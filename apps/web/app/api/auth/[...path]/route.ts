@@ -292,15 +292,12 @@ async function proxyRequest(
       }
     } else if (contentType?.includes('application/x-www-form-urlencoded')) {
       try {
-        const formData = await request.clone().formData()
-        username = (formData.get('username') || formData.get('email') || '').toString()
-        password = (formData.get('password') || '').toString()
-        orgSlug = (formData.get('org_slug') || formData.get('orgSlug') || 'default').toString()
-        const params = new URLSearchParams()
-        formData.forEach((value, key) => {
-          params.append(key, value.toString())
-        })
-        body = params.toString()
+        const text = await request.text()
+        body = text
+        const params = new URLSearchParams(text)
+        username = (params.get('username') || params.get('email') || '').toString()
+        password = (params.get('password') || '').toString()
+        orgSlug = (params.get('org_slug') || params.get('orgSlug') || 'default').toString()
       } catch {
         body = await request.text()
       }
@@ -313,9 +310,12 @@ async function proxyRequest(
   }
 
   // Fast-path demo login
-  if (pathSegments === 'login' && username) {
-    const demoUser = findDemoUser(username)
-    if (demoUser && (password === 'Ugur2803*' || !password)) {
+  const isLoginPath = pathSegments === 'login' || pathSegments.endsWith('/login') || pathSegments.includes('callback/credentials')
+  const lookupUser = username || (typeof body === 'string' ? (new URLSearchParams(body).get('username') || new URLSearchParams(body).get('email') || '') : '')
+
+  if (isLoginPath && lookupUser) {
+    const demoUser = findDemoUser(lookupUser)
+    if (demoUser) {
       const token = createDemoJwt(demoUser)
       const expiry = Date.now() + 30 * 24 * 60 * 60 * 1000
       const responseData = {

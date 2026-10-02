@@ -85,9 +85,15 @@ const getLEARNHOUSE_HTTP_PROTOCOL = () =>
   (getConfig('NEXT_PUBLIC_LEARNHOUSE_HTTPS') === 'true') ? 'https://' : 'http://'
 const getLEARNHOUSE_BACKEND_URL = () => getConfig('NEXT_PUBLIC_LEARNHOUSE_BACKEND_URL', 'http://localhost/')
 const getLEARNHOUSE_DOMAIN = () => {
+  if (typeof window !== 'undefined') {
+    const host = window.location.host
+    if (!host.includes('localhost') && !host.includes('127.0.0.1') && !host.includes('lvh.me')) {
+      return host
+    }
+  }
   // 1. Env var (backward compat for existing deploys)
   const envVal = getConfig('NEXT_PUBLIC_LEARNHOUSE_DOMAIN')
-  if (envVal) return envVal
+  if (envVal && !envVal.includes('lvh.me')) return envVal
   // 2. Cookie set by middleware from backend instance info
   const cookieVal = getCookieValue('LH_frontend_domain')
   if (cookieVal) return cookieVal
@@ -95,9 +101,16 @@ const getLEARNHOUSE_DOMAIN = () => {
   return 'localhost'
 }
 const getLEARNHOUSE_TOP_DOMAIN = () => {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname
+    if (!hostname.includes('localhost') && !hostname.includes('127.0.0.1') && !hostname.includes('lvh.me')) {
+      const parts = hostname.split('.')
+      return parts.length >= 2 ? parts.slice(-2).join('.') : hostname
+    }
+  }
   // 1. Env var (backward compat for existing deploys)
   const envVal = getConfig('NEXT_PUBLIC_LEARNHOUSE_TOP_DOMAIN')
-  if (envVal) return envVal
+  if (envVal && !envVal.includes('lvh.me')) return envVal
   // 2. Cookie set by middleware from backend instance info
   const cookieVal = getCookieValue('LH_top_domain')
   if (cookieVal) return cookieVal
@@ -144,9 +157,17 @@ export const isOnCustomDomain = (): boolean => {
 
 // Derive API URL from backend URL (with backward compat for NEXT_PUBLIC_LEARNHOUSE_API_URL)
 const deriveAPIUrl = (): string => {
-  // Backward compat: if explicit API URL is set, use it
+  if (typeof window !== 'undefined') {
+    // Client-side: always use relative /api/v1/ in production
+    const hostname = window.location.hostname
+    if (!hostname.includes('localhost') && !hostname.includes('127.0.0.1') && !hostname.includes('lvh.me')) {
+      return '/api/v1/'
+    }
+  }
+
+  // Backward compat: if explicit API URL is set, use it (unless obsolete lvh.me)
   const explicitApiUrl = getConfig('NEXT_PUBLIC_LEARNHOUSE_API_URL')
-  if (explicitApiUrl) return explicitApiUrl
+  if (explicitApiUrl && !explicitApiUrl.includes('lvh.me')) return explicitApiUrl
 
   if (typeof window !== 'undefined') {
     // Client-side: use relative /api/v1/ unless pointing to an external remote backend
@@ -159,7 +180,7 @@ const deriveAPIUrl = (): string => {
 
   // Server-side
   const backendUrl = getLEARNHOUSE_BACKEND_URL().replace(/\/+$/, '')
-  if (!backendUrl || backendUrl.includes('localhost')) {
+  if (!backendUrl || backendUrl.includes('localhost') || backendUrl.includes('lvh.me')) {
     const host = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
       : 'http://127.0.0.1:3000'
@@ -172,8 +193,12 @@ const deriveAPIUrl = (): string => {
 export const getAPIUrl = () => {
   // Client-side in browser: always use relative path to go through Next.js route handlers
   if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname
+    if (!hostname.includes('localhost') && !hostname.includes('127.0.0.1') && !hostname.includes('lvh.me')) {
+      return '/api/v1/'
+    }
     const explicitApiUrl = getConfig('NEXT_PUBLIC_LEARNHOUSE_API_URL')
-    if (explicitApiUrl) return explicitApiUrl
+    if (explicitApiUrl && !explicitApiUrl.includes('lvh.me')) return explicitApiUrl
     return '/api/v1/'
   }
   return deriveAPIUrl()

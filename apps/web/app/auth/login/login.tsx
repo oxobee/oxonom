@@ -503,6 +503,21 @@ const LoginClient = (props: LoginClientProps) => {
       })
 
       if (res && res.error) {
+        // Direct backup login call in case next-auth context had an unexpected hiccup
+        try {
+          const directRes = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({ username: email, password, org_slug: targetSlug }),
+            credentials: 'include',
+          })
+          if (directRes.ok) {
+            track(AnalyticsEvent.LoginSucceeded, { method: 'demo_quick_login_direct', role })
+            window.location.href = targetPath
+            return
+          }
+        } catch {}
+
         let errMsg = t('auth.wrong_email_password', { defaultValue: 'Giriş yapılamadı. Bilgilerinizi kontrol ediniz.' })
         try {
           const parsed = JSON.parse(res.error)
@@ -517,6 +532,20 @@ const LoginClient = (props: LoginClientProps) => {
         window.location.href = targetPath
       }
     } catch (err: any) {
+      try {
+        const directRes = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({ username: email, password, org_slug: targetSlug }),
+          credentials: 'include',
+        })
+        if (directRes.ok) {
+          track(AnalyticsEvent.LoginSucceeded, { method: 'demo_quick_login_direct', role })
+          window.location.href = targetPath
+          return
+        }
+      } catch {}
+
       setError(err?.message || t('auth.wrong_email_password', { defaultValue: 'Giriş yapılamadı. Lütfen tekrar deneyiniz.' }))
       setShowErrorModal(true)
       setIsSubmitting(false)

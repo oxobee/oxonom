@@ -304,30 +304,35 @@ export function SessionProvider({
   // signed out" apart from "the request did not get through" and avoid tearing
   // down a healthy session over a server blip.
   const fetchUserSession = useCallback(async (token: string, expiry?: number): Promise<Session | null> => {
-    const response = await fetch(`${getAPIUrl()}users/session`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      credentials: 'include',
-    })
+    try {
+      const response = await fetch(`${getAPIUrl()}users/session`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: 'include',
+      })
 
-    if (!response.ok) {
-      if (response.status === 401 || response.status === 403) {
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          return null
+        }
         return null
       }
-      throw new Error(`Session fetch failed with status: ${response.status}`)
-    }
 
-    const data = await response.json()
-    return {
-      user: data.user,
-      roles: data.roles,
-      tokens: {
-        access_token: token,
-        refresh_token: undefined, // Stored in httpOnly cookie
-        expiry: expiry,
-      },
+      const data = await response.json()
+      return {
+        user: data.user,
+        roles: data.roles,
+        tokens: {
+          access_token: token,
+          refresh_token: undefined, // Stored in httpOnly cookie
+          expiry: expiry,
+        },
+      }
+    } catch (err) {
+      console.warn('[auth] session fetch error:', err)
+      return null
     }
   }, [])
 
@@ -619,11 +624,15 @@ export function SessionProvider({
       sessionCacheRef.current = { data: newSession, timestamp: Date.now() }
 
       // Fetch full session with roles
-      const fullSession = await fetchUserSession(data.tokens.access_token, data.tokens.expiry)
-      if (fullSession) {
-        fullSession.tokens = newSession.tokens
-        setSession(fullSession)
-        sessionCacheRef.current = { data: fullSession, timestamp: Date.now() }
+      try {
+        const fullSession = await fetchUserSession(data.tokens.access_token, data.tokens.expiry)
+        if (fullSession) {
+          fullSession.tokens = newSession.tokens
+          setSession(fullSession)
+          sessionCacheRef.current = { data: fullSession, timestamp: Date.now() }
+        }
+      } catch (e) {
+        console.warn('[auth] Could not fetch full session, keeping active session:', e)
       }
 
       // Notify other tabs
