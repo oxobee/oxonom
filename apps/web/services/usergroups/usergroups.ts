@@ -15,7 +15,12 @@ export async function getUserGroups(org_id: any, access_token: string) {
       return await getResponseMetadata(result)
     }
   } catch (_err) {}
-  return SYNCED_USERGROUPS
+  return {
+    success: true,
+    data: SYNCED_USERGROUPS,
+    status: 200,
+    HTTPmessage: 'OK',
+  }
 }
 
 export async function getMyUserGroups(org_id: any, access_token: string) {
@@ -28,7 +33,12 @@ export async function getMyUserGroups(org_id: any, access_token: string) {
       return await getResponseMetadata(result)
     }
   } catch (_err) {}
-  return SYNCED_USERGROUPS
+  return {
+    success: true,
+    data: SYNCED_USERGROUPS,
+    status: 200,
+    HTTPmessage: 'OK',
+  }
 }
 
 export async function getUserGroup(usergroup_id: number, access_token: string) {
