@@ -20,7 +20,7 @@ if lsof -Pi :1348 -sTCP:LISTEN -t >/dev/null 2>&1 ; then
     echo "  -> API is already running on port 1348."
 else
     cd "$DIR/apps/api"
-    nohup bash run_demo_api.sh > "$DIR/logs/api.log" 2>&1 &
+    nohup bash run_demo_api.sh </dev/null > "$DIR/logs/api.log" 2>&1 &
     echo $! > "$DIR/logs/api.pid"
     echo "  -> API started (PID $(cat "$DIR/logs/api.pid"))."
 fi
@@ -31,7 +31,7 @@ if lsof -Pi :4000 -sTCP:LISTEN -t >/dev/null 2>&1 ; then
     echo "  -> Collab is already running on port 4000."
 else
     cd "$DIR/apps/collab"
-    nohup bash run_demo_collab.sh > "$DIR/logs/collab.log" 2>&1 &
+    nohup bash run_demo_collab.sh </dev/null > "$DIR/logs/collab.log" 2>&1 &
     echo $! > "$DIR/logs/collab.pid"
     echo "  -> Collab started (PID $(cat "$DIR/logs/collab.pid"))."
 fi
@@ -42,7 +42,7 @@ if lsof -Pi :3010 -sTCP:LISTEN -t >/dev/null 2>&1 ; then
     echo "  -> Web is already running on port 3010."
 else
     cd "$DIR/apps/web"
-    nohup bun run dev -p 3010 > "$DIR/logs/web.log" 2>&1 &
+    nohup bun run dev -p 3010 </dev/null > "$DIR/logs/web.log" 2>&1 &
     echo $! > "$DIR/logs/web.pid"
     echo "  -> Web started (PID $(cat "$DIR/logs/web.pid"))."
 fi
