@@ -127,9 +127,15 @@ export default function BoardTopBar({
             </div>
           </Link>
 
-          <span className="text-sm font-bold text-neutral-800 truncate max-w-[220px]">
+          <span className="text-sm font-bold text-neutral-800 truncate max-w-[220px] sm:max-w-[340px] md:max-w-[460px]">
             {boardName}
           </span>
+
+          {(board?.is_demo || board?.board_uuid?.startsWith('board_')) && (
+            <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              MEB Demo
+            </span>
+          )}
 
           {accessToken && (
             <ToolTip content="Pano Ayarları (Efekt, Chat, Emoji)">

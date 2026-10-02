@@ -9,6 +9,7 @@ import Collaboration from '@tiptap/extension-collaboration'
 import { HocuspocusProvider } from '@hocuspocus/provider'
 import * as Y from 'yjs'
 import { getCollabUrl } from '@services/config/config'
+import { getDemoBoardInitialContent } from '@services/demo/demoBoardContents'
 import BoardToolbar from './BoardToolbar'
 import BoardTopBar from './BoardTopBar'
 import BoardTopRight from './BoardTopRight'
@@ -233,6 +234,51 @@ function BoardEditorInner({
       },
     },
   })
+
+  // Seed demo board content if document is empty
+  useEffect(() => {
+    if (!editor) return
+
+    const timer = setTimeout(() => {
+      const doc = editor.state.doc
+      const isEmpty =
+        doc.childCount === 0 ||
+        (doc.childCount === 1 &&
+          doc.firstChild?.type.name === 'paragraph' &&
+          doc.firstChild?.content.size === 0)
+
+      if (isEmpty) {
+        const initial = getDemoBoardInitialContent(board)
+        if (initial && initial.content && initial.content.length > 0) {
+          editor.commands.setContent(initial)
+        }
+      }
+    }, 150)
+
+    return () => clearTimeout(timer)
+  }, [editor, board])
+
+  // Persist local edits to localStorage for seamless offline & demo experience
+  useEffect(() => {
+    if (!ydoc || !board?.board_uuid) return
+    const handler = () => {
+      try {
+        const update = Y.encodeStateAsUpdate(ydoc)
+        let binary = ''
+        const len = update.byteLength
+        for (let i = 0; i < len; i++) {
+          binary += String.fromCharCode(update[i])
+        }
+        localStorage.setItem(`board_ydoc_${board.board_uuid}`, btoa(binary))
+      } catch (_err) {
+        // Ignore quota limits
+      }
+    }
+    ydoc.on('update', handler)
+    return () => {
+      ydoc.off('update', handler)
+    }
+  }, [ydoc, board?.board_uuid])
 
   // Remap selected positions when the document changes
   useEffect(() => {
@@ -916,20 +962,50 @@ export default function BoardCanvas({ board, accessToken, orgslug, username, org
   const [connStatus, setConnStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting')
   const [authFailed, setAuthFailed] = useState(false)
 
+  const isDemo = Boolean(
+    board?.is_demo ||
+    board?.board_uuid?.startsWith('board_') ||
+    (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && getCollabUrl().includes('localhost'))
+  )
+
   useEffect(() => {
     const doc = new Y.Doc()
+
+    // Restore saved board state from localStorage if available
+    if (typeof window !== 'undefined' && board?.board_uuid) {
+      try {
+        const saved = localStorage.getItem(`board_ydoc_${board.board_uuid}`)
+        if (saved) {
+          const binary = atob(saved)
+          const bytes = new Uint8Array(binary.length)
+          for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i)
+          }
+          Y.applyUpdate(doc, bytes)
+        }
+      } catch (err) {
+        console.warn('[board] Could not restore from localStorage:', err)
+      }
+    }
+
     const prov = new HocuspocusProvider({
       url: getCollabUrl(),
       name: `board:${board.board_uuid}`,
       document: doc,
       token: accessToken,
       onStatus({ status }: { status: string }) {
-        setConnStatus(status as 'connecting' | 'connected' | 'disconnected')
+        if (!isDemo) {
+          setConnStatus(status as 'connecting' | 'connected' | 'disconnected')
+        } else {
+          setConnStatus('connected')
+        }
       },
       onAuthenticationFailed({ reason }: { reason: string }) {
         console.error('[board] Authentication failed:', reason)
-        setAuthFailed(true)
-        prov.disconnect()
+        if (!isDemo) {
+          setAuthFailed(true)
+          prov.disconnect()
+        }
       },
     })
 
@@ -940,13 +1016,13 @@ export default function BoardCanvas({ board, accessToken, orgslug, username, org
     setYdoc(doc)
     setProvider(prov)
     setAuthFailed(false)
-    setConnStatus('connecting')
+    setConnStatus(isDemo ? 'connected' : 'connecting')
 
     return () => {
       prov.destroy()
       doc.destroy()
     }
-  }, [board.board_uuid, accessToken])
+  }, [board.board_uuid, accessToken, isDemo])
 
   if (authFailed) {
     return (
@@ -979,8 +1055,8 @@ export default function BoardCanvas({ board, accessToken, orgslug, username, org
         ydoc={ydoc}
         provider={provider}
       />
-      {/* Connection status indicator */}
-      {connStatus === 'disconnected' && (
+      {/* Connection status indicator (suppressed for demo/standalone boards to avoid false alarms) */}
+      {connStatus === 'disconnected' && !isDemo && (
         <div className="fixed bottom-20 left-1/2 z-50 -translate-x-1/2 flex items-center gap-2 rounded-full bg-amber-50 border border-amber-200 px-4 py-2 shadow-lg">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />

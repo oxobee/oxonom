@@ -550,6 +550,16 @@ export function generateClassroomBoards(classItem: ClassroomItem) {
   ]
 }
 
+// Export all classroom boards across all schools & branches
+export const ALL_CLASSROOM_BOARDS = ALL_CLASSROOMS.flatMap((c) =>
+  generateClassroomBoards(c).map((b) => ({
+    ...b,
+    is_demo: true,
+    created_by: 2,
+    org_id: c.org_id,
+  }))
+)
+
 // Generate classroom homework (All assigned to Demo Student: Erçil Evren UĞURLU)
 export function generateClassroomAssignments(classItem: ClassroomItem) {
   const isPrimary = classItem.org_id === 10

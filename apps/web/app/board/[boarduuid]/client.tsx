@@ -28,10 +28,11 @@ export default function BoardCanvasClient({
 }: BoardCanvasClientProps) {
   const session = useLHSession() as any
   const sessionToken = accessToken || session?.data?.tokens?.access_token
+  const isDemoUuid = boardUuid.startsWith('board_')
 
   // Guest token & user state when accessing without login
-  const [guestToken, setGuestToken] = useState<string | null>(null)
-  const [guestName, setGuestName] = useState<string>('')
+  const [guestToken, setGuestToken] = useState<string | null>(() => (isDemoUuid && !sessionToken ? 'demo_guest_token' : null))
+  const [guestName, setGuestName] = useState<string>(() => (isDemoUuid && !sessionToken ? 'Misafir' : ''))
   const [pinDigits, setPinDigits] = useState(['', '', '', ''])
   const [submittingPin, setSubmittingPin] = useState(false)
   const [pinError, setPinError] = useState<string | null>(null)
