@@ -54,8 +54,8 @@ export const DEMO_USERS: Record<string, DemoUser> = {
     user_uuid: 'user_6f129354-53fb-40c0-be52-0cc8dc07cce1',
     username: 'ogretmen',
     email: 'ogretmen@oxonom.com',
-    first_name: 'Ahmet',
-    last_name: 'Öğretmen',
+    first_name: 'Özlem',
+    last_name: 'ZOR',
     email_verified: true,
     is_superadmin: false,
     is_demo: true,
@@ -83,8 +83,8 @@ export const DEMO_USERS: Record<string, DemoUser> = {
     user_uuid: 'user_28721dd2-df5b-4c84-8f2d-6ad97e3e6cbb',
     username: 'ogrenci',
     email: 'ogrenci@oxonom.com',
-    first_name: 'Ali',
-    last_name: 'Öğrenci',
+    first_name: 'Erçil Evren',
+    last_name: 'UĞURLU',
     email_verified: true,
     is_superadmin: false,
     is_demo: true,
@@ -141,8 +141,8 @@ export const DEMO_USERS: Record<string, DemoUser> = {
     user_uuid: 'user_6f129354-53fb-40c0-be52-0cc8dc07cce1',
     username: 'ogretmen',
     email: 'ogretmen@oxonom.com',
-    first_name: 'Ahmet',
-    last_name: 'Yılmaz (Öğretmen)',
+    first_name: 'Özlem',
+    last_name: 'ZOR',
     email_verified: true,
     is_superadmin: false,
     is_demo: true,
@@ -170,8 +170,8 @@ export const DEMO_USERS: Record<string, DemoUser> = {
     user_uuid: 'user_28721dd2-df5b-4c84-8f2d-6ad97e3e6cbb',
     username: 'ogrenci',
     email: 'ogrenci@oxonom.com',
-    first_name: 'Emre',
-    last_name: 'Demir (Öğrenci)',
+    first_name: 'Erçil Evren',
+    last_name: 'UĞURLU',
     email_verified: true,
     is_superadmin: false,
     is_demo: true,
@@ -245,21 +245,24 @@ export function findDemoUser(identifier: string): DemoUser | null {
 }
 
 export function getDemoSession(demoUser: DemoUser) {
-  const demoOrg = {
+  const neclaGorerOrg = {
     ...DEFAULT_FALLBACK_ORG,
-    id: 2,
-    org_uuid: 'org_33d3ce57-c2b3-4368-aab5-840ea0e48f2e',
-    name: 'Atatürk Fen ve Anadolu Lisesi',
-    slug: 'demo',
+    id: 10,
+    org_uuid: 'org_necla_gorer_ilkokulu',
+    name: 'Necla Görer İlkokulu',
+    slug: 'neclagorer',
+    description: '1, 2, 3 ve 4. Sınıflar — MEB Temel Eğitim & Akıllı İlkokul Portalı',
     is_demo: true,
   }
-  const defaultOrg = {
+  const fevziKutluOrg = {
     ...DEFAULT_FALLBACK_ORG,
-    id: 1,
-    name: 'Atatürk Fen ve Anadolu Lisesi',
-    slug: 'default',
+    id: 20,
+    org_uuid: 'org_sfg_ortaokulu',
+    name: 'Şair Fevzi Kutlu Kalkancı Ortaokulu',
+    slug: 'fevzikalkanci',
+    description: '5, 6, 7 ve 8. Sınıflar — LGS Hazırlık & Akıllı Ortaokul Portalı',
+    is_demo: true,
   }
-
   return {
     user: {
       id: demoUser.id,
@@ -281,7 +284,7 @@ export function getDemoSession(demoUser: DemoUser) {
           name: demoUser.role.name,
           rights: demoUser.role.rights,
         },
-        org: demoOrg,
+        org: neclaGorerOrg,
       },
       {
         role: {
@@ -290,7 +293,7 @@ export function getDemoSession(demoUser: DemoUser) {
           name: demoUser.role.name,
           rights: demoUser.role.rights,
         },
-        org: defaultOrg,
+        org: fevziKutluOrg,
       },
     ],
   }

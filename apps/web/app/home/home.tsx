@@ -40,6 +40,8 @@ import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import { changeLanguage } from '@/lib/i18n'
 import JoinClassModal from '@components/Dashboard/Classrooms/JoinClassModal'
+import TcKimlikModal from '@components/Objects/TcKimlikModal'
+import DemoClassSwitcher from '@components/Objects/DemoClassSwitcher'
 import { getMyClasses } from '@services/usergroups/usergroups'
 import { asArray } from '@services/utils/ts/requests'
 import { CopyrightFooter } from '@components/Footers/LegalFooters'
@@ -75,29 +77,36 @@ function HomeClient() {
   const platformUrl = getLEARNHOUSE_PLATFORM_URL_VAL()
   const queryClient = useQueryClient()
   const [isJoinClassOpen, setIsJoinClassOpen] = useState(false)
+  const [isTcModalOpen, setIsTcModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
   // Roles calculation
+  const email = (session?.data?.user?.email || '').toLowerCase()
   const isSuperAdmin = session?.data?.user?.is_superadmin === true
   const roles: any[] = session?.data?.roles || []
-  const isTeacher = roles.some(
-    (r: any) =>
-      r?.role?.id === 3 ||
-      r?.role?.name?.toLowerCase() === 'instructor' ||
-      r?.role?.name?.toLowerCase() === 'teacher' ||
-      r?.role?.name?.toLowerCase() === 'öğretmen'
-  )
-  const isAdmin =
-    isSuperAdmin ||
+  const isTeacher =
+    email.includes('ogretmen') ||
     roles.some(
       (r: any) =>
-        r?.role?.id === 1 ||
-        r?.role?.id === 2 ||
-        r?.role?.name?.toLowerCase() === 'admin' ||
-        r?.role?.name?.toLowerCase() === 'owner' ||
-        r?.role?.name?.toLowerCase() === 'yönetici' ||
-        r?.role?.rights?.organizations?.action_create === true
+        r?.role?.id === 3 ||
+        r?.role?.name?.toLowerCase() === 'instructor' ||
+        r?.role?.name?.toLowerCase() === 'teacher' ||
+        r?.role?.name?.toLowerCase() === 'öğretmen'
     )
+  const isAdmin =
+    !email.includes('ogrenci') &&
+    (isSuperAdmin ||
+      email.includes('idare') ||
+      email.includes('admin') ||
+      roles.some(
+        (r: any) =>
+          r?.role?.id === 1 ||
+          r?.role?.id === 2 ||
+          r?.role?.name?.toLowerCase() === 'admin' ||
+          r?.role?.name?.toLowerCase() === 'owner' ||
+          r?.role?.name?.toLowerCase() === 'yönetici' ||
+          r?.role?.rights?.organizations?.action_create === true
+      ))
   const isStudent = !isAdmin && !isTeacher
 
   const { data: orgs, isLoading: orgsLoading } = useQuery({
@@ -212,6 +221,17 @@ function HomeClient() {
             {/* Right Controls */}
             {isAuthenticated && (
               <div className="flex items-center gap-2.5">
+                {/* T.C. Kimlik Doğrulama Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsTcModalOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50/80 hover:bg-emerald-100 text-xs font-bold text-emerald-900 transition-colors shadow-2xs cursor-pointer"
+                >
+                  <Shield size={14} className="text-emerald-700" />
+                  <span className="hidden sm:inline">T.C. Doğrulama</span>
+                  <span className="sm:hidden">T.C.</span>
+                </button>
+
                 {/* Language Switcher */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -344,9 +364,12 @@ function HomeClient() {
               )}
             </div>
 
-            {/* Student-Only Banner: Sınıf Katılım Koduyla Katıl */}
+            {/* Student-Only Banner: Sınıf Seçici & Katılım Koduyla Katıl */}
             {isStudent && (
-              <div className="mt-6 pt-6 border-t border-gray-100">
+              <div className="mt-6 pt-6 border-t border-gray-100 space-y-4">
+                {/* 58 Classrooms Switcher specifically for Demo Student */}
+                <DemoClassSwitcher />
+
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-gradient-to-r from-emerald-50/80 via-emerald-50/40 to-teal-50/60 border border-emerald-200/80">
                   <div className="flex items-center gap-3.5">
                     <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
@@ -354,21 +377,31 @@ function HomeClient() {
                     </div>
                     <div>
                       <h2 className="text-sm font-bold text-emerald-950">
-                        Sınıf Katılım Kodu ile Katıl
+                        Sınıf Katılım Kodu ile Katıl & Kimlik Doğrulama
                       </h2>
                       <p className="text-xs text-emerald-700/90 mt-0.5">
-                        Öğretmeninizin size ilettiği 6 haneli kod ile sınıfınıza ve ders panolarınıza hemen katılın.
+                        Öğretmeninizin size ilettiği 6 haneli kod ile sınıfınıza hemen katılın veya T.C. Kimlik ile kütük kaydınızı sorgulayın.
                       </p>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setIsJoinClassOpen(true)}
-                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs hover:shadow-sm cursor-pointer shrink-0"
-                  >
-                    <KeyRound size={14} />
-                    <span>Sınıf Kodu Gir</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsTcModalOpen(true)}
+                      className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 bg-white border border-emerald-300 hover:bg-emerald-50 text-emerald-900 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer shrink-0"
+                    >
+                      <Shield size={14} className="text-emerald-700" />
+                      <span>T.C. Kimlik Sorgula</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsJoinClassOpen(true)}
+                      className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs hover:shadow-sm cursor-pointer shrink-0"
+                    >
+                      <KeyRound size={14} />
+                      <span>Sınıf Kodu Gir</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -499,6 +532,12 @@ function HomeClient() {
             }}
           />
 
+          {/* TC Kimlik Verification Modal */}
+          <TcKimlikModal
+            isOpen={isTcModalOpen}
+            onClose={() => setIsTcModalOpen(false)}
+          />
+
           {/* Footer */}
           <div className="mt-12 text-center">
             <div className="flex items-center justify-center gap-1.5 text-xs text-gray-600">
@@ -590,12 +629,19 @@ function OrgRow({
     }
   }
 
-  const destinationHref = getUriWithOrg(org.slug, '/')
+  const destinationHref = (isAdmin || isTeacher)
+    ? `/orgs/${org.slug}/dash`
+    : `/orgs/${org.slug}`
+
+  const isPrimary = org.slug === 'neclagorer' || org.id === 10
+  const gradeLabel = isPrimary ? '1 - 4. Sınıflar (İlkokul)' : '5 - 8. Sınıflar (Ortaokul)'
+  const branchCount = isPrimary ? '28 Şube' : '30 Şube'
+  const teacherCount = isPrimary ? '28 Sınıf Öğretmeni' : '30 Branş Öğretmeni'
 
   return (
-    <div className="relative flex items-center p-4 sm:p-5 bg-white rounded-2xl border border-gray-200/90 shadow-xs hover:shadow-md hover:border-gray-300 transition-all group">
+    <div className="relative flex flex-col p-4 sm:p-5 bg-white rounded-2xl border border-gray-200/90 shadow-xs hover:shadow-md hover:border-gray-300 transition-all group">
       {/* Clickable Area */}
-      <Link href={destinationHref} className="flex items-center flex-1 min-w-0">
+      <Link href={destinationHref} className="flex items-center w-full min-w-0">
         {/* School Logo */}
         <div className="w-13 h-13 rounded-2xl bg-gray-50 border border-gray-200/80 overflow-hidden flex items-center justify-center shrink-0 shadow-xs group-hover:border-gray-300 transition-colors">
           <OrgSquareLogo
@@ -614,11 +660,9 @@ function OrgRow({
             <span className="font-bold text-gray-900 text-base tracking-tight truncate group-hover:text-black transition-colors">
               {org.name}
             </span>
-            {org.is_demo && (
-              <span className="shrink-0 rounded-md bg-amber-100 text-amber-800 border border-amber-200/80 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
-                Demo Okul
-              </span>
-            )}
+            <span className="shrink-0 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200/80 px-2 py-0.5 text-[10px] font-bold">
+              {gradeLabel}
+            </span>
             {isAdmin && (
               <span className="shrink-0 rounded-md bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 text-[10px] font-bold">
                 Yönetici Erişimi
@@ -628,8 +672,8 @@ function OrgRow({
 
           {/* Subtitle / Classes description */}
           {isStudent && myClasses && myClasses.length > 0 ? (
-            <div className="flex flex-wrap items-center gap-1.5 mt-2">
-              <span className="text-[11px] font-semibold text-gray-600">Kayıtlı Sınıflarınız:</span>
+            <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+              <span className="text-[11px] font-semibold text-gray-600">Kayıtlı Sınıfınız:</span>
               {myClasses.map((cls: any) => (
                 <span
                   key={cls.id}
@@ -649,10 +693,44 @@ function OrgRow({
 
         {/* Action button indicator */}
         <div className="ms-3 hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-50 border border-gray-200/60 text-xs font-bold text-gray-700 group-hover:bg-gray-900 group-hover:text-white group-hover:border-transparent transition-all shrink-0">
-          <span>{isAdmin ? 'Yönetim Paneli' : 'Giriş Yap'}</span>
+          <span>{isAdmin || isTeacher ? 'Yönetim Paneli' : 'Giriş Yap'}</span>
           <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
         </div>
       </Link>
+
+      {/* Sub-navigation Chips */}
+      <div className="mt-3 pt-3 border-t border-gray-100 flex flex-wrap items-center gap-2">
+        <Link
+          href={`/orgs/${org.slug}/dash/classrooms`}
+          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold transition-colors cursor-pointer"
+        >
+          <span>{branchCount}</span>
+        </Link>
+        <Link
+          href={`/orgs/${org.slug}/dash/teachers`}
+          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold transition-colors cursor-pointer"
+        >
+          <span>{teacherCount}</span>
+        </Link>
+        <Link
+          href={`/orgs/${org.slug}/dash/assignments`}
+          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition-colors cursor-pointer"
+        >
+          <span>Ödevler & Takip</span>
+        </Link>
+        <Link
+          href={`/orgs/${org.slug}/boards`}
+          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-cyan-50 hover:bg-cyan-100 text-cyan-800 text-xs font-bold transition-colors cursor-pointer"
+        >
+          <span>Akıllı Tahtalar</span>
+        </Link>
+        <Link
+          href={`/orgs/${org.slug}/dash/students`}
+          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold transition-colors cursor-pointer"
+        >
+          <span>Öğrenci Kütüğü</span>
+        </Link>
+      </div>
 
       {/* Admin 3-dots actions menu */}
       {!isStudent && (

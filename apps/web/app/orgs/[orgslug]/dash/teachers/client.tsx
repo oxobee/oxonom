@@ -43,6 +43,7 @@ import {
   DialogTitle,
 } from '@components/ui/dialog'
 import { searchMatchesAny } from '@/lib/search/normalize'
+import { getOrgTeachers, validateTcKimlik } from '@services/demo/schoolDirectory'
 
 export interface TeacherDocument {
   id: string
@@ -296,14 +297,25 @@ export default function TeachersClient({ orgslug }: { orgslug: string }) {
     return []
   }, [rawClasses])
 
-  const [teachers, setTeachers] = useState<TeacherRecord[]>(INITIAL_TEACHERS)
+  const orgId = org?.id || (orgslug === 'fevzikalkanci' ? 20 : 10)
+  const defaultOrgTeachers = useMemo(() => getOrgTeachers(orgId) as TeacherRecord[], [orgId])
+
+  const [teachers, setTeachers] = useState<TeacherRecord[]>(() => {
+    const id = orgslug === 'fevzikalkanci' ? 20 : 10
+    return getOrgTeachers(id) as TeacherRecord[]
+  })
 
   // Synchronize teachers with real available classes and persist
   React.useEffect(() => {
     if (typeof window === 'undefined') return
-    const key = `oxonom_teachers_${org?.id || 'demo'}`
+    const key = `oxonom_teachers_${orgId}`
     const saved = localStorage.getItem(key)
-    let currentList: TeacherRecord[] = saved ? JSON.parse(saved) : INITIAL_TEACHERS
+    let currentList: TeacherRecord[] = saved ? JSON.parse(saved) : defaultOrgTeachers
+
+    // If saved list had outdated mock teachers, refresh to current school teachers
+    if (currentList.length > 0 && currentList[0].name.includes('Ahmet Hakan')) {
+      currentList = defaultOrgTeachers
+    }
 
     if (rawClasses.length > 0) {
       const realClassNames = new Set(rawClasses.map((c: any) => c.name))
@@ -326,12 +338,12 @@ export default function TeachersClient({ orgslug }: { orgslug: string }) {
       })
     }
     setTeachers(currentList)
-  }, [rawClasses, org?.id])
+  }, [rawClasses, orgId, defaultOrgTeachers])
 
   const saveTeachersList = (updated: TeacherRecord[]) => {
     setTeachers(updated)
     if (typeof window !== 'undefined') {
-      const key = `oxonom_teachers_${org?.id || 'demo'}`
+      const key = `oxonom_teachers_${orgId}`
       localStorage.setItem(key, JSON.stringify(updated))
     }
   }

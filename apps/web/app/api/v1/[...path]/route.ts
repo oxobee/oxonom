@@ -8,9 +8,6 @@ import {
   getDemoSession,
   createDemoJwt,
   DEMO_USERS,
-  FALLBACK_PLAYGROUNDS,
-  FALLBACK_BOARDS,
-  FALLBACK_USERGROUPS,
 } from '@services/auth/demoAuth'
 import {
   SYNCED_ORGANIZATIONS,
@@ -30,6 +27,24 @@ import {
   getSyncedSuperadminVisits,
   getSyncedSuperadminUsers,
 } from '@services/demo/databaseSync'
+import {
+  SCHOOL_ORGS,
+  DEFAULT_SCHOOL_ALIAS_MAP,
+  ALL_CLASSROOMS,
+  TEACHER_RAW_LIST,
+  DEMO_STUDENT,
+  generateClassStudents,
+  generateClassroomBoards,
+  generateClassroomAssignments,
+  validateTcKimlik,
+  lookupTcRecord,
+  getOrgTeachers,
+} from '@services/demo/schoolDirectory'
+import {
+  TURKISH_COMMUNITIES,
+  TURKISH_FOLDERS,
+  TURKISH_COURSES,
+} from '@services/demo/turkishSchoolData'
 
 export const maxDuration = 300
 export const dynamic = 'force-dynamic'
@@ -38,16 +53,58 @@ export const fetchCache = 'force-no-store'
 const SKIP_REQUEST_HEADERS = new Set(['host', 'connection', 'keep-alive', 'transfer-encoding'])
 const SKIP_RESPONSE_HEADERS = new Set(['connection', 'keep-alive', 'transfer-encoding', 'content-encoding'])
 
+const SCHOOL_LIST = [
+  {
+    ...DEFAULT_FALLBACK_ORG,
+    id: 10,
+    org_uuid: 'org_necla_gorer_ilkokulu',
+    name: 'Necla Görer İlkokulu',
+    slug: 'neclagorer',
+    description: '1, 2, 3 ve 4. Sınıflar — MEB Temel Eğitim & Akıllı İlkokul Portalı',
+    about: 'Necla Görer İlkokulu resmi dijital eğitim kampüsü. 1. sınıftan 4. sınıfa kadar tüm şubeler, sınıf öğretmenleri, akıllı tahtalar ve ödev takip sistemi.',
+    grades: '1 - 4. Sınıflar (İlkokul)',
+    is_demo: false,
+  },
+  {
+    ...DEFAULT_FALLBACK_ORG,
+    id: 20,
+    org_uuid: 'org_sfg_ortaokulu',
+    name: 'Şair Fevzi Kutlu Kalkancı Ortaokulu',
+    slug: 'fevzikalkanci',
+    description: '5, 6, 7 ve 8. Sınıflar — LGS Hazırlık & Akıllı Ortaokul Portalı',
+    about: 'Şair Fevzi Kutlu Kalkancı Ortaokulu resmi dijital eğitim kampüsü. 5. sınıftan 8. sınıfa kadar branş dersleri, LGS hazırlık denemeleri, akıllı tahtalar ve ödev platformu.',
+    grades: '5 - 8. Sınıflar (Ortaokul)',
+    is_demo: false,
+  },
+]
+
 async function handleFallback(request: NextRequest, path: string): Promise<Response> {
   // Instance info
   if (path === '/api/v1/instance/info' || path.startsWith('/api/v1/instance/info')) {
     return NextResponse.json({
       tenancy: 'single',
-      default_org_slug: 'demo',
+      default_org_slug: 'neclagorer',
       frontend_domain: 'learnhouze.vercel.app',
       top_domain: 'learnhouze.vercel.app',
       mode: 'saas',
       multi_org_enabled: false,
+    }, { status: 200 })
+  }
+
+  // Active class resolution from cookie or header (Defaults to 1-A)
+  const activeClassCode = request.cookies.get('oxonom_demo_student_active_class')?.value ||
+                          request.headers.get('x-active-class') ||
+                          '1-A'
+  const activeClassItem = ALL_CLASSROOMS.find((c) => c.code === activeClassCode || c.name.startsWith(activeClassCode)) || ALL_CLASSROOMS[0]
+
+  // TC Kimlik No Verification & Lookup Endpoint
+  if (path.startsWith('/api/v1/tc/validate') || path.startsWith('/api/v1/tc/lookup')) {
+    const tcParam = request.nextUrl.searchParams.get('tc') || ''
+    const check = validateTcKimlik(tcParam)
+    const record = lookupTcRecord(tcParam)
+    return NextResponse.json({
+      ...check,
+      record: record || null,
     }, { status: 200 })
   }
 
@@ -85,17 +142,165 @@ async function handleFallback(request: NextRequest, path: string): Promise<Respo
     return NextResponse.json([], { status: 200 })
   }
 
-  // Organizations
+  // Organizations: User Orgs (ALWAYS returns Array for /orgs/user)
+  if (path.startsWith('/api/v1/orgs/user')) {
+    return NextResponse.json(SCHOOL_LIST, { status: 200 })
+  }
+
   if (path.startsWith('/api/v1/orgs/slug/')) {
     const slug = path.replace('/api/v1/orgs/slug/', '').split('/')[0]
-    const matched = SYNCED_ORGANIZATIONS.find((o: any) => o.slug === slug)
-    return NextResponse.json(matched || SYNCED_ORGANIZATIONS[0] || DEFAULT_FALLBACK_ORG, { status: 200 })
+    const matched = SCHOOL_LIST.find((o) => o.slug === slug) ||
+                    SCHOOL_ORGS.find((o) => o.slug === slug) ||
+                    DEFAULT_SCHOOL_ALIAS_MAP[slug] ||
+                    SCHOOL_LIST[0]
+    return NextResponse.json(matched, { status: 200 })
   }
+
+  if (path === '/api/v1/orgs' || path === '/api/v1/orgs/' || path.startsWith('/api/v1/orgs/page/')) {
+    return NextResponse.json(SCHOOL_LIST, { status: 200 })
+  }
+
   if (path.startsWith('/api/v1/orgs/')) {
     const parts = path.split('/')
     const orgId = parts[parts.indexOf('orgs') + 1] || ''
-    const matched = SYNCED_ORGANIZATIONS.find((o: any) => String(o.id) === orgId || o.org_uuid === orgId || o.slug === orgId)
-    return NextResponse.json(matched || SYNCED_ORGANIZATIONS[0], { status: 200 })
+    if (orgId === 'user') return NextResponse.json(SCHOOL_LIST, { status: 200 })
+    const matched = SCHOOL_LIST.find((o) => String(o.id) === orgId || o.slug === orgId || o.org_uuid === orgId) ||
+                    SCHOOL_ORGS.find((o) => String(o.id) === orgId || o.slug === orgId || o.org_uuid === orgId) ||
+                    SCHOOL_LIST[0]
+    return NextResponse.json(matched, { status: 200 })
+  }
+
+  // Usergroups (Classrooms)
+  if (path.startsWith('/api/v1/usergroups')) {
+    // 1. My classes
+    if (path.includes('/my-classes')) {
+      const authHeader = request.headers.get('authorization') || ''
+      const cookieToken = request.cookies.get(ACCESS_TOKEN_COOKIE)?.value || ''
+      const token = authHeader.replace(/^Bearer\s+/i, '') || cookieToken
+      const demoUser = findDemoUser(token)
+
+      if (demoUser?.username === 'ogretmen') {
+        const myTeacherCls = ALL_CLASSROOMS.filter((c) => c.teacher_name === 'Özlem ZOR' || c.code === '1-A')
+        return NextResponse.json(myTeacherCls.length ? myTeacherCls : [ALL_CLASSROOMS[0]], { status: 200 })
+      }
+      if (demoUser?.is_superadmin) {
+        return NextResponse.json(ALL_CLASSROOMS, { status: 200 })
+      }
+      // Demo student gets active class
+      return NextResponse.json([activeClassItem], { status: 200 })
+    }
+
+    // 2. Class students: /api/v1/usergroups/:id/users
+    if (path.includes('/users')) {
+      const parts = path.split('/')
+      const ugIdx = parts.indexOf('usergroups')
+      const targetId = Number(parts[ugIdx + 1])
+      const cls = ALL_CLASSROOMS.find((c) => c.id === targetId) || activeClassItem
+      return NextResponse.json(generateClassStudents(cls), { status: 200 })
+    }
+
+    // 3. Class by join code
+    if (path.includes('join-by-code')) {
+      return NextResponse.json({ success: true, classroom: activeClassItem }, { status: 200 })
+    }
+
+    // 4. By Org: /api/v1/usergroups/org/:id
+    if (path.includes('/org/')) {
+      const parts = path.split('/')
+      const orgParam = parts[parts.indexOf('org') + 1] || ''
+      const orgNum = Number(orgParam)
+      if (orgNum === 10 || orgParam === 'neclagorer') {
+        return NextResponse.json(ALL_CLASSROOMS.filter((c) => c.org_id === 10), { status: 200 })
+      }
+      if (orgNum === 20 || orgParam === 'fevzikalkanci') {
+        return NextResponse.json(ALL_CLASSROOMS.filter((c) => c.org_id === 20), { status: 200 })
+      }
+      return NextResponse.json(ALL_CLASSROOMS, { status: 200 })
+    }
+
+    // 5. Single classroom: /api/v1/usergroups/:id
+    const parts = path.split('/')
+    const ugId = parts[parts.indexOf('usergroups') + 1] || ''
+    if (ugId && ugId !== 'org' && !ugId.startsWith('org')) {
+      const matched = ALL_CLASSROOMS.find((u) => String(u.id) === ugId || u.code.toLowerCase() === ugId.toLowerCase() || u.usergroup_uuid?.includes(ugId))
+      if (matched) return NextResponse.json(matched, { status: 200 })
+    }
+
+    return NextResponse.json(ALL_CLASSROOMS, { status: 200 })
+  }
+
+  // Teachers List in Dashboard: /api/v1/teachers or /api/v1/users/org/:id/teachers
+  if (path.includes('/teachers')) {
+    const isMiddle = path.includes('fevzikalkanci') || path.includes('/20/')
+    const targetOrgId = isMiddle ? 20 : 10
+    return NextResponse.json(getOrgTeachers(targetOrgId), { status: 200 })
+  }
+
+  // Students List in Dashboard: /api/v1/students or /api/v1/users/org/:id/students
+  if (path.includes('/students')) {
+    const classParam = request.nextUrl.searchParams.get('classroom_id') ||
+                       request.nextUrl.searchParams.get('class') ||
+                       request.nextUrl.searchParams.get('code')
+    let targetClass = activeClassItem
+    if (classParam) {
+      const found = ALL_CLASSROOMS.find((c) => String(c.id) === classParam || c.code.toLowerCase() === classParam.toLowerCase())
+      if (found) targetClass = found
+    }
+    return NextResponse.json(generateClassStudents(targetClass), { status: 200 })
+  }
+
+  // Boards
+  if (path.startsWith('/api/v1/boards')) {
+    if (path.includes('/classroom/')) {
+      const parts = path.split('/')
+      const classId = Number(parts[parts.indexOf('classroom') + 1])
+      const cls = ALL_CLASSROOMS.find((c) => c.id === classId) || activeClassItem
+      return NextResponse.json(generateClassroomBoards(cls), { status: 200 })
+    }
+    const parts = path.split('/')
+    const bId = parts[parts.indexOf('boards') + 1] || ''
+    if (bId && bId !== 'org' && !bId.startsWith('org')) {
+      const allGenBoards = generateClassroomBoards(activeClassItem)
+      const matched = allGenBoards.find((b) => b.board_uuid === bId || String(b.id) === bId) ||
+                      SYNCED_BOARDS.find((b: any) => b.board_uuid === bId || String(b.id) === bId)
+      if (matched) return NextResponse.json(matched, { status: 200 })
+    }
+    const defaultBoards = generateClassroomBoards(activeClassItem)
+    return NextResponse.json((defaultBoards as any[]).concat(SYNCED_BOARDS.slice(0, 4) as any[]), { status: 200 })
+  }
+
+  // School Assignments & Homework
+  if (path.startsWith('/api/v1/school_assignments') || path.startsWith('/api/v1/assignments')) {
+    const classAssignments = generateClassroomAssignments(activeClassItem)
+    const parts = path.split('/')
+    const asgId = parts[parts.length - 1]
+    if (asgId && asgId !== 'school_assignments' && asgId !== 'assignments' && asgId !== 'org') {
+      const matched = classAssignments.find((a) => a.assignment_uuid === asgId || String(a.id) === asgId) ||
+                      SYNCED_ASSIGNMENTS.find((a: any) => a.assignment_uuid === asgId || String(a.id) === asgId)
+      if (matched) return NextResponse.json(matched, { status: 200 })
+    }
+    return NextResponse.json(classAssignments, { status: 200 })
+  }
+
+  // Communities (Forum & Discussion boards)
+  if (path.startsWith('/api/v1/communities')) {
+    const parts = path.split('/')
+    const commId = parts[parts.indexOf('communities') + 1] || ''
+    if (commId && commId !== 'org' && !commId.startsWith('org')) {
+      const matched = TURKISH_COMMUNITIES.find((c) => c.community_uuid === commId || String(c.id) === commId)
+      if (matched) return NextResponse.json(matched, { status: 200 })
+    }
+    return NextResponse.json(TURKISH_COMMUNITIES, { status: 200 })
+  }
+
+  // Discussions
+  if (path.startsWith('/api/v1/discussions')) {
+    return NextResponse.json(SYNCED_DISCUSSIONS, { status: 200 })
+  }
+
+  // Folders (Library & Resources)
+  if (path.startsWith('/api/v1/folders')) {
+    return NextResponse.json(TURKISH_FOLDERS, { status: 200 })
   }
 
   // Courses
@@ -103,17 +308,17 @@ async function handleFallback(request: NextRequest, path: string): Promise<Respo
     const parts = path.split('/')
     const uuidWithPrefix = parts[parts.indexOf('courses') + 1] || ''
     const cleanUuid = uuidWithPrefix.replace('course_', '').replace('/meta', '')
-    const matched = SYNCED_COURSE_METAS[uuidWithPrefix] || SYNCED_COURSE_METAS[cleanUuid] || SYNCED_COURSES[0]
+    const matched = SYNCED_COURSE_METAS[uuidWithPrefix] || SYNCED_COURSE_METAS[cleanUuid] || TURKISH_COURSES[0]
     return NextResponse.json(matched, { status: 200 })
   }
   if (path.startsWith('/api/v1/courses/org_slug/')) {
-    return NextResponse.json(SYNCED_COURSES, { status: 200 })
+    return NextResponse.json(TURKISH_COURSES, { status: 200 })
   }
   if (path.startsWith('/api/v1/courses/')) {
     const parts = path.split('/')
     const uuidWithPrefix = parts[parts.indexOf('courses') + 1] || ''
     const cleanUuid = uuidWithPrefix.replace('course_', '')
-    const matched = SYNCED_COURSES.find((c: any) => c.course_uuid === uuidWithPrefix || c.course_uuid?.includes(cleanUuid)) || SYNCED_COURSES[0]
+    const matched = TURKISH_COURSES.find((c) => c.course_uuid === uuidWithPrefix || c.course_uuid?.includes(cleanUuid)) || TURKISH_COURSES[0]
     return NextResponse.json(matched, { status: 200 })
   }
 
@@ -160,49 +365,8 @@ async function handleFallback(request: NextRequest, path: string): Promise<Respo
     return NextResponse.json(SYNCED_PLAYGROUNDS, { status: 200 })
   }
 
-  // Boards
-  if (path.startsWith('/api/v1/boards/')) {
-    const parts = path.split('/')
-    const bId = parts[parts.indexOf('boards') + 1] || ''
-    if (bId && bId !== 'org' && !bId.startsWith('org')) {
-      const cleanBId = bId.replace('board_', '')
-      const matched = SYNCED_BOARDS.find((b: any) => b.board_uuid === bId || b.board_uuid?.includes(cleanBId) || String(b.id) === bId)
-      if (matched) {
-        return NextResponse.json(matched, { status: 200 })
-      }
-    }
-    return NextResponse.json(SYNCED_BOARDS, { status: 200 })
-  }
-  if (path === '/api/v1/boards') {
-    return NextResponse.json(SYNCED_BOARDS, { status: 200 })
-  }
-
-  // Usergroups (Classes)
-  if (path.startsWith('/api/v1/usergroups')) {
-    const parts = path.split('/')
-    const ugId = parts[parts.indexOf('usergroups') + 1] || ''
-    if (ugId && ugId !== 'org' && !ugId.startsWith('org')) {
-      const matched = SYNCED_USERGROUPS.find((u: any) => String(u.id) === ugId || u.usergroup_uuid?.includes(ugId))
-      if (matched) return NextResponse.json(matched, { status: 200 })
-    }
-    return NextResponse.json(SYNCED_USERGROUPS, { status: 200 })
-  }
-
-  // School Assignments & Discussions
-  if (path.startsWith('/api/v1/school_assignments') || path.startsWith('/api/v1/assignments')) {
-    const parts = path.split('/')
-    const asgId = parts[parts.length - 1]
-    if (asgId && asgId !== 'school_assignments' && asgId !== 'assignments' && asgId !== 'org') {
-      const matched = SYNCED_ASSIGNMENTS.find((a: any) => a.assignment_uuid === asgId || String(a.id) === asgId)
-      if (matched) return NextResponse.json(matched, { status: 200 })
-    }
-    return NextResponse.json(SYNCED_ASSIGNMENTS, { status: 200 })
-  }
-  if (path.startsWith('/api/v1/discussions')) {
-    return NextResponse.json(SYNCED_DISCUSSIONS, { status: 200 })
-  }
   if (path.startsWith('/api/v1/userorganizations') || path.startsWith('/api/v1/users/organizations')) {
-    return NextResponse.json(SYNCED_ORGANIZATIONS, { status: 200 })
+    return NextResponse.json(SCHOOL_LIST, { status: 200 })
   }
 
   // Podcasts
@@ -233,7 +397,7 @@ async function handleFallback(request: NextRequest, path: string): Promise<Respo
     return NextResponse.json({ authenticated: false, user: null }, { status: 401 })
   }
 
-  return NextResponse.json(SYNCED_ORGANIZATIONS[0], { status: 200 })
+  return NextResponse.json(SCHOOL_LIST[0], { status: 200 })
 }
 
 async function proxyToBackend(request: NextRequest): Promise<Response> {
@@ -253,6 +417,11 @@ async function proxyToBackend(request: NextRequest): Promise<Response> {
     }
   }
 
+  // Fast-path for TC validation / lookup
+  if (path.startsWith('/api/v1/tc/validate') || path.startsWith('/api/v1/tc/lookup')) {
+    return handleFallback(request, path)
+  }
+
   // On Vercel / serverless when no remote backend URL is provided (defaults to localhost),
   // immediately serve synced database responses with 0ms latency.
   const isVercelServerless = Boolean(process.env.VERCEL || process.env.NEXT_PUBLIC_VERCEL_ENV)
@@ -269,7 +438,7 @@ async function proxyToBackend(request: NextRequest): Promise<Response> {
     }
   })
 
-  // Forward request body as-is (no parsing/re-serializing)
+  // Forward request body as-is
   const body = request.method !== 'GET' && request.method !== 'HEAD'
     ? request.body
     : undefined
@@ -283,7 +452,7 @@ async function proxyToBackend(request: NextRequest): Promise<Response> {
       headers,
       body,
       redirect: 'manual',
-      // @ts-ignore — needed for streaming request bodies in Node.js
+      // @ts-ignore
       duplex: 'half',
       signal: controller.signal,
     } as RequestInit)

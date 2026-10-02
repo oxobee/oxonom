@@ -45,6 +45,13 @@ import {
   DialogTitle,
 } from '@components/ui/dialog'
 import { searchMatchesAny } from '@/lib/search/normalize'
+import {
+  generateClassStudents,
+  validateTcKimlik,
+  lookupTcRecord,
+  ALL_CLASSROOMS,
+  DEMO_STUDENT,
+} from '@services/demo/schoolDirectory'
 
 export interface GuidanceNote {
   id: string
@@ -394,7 +401,13 @@ export default function StudentsClient({ orgslug }: { orgslug: string }) {
     staleTime: 30_000,
   })
 
-  const [students, setStudents] = useState<StudentRecord[]>(INITIAL_STUDENTS)
+  const [students, setStudents] = useState<StudentRecord[]>(() => {
+    const targetOrgId = orgslug === 'fevzikalkanci' ? 20 : 10
+    const schoolClasses = ALL_CLASSROOMS.filter((c) => c.org_id === targetOrgId)
+    return (schoolClasses.length > 0
+      ? schoolClasses.flatMap((cls) => generateClassStudents(cls))
+      : generateClassStudents(ALL_CLASSROOMS[0])) as StudentRecord[]
+  })
   const [selectedClassFilter, setSelectedClassFilter] = useState<string>('all')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'frozen'>('all')
   const [search, setSearch] = useState('')
@@ -463,16 +476,26 @@ export default function StudentsClient({ orgslug }: { orgslug: string }) {
   // Synchronize students with real availableClasses and persist to localStorage
   React.useEffect(() => {
     if (typeof window === 'undefined') return
-    const key = `oxonom_students_${org?.id || 'demo'}`
+    const targetOrgId = org?.id || (orgslug === 'fevzikalkanci' ? 20 : 10)
+    const schoolClasses = ALL_CLASSROOMS.filter((c) => c.org_id === targetOrgId)
+    const defaultRoster = (schoolClasses.length > 0
+      ? schoolClasses.flatMap((cls) => generateClassStudents(cls))
+      : generateClassStudents(ALL_CLASSROOMS[0])) as StudentRecord[]
+
+    const key = `oxonom_students_${targetOrgId}`
     const saved = localStorage.getItem(key)
-    let currentList: StudentRecord[] = saved ? JSON.parse(saved) : INITIAL_STUDENTS
+    let currentList: StudentRecord[] = saved ? JSON.parse(saved) : defaultRoster
+
+    // If saved list had outdated mock students (e.g. Merve Çelik or old high school 9-A), reset to Erçil Evren UĞURLU and class students
+    if (currentList.length > 0 && (currentList[0].name.includes('Merve') || currentList[0].name.includes('Ali Yılmaz') || currentList[0].classroomName?.includes('9-A'))) {
+      currentList = defaultRoster
+    }
 
     if (rawClasses.length > 0) {
       const realClassMap = new Map(rawClasses.map((c: any) => [c.id, c.name]))
       const firstClass = rawClasses[0]
 
       currentList = currentList.map((st, idx) => {
-        // If student's class matches an existing class in rawClasses, keep it
         const existsByName = rawClasses.find((c: any) => c.name === st.classroomName)
         if (existsByName) {
           return { ...st, classroomId: existsByName.id, classroomName: existsByName.name }
@@ -480,7 +503,6 @@ export default function StudentsClient({ orgslug }: { orgslug: string }) {
         if (realClassMap.has(st.classroomId)) {
           return { ...st, classroomName: realClassMap.get(st.classroomId)! }
         }
-        // If the student's class doesn't exist in backend, map to a real class!
         const fallbackClass = rawClasses[idx % rawClasses.length] || firstClass
         return {
           ...st,
@@ -490,12 +512,13 @@ export default function StudentsClient({ orgslug }: { orgslug: string }) {
       })
     }
     setStudents(currentList)
-  }, [rawClasses, org?.id])
+  }, [rawClasses, org?.id, orgslug])
 
   const saveStudentsList = (updated: StudentRecord[]) => {
     setStudents(updated)
     if (typeof window !== 'undefined') {
-      const key = `oxonom_students_${org?.id || 'demo'}`
+      const targetOrgId = org?.id || (orgslug === 'fevzikalkanci' ? 20 : 10)
+      const key = `oxonom_students_${targetOrgId}`
       localStorage.setItem(key, JSON.stringify(updated))
     }
   }

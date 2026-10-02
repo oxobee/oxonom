@@ -23,6 +23,9 @@ import CustomSignupFields, {
   validateCustomFields,
 } from '@components/Auth/CustomSignupFields'
 import { readSignupFields, type SignupFieldItem } from '@services/settings/org'
+import { validateTcKimlik, lookupTcRecord } from '@services/demo/schoolDirectory'
+import TcKimlikModal from '@components/Objects/TcKimlikModal'
+import toast from 'react-hot-toast'
 
 const validate = (values: any, t: any, customFields: SignupFieldItem[]) => {
   const errors: any = {}
@@ -102,6 +105,48 @@ function OpenSignUpComponent({ org: propOrg }: OpenSignUpComponentProps = {}) {
 
   // Student Extra & Multi-Parent Information
   const [tcNo, setTcNo] = React.useState('')
+  const [isTcModalOpen, setIsTcModalOpen] = React.useState(false)
+  const [tcStatus, setTcStatus] = React.useState<'idle' | 'valid' | 'invalid'>('idle')
+  const [tcError, setTcError] = React.useState('')
+
+  const handleTcVerified = (record: any) => {
+    if (!record) return
+    setTcStatus('valid')
+    setTcError('')
+    if (record.first_name && !formik.values.first_name) formik.setFieldValue('first_name', record.first_name)
+    if (record.last_name && !formik.values.last_name) formik.setFieldValue('last_name', record.last_name)
+    if (record.motherName || record.fatherName) {
+      setParents([
+        { name: record.motherName || 'Ebru UĞURLU', relation: 'Anne', phone: '+90 532 999 1100', occupation: 'Mimar', email: '' },
+        { name: record.fatherName || 'Uğur UĞURLU', relation: 'Baba', phone: '+90 532 999 2200', occupation: 'Yazılım Mühendisi', email: '' },
+      ])
+    }
+  }
+
+  const handleTcChange = (val: string) => {
+    const clean = val.replace(/\D/g, '').slice(0, 11)
+    setTcNo(clean)
+    if (clean.length === 11) {
+      const check = validateTcKimlik(clean)
+      if (!check.valid) {
+        setTcStatus('invalid')
+        setTcError(check.message || 'Geçersiz T.C. Kimlik No')
+        setIsTcModalOpen(true)
+      } else {
+        setTcStatus('valid')
+        setTcError('')
+        const found = lookupTcRecord(clean)
+        if (found) {
+          handleTcVerified(found)
+          toast.success(`✨ T.C. Kimlik Doğrulandı: ${found.name}`)
+        }
+      }
+    } else {
+      setTcStatus('idle')
+      setTcError('')
+    }
+  }
+
   const [birthDate, setBirthDate] = React.useState('')
   const [bloodType, setBloodType] = React.useState('A Rh+')
   const [address, setAddress] = React.useState('')
@@ -181,6 +226,15 @@ function OpenSignUpComponent({ org: propOrg }: OpenSignUpComponentProps = {}) {
     onSubmit: async (values) => {
       setError('')
       setMessage(null)
+      if (tcNo.trim()) {
+        const check = validateTcKimlik(tcNo.trim())
+        if (!check.valid) {
+          setTcStatus('invalid')
+          setTcError(check.message || 'Geçersiz T.C. Kimlik Numarası.')
+          setIsTcModalOpen(true)
+          return
+        }
+      }
       setIsSubmitting(true)
       track(AnalyticsEvent.SignupSubmitted, { invite_code_present: false, has_bio: !!values.bio })
       try {
@@ -463,15 +517,42 @@ function OpenSignUpComponent({ org: propOrg }: OpenSignUpComponentProps = {}) {
               <div className="space-y-3 bg-white/70 p-3 rounded-lg border border-indigo-50">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div>
-                    <label className="block text-[11px] font-semibold text-gray-600 mb-1">T.C. Kimlik No</label>
-                    <input
-                      type="text"
-                      maxLength={11}
-                      placeholder="11 haneli T.C. No"
-                      value={tcNo}
-                      onChange={(e) => setTcNo(e.target.value.replace(/\D/g, ''))}
-                      className="w-full text-xs px-2.5 py-1.5 rounded-md border border-gray-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                    />
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[11px] font-semibold text-gray-600">T.C. Kimlik No</label>
+                      <button
+                        type="button"
+                        onClick={() => setIsTcModalOpen(true)}
+                        className="text-[10px] text-indigo-600 hover:text-indigo-800 font-bold hover:underline cursor-pointer"
+                      >
+                        T.C. Doğrula
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        maxLength={11}
+                        placeholder="11 haneli T.C. No"
+                        value={tcNo}
+                        onChange={(e) => handleTcChange(e.target.value)}
+                        className={`w-full text-xs px-2.5 py-1.5 rounded-md border font-mono transition-colors focus:outline-none focus:ring-1 ${
+                          tcStatus === 'valid'
+                            ? 'border-emerald-400 bg-emerald-50/30 text-emerald-950 focus:ring-emerald-500'
+                            : tcStatus === 'invalid'
+                            ? 'border-rose-400 bg-rose-50/30 text-rose-950 focus:ring-rose-500'
+                            : 'border-gray-200 focus:ring-indigo-500'
+                        }`}
+                      />
+                      {tcStatus === 'valid' && (
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-emerald-600 font-bold">
+                          ✓ Onaylı
+                        </span>
+                      )}
+                      {tcStatus === 'invalid' && (
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-rose-600 font-bold">
+                          Geçersiz
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <label className="block text-[11px] font-semibold text-gray-600 mb-1">Doğum Tarihi</label>
@@ -802,6 +883,14 @@ function OpenSignUpComponent({ org: propOrg }: OpenSignUpComponentProps = {}) {
             {t('auth.login')}
           </Link>
         </p>
+
+        {/* T.C. Kimlik Verification Modal */}
+        <TcKimlikModal
+          isOpen={isTcModalOpen}
+          onClose={() => setIsTcModalOpen(false)}
+          initialTc={tcNo}
+          onVerified={handleTcVerified}
+        />
       </div>
     </div>
   )
