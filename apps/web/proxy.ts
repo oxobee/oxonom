@@ -138,10 +138,11 @@ async function isAdminSubdomain(host: string | null, instance: InstanceInfo): Pr
  * - multi tenancy + apex/subdomain → '.{top_domain}' (cross-subdomain auth)
  * - localhost in either mode → '' (browsers refuse `Domain=.localhost`)
  */
-function cookieDomainFor(instance: InstanceInfo, customDomain?: string): string {
+function cookieDomainFor(instance: InstanceInfo, customDomain?: string, host?: string | null): string {
   if (instance.tenancy === 'single') return ''
   if (customDomain) return ''
   if (instance.top_domain === 'localhost') return ''
+  if (host && !host.split(':')[0].endsWith(instance.top_domain)) return ''
   return `.${instance.top_domain}`
 }
 
@@ -149,8 +150,9 @@ function setOrgCookies(
   response: NextResponse,
   resolved: ResolvedTenant,
   instance: InstanceInfo,
+  host?: string | null,
 ) {
-  const domain = cookieDomainFor(instance, resolved.customDomain)
+  const domain = cookieDomainFor(instance, resolved.customDomain, host)
   response.cookies.set({
     name: 'LH_org',
     value: resolved.slug,
@@ -373,7 +375,7 @@ export default async function proxy(req: NextRequest) {
       new URL(`/auth${pathname}${search}`, req.url),
       { request: { headers: requestHeaders } },
     )
-    setOrgCookies(response, resolved, instance)
+    setOrgCookies(response, resolved, instance, fullhost)
     setInstanceCookies(response, instance)
     return response
   }
@@ -404,7 +406,7 @@ export default async function proxy(req: NextRequest) {
       new URL(`${pathname}${search}`, req.url),
       { request: { headers: requestHeaders } },
     )
-    setOrgCookies(response, resolved, instance)
+    setOrgCookies(response, resolved, instance, fullhost)
     setInstanceCookies(response, instance)
     return response
   }
@@ -537,7 +539,7 @@ export default async function proxy(req: NextRequest) {
       const response = NextResponse.rewrite(new URL(target, req.url), {
         request: { headers: requestHeaders },
       })
-      setOrgCookies(response, resolved, instance)
+      setOrgCookies(response, resolved, instance, fullhost)
       setInstanceCookies(response, instance)
       return response
     }
@@ -557,7 +559,7 @@ export default async function proxy(req: NextRequest) {
       new URL(`${pathname}${search}`, req.url),
       { request: { headers: requestHeaders } },
     )
-    setOrgCookies(response, pathResolved, instance)
+    setOrgCookies(response, pathResolved, instance, fullhost)
     setInstanceCookies(response, instance)
     return response
   }
@@ -572,7 +574,7 @@ export default async function proxy(req: NextRequest) {
     new URL(`/orgs/${resolved.slug}${pathname}${search}`, req.url),
     { request: { headers: requestHeaders } },
   )
-  setOrgCookies(response, resolved, instance)
+  setOrgCookies(response, resolved, instance, fullhost)
   setInstanceCookies(response, instance)
   return response
 }
