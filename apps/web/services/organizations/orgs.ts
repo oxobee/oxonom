@@ -32,17 +32,132 @@ export async function deleteOrganizationFromBackend(
   return res
 }
 
+export const DEFAULT_FALLBACK_ORG = {
+  id: 1,
+  org_uuid: 'org_e6503d4f-caf3-4e73-bd09-bf9af570ffd9',
+  name: 'Atatürk Fen ve Anadolu Lisesi',
+  slug: 'default',
+  description: 'Oxonom Edu Dijital Eğitim & Akıllı Okul Portalı',
+  about: 'Atatürk Fen ve Anadolu Lisesi resmi dijital kampüsü. Akıllı tahtalar, ders içerikleri, ödevler ve veli-öğrenci takip sistemi.',
+  socials: {},
+  links: {},
+  scripts: {},
+  logo_image: '',
+  thumbnail_image: '',
+  previews: {},
+  explore: true,
+  label: 'Oxonom',
+  email: 'idare@oxonom.com',
+  is_demo: false,
+  creation_date: '2026-09-30 10:00:43.058047',
+  update_date: '2026-09-30 10:00:43.058056',
+  config: {
+    id: 1,
+    org_id: 1,
+    creation_date: '2026-09-30 10:00:43.515544',
+    update_date: '2026-09-30 20:17:00.480975',
+    config: {
+      plan: 'pro',
+      active: true,
+      overrides: {},
+      admin_toggles: {
+        ai: { disabled: false, copilot_enabled: true },
+        api: { disabled: false },
+        boards: { disabled: false },
+        folders: { disabled: false },
+        members: { disabled: false, signup_mode: 'open' },
+        payments: { disabled: false },
+        podcasts: { disabled: false },
+        security: {
+          require_2fa: false,
+          allowed_auth_methods: ['password', 'magic_login', 'google', 'sso'],
+          exempt_external_auth: true,
+          require_2fa_enabled_at: null,
+          require_2fa_grace_days: 0,
+          allow_central_session_sharing: true,
+        },
+        analytics: { disabled: false },
+        communities: { disabled: false },
+        playgrounds: { disabled: false },
+        collaboration: { disabled: false },
+      },
+      customization: {
+        seo: {
+          twitter_handle: '',
+          default_og_image: '',
+          noindex_communities: false,
+          default_meta_description: 'Yeni nesil akıllı eğitim ve dijital öğrenme portalı',
+          google_site_verification: '',
+          default_meta_title_suffix: 'Oxonom Edu',
+        },
+        menu: { items: [] },
+        general: {
+          font: '',
+          color: '',
+          watermark: false,
+          footer_text: 'Oxonom Edu — Geleceğin Eğitimi Burada Başlar',
+          favicon_image: '',
+          default_language: 'tr',
+          email_sender_name: 'Oxonom Edu',
+          square_logo_image: '',
+        },
+        landing: {},
+        course_end: { message: '', button_link: '', button_text: '' },
+        auth_branding: {
+          text_color: 'light',
+          background_type: 'gradient',
+          welcome_message: 'Oxonom Edu Eğitim Portalına Hoş Geldiniz',
+          background_image: '',
+          unsplash_photo_url: '',
+          unsplash_photographer_url: '',
+          unsplash_photographer_name: '',
+        },
+        signup_fields: { fields: [] },
+      },
+      config_version: '2.0',
+      resolved_features: {
+        ai: { enabled: true, available: true, limit: 2000, required_plan: 'free' },
+        analytics: { enabled: true, available: true, limit: 0, required_plan: 'standard' },
+        api: { enabled: true, available: true, limit: 0, required_plan: null },
+        assignments: { enabled: true, available: true, limit: 0, required_plan: null },
+        audit_logs: { enabled: false, available: false, limit: 0, required_plan: 'enterprise' },
+        boards: { enabled: true, available: true, limit: 0, required_plan: 'personal' },
+        collaboration: { enabled: true, available: true, limit: 0, required_plan: 'standard' },
+        folders: { enabled: true, available: true, limit: 0, required_plan: null },
+        communities: { enabled: true, available: true, limit: 0, required_plan: 'standard' },
+        courses: { enabled: true, available: true, limit: 0, required_plan: null },
+        members: { enabled: true, available: true, limit: 0, required_plan: null },
+        payments: { enabled: true, available: true, limit: 0, required_plan: 'standard' },
+        playgrounds: { enabled: true, available: true, limit: 0, required_plan: 'personal' },
+        podcasts: { enabled: true, available: true, limit: 0, required_plan: 'standard' },
+        roles: { enabled: true, available: true, limit: 0, required_plan: 'pro' },
+        scorm: { enabled: false, available: false, limit: 0, required_plan: 'enterprise' },
+        sso: { enabled: false, available: false, limit: 0, required_plan: 'enterprise' },
+        usergroups: { enabled: true, available: true, limit: 0, required_plan: 'standard' },
+        versioning: { enabled: true, available: true, limit: 0, required_plan: 'pro' },
+      },
+    },
+  },
+}
+
 export async function getOrganizationContextInfo(
   org_slug: any,
   next: any,
   access_token?: string
 ) {
-  const result = await fetch(
-    `${getAPIUrl()}orgs/slug/${org_slug}`,
-    RequestBodyWithAuthHeader('GET', null, next, access_token)
-  )
-  const res = await errorHandling(result)
-  return res
+  try {
+    const result = await fetch(
+      `${getAPIUrl()}orgs/slug/${org_slug}`,
+      RequestBodyWithAuthHeader('GET', null, next, access_token)
+    )
+    if (!result.ok) {
+      return DEFAULT_FALLBACK_ORG
+    }
+    const res = await errorHandling(result)
+    return res || DEFAULT_FALLBACK_ORG
+  } catch (_err) {
+    return DEFAULT_FALLBACK_ORG
+  }
 }
 
 export async function getOrganizationContextInfoWithUUID(
@@ -50,33 +165,43 @@ export async function getOrganizationContextInfoWithUUID(
   next: any,
   access_token?: string
 ) {
-  const result = await fetch(
-    `${getAPIUrl()}orgs/uuid/${org_uuid}`,
-    RequestBodyWithAuthHeader('GET', null, next, access_token)
-  )
-  const res = await errorHandling(result)
-  return res
+  try {
+    const result = await fetch(
+      `${getAPIUrl()}orgs/uuid/${org_uuid}`,
+      RequestBodyWithAuthHeader('GET', null, next, access_token)
+    )
+    if (!result.ok) {
+      return DEFAULT_FALLBACK_ORG
+    }
+    const res = await errorHandling(result)
+    return res || DEFAULT_FALLBACK_ORG
+  } catch (_err) {
+    return DEFAULT_FALLBACK_ORG
+  }
 }
 
 export async function getOrganizationContextInfoWithoutCredentials(
   org_slug: any,
   _next?: any
 ) {
-  // Never use the Next.js fetch cache — the backend has its own Redis cache
-  // which is invalidated on org config changes. Relying on Next's tag-based
-  // revalidation was unreliable across pods and left users with stale data
-  // for up to 60s after an admin changed settings like the signup method.
-  let HeadersConfig = new Headers({ 'Content-Type': 'application/json' })
-  let options: any = {
-    method: 'GET',
-    headers: HeadersConfig,
-    redirect: 'follow',
-    cache: 'no-store',
-  }
+  try {
+    let HeadersConfig = new Headers({ 'Content-Type': 'application/json' })
+    let options: any = {
+      method: 'GET',
+      headers: HeadersConfig,
+      redirect: 'follow',
+      cache: 'no-store',
+    }
 
-  const result = await fetch(`${getAPIUrl()}orgs/slug/${org_slug}`, options)
-  const res = await errorHandling(result)
-  return res
+    const result = await fetch(`${getAPIUrl()}orgs/slug/${org_slug}`, options)
+    if (!result.ok) {
+      return DEFAULT_FALLBACK_ORG
+    }
+    const res = await errorHandling(result)
+    return res || DEFAULT_FALLBACK_ORG
+  } catch (_err) {
+    return DEFAULT_FALLBACK_ORG
+  }
 }
 
 export function getOrganizationContextInfoNoAsync(

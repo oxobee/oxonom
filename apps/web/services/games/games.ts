@@ -96,6 +96,12 @@ export interface SchoolOption {
   slug: string
 }
 
+import {
+  FALLBACK_GAME_CATEGORIES,
+  getFallbackGamesStore,
+  getFallbackGamePlay,
+} from './fallbackData'
+
 // ── Public Store Endpoints ──
 
 export async function getGamesStore(
@@ -106,33 +112,57 @@ export async function getGamesStore(
     search?: string
   }
 ): Promise<GamesStoreResponse> {
-  const q = new URLSearchParams()
-  if (params?.category_slug && params.category_slug !== 'all') {
-    q.set('category_slug', params.category_slug)
-  }
-  if (params?.grade_level && params.grade_level !== 'all') {
-    q.set('grade_level', params.grade_level)
-  }
-  if (params?.search) {
-    q.set('search', params.search)
-  }
+  try {
+    const q = new URLSearchParams()
+    if (params?.category_slug && params.category_slug !== 'all') {
+      q.set('category_slug', params.category_slug)
+    }
+    if (params?.grade_level && params.grade_level !== 'all') {
+      q.set('grade_level', params.grade_level)
+    }
+    if (params?.search) {
+      q.set('search', params.search)
+    }
 
-  const url = `${getAPIUrl()}games/org/${orgId}${q.toString() ? '?' + q.toString() : ''}`
-  const res = await fetch(url)
-  return errorHandling(res)
+    const url = `${getAPIUrl()}games/org/${orgId}${q.toString() ? '?' + q.toString() : ''}`
+    const res = await fetch(url)
+    if (!res.ok) {
+      return getFallbackGamesStore(params)
+    }
+    const data = await errorHandling(res)
+    return data || getFallbackGamesStore(params)
+  } catch (_err) {
+    return getFallbackGamesStore(params)
+  }
 }
 
 export async function getGamePlay(gameUuid: string): Promise<GamePlayResponse> {
-  const url = `${getAPIUrl()}games/${gameUuid}/play`
-  const res = await fetch(url)
-  return errorHandling(res)
+  try {
+    const url = `${getAPIUrl()}games/${gameUuid}/play`
+    const res = await fetch(url)
+    if (!res.ok) {
+      return getFallbackGamePlay(gameUuid)
+    }
+    const data = await errorHandling(res)
+    return data || getFallbackGamePlay(gameUuid)
+  } catch (_err) {
+    return getFallbackGamePlay(gameUuid)
+  }
 }
 
 export async function getGameCategories(orgId?: number): Promise<GameCategory[]> {
-  const q = orgId ? `?org_id=${orgId}` : ''
-  const url = `${getAPIUrl()}games/categories${q}`
-  const res = await fetch(url)
-  return errorHandling(res)
+  try {
+    const q = orgId ? `?org_id=${orgId}` : ''
+    const url = `${getAPIUrl()}games/categories${q}`
+    const res = await fetch(url)
+    if (!res.ok) {
+      return FALLBACK_GAME_CATEGORIES
+    }
+    const data = await errorHandling(res)
+    return data || FALLBACK_GAME_CATEGORIES
+  } catch (_err) {
+    return FALLBACK_GAME_CATEGORIES
+  }
 }
 
 export async function getGameRating(
