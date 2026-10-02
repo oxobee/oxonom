@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/query/keys'
-import { getOrganizationContextInfo } from '@services/organizations/orgs'
+import { getOrganizationContextInfo, DEFAULT_FALLBACK_ORG } from '@services/organizations/orgs'
 import { useLHSession } from '@components/Contexts/LHSessionContext'
 import ErrorUI from '@components/Objects/StyledElements/Error/Error'
 
@@ -32,12 +32,14 @@ export function OrgProvider({
   const session = useLHSession() as any
   const accessToken = session?.data?.tokens?.access_token
 
-  const { data: org, error: orgError, isLoading } = useQuery({
+  const { data: fetchedOrg, error: orgError, isLoading } = useQuery({
     queryKey: queryKeys.org.detail(orgslug),
     queryFn: () => getOrganizationContextInfo(orgslug, {}, accessToken),
     staleTime: 5 * 60_000,
     enabled: !!orgslug,
   })
+
+  const org = fetchedOrg || DEFAULT_FALLBACK_ORG
 
   const isOrgActive = useMemo(() => (org?.config?.config?.active ?? org?.config?.config?.general?.enabled) !== false, [org])
 
@@ -65,10 +67,6 @@ export function OrgProvider({
     orgslug,
   }), [org, isUserPartOfTheOrg, orgslug])
 
-  // Pass the real SWR error so it's classified into a meaningful message
-  // (offline / server / not-found …) with the right recovery actions. An
-  // explicit errorMessage prop still overrides the classification.
-  if (orgError) return <ErrorUI error={orgError} message={errorMessage} submessage={errorSubmessage} />
   if (!isLoading && org && !isOrgActive) return (
     <ErrorUI
       message={inactiveMessage}

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getBackendUrl } from '@services/config/config'
+import { DEFAULT_FALLBACK_ORG } from '@services/organizations/orgs'
+import { getFallbackGamesStore, FALLBACK_GAME_CATEGORIES, getFallbackGamePlay } from '@services/games/fallbackData'
 
 // Allow large file uploads to pass through (max 300s on Vercel Hobby plan)
 export const maxDuration = 300
@@ -88,6 +90,30 @@ async function proxyToBackend(request: NextRequest): Promise<Response> {
       return NextResponse.json({ error: 'Request timeout' }, { status: 504 })
     }
     console.error(`Failed to proxy ${backendUrl}:`, error.message || error)
+
+    // Resilient fallbacks for essential endpoints when backend is cold/sleeping/offline
+    if (path.startsWith('/api/v1/orgs/slug/')) {
+      return NextResponse.json(DEFAULT_FALLBACK_ORG, { status: 200 })
+    }
+    if (path.startsWith('/api/v1/games/org/')) {
+      return NextResponse.json(getFallbackGamesStore(), { status: 200 })
+    }
+    if (path.startsWith('/api/v1/games/categories')) {
+      return NextResponse.json(FALLBACK_GAME_CATEGORIES, { status: 200 })
+    }
+    if (path.includes('/play')) {
+      const parts = path.split('/')
+      const uuidIndex = parts.indexOf('games') + 1
+      const uuid = parts[uuidIndex] || ''
+      return NextResponse.json(getFallbackGamePlay(uuid), { status: 200 })
+    }
+    if (path.startsWith('/api/v1/boards') || path.startsWith('/api/v1/playgrounds')) {
+      return NextResponse.json([], { status: 200 })
+    }
+    if (path.startsWith('/api/v1/users/session') || path.startsWith('/api/v1/users/me')) {
+      return NextResponse.json({ authenticated: false, user: null }, { status: 401 })
+    }
+
     return NextResponse.json(
       { error: 'Backend unavailable' },
       { status: 502 }

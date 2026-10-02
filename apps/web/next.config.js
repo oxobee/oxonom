@@ -147,7 +147,7 @@ const nextConfig = {
 }
 
 // Generate runtime config for development
-if (process.env.NODE_ENV === 'development') {
+if (process.env.NODE_ENV === 'development' && !process.env.VERCEL) {
   const fs = require('fs')
   const path = require('path')
   const runtimeConfig = {}
