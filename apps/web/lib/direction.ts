@@ -52,11 +52,12 @@ export function dirMultiplier(dir: Direction): 1 | -1 {
  * Kept byte-for-byte equivalent to the detector in public/dir-init.js.
  */
 export function detectClientLanguage(): string {
-  if (typeof window === 'undefined') return 'en'
+  if (typeof window === 'undefined') return 'tr'
 
   try {
+    const userPicked = window.localStorage.getItem('i18nextLng_userPicked')
     const stored = window.localStorage.getItem('i18nextLng')
-    if (stored) return stored
+    if (stored && userPicked) return stored
   } catch {
     /* localStorage can throw in private mode / sandboxed iframes */
   }
@@ -77,7 +78,7 @@ export function detectClientLanguage(): string {
     /* malformed query string */
   }
 
-  return navigator.languages?.[0] || navigator.language || 'en'
+  return 'tr'
 }
 
 /**

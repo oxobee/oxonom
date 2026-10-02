@@ -1,4 +1,5 @@
 from typing import Optional
+from pydantic import BaseModel
 from sqlalchemy import Column, ForeignKey, Integer
 from sqlmodel import Field, SQLModel
 
@@ -6,6 +7,9 @@ from sqlmodel import Field, SQLModel
 class UserGroupBase(SQLModel):
     name: str
     description: str
+    join_code: Optional[str] = None
+    grade_level: Optional[str] = None
+
 
 class UserGroup(UserGroupBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -16,13 +20,18 @@ class UserGroup(UserGroupBase, table=True):
     creation_date: str = ""
     update_date: str = ""
 
+
 class UserGroupCreate(UserGroupBase):
     org_id: int = Field(default=None, foreign_key="organization.id")
     pass
 
+
 class UserGroupUpdate(SQLModel):
     name: Optional[str] = None
     description: Optional[str] = None
+    grade_level: Optional[str] = None
+    join_code: Optional[str] = None
+
 
 class UserGroupRead(UserGroupBase):
     id: int
@@ -30,4 +39,16 @@ class UserGroupRead(UserGroupBase):
     usergroup_uuid: str
     creation_date: str
     update_date: str
+    member_count: Optional[int] = None
     pass
+
+
+class JoinCodeRequest(BaseModel):
+    code: str
+    org_id: Optional[int] = None
+
+
+class JoinCodeResponse(BaseModel):
+    status: str
+    message: str
+    usergroup: Optional[UserGroupRead] = None

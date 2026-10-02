@@ -17,8 +17,9 @@
 
   function detect() {
     try {
+      var userPicked = localStorage.getItem('i18nextLng_userPicked');
       var stored = localStorage.getItem('i18nextLng');
-      if (stored) return stored;
+      if (stored && userPicked) return stored;
     } catch { /* private mode / sandboxed iframe */ }
 
     var cookie = document.cookie.match(/(?:^|;\s*)i18next=([^;]*)/);
@@ -31,10 +32,10 @@
       if (qs) return qs;
     } catch { /* malformed query string */ }
 
-    return (navigator.languages && navigator.languages[0]) || navigator.language || 'en';
+    return 'tr';
   }
 
-  var code = String(detect() || 'en').split('-')[0].toLowerCase();
+  var code = String(detect() || 'tr').split('-')[0].toLowerCase();
   var dir = RTL[code] ? 'rtl' : 'ltr';
 
   var el = document.documentElement;

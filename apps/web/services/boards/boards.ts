@@ -6,12 +6,28 @@ import {
 
 export async function createBoard(
   orgId: number,
-  data: { name: string; description?: string; thumbnail_image?: string },
+  data: {
+    name: string
+    description?: string
+    thumbnail_image?: string
+    usergroup_id?: number
+    features?: any
+    share_type?: string
+    share_code?: string | null
+  },
   access_token: string
 ) {
   const result = await fetch(
     `${getAPIUrl()}boards/?org_id=${orgId}`,
     RequestBodyWithAuthHeader('POST', data, null, access_token)
+  )
+  return errorHandling(result)
+}
+
+export async function getClassroomBoards(usergroupId: number, access_token: string) {
+  const result = await fetch(
+    `${getAPIUrl()}boards/classroom/${usergroupId}`,
+    RequestBodyWithAuthHeader('GET', null, null, access_token)
   )
   return errorHandling(result)
 }
@@ -34,7 +50,15 @@ export async function getBoard(boardUuid: string, access_token: string) {
 
 export async function updateBoard(
   boardUuid: string,
-  data: { name?: string; description?: string; thumbnail_image?: string; public?: boolean },
+  data: {
+    name?: string
+    description?: string
+    thumbnail_image?: string
+    public?: boolean
+    features?: any
+    share_type?: string
+    share_code?: string | null
+  },
   access_token: string
 ) {
   const result = await fetch(
@@ -124,5 +148,54 @@ export async function updateBoardThumbnail(
       body: formData,
     }
   )
+  return errorHandling(result)
+}
+
+export async function getBoardPublicInfo(boardUuid: string) {
+  const cleanUuid = boardUuid.startsWith('board_') ? boardUuid : `board_${boardUuid}`
+  const result = await fetch(`${getAPIUrl()}boards/${cleanUuid}/public-info`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  })
+  return errorHandling(result)
+}
+
+export async function getBoardByShortCode(shortCode: string) {
+  const result = await fetch(`${getAPIUrl()}boards/by-short/${shortCode}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  })
+  return errorHandling(result)
+}
+
+export async function updateBoardShareSettings(
+  boardUuid: string,
+  shareType: 'public' | 'code',
+  shareCode: string | null,
+  access_token: string
+) {
+  const cleanUuid = boardUuid.startsWith('board_') ? boardUuid : `board_${boardUuid}`
+  const result = await fetch(
+    `${getAPIUrl()}boards/${cleanUuid}/share-settings`,
+    RequestBodyWithAuthHeader(
+      'PUT',
+      JSON.stringify({
+        share_type: shareType,
+        share_code: shareCode,
+      }),
+      'application/json',
+      access_token
+    )
+  )
+  return errorHandling(result)
+}
+
+export async function getBoardGuestAccess(boardUuid: string, code?: string) {
+  const cleanUuid = boardUuid.startsWith('board_') ? boardUuid : `board_${boardUuid}`
+  const result = await fetch(`${getAPIUrl()}boards/${cleanUuid}/guest-access`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code: code || null }),
+  })
   return errorHandling(result)
 }

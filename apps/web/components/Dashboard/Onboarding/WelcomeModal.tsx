@@ -4,15 +4,15 @@ import { motion, AnimatePresence } from 'motion/react'
 import { useOnboarding } from '@components/Hooks/useOnboarding'
 import {
   ArrowRight,
-  BookOpen,
-  Lightning,
+  GraduationCap,
   Users,
   Microphone,
   ChalkboardSimple,
   ChatsCircle,
   Files,
-  Certificate,
-  ChartBar,
+  CheckCircle,
+  Cube,
+  FolderSimple,
 } from '@phosphor-icons/react'
 import WelcomeGlobe from './WelcomeGlobe'
 import { useTranslation } from 'react-i18next'
@@ -22,21 +22,21 @@ const ease = [0.16, 1, 0.3, 1] as const
 
 const FEATURES = [
   {
-    icon: BookOpen,
-    labelKey: 'onboarding.welcome.features.teach',
-    descKey: 'onboarding.welcome.features.teach_desc',
+    icon: GraduationCap,
+    labelKey: 'onboarding.welcome.features.classes',
+    descKey: 'onboarding.welcome.features.classes_desc',
     gradient: 'from-blue-50/40 to-blue-50/10',
     iconColor: 'text-blue-500',
     pattern: `radial-gradient(circle, rgba(59,130,246,0.08) 1px, transparent 1px)`,
     patternSize: '10px 10px',
   },
   {
-    icon: Lightning,
-    labelKey: 'onboarding.welcome.features.interactive',
-    descKey: 'onboarding.welcome.features.interactive_desc',
-    gradient: 'from-amber-50/40 to-amber-50/10',
-    iconColor: 'text-amber-500',
-    pattern: `repeating-linear-gradient(-45deg, transparent, transparent 6px, rgba(245,158,11,0.06) 6px, rgba(245,158,11,0.06) 7px)`,
+    icon: ChalkboardSimple,
+    labelKey: 'onboarding.welcome.features.collaborate',
+    descKey: 'onboarding.welcome.features.collaborate_desc',
+    gradient: 'from-rose-50/40 to-rose-50/10',
+    iconColor: 'text-rose-500',
+    pattern: `repeating-linear-gradient(0deg, transparent, transparent 8px, rgba(244,63,94,0.05) 8px, rgba(244,63,94,0.05) 9px), repeating-linear-gradient(90deg, transparent, transparent 8px, rgba(244,63,94,0.05) 8px, rgba(244,63,94,0.05) 9px)`,
   },
   {
     icon: ChatsCircle,
@@ -56,12 +56,12 @@ const FEATURES = [
     pattern: `repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(139,92,246,0.06) 6px, rgba(139,92,246,0.06) 7px)`,
   },
   {
-    icon: ChalkboardSimple,
-    labelKey: 'onboarding.welcome.features.collaborate',
-    descKey: 'onboarding.welcome.features.collaborate_desc',
-    gradient: 'from-rose-50/40 to-rose-50/10',
-    iconColor: 'text-rose-500',
-    pattern: `repeating-linear-gradient(0deg, transparent, transparent 8px, rgba(244,63,94,0.05) 8px, rgba(244,63,94,0.05) 9px), repeating-linear-gradient(90deg, transparent, transparent 8px, rgba(244,63,94,0.05) 8px, rgba(244,63,94,0.05) 9px)`,
+    icon: CheckCircle,
+    labelKey: 'onboarding.welcome.features.attendance',
+    descKey: 'onboarding.welcome.features.attendance_desc',
+    gradient: 'from-amber-50/40 to-amber-50/10',
+    iconColor: 'text-amber-500',
+    pattern: `repeating-linear-gradient(-45deg, transparent, transparent 6px, rgba(245,158,11,0.06) 6px, rgba(245,158,11,0.06) 7px)`,
   },
   {
     icon: Microphone,
@@ -73,17 +73,17 @@ const FEATURES = [
     patternSize: '12px 12px',
   },
   {
-    icon: Certificate,
-    labelKey: 'onboarding.welcome.features.certify',
-    descKey: 'onboarding.welcome.features.certify_desc',
+    icon: Cube,
+    labelKey: 'onboarding.welcome.features.modules',
+    descKey: 'onboarding.welcome.features.modules_desc',
     gradient: 'from-sky-50/40 to-sky-50/10',
     iconColor: 'text-sky-500',
     pattern: `repeating-linear-gradient(135deg, transparent, transparent 6px, rgba(14,165,233,0.06) 6px, rgba(14,165,233,0.06) 7px)`,
   },
   {
-    icon: ChartBar,
-    labelKey: 'onboarding.welcome.features.impact',
-    descKey: 'onboarding.welcome.features.impact_desc',
+    icon: FolderSimple,
+    labelKey: 'onboarding.welcome.features.library',
+    descKey: 'onboarding.welcome.features.library_desc',
     gradient: 'from-indigo-50/40 to-indigo-50/10',
     iconColor: 'text-indigo-500',
     pattern: `radial-gradient(circle, rgba(99,102,241,0.06) 1px, transparent 1px), radial-gradient(circle, rgba(99,102,241,0.04) 1.5px, transparent 1.5px)`,
@@ -146,15 +146,14 @@ export default function WelcomeModal() {
                   transition={{ duration: 0.3, ease }}
                 >
                   <div className="px-10 pt-10 pb-2 text-center">
-                    <motion.img
-                      src="/lrn-dash.svg"
-                      alt="LearnHouse"
-                      className="h-12 w-12 mx-auto mb-5"
-                      style={{ filter: 'brightness(0)' }}
+                    <motion.div
+                      className="h-14 w-14 rounded-2xl bg-neutral-900 text-white flex items-center justify-center mx-auto mb-4 shadow-lg shadow-black/10 ring-4 ring-neutral-100"
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.2, duration: 0.5, ease }}
-                    />
+                    >
+                      <GraduationCap size={32} weight="fill" className="text-white" />
+                    </motion.div>
                     <motion.h1
                       className="text-2xl font-bold text-gray-900 tracking-tight"
                       initial={{ opacity: 0, y: 10 }}

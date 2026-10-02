@@ -3,6 +3,7 @@ import { classifyError } from '@lib/errors/classify'
 import type { ResolutionKind } from '@lib/errors/types'
 import { AlertTriangle, ChevronDown, ChevronRight } from 'lucide-react'
 import React, { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import ErrorActions from './ErrorActions'
 
 interface ErrorUIProps {
@@ -40,6 +41,7 @@ function ErrorUI({
   loginNext,
   compact,
 }: ErrorUIProps) {
+  const { t } = useTranslation()
   const [showDetails, setShowDetails] = useState(false)
 
   const classified = useMemo(
@@ -47,13 +49,36 @@ function ErrorUI({
     [error],
   )
 
-  // Headline + body: explicit props win, else the classified category, else a
-  // meaningful default (never a bare "Something went wrong").
-  const title = message || classified?.category.title || 'Something unexpected happened'
+  const kind = classified?.category.kind || 'unknown'
+  const detail = classified?.detail
+
+  // Headline + body: explicit props win, then localized admin_only/category, then fallback.
+  const title =
+    message ||
+    (detail === 'admin_only'
+      ? t('errors.admin_only.title', { defaultValue: 'Bu Sayfaya Erişim Yetkiniz Bulunmuyor' })
+      : t(`errors.categories.${kind}.title`, {
+          defaultValue: classified?.category.title || t('errors.generic_title', { defaultValue: 'Beklenmeyen bir durum oluştu' }),
+        }))
+
   const description =
     submessage ||
-    classified?.category.description ||
-    "We ran into an error. It's been logged automatically — retrying or heading home usually helps."
+    (detail === 'admin_only'
+      ? t('errors.admin_only.description', {
+          defaultValue:
+            'Bu yönetim alanı yalnızca okul yöneticileri ve öğretmenler içindir. Bir öğrenciyseniz sınıflarınıza, derslerinize ve panolarınıza ana sayfadan erişebilirsiniz.',
+        })
+      : t(`errors.categories.${kind}.description`, {
+          defaultValue:
+            classified?.category.description ||
+            t('errors.generic_description', {
+              defaultValue: 'İşleminiz gerçekleştirilirken bir hata ile karşılaşıldı. Tekrar denemek veya ana sayfaya dönmek genellikle sorunu çözer.',
+            }),
+        }))
+
+  const kindBadge = t(`errors.kinds.${kind}`, {
+    defaultValue: kind === 'permission' && detail === 'admin_only' ? 'Yetki Sınırlaması' : kind.replace(/_/g, ' '),
+  })
 
   const actions: ResolutionKind[] =
     resolutions ||
@@ -61,7 +86,6 @@ function ErrorUI({
     (['retry', 'home', 'report'] as ResolutionKind[])
 
   // The raw cause we can safely show under "details".
-  const detail = classified?.detail
   const status = classified?.status
   const digest = classified?.digest
   const hasDetails = Boolean(detail || status || digest || eventId)
@@ -80,9 +104,9 @@ function ErrorUI({
           <p className={`font-bold text-rose-700 ${compact ? 'text-xl' : 'text-2xl md:text-3xl'}`}>
             {title}
           </p>
-          {classified?.category.kind && (
+          {kindBadge && (
             <span className="text-[11px] uppercase tracking-wide font-semibold text-rose-400">
-              {classified.category.kind.replace(/_/g, ' ')}
+              {kindBadge}
             </span>
           )}
         </div>
@@ -101,32 +125,36 @@ function ErrorUI({
             className="flex items-center gap-1 mx-auto text-xs font-semibold text-gray-400 hover:text-gray-600 transition-colors"
           >
             {showDetails ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-            <span>{showDetails ? 'Hide technical details' : 'Show technical details'}</span>
+            <span>
+              {showDetails
+                ? t('errors.hide_details', { defaultValue: 'Teknik detayları gizle' })
+                : t('errors.show_details', { defaultValue: 'Teknik detayları göster' })}
+            </span>
           </button>
           {showDetails && (
             <div className="mt-3 bg-gray-50 border border-gray-200 rounded-xl p-4 text-start">
               <dl className="space-y-1.5 text-xs font-mono text-gray-600 break-words">
                 {detail && (
                   <div className="flex gap-2">
-                    <dt className="text-gray-400 shrink-0">cause</dt>
+                    <dt className="text-gray-400 shrink-0">{t('errors.cause', { defaultValue: 'sebep' })}</dt>
                     <dd className="break-all">{detail}</dd>
                   </div>
                 )}
                 {status !== undefined && (
                   <div className="flex gap-2">
-                    <dt className="text-gray-400 shrink-0">status</dt>
+                    <dt className="text-gray-400 shrink-0">{t('errors.status', { defaultValue: 'durum' })}</dt>
                     <dd>{status}</dd>
                   </div>
                 )}
                 {digest && (
                   <div className="flex gap-2">
-                    <dt className="text-gray-400 shrink-0">digest</dt>
+                    <dt className="text-gray-400 shrink-0">{t('errors.digest', { defaultValue: 'özet' })}</dt>
                     <dd className="break-all">{digest}</dd>
                   </div>
                 )}
                 {eventId && (
                   <div className="flex gap-2">
-                    <dt className="text-gray-400 shrink-0">ref</dt>
+                    <dt className="text-gray-400 shrink-0">{t('errors.ref', { defaultValue: 'referans' })}</dt>
                     <dd className="break-all">{eventId}</dd>
                   </div>
                 )}

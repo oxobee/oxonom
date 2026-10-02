@@ -10,13 +10,38 @@ import { apiFetch } from '@services/utils/ts/requests'
 import { signOut } from '@components/Contexts/AuthContext'
 import OrgSquareLogo from '@components/Objects/Org/OrgSquareLogo'
 import { deleteOrganizationFromBackend, leaveOrg } from '@services/organizations/orgs'
-import { ChevronRight, Languages, Check, LogOut, Settings, TentTree, LogIn, Plus, MoreVertical, CreditCard, Trash2, AlertTriangle } from 'lucide-react'
+import {
+  ChevronRight,
+  Languages,
+  Check,
+  LogOut,
+  Settings,
+  LogIn,
+  Plus,
+  MoreVertical,
+  CreditCard,
+  Trash2,
+  AlertTriangle,
+  GraduationCap,
+  KeyRound,
+  Shield,
+  Building2,
+  Search,
+  ArrowRight,
+  Crown,
+  Sparkles,
+  School,
+  ExternalLink,
+} from 'lucide-react'
 import Link from 'next/link'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import { changeLanguage } from '@/lib/i18n'
+import JoinClassModal from '@components/Dashboard/Classrooms/JoinClassModal'
+import { getMyClasses } from '@services/usergroups/usergroups'
+import { asArray } from '@services/utils/ts/requests'
 import { CopyrightFooter } from '@components/Footers/LegalFooters'
 import {
   DropdownMenu,
@@ -48,6 +73,32 @@ function HomeClient() {
   const isAuthenticated = session?.status === 'authenticated'
   const isLoading = session?.status === 'loading'
   const platformUrl = getLEARNHOUSE_PLATFORM_URL_VAL()
+  const queryClient = useQueryClient()
+  const [isJoinClassOpen, setIsJoinClassOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+
+  // Roles calculation
+  const isSuperAdmin = session?.data?.user?.is_superadmin === true
+  const roles: any[] = session?.data?.roles || []
+  const isTeacher = roles.some(
+    (r: any) =>
+      r?.role?.id === 3 ||
+      r?.role?.name?.toLowerCase() === 'instructor' ||
+      r?.role?.name?.toLowerCase() === 'teacher' ||
+      r?.role?.name?.toLowerCase() === 'öğretmen'
+  )
+  const isAdmin =
+    isSuperAdmin ||
+    roles.some(
+      (r: any) =>
+        r?.role?.id === 1 ||
+        r?.role?.id === 2 ||
+        r?.role?.name?.toLowerCase() === 'admin' ||
+        r?.role?.name?.toLowerCase() === 'owner' ||
+        r?.role?.name?.toLowerCase() === 'yönetici' ||
+        r?.role?.rights?.organizations?.action_create === true
+    )
+  const isStudent = !isAdmin && !isTeacher
 
   const { data: orgs, isLoading: orgsLoading } = useQuery({
     queryKey: ['orgs', 'user'],
@@ -62,208 +113,423 @@ function HomeClient() {
     }
   }, [isLoading, isAuthenticated, router])
 
-  // A brand-new (org-less) user has no orgs yet — send them straight to create
-  // their first org rather than a confusing empty hub. Mirrors the platform's
-  // post-signup onboarding hop.
+  // A brand-new staff user has no orgs yet — send them to create their first org.
+  // A brand-new student is prompted to join a class by code instead.
   useEffect(() => {
     if (isAuthenticated && Array.isArray(orgs) && orgs.length === 0) {
-      router.replace('/new')
+      if (!isStudent) {
+        router.replace('/new')
+      } else {
+        setIsJoinClassOpen(true)
+      }
     }
-  }, [isAuthenticated, orgs, router])
+  }, [isAuthenticated, orgs, router, isStudent])
+
+  // Filter organizations by search
+  const filteredOrgs = useMemo(() => {
+    if (!Array.isArray(orgs)) return []
+    if (!searchQuery.trim()) return orgs
+    const q = searchQuery.toLowerCase().trim()
+    return orgs.filter(
+      (o: any) =>
+        o?.name?.toLowerCase().includes(q) ||
+        o?.slug?.toLowerCase().includes(q) ||
+        o?.description?.toLowerCase().includes(q)
+    )
+  }, [orgs, searchQuery])
+
+  const currentLangCode = (i18n.language || 'tr').split('-')[0].toUpperCase()
+
+  // Profile-specific styling & headers
+  const profileInfo = useMemo(() => {
+    if (isSuperAdmin) {
+      return {
+        badge: '⚡ Platform Süper Admin',
+        badgeBg: 'bg-amber-50 text-amber-800 border-amber-200',
+        title: 'Okul Yönetim Portalı',
+        subtitle: 'Sisteme bağlı tüm okulları denetleyin, yönetim panellerine geçin veya yeni bir okul ekleyin.',
+      }
+    }
+    if (isAdmin) {
+      return {
+        badge: '🛡️ Okul Yöneticisi / İdare',
+        badgeBg: 'bg-slate-100 text-slate-800 border-slate-300',
+        title: 'Okul Yönetim Portalı',
+        subtitle: 'Yetkili olduğunuz okulları görüntüleyin, yönetim paneline erişin veya yeni bir okul ekleyin.',
+      }
+    }
+    if (isTeacher) {
+      return {
+        badge: '👨‍🏫 Öğretmen Kadrosu',
+        badgeBg: 'bg-indigo-50 text-indigo-800 border-indigo-200',
+        title: 'Öğretmen Portalı',
+        subtitle: 'Ders verdiğiniz sınıfları, akıllı tahta panolarınızı ve öğrenci yoklama listelerinizi yönetmek için okulunuzu seçin.',
+      }
+    }
+    return {
+      badge: '🎓 Öğrenci',
+      badgeBg: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+      title: 'Öğrenci Portalı',
+      subtitle: 'Derslerinize, akıllı tahtalarınıza ve ödevlerinize erişmek için okulunuzu seçin veya katılım kodu ile sınıfa kaydolun.',
+    }
+  }, [isSuperAdmin, isAdmin, isTeacher])
 
   return (
-    <div className="fixed inset-0 z-[100] bg-white overflow-y-auto">
-      <div className="relative min-h-screen">
-        {/* Blueprint grid — fades in from bottom */}
+    <div className="fixed inset-0 z-[100] bg-[#f8fafc] overflow-y-auto">
+      <div className="relative min-h-screen pb-16">
+        {/* Subtle grid background */}
         <div
           className="absolute inset-0 pointer-events-none z-0"
           style={{
             backgroundImage: `
-              linear-gradient(rgba(0,0,0,0.035) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(0,0,0,0.035) 1px, transparent 1px),
-              linear-gradient(rgba(0,0,0,0.018) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(0,0,0,0.018) 1px, transparent 1px)
+              linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px)
             `,
-            backgroundSize: '80px 80px, 80px 80px, 16px 16px, 16px 16px',
-            maskImage: 'linear-gradient(to top, black 0%, transparent 60%)',
-            WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 60%)',
+            backgroundSize: '32px 32px',
+            maskImage: 'linear-gradient(to bottom, black 20%, transparent 95%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, black 20%, transparent 95%)',
           }}
         />
 
-        <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-12">
-          <div className="w-full max-w-md flex flex-col items-center">
-            {/* Brand */}
-            <div className="flex flex-col items-center mb-10">
-              { }
-              <img
-                src="/lrn.svg"
-                alt="LearnHouse"
-                width={44}
-                height={44}
-                className="opacity-90"
-              />
-              <h1 className="mt-6 font-black tracking-tight text-2xl text-gray-900 text-center">
-                {t('common.your_organizations')}
-              </h1>
-              <p className="mt-1.5 text-sm text-black/40 text-center">
-                {t('common.choose_an_organization_to_continue', {
-                  defaultValue: 'Choose an organization to continue',
-                })}
-              </p>
+        {/* Top Navbar */}
+        <header className="relative z-10 w-full border-b border-gray-200/80 bg-white/80 backdrop-blur-md sticky top-0">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+            {/* Logo */}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gray-950 text-white flex items-center justify-center shadow-xs">
+                <GraduationCap size={22} className="text-white" />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-extrabold text-base tracking-tight text-gray-900 leading-none">
+                  Oxonom Edu
+                </span>
+                <span className="text-[11px] font-medium text-gray-600 mt-0.5">
+                  Okul Yönetim & Eğitim Portalı
+                </span>
+              </div>
             </div>
 
-            {/* User strip */}
+            {/* Right Controls */}
             {isAuthenticated && (
-              <div className="w-full mb-6 flex items-center justify-between bg-white rounded-2xl nice-shadow px-4 py-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <UserAvatar border="border-2" rounded="rounded-full" width={36} />
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-sm font-semibold text-gray-900 truncate capitalize">
-                      {session?.data?.user?.first_name} {session?.data?.user?.last_name}
-                    </span>
-                    <span className="text-xs text-black/40 truncate">
-                      {session?.data?.user?.email}
-                    </span>
-                  </div>
-                </div>
+              <div className="flex items-center gap-2.5">
+                {/* Language Switcher */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button
-                      aria-label={t('common.settings')}
-                      className="p-2 rounded-lg text-black/40 hover:text-black hover:bg-black/[0.04] transition-colors"
-                    >
-                      <Settings size={16} />
+                    <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 text-xs font-semibold text-gray-700 transition-colors cursor-pointer">
+                      <Languages size={14} className="text-gray-500" />
+                      <span>{currentLangCode}</span>
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56" align="end">
+                  <DropdownMenuContent className="w-48 z-[200]" align="end">
+                    <DropdownMenuLabel className="text-xs text-gray-500 font-medium">
+                      {t('common.language', { defaultValue: 'Dil Seçimi' })}
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {AVAILABLE_LANGUAGES.map((language) => (
+                      <DropdownMenuItem
+                        key={language.code}
+                        onClick={() => {
+                          try {
+                            localStorage.setItem('i18nextLng_userPicked', '1')
+                          } catch {}
+                          changeLanguage(language.code)
+                        }}
+                        className="flex items-center justify-between text-xs cursor-pointer"
+                      >
+                        <span className="font-medium">{language.nativeName}</span>
+                        {i18n.language?.split('-')[0] === language.code && (
+                          <Check size={14} className="text-gray-900" />
+                        )}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* User Menu */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-2.5 p-1.5 pe-3 rounded-full border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all cursor-pointer">
+                      <UserAvatar border="border-2" rounded="rounded-full" width={28} />
+                      <div className="flex flex-col text-start">
+                        <span className="text-xs font-bold text-gray-900 leading-tight truncate max-w-[120px]">
+                          {session?.data?.user?.first_name || session?.data?.user?.username}
+                        </span>
+                      </div>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-60 z-[200]" align="end">
                     <DropdownMenuLabel>
-                      <div className="flex flex-col">
-                        <p className="text-sm font-medium">
+                      <div className="flex flex-col gap-0.5">
+                        <p className="text-sm font-bold text-gray-900">
                           {session?.data?.user?.first_name} {session?.data?.user?.last_name}
                         </p>
-                        <p className="text-xs text-gray-500">{session?.data?.user?.email}</p>
+                        <p className="text-xs text-gray-500 truncate">{session?.data?.user?.email}</p>
+                        <span className={`inline-flex items-center w-fit mt-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold border ${profileInfo.badgeBg}`}>
+                          {profileInfo.badge}
+                        </span>
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuSub>
-                      <DropdownMenuSubTrigger className="flex items-center space-x-2">
-                        <Languages size={14} />
-                        <span>{t('common.language')}</span>
-                      </DropdownMenuSubTrigger>
-                      <DropdownMenuPortal>
-                        <DropdownMenuSubContent>
-                          {AVAILABLE_LANGUAGES.map((language) => (
-                            <DropdownMenuItem
-                              key={language.code}
-                              onClick={() => changeLanguage(language.code)}
-                              className="flex items-center justify-between"
-                            >
-                              <span>
-                                {t(language.translationKey)} ({language.nativeName})
-                              </span>
-                              {i18n.language.split('-')[0] === language.code && <Check size={14} />}
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuSubContent>
-                      </DropdownMenuPortal>
-                    </DropdownMenuSub>
+                    {isSuperAdmin && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin" className="flex items-center gap-2 text-xs font-semibold text-amber-700 cursor-pointer">
+                          <Crown size={14} />
+                          <span>Süper Admin Paneli</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem asChild>
+                      <Link href="/account/general" className="flex items-center gap-2 text-xs cursor-pointer">
+                        <Settings size={14} />
+                        <span>{t('common.settings', { defaultValue: 'Hesap Ayarları' })}</span>
+                      </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() => signOut({ redirect: true, callbackUrl: '/login' })}
-                      className="flex items-center space-x-2 text-red-600 focus:text-red-600"
+                      className="flex items-center gap-2 text-xs text-red-600 focus:text-red-600 cursor-pointer"
                     >
-                      <LogOut size={16} />
-                      <span>{t('user.sign_out')}</span>
+                      <LogOut size={14} />
+                      <span>{t('user.sign_out', { defaultValue: 'Çıkış Yap' })}</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
             )}
+          </div>
+        </header>
 
-            {/* Org list */}
-            <div className="w-full space-y-2.5">
-              {(isLoading || (isAuthenticated && orgsLoading)) && (
-                <>
-                  {[0, 1, 2].map((i) => (
-                    <div
-                      key={i}
-                      className="h-[68px] w-full rounded-2xl bg-black/[0.03] animate-pulse"
-                    />
-                  ))}
-                </>
-              )}
+        {/* Main Content Area */}
+        <main className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 pt-8 pb-12">
+          {/* Hero Welcome Card */}
+          <div className="bg-white rounded-2xl border border-gray-200/90 shadow-xs p-6 sm:p-8 mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border ${profileInfo.badgeBg}`}>
+                    {profileInfo.badge}
+                  </span>
+                  <span className="text-xs text-gray-600 font-medium">
+                    {session?.data?.user?.email}
+                  </span>
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
+                  {profileInfo.title}
+                </h1>
+                <p className="mt-1.5 text-sm text-gray-700 max-w-xl leading-relaxed">
+                  {profileInfo.subtitle}
+                </p>
+              </div>
 
-              {!isLoading && !isAuthenticated && (
-                <Link
-                  href="/login"
-                  className="w-full flex items-center justify-center gap-2 px-5 py-3.5 bg-gray-900 text-white rounded-2xl font-semibold text-sm nice-shadow hover:bg-gray-800 transition-colors"
-                >
-                  <LogIn size={16} />
-                  {t('auth.sign_in', { defaultValue: 'Sign in' })}
-                </Link>
-              )}
-
-              {isAuthenticated && orgs && orgs.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-14 px-6 bg-white rounded-2xl nice-shadow">
-                  <TentTree className="text-black/10" size={64} />
-                  <p className="mt-4 text-sm font-semibold text-black/50 text-center">
-                    {t('common.no_orgs_message')}
-                  </p>
+              {/* Action Buttons for Management / Admin */}
+              {isAdmin && (
+                <div className="flex flex-wrap items-center gap-2.5 sm:self-center shrink-0">
+                  {isSuperAdmin && (
+                    <Link
+                      href="/admin"
+                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold transition-all shadow-xs"
+                    >
+                      <Crown size={15} className="text-amber-600" />
+                      <span>Süper Admin Paneli</span>
+                    </Link>
+                  )}
+                  <Link
+                    href="/new"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-900 hover:bg-gray-800 text-white text-xs font-bold transition-all shadow-xs hover:shadow-md cursor-pointer"
+                  >
+                    <Plus size={15} className="text-white" />
+                    <span>+ Yeni Okul Oluştur</span>
+                  </Link>
                 </div>
               )}
-
-              {isAuthenticated &&
-                orgs &&
-                orgs.map((org: any) => (
-                  <OrgRow key={org.id ?? org.slug} org={org} access_token={access_token} />
-                ))}
-
-              {/* Create organization — prominent entry into the hub */}
-              {isAuthenticated && orgs && (
-                <Link
-                  href="/new"
-                  className="w-full flex items-center justify-center gap-2 px-5 py-3.5 bg-gray-900 text-white rounded-2xl font-semibold text-sm nice-shadow hover:bg-gray-800 transition-colors"
-                >
-                  <Plus size={16} />
-                  {t('common.create_organization', { defaultValue: 'Create organization' })}
-                </Link>
-              )}
-
-              {/* Renders nothing when this instance has no demo. */}
-              {isAuthenticated && <DemoEntryCard className="mt-1" />}
             </div>
 
-            {/* Footer */}
-            {platformUrl ? (
-              <a
-                href={platformUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-10 flex items-center gap-1.5 text-[11px] text-black/30 hover:text-black/60 transition-colors"
-              >
-                <span>{t('common.powered_by', { defaultValue: 'Powered by' })}</span>
-                <span className="font-semibold tracking-tight text-black/50 group-hover:text-black/70">LearnHouse</span>
-              </a>
-            ) : (
-              <div className="mt-10 flex items-center gap-1.5 text-[11px] text-black/30">
-                <span>{t('common.powered_by', { defaultValue: 'Powered by' })}</span>
-                <span className="font-semibold tracking-tight text-black/50">LearnHouse</span>
+            {/* Student-Only Banner: Sınıf Katılım Koduyla Katıl */}
+            {isStudent && (
+              <div className="mt-6 pt-6 border-t border-gray-100">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-gradient-to-r from-emerald-50/80 via-emerald-50/40 to-teal-50/60 border border-emerald-200/80">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                      <KeyRound size={20} />
+                    </div>
+                    <div>
+                      <h2 className="text-sm font-bold text-emerald-950">
+                        Sınıf Katılım Kodu ile Katıl
+                      </h2>
+                      <p className="text-xs text-emerald-700/90 mt-0.5">
+                        Öğretmeninizin size ilettiği 6 haneli kod ile sınıfınıza ve ders panolarınıza hemen katılın.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsJoinClassOpen(true)}
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs hover:shadow-sm cursor-pointer shrink-0"
+                  >
+                    <KeyRound size={14} />
+                    <span>Sınıf Kodu Gir</span>
+                  </button>
+                </div>
               </div>
             )}
-            <CopyrightFooter year={new Date().getFullYear()} className="mt-4 pt-0" />
           </div>
-        </div>
+
+          {/* Section: Schools List */}
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-base font-bold text-gray-900">
+                  {isAdmin ? 'Yönetiminizdeki Okullar' : isTeacher ? 'Görevli Olduğunuz Okullar' : 'Kayıtlı Okullarınız'}
+                </h2>
+                {Array.isArray(orgs) && (
+                  <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-gray-200/80 text-gray-700">
+                    {orgs.length}
+                  </span>
+                )}
+              </div>
+
+              {/* Search Filter when multiple orgs exist */}
+              {Array.isArray(orgs) && orgs.length > 2 && (
+                <div className="relative w-full sm:w-64">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Okul ara..."
+                    className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 transition-colors"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Loading skeletons */}
+            {(isLoading || (isAuthenticated && orgsLoading)) && (
+              <div className="space-y-3">
+                {[0, 1, 2].map((i) => (
+                  <div
+                    key={i}
+                    className="h-20 w-full rounded-2xl bg-white border border-gray-200/60 p-4 animate-pulse flex items-center gap-4"
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-gray-100 shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 w-40 bg-gray-100 rounded" />
+                      <div className="h-3 w-64 bg-gray-50 rounded" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Empty States */}
+            {!orgsLoading && isAuthenticated && Array.isArray(orgs) && orgs.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-12 px-6 bg-white rounded-2xl border border-gray-200/80 shadow-xs text-center">
+                <div className="w-14 h-14 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 mb-3">
+                  <School size={28} />
+                </div>
+                <h3 className="text-base font-bold text-gray-900">
+                  {isAdmin ? 'Henüz Bir Okul Kaydınız Bulunmuyor' : 'Henüz Bir Sınıfa veya Okula Kayıtlı Değilsiniz'}
+                </h3>
+                <p className="mt-1 text-xs text-gray-500 max-w-sm">
+                  {isAdmin
+                    ? 'Eğitim kurumunuzu hemen dijitalleştirmek ve sınıflarınızı oluşturmak için yeni bir okul ekleyin.'
+                    : 'Öğretmeninizden aldığınız 6 haneli katılım kodu ile sınıfınıza anında dahil olabilirsiniz.'}
+                </p>
+                <div className="mt-5">
+                  {isAdmin ? (
+                    <Link
+                      href="/new"
+                      className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-900 hover:bg-gray-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
+                    >
+                      <Plus size={15} />
+                      <span>Yeni Okul Oluştur</span>
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setIsJoinClassOpen(true)}
+                      className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+                    >
+                      <KeyRound size={15} />
+                      <span>Sınıf Kodu Gir</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* School Cards Grid */}
+            {!orgsLoading && filteredOrgs.length > 0 && (
+              <div className="space-y-3">
+                {filteredOrgs.map((org: any) => (
+                  <OrgRow
+                    key={org.id ?? org.slug}
+                    org={org}
+                    access_token={access_token}
+                    isStudent={isStudent}
+                    isAdmin={isAdmin}
+                    isTeacher={isTeacher}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* No search results */}
+            {!orgsLoading && Array.isArray(orgs) && orgs.length > 0 && filteredOrgs.length === 0 && (
+              <div className="p-8 text-center bg-white rounded-2xl border border-gray-200 text-xs text-gray-500">
+                Aramanızla eşleşen bir okul bulunamadı.
+              </div>
+            )}
+
+            {/* Demo Sandbox Entry */}
+            {isAuthenticated && (
+              <div className="pt-2">
+                <DemoEntryCard />
+              </div>
+            )}
+          </div>
+
+          {/* Join Class Modal for Students */}
+          <JoinClassModal
+            isOpen={isJoinClassOpen}
+            onClose={() => setIsJoinClassOpen(false)}
+            onSuccess={() => {
+              queryClient.invalidateQueries({ queryKey: ['orgs', 'user'] })
+              queryClient.invalidateQueries({ queryKey: ['my-classes'] })
+            }}
+          />
+
+          {/* Footer */}
+          <div className="mt-12 text-center">
+            <div className="flex items-center justify-center gap-1.5 text-xs text-gray-600">
+              <span>Altyapı:</span>
+              <span className="font-bold tracking-tight text-gray-800">Oxonom Edu</span>
+            </div>
+            <CopyrightFooter year={new Date().getFullYear()} className="mt-3 pt-0" />
+          </div>
+        </main>
       </div>
     </div>
   )
 }
 
-function OrgRow({ org, access_token }: { org: any; access_token: string }) {
+function OrgRow({
+  org,
+  access_token,
+  isStudent,
+  isAdmin,
+  isTeacher,
+}: {
+  org: any
+  access_token: string
+  isStudent?: boolean
+  isAdmin?: boolean
+  isTeacher?: boolean
+}) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const orgSession = useLHSession() as any
   const { track } = useLHAnalytics('hub')
-  // Only org managers (admins/superadmins) see the billing / Manage-Upgrade entry.
   const canManageOrg = canManageOrgFromSession(orgSession, org?.id)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [confirmText, setConfirmText] = useState('')
@@ -274,6 +540,13 @@ function OrgRow({ org, access_token }: { org: any; access_token: string }) {
 
   const initial = (org.name || org.slug || '?').trim().charAt(0).toUpperCase()
   const canDelete = confirmText.trim() === org.slug
+
+  const { data: rawMyClasses } = useQuery({
+    queryKey: ['my-classes', org?.id],
+    queryFn: () => getMyClasses(org.id, access_token),
+    enabled: !!(org?.id && access_token && isStudent),
+  })
+  const myClasses = asArray<any>(rawMyClasses)
 
   const handleDelete = async () => {
     if (!canDelete || deleting) return
@@ -289,7 +562,7 @@ function OrgRow({ org, access_token }: { org: any; access_token: string }) {
     } catch {
       setError(
         t('common.delete_organization_error', {
-          defaultValue: 'Could not delete this organization. Please try again.',
+          defaultValue: 'Bu okul silinemedi. Lütfen tekrar deneyiniz.',
         })
       )
     } finally {
@@ -309,7 +582,7 @@ function OrgRow({ org, access_token }: { org: any; access_token: string }) {
       setError(
         e?.data?.detail ||
           t('common.leave_organization_error', {
-            defaultValue: 'Could not leave this organization. Please try again.',
+            defaultValue: 'Okuldan ayrılınamadı. Lütfen tekrar deneyin.',
           })
       )
     } finally {
@@ -317,110 +590,131 @@ function OrgRow({ org, access_token }: { org: any; access_token: string }) {
     }
   }
 
+  const destinationHref = getUriWithOrg(org.slug, '/')
+
   return (
-    <div className="relative flex items-center p-4 bg-white rounded-2xl nice-shadow hover:shadow-lg transition-all group">
-      <Link
-        href={getUriWithOrg(org.slug, '/')}
-        className="flex items-center flex-1 min-w-0"
-      >
-        <div className="w-11 h-11 rounded-xl bg-white overflow-hidden flex items-center justify-center flex-shrink-0 ring-1 ring-inset ring-black/5">
+    <div className="relative flex items-center p-4 sm:p-5 bg-white rounded-2xl border border-gray-200/90 shadow-xs hover:shadow-md hover:border-gray-300 transition-all group">
+      {/* Clickable Area */}
+      <Link href={destinationHref} className="flex items-center flex-1 min-w-0">
+        {/* School Logo */}
+        <div className="w-13 h-13 rounded-2xl bg-gray-50 border border-gray-200/80 overflow-hidden flex items-center justify-center shrink-0 shadow-xs group-hover:border-gray-300 transition-colors">
           <OrgSquareLogo
             org={org}
             fallback={
-              <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-gray-700 font-bold text-lg">
+              <div className="w-full h-full bg-gradient-to-br from-gray-900 to-gray-700 flex items-center justify-center text-white font-extrabold text-lg">
                 {initial}
               </div>
             }
           />
         </div>
 
-        <div className="ms-3 flex-1 min-w-0">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="font-semibold text-gray-900 tracking-tight truncate">
+        {/* School Details */}
+        <div className="ms-4 flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap min-w-0">
+            <span className="font-bold text-gray-900 text-base tracking-tight truncate group-hover:text-black transition-colors">
               {org.name}
             </span>
             {org.is_demo && (
-              // Marks the shared sandbox in a list of the user's real
-              // organizations, so nobody mistakes it for one of theirs.
-              <span className="shrink-0 rounded-md bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">
-                {t('demo.badge', { defaultValue: 'Demo' })}
+              <span className="shrink-0 rounded-md bg-amber-100 text-amber-800 border border-amber-200/80 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                Demo Okul
+              </span>
+            )}
+            {isAdmin && (
+              <span className="shrink-0 rounded-md bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 text-[10px] font-bold">
+                Yönetici Erişimi
               </span>
             )}
           </div>
-          {org.description ? (
-            <p className="text-xs text-black/40 truncate mt-0.5">{org.description}</p>
+
+          {/* Subtitle / Classes description */}
+          {isStudent && myClasses && myClasses.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-1.5 mt-2">
+              <span className="text-[11px] font-semibold text-gray-600">Kayıtlı Sınıflarınız:</span>
+              {myClasses.map((cls: any) => (
+                <span
+                  key={cls.id}
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-lg"
+                >
+                  <GraduationCap size={12} className="text-emerald-600" />
+                  <span>{cls.name}</span>
+                </span>
+              ))}
+            </div>
+          ) : org.description ? (
+            <p className="text-xs text-gray-600 truncate mt-1">{org.description}</p>
           ) : (
-            <p className="text-xs text-black/30 truncate mt-0.5">{org.slug}</p>
+            <p className="text-xs text-gray-600 font-mono truncate mt-1">{org.slug}</p>
           )}
         </div>
 
-        <ChevronRight
-          size={18}
-          className="ms-3 text-black/25 group-hover:text-black/60 group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5 transition-all flex-shrink-0"
-        />
+        {/* Action button indicator */}
+        <div className="ms-3 hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-50 border border-gray-200/60 text-xs font-bold text-gray-700 group-hover:bg-gray-900 group-hover:text-white group-hover:border-transparent transition-all shrink-0">
+          <span>{isAdmin ? 'Yönetim Paneli' : 'Giriş Yap'}</span>
+          <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
+        </div>
       </Link>
 
-      {/* Admin actions */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            aria-label={t('common.org_actions', { defaultValue: 'Organization actions' })}
-            className="ms-1.5 p-2 rounded-lg text-black/30 hover:text-black hover:bg-black/[0.04] transition-colors flex-shrink-0"
-          >
-            <MoreVertical size={16} />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-52" align="end">
-          {canManageOrg && (
+      {/* Admin 3-dots actions menu */}
+      {!isStudent && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              aria-label={t('common.org_actions', { defaultValue: 'Okul İşlemleri' })}
+              className="ms-2 p-2 rounded-xl text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-colors shrink-0 cursor-pointer"
+            >
+              <MoreVertical size={16} />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-52 z-[200]" align="end">
+            {canManageOrg && (
+              <DropdownMenuItem asChild>
+                <Link href={`/billing?org=${org.slug}`} className="flex items-center gap-2 text-xs cursor-pointer">
+                  <CreditCard size={14} />
+                  <span>Plan & Faturalandırma</span>
+                </Link>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem asChild>
-              <Link href={`/billing?org=${org.slug}`} className="flex items-center space-x-2">
-                <CreditCard size={14} />
-                <span>{t('common.manage_upgrade', { defaultValue: 'Manage / Upgrade' })}</span>
+              <Link
+                href={getUriWithOrg(org.slug, '/dash/org/settings/general')}
+                className="flex items-center gap-2 text-xs cursor-pointer"
+              >
+                <Settings size={14} />
+                <span>Okul Ayarları</span>
               </Link>
             </DropdownMenuItem>
-          )}
-          <DropdownMenuItem asChild>
-            <Link
-              href={getUriWithOrg(org.slug, '/dash/org/settings/general')}
-              className="flex items-center space-x-2"
-            >
-              <Settings size={14} />
-              <span>{t('common.settings', { defaultValue: 'Settings' })}</span>
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          {canManageOrg ? (
-            // Admins can delete the whole organization.
-            <DropdownMenuItem
-              onSelect={(e) => {
-                e.preventDefault()
-                setError(null)
-                setConfirmText('')
-                setConfirmOpen(true)
-              }}
-              className="flex items-center space-x-2 text-red-600 focus:text-red-600"
-            >
-              <Trash2 size={14} />
-              <span>{t('common.delete', { defaultValue: 'Delete' })}</span>
-            </DropdownMenuItem>
-          ) : (
-            // Non-admin members can only leave the org (quit their membership).
-            <DropdownMenuItem
-              onSelect={(e) => {
-                e.preventDefault()
-                setError(null)
-                setLeaveOpen(true)
-              }}
-              className="flex items-center space-x-2 text-red-600 focus:text-red-600"
-            >
-              <LogOut size={14} />
-              <span>{t('common.leave_organization', { defaultValue: 'Leave organization' })}</span>
-            </DropdownMenuItem>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+            <DropdownMenuSeparator />
+            {canManageOrg ? (
+              <DropdownMenuItem
+                onSelect={(e) => {
+                  e.preventDefault()
+                  setError(null)
+                  setConfirmText('')
+                  setConfirmOpen(true)
+                }}
+                className="flex items-center gap-2 text-xs text-red-600 focus:text-red-600 cursor-pointer"
+              >
+                <Trash2 size={14} />
+                <span>Okulu Sil</span>
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem
+                onSelect={(e) => {
+                  e.preventDefault()
+                  setError(null)
+                  setLeaveOpen(true)
+                }}
+                className="flex items-center gap-2 text-xs text-red-600 focus:text-red-600 cursor-pointer"
+              >
+                <LogOut size={14} />
+                <span>Okuldan Ayrıl</span>
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
 
-      {/* Typed-confirmation delete dialog */}
+      {/* Delete confirmation dialog */}
       <Dialog
         open={confirmOpen}
         onOpenChange={(open) => {
@@ -435,28 +729,21 @@ function OrgRow({ org, access_token }: { org: any; access_token: string }) {
         <DialogContent className="max-w-md p-6">
           <DialogHeader>
             <div className="flex items-center gap-2.5">
-              <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-red-50 text-red-600 flex-shrink-0">
+              <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-red-50 text-red-600 shrink-0">
                 <AlertTriangle size={18} />
               </div>
               <DialogTitle>
-                {t('common.delete_organization', { defaultValue: 'Delete organization' })}
+                Okulu Kalıcı Olarak Sil
               </DialogTitle>
             </div>
-            <DialogDescription className="mt-3">
-              {t('common.delete_organization_warning', {
-                defaultValue:
-                  'This permanently deletes {{name}} and all of its data. This action cannot be undone.',
-                name: org.name,
-              })}
+            <DialogDescription className="mt-3 text-xs text-gray-500">
+              Bu işlem <strong>{org.name}</strong> okulunu ve tüm sınıflarını, öğrencilerini ve verilerini kalıcı olarak siler. Bu işlem geri alınamaz.
             </DialogDescription>
           </DialogHeader>
 
           <div className="mt-4">
-            <label className="block text-xs font-medium text-black/50 mb-1.5">
-              {t('common.delete_organization_confirm_label', {
-                defaultValue: 'Type {{slug}} to confirm',
-                slug: org.slug,
-              })}
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              Onaylamak için <span className="font-mono font-bold text-gray-900">{org.slug}</span> yazınız:
             </label>
             <input
               type="text"
@@ -464,7 +751,7 @@ function OrgRow({ org, access_token }: { org: any; access_token: string }) {
               onChange={(e) => setConfirmText(e.target.value)}
               placeholder={org.slug}
               autoComplete="off"
-              className="w-full px-3 py-2 text-sm rounded-xl border border-black/10 bg-white focus:outline-none focus:ring-2 focus:ring-red-500/30 focus:border-red-400 transition-colors"
+              className="w-full px-3 py-2 text-xs font-mono rounded-xl border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-colors"
             />
             {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
           </div>
@@ -479,25 +766,23 @@ function OrgRow({ org, access_token }: { org: any; access_token: string }) {
                 setError(null)
               }}
               disabled={deleting}
-              className="px-4 py-2 text-sm font-semibold rounded-xl text-gray-700 bg-black/[0.04] hover:bg-black/[0.07] transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-xs font-bold rounded-xl text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-50 cursor-pointer"
             >
-              {t('common.cancel', { defaultValue: 'Cancel' })}
+              Vazgeç
             </button>
             <button
               type="button"
               onClick={handleDelete}
               disabled={!canDelete || deleting}
-              className="px-4 py-2 text-sm font-semibold rounded-xl text-white bg-red-600 hover:bg-red-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-xs font-bold rounded-xl text-white bg-red-600 hover:bg-red-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
-              {deleting
-                ? t('common.deleting', { defaultValue: 'Deleting…' })
-                : t('common.delete_organization', { defaultValue: 'Delete organization' })}
+              {deleting ? 'Siliniyor...' : 'Okulu Sil'}
             </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Leave-organization confirmation (non-admin members) */}
+      {/* Leave confirmation dialog */}
       <Dialog
         open={leaveOpen}
         onOpenChange={(open) => {
@@ -509,37 +794,32 @@ function OrgRow({ org, access_token }: { org: any; access_token: string }) {
         <DialogContent className="max-w-md p-6">
           <DialogHeader>
             <div className="flex items-center gap-2.5">
-              <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-red-50 text-red-600 flex-shrink-0">
+              <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-red-50 text-red-600 shrink-0">
                 <LogOut size={16} />
               </div>
-              <DialogTitle className="text-lg">
-                {t('common.leave_organization_title', { defaultValue: 'Leave organization?' })}
+              <DialogTitle className="text-base">
+                Okuldan Ayrılmak İstediğinize Emin Misiniz?
               </DialogTitle>
             </div>
           </DialogHeader>
-          <p className="text-sm text-black/60 mt-1">
-            {t('common.leave_organization_desc', {
-              defaultValue: 'You will lose access to {{org}} and be removed from its members. You can re-join later if invited.',
-              org: org.name || org.slug,
-            })}
+          <p className="text-xs text-gray-500 mt-2">
+            {org.name || org.slug} okulundan ayrılacaksınız ve üyelik yetkileriniz sonlandırılacaktır.
           </p>
-          {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+          {error && <p className="mt-3 text-xs text-red-600">{error}</p>}
           <DialogFooter className="mt-5 gap-2">
             <button
               onClick={() => setLeaveOpen(false)}
               disabled={leaving}
-              className="px-4 py-2 rounded-lg text-sm font-semibold text-black/60 hover:bg-black/[0.04] transition-colors disabled:opacity-50"
+              className="px-4 py-2 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-50 cursor-pointer"
             >
-              {t('common.cancel', { defaultValue: 'Cancel' })}
+              Vazgeç
             </button>
             <button
               onClick={handleLeave}
               disabled={leaving}
-              className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-red-600 hover:bg-red-700 transition-colors disabled:opacity-50"
+              className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-red-600 hover:bg-red-700 transition-colors disabled:opacity-50 cursor-pointer"
             >
-              {leaving
-                ? t('common.leaving', { defaultValue: 'Leaving…' })
-                : t('common.leave_organization', { defaultValue: 'Leave organization' })}
+              {leaving ? 'Ayrılınıyor...' : 'Okuldan Ayrıl'}
             </button>
           </DialogFooter>
         </DialogContent>

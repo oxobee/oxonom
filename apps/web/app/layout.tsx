@@ -40,7 +40,7 @@ export default function RootLayout({
   return (
     <html
       className={`${wixMadeforText.variable} ${tajawal.variable}`}
-      lang="en"
+      lang="tr"
       suppressHydrationWarning
     >
       <head>

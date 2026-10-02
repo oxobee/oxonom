@@ -15,6 +15,9 @@ import {
   ArrowUpRight,
   Play,
   CaretDown,
+  GraduationCap,
+  ChalkboardTeacher,
+  Student,
 } from '@phosphor-icons/react'
 import { useOrg } from '@components/Contexts/OrgContext'
 import { getUriWithOrg } from '@services/config/config'
@@ -25,9 +28,12 @@ import { useLHAnalytics, AnalyticsEvent } from '@services/analytics'
 export const ease = [0.25, 0.1, 0.25, 1] as const
 
 const STEP_ICON: Record<string, { icon: React.ElementType; color: string }> = {
+  brand_school: { icon: Palette, color: 'text-rose-500' },
+  create_classes: { icon: GraduationCap, color: 'text-indigo-500' },
+  add_teachers: { icon: ChalkboardTeacher, color: 'text-amber-500' },
+  enroll_students: { icon: Student, color: 'text-emerald-500' },
   create_course: { icon: BookOpen, color: 'text-blue-500' },
   add_content: { icon: Browsers, color: 'text-violet-500' },
-  brand_school: { icon: Palette, color: 'text-rose-500' },
   share_grow: { icon: ShareNetwork, color: 'text-emerald-500' },
   invite_learners: { icon: UserPlus, color: 'text-sky-500' },
   build_community: { icon: ChatsCircle, color: 'text-indigo-500' },

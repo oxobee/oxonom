@@ -132,6 +132,8 @@ class CohortSpec(BaseModel):
     name: str
     description: str = ""
     share: float
+    join_code: Optional[str] = None
+    grade_level: Optional[str] = None
     restricted_courses: list[str] = Field(default_factory=list)
 
     _validate_slug = field_validator("slug")(_validate_key)

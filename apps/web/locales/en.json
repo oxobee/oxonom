@@ -3,14 +3,23 @@
     "hello": "Hello",
     "home": "Home",
     "back_to_home": "Back to Home",
-    "your_organization": "Your Organization",
-    "your_organizations": "Your Organizations",
-    "no_orgs_message": "You are not part of any organization yet.",
+    "your_organization": "Your School",
+    "your_organizations": "Your Schools",
+    "choose_an_organization_to_continue": "Choose a school to continue",
+    "no_orgs_message": "You are not part of any school yet. Join or create a school to get started.",
+    "student_hub_title": "Your School & Classes",
+    "student_hub_subtitle": "Select your school to access your classes and whiteboards, or join a class with your code",
+    "join_class_button": "Join with Class Code",
+    "student_badge": "Student",
+    "teacher_badge": "Teacher",
+    "admin_badge": "Admin",
+    "enrolled_class": "Enrolled Class",
+    "create_new_school": "Create New School",
     "assignments": "Assignments",
     "boards": "Boards",
     "payments": "Payments",
     "playgrounds": "Playgrounds",
-    "organization": "Organization",
+    "organization": "School",
     "analytics": "Analytics",
     "dashboard": "Dashboard",
     "settings": "Settings",
@@ -43,6 +52,8 @@
     "all": "All",
     "all_courses": "All Courses",
     "all_assignments": "All Assignments",
+    "feedback": "Feedback",
+    "games": "Games",
     "recent": "Recent",
     "expand": "Expand",
     "help": "Help",
@@ -207,19 +218,19 @@
     "for": "for",
     "results": "result",
     "powered_by": "Powered by",
-    "choose_an_organization_to_continue": "Choose an organization to continue",
+    "choose_an_organization_to_continue": "Choose your school to continue or join a class with your code",
     "no_content_yet": "No content yet",
     "other": "Other",
     "disabled": "Disabled",
     "store": "Store",
-    "organizations": "Organizations",
+    "organizations": "Schools",
     "billing": "Billing",
-    "create_organization": "Create organization",
-    "copyright": "© {{year}} LearnHouse, Inc.",
-    "delete_organization_error": "Could not delete this organization. Please try again.",
-    "org_actions": "Organization actions",
+    "create_organization": "Create School",
+    "copyright": "© {{year}} Oxonom Edu, Inc.",
+    "delete_organization_error": "Could not delete this school. Please try again.",
+    "org_actions": "School actions",
     "manage_upgrade": "Manage / Upgrade",
-    "delete_organization": "Delete organization",
+    "delete_organization": "Delete school",
     "delete_organization_warning": "This permanently deletes {{name}} and all of its data. This action cannot be undone.",
     "delete_organization_confirm_label": "Type {{slug}} to confirm",
     "deleting": "Deleting…",
@@ -245,8 +256,18 @@
     "free_plan_upgrade": "You're on the Free plan. Upgrade to unlock the complete experience.",
     "free_plan_upgrade_button": "Upgrade"
   },
+  "demo": {
+    "entry_title": "Explore a Live Demo School",
+    "entry_body": "A complete digital school with classrooms, interactive boards, attendance, homework and parent forum — already set up. Shared with everyone, and reset every {{interval}}.",
+    "entry_opening": "Opening demo school…",
+    "entry_preparing": "Being prepared — try again in a moment.",
+    "entry_busy": "The demo is being refreshed. Try again in a moment."
+  },
   "auth": {
     "login": "Login",
+    "demo_admin_login": "🛡️ Explore with Demo School Admin",
+    "demo_teacher_login": "⚡ Explore with Demo Teacher Account",
+    "demo_student_login": "🎓 Explore with Demo Student Account",
     "sign_in": "Sign in",
     "email": "Email",
     "password": "Password",
@@ -986,6 +1007,7 @@
       "sticker": "Sticker",
       "youtube": "YouTube",
       "ai_playground": "AI Playground",
+      "modules": "Modules",
       "activity": "Activity",
       "embed": "Embed",
       "webpage": "Webpage",
@@ -1023,7 +1045,13 @@
       "resume": "Resume",
       "pause": "Pause",
       "restart": "Restart",
-      "close": "Close"
+      "close": "Close",
+      "pomodoro_focus": "Focus",
+      "pomodoro_short_break": "Short Break",
+      "pomodoro_long_break": "Long Break",
+      "pomodoro_label": "Pomodoro (25/5)",
+      "minute_short": "m",
+      "back_to_focus": "Back to Focus"
     },
     "share": {
       "share_board": "Share board",
@@ -2479,7 +2507,8 @@
             "general": "General",
             "thumbnail": "Thumbnail",
             "access": "Access",
-            "course": "Linked Course",
+            "course": "Linked Classes",
+            "class": "Linked Classes",
             "moderation": "Moderation"
           },
           "general": {
@@ -2495,8 +2524,12 @@
             "subtitle": "Control who can access this community"
           },
           "course": {
-            "title": "Linked Course",
-            "subtitle": "Connect this community to a course"
+            "title": "Linked Classes",
+            "subtitle": "Connect this forum to classes"
+          },
+          "class": {
+            "title": "Linked Classes",
+            "subtitle": "Connect this forum to classes"
           },
           "moderation": {
             "title": "Moderation",
@@ -2504,23 +2537,58 @@
           }
         },
         "course": {
-          "title": "Linked Course",
-          "subtitle": "Connect this community to a course for course-specific discussions",
+          "title": "Linked Classes",
+          "subtitle": "Connect this forum to classes for class-specific discussions",
           "currently_linked": "Currently linked",
           "unlink": "Unlink",
-          "link_button": "Link Course",
-          "search_placeholder": "Search courses...",
-          "no_courses": "No courses found",
-          "course_linked_id": "Course linked (ID: {{id}})",
-          "course_not_found": "The linked course may no longer exist or you don't have access to it",
+          "link_button": "Link Class",
+          "search_placeholder": "Search classes...",
+          "no_courses": "No classes found",
+          "course_linked_id": "Class linked (ID: {{id}})",
+          "course_not_found": "The linked class may no longer exist or you don't have access to it",
           "toasts": {
-            "linking": "Linking course...",
-            "link_success": "Course linked successfully",
-            "link_error": "Failed to link course",
-            "unlinking": "Unlinking course...",
-            "unlink_success": "Course unlinked successfully",
-            "unlink_error": "Failed to unlink course"
+            "linking": "Linking class...",
+            "link_success": "Class linked successfully",
+            "link_error": "Failed to link class",
+            "unlinking": "Unlinking class...",
+            "unlink_success": "Class unlinked successfully",
+            "unlink_error": "Failed to unlink class"
           }
+        },
+        "class": {
+          "title": "Linked Classes",
+          "subtitle": "Restrict forum access to specific classes or link multiple classes",
+          "currently_linked": "Linked Classes",
+          "no_classes_linked": "No classes linked yet (This forum is school-wide)",
+          "unlink": "Unlink",
+          "link_button": "Link Class",
+          "search_placeholder": "Search class or section...",
+          "all_classes": "All School Classes",
+          "no_classes": "No classes registered yet",
+          "students_count": "{{count}} students",
+          "toasts": {
+            "linking": "Linking class...",
+            "link_success": "Class linked successfully",
+            "link_error": "Failed to link class",
+            "unlinking": "Unlinking class...",
+            "unlink_success": "Class unlinked successfully",
+            "unlink_error": "Failed to unlink class"
+          }
+        },
+        "scope": {
+          "title": "Forum Visibility Scope",
+          "subtitle": "Determine who can view and participate in this forum",
+          "all_school_title": "School-Wide (All School)",
+          "all_school_desc": "All students, teachers, and school staff can view and participate in this forum.",
+          "class_specific_title": "Class-Based (Specific Classes)",
+          "class_specific_desc": "Only students and assigned teachers in selected classes can view this forum.",
+          "select_classes_label": "Select classes with access:",
+          "search_placeholder": "Search classes...",
+          "select_all": "Select All",
+          "deselect_all": "Clear Selection",
+          "selected_count": "{{count}} classes selected",
+          "must_select_class": "Please select at least one class or choose School-Wide.",
+          "no_classes_warning": "No classes found in this school. Create classes first from the Classrooms panel."
         },
         "general": {
           "title": "Community Settings",
@@ -2929,6 +2997,37 @@
         "short_description_placeholder": "Brief description of your organization",
         "label": "Organization Label",
         "label_placeholder": "Select organization label",
+        "categories": {
+          "languages": "Languages",
+          "business": "Business",
+          "ecommerce": "E-commerce",
+          "gaming": "Gaming",
+          "music": "Music",
+          "sports": "Sports",
+          "cars": "Cars",
+          "sales_marketing": "Sales & Marketing",
+          "tech": "Tech",
+          "photo_video": "Photo & Video",
+          "pets": "Pets",
+          "personal_development": "Personal Development",
+          "real_estate": "Real Estate",
+          "beauty_fashion": "Beauty & Fashion",
+          "travel": "Travel",
+          "productivity": "Productivity",
+          "health_fitness": "Health & Fitness",
+          "finance": "Finance",
+          "arts_crafts": "Arts & Crafts",
+          "education": "Education",
+          "stem": "STEM",
+          "humanities": "Humanities",
+          "professional_skills": "Professional Skills",
+          "digital_skills": "Digital Skills",
+          "creative_arts": "Creative Arts",
+          "social_sciences": "Social Sciences",
+          "test_prep": "Test Preparation",
+          "vocational": "Vocational Training",
+          "early_education": "Early Education"
+        },
         "about": "About Organization",
         "about_placeholder": "Detailed description of your organization",
         "save_changes": "Save Changes",
@@ -6208,31 +6307,31 @@
       }
     },
     "welcome": {
-      "title": "Welcome to LearnHouse",
-      "subtitle": "Create courses, invite learners and share knowledge with the world.",
+      "title": "Welcome to Oxonom Edu",
+      "subtitle": "Manage classrooms, assign homework, teach with interactive whiteboards, and engage with parents.",
       "get_started": "Get Started",
-      "features_title": "Everything you need",
-      "features_subtitle": "All the tools to build and grow your learning platform.",
-      "lets_go": "Let's go",
+      "features_title": "Everything Your School Needs",
+      "features_subtitle": "Modern school management and learning tools for teachers, students, and parents.",
+      "lets_go": "Enter School Dashboard",
       "features": {
-        "teach": "Teach anything",
-        "teach_desc": "Create structured courses with chapters and rich content",
-        "interactive": "Go interactive",
-        "interactive_desc": "Build playgrounds where learners explore at their own pace",
-        "community": "Build a community",
-        "community_desc": "Create discussion spaces where learners help each other",
-        "assess": "Assess knowledge",
-        "assess_desc": "Create assignments and track submissions from learners",
-        "collaborate": "Collaborate visually",
-        "collaborate_desc": "Give learners shared boards to brainstorm and work together",
-        "voice": "Share your voice",
-        "voice_desc": "Launch podcasts and distribute audio episodes to learners",
-        "certify": "Certify learners",
-        "certify_desc": "Issue certificates when learners complete your courses",
-        "impact": "Understand your impact",
-        "impact_desc": "Track engagement and see how learners progress over time",
-        "team": "Grow your team",
-        "team_desc": "Invite instructors, manage roles and organize learner groups"
+        "classes": "Classroom Management & Codes",
+        "classes_desc": "6-digit code student onboarding, sections and smartboard projector mode",
+        "collaborate": "Interactive Whiteboards",
+        "collaborate_desc": "Class-dedicated whiteboards and live lesson presentation spaces",
+        "community": "Parent Forum",
+        "community_desc": "Secure communication spaces between teachers and parents",
+        "assess": "Homework & Tracking",
+        "assess_desc": "Create homework assignments, track submissions and grades",
+        "attendance": "Daily Attendance",
+        "attendance_desc": "One-click attendance sessions and participation stats",
+        "voice": "Educational Podcasts",
+        "voice_desc": "Audio lectures, topic reviews and school announcements",
+        "modules": "Learning Modules",
+        "modules_desc": "Interactive learning tools and school applications",
+        "library": "Library & Resources",
+        "library_desc": "Course documents, study sheets, tests and teaching materials",
+        "team": "School Staff & Roles",
+        "team_desc": "Role-based access control for teachers, parents, and admins"
       }
     },
     "farewell": {
@@ -6513,27 +6612,27 @@
   "hub_new": {
     "useType": {
       "personal": {
-        "label": "Personal",
-        "subtitle": "Learn and build your own space.",
-        "badge": "New"
+        "label": "Individual Student",
+        "subtitle": "Create your personal class and study space.",
+        "badge": "Student"
       },
       "organization": {
-        "label": "Organization",
-        "subtitle": "Teach a team, school or audience."
+        "label": "School / Campus",
+        "subtitle": "Digital school portal for classrooms, whiteboards and teachers."
       }
     },
     "useCases": {
       "personal": {
-        "title": "Self learning",
-        "description": "Organize courses for yourself."
+        "title": "Individual Study",
+        "description": "Organize your classes and whiteboards."
       },
       "creators": {
-        "title": "Creators",
-        "description": "Sell courses to your audience."
+        "title": "K-12 / College",
+        "description": "Classroom & whiteboard management for primary, middle and high schools."
       },
       "business": {
-        "title": "Business",
-        "description": "Train your employees."
+        "title": "Academy / Learning Center",
+        "description": "Educational portal for private courses and workshops."
       }
     },
     "personalGoals": {
@@ -6553,34 +6652,34 @@
       "gaming": "Gaming"
     },
     "personalUsage": {
-      "title": "What would you like to learn?",
+      "title": "What fields are you studying?",
       "subtitle": "Pick all that apply."
     },
     "teamSizes": {
-      "solo": "Solo",
-      "2-10": "2–10",
-      "11-50": "11–50",
-      "51-200": "51–200",
-      "200plus": "200+"
+      "solo": "Single class",
+      "2-10": "2–10 Classes",
+      "11-50": "11–50 Classes",
+      "51-200": "51–200 Classes",
+      "200plus": "200+ Classes"
     },
     "orgUseCases": {
-      "employeeTraining": "Employee training",
-      "onlineCourses": "Online courses",
-      "customerEducation": "Customer education",
-      "academicPrograms": "Academic programs",
-      "developerDocs": "Developer docs",
-      "communityLearning": "Community learning"
+      "employeeTraining": "K-12 School Management",
+      "onlineCourses": "Live & Hybrid Classrooms",
+      "customerEducation": "Exam Prep & Tutoring",
+      "academicPrograms": "Academic Programs",
+      "developerDocs": "STEM & Coding Labs",
+      "communityLearning": "School Clubs & Parent Forums"
     },
     "orgUsage": {
-      "teamSizeTitle": "How big is your team?",
-      "useCaseTitle": "What will you use it for?"
+      "teamSizeTitle": "How many classrooms and sections does your school have?",
+      "useCaseTitle": "What type of educational program is this for?"
     },
     "createOrg": {
       "testHint": {
         "title": "Looking to test?",
         "body": "Head to the",
         "link": "Developers page",
-        "suffix": "to try LearnHouse instead."
+        "suffix": "to try Oxonom Edu instead."
       },
       "validation": {
         "required": "Required",
@@ -6590,29 +6689,29 @@
         "maxLength": "Max 20 characters"
       },
       "fields": {
-        "name": "Organization name",
+        "name": "School / Institution name",
         "description": "Description (optional)",
-        "slug": "Address"
+        "slug": "School Web Address"
       },
       "placeholders": {
-        "name": "Acme Academy",
-        "description": "What is your organization about?"
+        "name": "Riverbend Academy",
+        "description": "What is your school or learning center about?"
       },
       "submitting": "Creating…",
       "submitPaid": "Create & continue to payment",
-      "submit": "Create organization"
+      "submit": "Create School"
     },
     "success": {
-      "title": "Your organization is ready",
-      "description": "Jump in and start building your courses.",
-      "goToOrg": "Go to organization",
-      "cta": "Back to organizations"
+      "title": "Your school is ready!",
+      "description": "Jump in and start setting up your classes and whiteboards.",
+      "goToOrg": "Go to School",
+      "cta": "Back to schools"
     },
     "toast": {
-      "creating": "Creating organization…",
-      "created": "Organization created!",
-      "checkoutFailed": "Organization created — you can upgrade from Plan & Usage.",
-      "failed": "Failed to create organization"
+      "creating": "Creating school…",
+      "created": "School created successfully!",
+      "checkoutFailed": "School created — you can upgrade from Plan & Usage.",
+      "failed": "Failed to create school"
     },
     "steps": {
       "useType": {
@@ -6628,7 +6727,7 @@
         "subtitle": "You can change this anytime."
       },
       "createOrg": {
-        "title": "Name your organization",
+        "title": "Name your school",
         "subtitle": "Pick a name and a web address."
       },
       "success": {
@@ -6636,9 +6735,11 @@
       }
     },
     "topBar": {
-      "back": "Organizations"
+      "back": "Schools"
     },
-    "freeLimit": "1 free org limit reached",
+    "student_callout_title": "Are you a student? Have a class code?",
+    "student_callout_subtitle": "Instead of creating a school, enter the code provided by your teacher to join your class.",
+    "freeLimit": "1 free school limit reached",
     "navigation": {
       "back": "Back",
       "continue": "Continue",
@@ -6688,6 +6789,99 @@
     "pricing": {
       "from": "from",
       "subscription": "subscription"
+    }
+  },
+  "demo": {
+    "banner_title": "You are in the shared demo.",
+    "banner_body_countdown": "Everything here is example data, and anything you change is put back in {{countdown}}.",
+    "banner_body": "Everything here is example data, and anything you change is reset periodically.",
+    "reset_imminent": "any moment",
+    "create_org": "Create your own school"
+  },
+  "errors": {
+    "generic_title": "Something unexpected happened",
+    "generic_description": "We ran into an error. Retrying or heading home usually helps.",
+    "hide_details": "Hide technical details",
+    "show_details": "Show technical details",
+    "cause": "cause",
+    "status": "status",
+    "digest": "digest",
+    "ref": "ref",
+    "admin_only": {
+      "title": "Access Restricted",
+      "description": "This management area is restricted to school administrators and teachers. As a student, you can access your enrolled classes, lessons, and whiteboards from the home page."
+    },
+    "actions": {
+      "retry": "Try again",
+      "reload": "Reload page",
+      "login": "Sign in",
+      "home": "Home",
+      "signout": "Sign out",
+      "signing_out": "Signing out…",
+      "contact_support": "Contact support",
+      "report": "Report problem"
+    },
+    "kinds": {
+      "permission": "Permission",
+      "auth_session": "Session Expired",
+      "plan_limit": "Plan Limit",
+      "rate_limit": "Rate Limit",
+      "not_found": "Not Found",
+      "conflict": "Conflict",
+      "validation": "Validation",
+      "org_config": "School Configuration",
+      "payment": "Billing",
+      "upload": "Upload",
+      "ai": "AI Assistant",
+      "offline": "Offline",
+      "service_unavailable": "Service Unavailable",
+      "timeout": "Timeout",
+      "server": "Server Error",
+      "version_mismatch": "Version Update",
+      "chunk_load": "Loading Error",
+      "unknown": "Error"
+    },
+    "categories": {
+      "permission": {
+        "title": "You don't have access to this",
+        "description": "Your account doesn't have permission for this page or action. If you think it should, an admin for your school can grant access."
+      },
+      "auth_session": {
+        "title": "Your session expired",
+        "description": "You've been signed out or your sign-in needs refreshing. Logging back in will restore your access."
+      },
+      "plan_limit": {
+        "title": "This needs a plan upgrade",
+        "description": "The feature you tried to use isn't included on your current school plan, or it's turned off for your school."
+      },
+      "rate_limit": {
+        "title": "Let's slow down for a moment",
+        "description": "You've made a lot of requests in a short time. We've paused things briefly to keep your account safe."
+      },
+      "not_found": {
+        "title": "We couldn't find that",
+        "description": "The item you're looking for may have been moved, deleted, or isn't available to your school."
+      },
+      "conflict": {
+        "title": "That already exists",
+        "description": "This conflicts with something that's already there — for example an account or item with the same name already exists."
+      },
+      "validation": {
+        "title": "Something needs a quick fix",
+        "description": "A field is missing, out of range, or in the wrong format. Adjust the input and try again."
+      },
+      "offline": {
+        "title": "You appear to be offline",
+        "description": "We couldn't reach our servers. Check your connection and try again."
+      },
+      "server": {
+        "title": "We hit a snag on our end",
+        "description": "Our servers returned an unexpected error while handling your request. Trying again in a moment usually helps."
+      },
+      "timeout": {
+        "title": "That took too long",
+        "description": "The request timed out before it finished. Trying again usually works."
+      }
     }
   }
 }

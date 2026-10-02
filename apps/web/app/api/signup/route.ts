@@ -31,6 +31,7 @@ interface SignupBody {
   custom_fields?: Record<string, unknown>
   turnstileToken?: string | null
   inviteCode?: string
+  join_code?: string
 }
 
 export async function POST(request: NextRequest) {
@@ -43,10 +44,11 @@ export async function POST(request: NextRequest) {
 
   const {
     email,
-    org_id,
+    org_id: initialOrgId,
     org_slug: _org_slug,
     turnstileToken,
     inviteCode,
+    join_code,
     password,
     username,
     first_name,
@@ -54,6 +56,7 @@ export async function POST(request: NextRequest) {
     bio,
     custom_fields,
   } = body
+  let org_id = initialOrgId
 
   if (!email || !password || !username) {
     return NextResponse.json({ detail: 'Missing required fields' }, { status: 400 })
@@ -91,14 +94,23 @@ export async function POST(request: NextRequest) {
 
   const base = getServerAPIUrl()
 
-  // The backend UserCreate body — account fields only; the org (if any) is in
-  // the URL path, never the body.
-  //
-  // Every field is listed explicitly rather than spread from the request. The
-  // previous `...rest` spread forwarded any key the client invented, which is
-  // how an arbitrary `extra_metadata` blob could reach UserCreate. Custom field
-  // answers travel in their own slot and the backend validates them against the
-  // org's declared fields.
+  // If a class join code is provided and org_id is not yet set, resolve org from the class
+  if (join_code && !org_id) {
+    try {
+      const verifyRes = await fetch(`${base}usergroups/verify-code/${encodeURIComponent(join_code)}`, {
+        signal: AbortSignal.timeout(5000),
+      })
+      if (verifyRes.ok) {
+        const classData = await verifyRes.json()
+        if (classData?.org_id) {
+          org_id = classData.org_id
+        }
+      }
+    } catch (err) {
+      console.error('[signup] error resolving class join code:', err)
+    }
+  }
+
   const backendBody = {
     email,
     password,
@@ -106,6 +118,7 @@ export async function POST(request: NextRequest) {
     first_name,
     last_name,
     bio,
+    join_code,
     ...(custom_fields ? { custom_fields } : {}),
   }
 

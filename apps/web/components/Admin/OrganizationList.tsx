@@ -41,6 +41,7 @@ interface OrgWithCount {
   user_count: number
   course_count: number
   plan: string
+  active?: boolean
   custom_domains: string[]
   admin_users: AdminUserInfo[]
 }
@@ -118,7 +119,7 @@ function AdminUserTooltip({ users }: { users: AdminUserInfo[] }) {
   }, [open])
 
   if (users.length === 0) {
-    return <span className="text-white/25 text-xs">None</span>
+    return <span className="text-white/25 text-xs">Yok</span>
   }
 
   return (
@@ -129,7 +130,7 @@ function AdminUserTooltip({ users }: { users: AdminUserInfo[] }) {
         onMouseLeave={() => setOpen(false)}
         className="text-sm text-white/60 hover:text-white/80 transition-colors underline decoration-dotted underline-offset-2"
       >
-        {users.length} admin{users.length !== 1 ? 's' : ''}
+        {users.length} yönetici
       </button>
       {open && pos && (
         <div
@@ -337,20 +338,20 @@ export default function OrganizationList() {
               type="text"
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
-              placeholder="Search organizations..."
+              placeholder="Okul veya kurum ara..."
               className="bg-white/[0.05] border border-white/[0.08] rounded-lg ps-8 pe-3 py-1.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-white/20 w-64"
             />
           </div>
           <div className="flex items-center gap-3">
             <span className="text-xs text-white/30">
-              {totalCount} org{totalCount !== 1 ? 's' : ''}
+              {totalCount} okul kayıtlı
             </span>
             <button
               onClick={() => setCreateOpen(true)}
-              className="flex items-center gap-1.5 bg-white/10 hover:bg-white/15 text-white text-xs font-medium px-3 py-1.5 rounded-md transition-colors"
+              className="flex items-center gap-1.5 bg-white/10 hover:bg-white/15 text-white text-xs font-semibold px-3 py-1.5 rounded-md transition-colors cursor-pointer"
             >
               <Plus size={12} weight="bold" />
-              New organization
+              Yeni Okul Ekle
             </button>
           </div>
         </div>
@@ -358,17 +359,24 @@ export default function OrganizationList() {
           {isSaaS ? (
             <div className="flex items-center gap-2">
               <span className="text-xs text-white/40 me-1">Plan:</span>
-              {PLANS_SAAS.map((p) => (
+              {[
+                ['all', 'Tümü'],
+                ['free', 'Ücretsiz'],
+                ['paid', 'Ücretli'],
+                ['standard', 'Standart'],
+                ['pro', 'Pro'],
+                ['enterprise', 'Kurumsal'],
+              ].map(([p, pLabel]) => (
                 <button
                   key={p}
                   onClick={() => handleFilterChange(p)}
-                  className={`text-xs px-2.5 py-1 rounded-md transition-colors capitalize ${
+                  className={`text-xs px-2.5 py-1 rounded-md transition-colors ${
                     planFilter === p
-                      ? 'bg-white/10 text-white'
+                      ? 'bg-white/10 text-white font-medium'
                       : 'text-white/40 hover:text-white/60 hover:bg-white/[0.05]'
                   }`}
                 >
-                  {p}
+                  {pLabel}
                 </button>
               ))}
             </div>
@@ -376,26 +384,26 @@ export default function OrganizationList() {
             <div />
           )}
           <div className="flex items-center gap-2">
-            <span className="text-xs text-white/40 me-1">Sort:</span>
+            <span className="text-xs text-white/40 me-1">Sırala:</span>
             {([
-              ['id', 'Default'],
-              ['newest', 'Newest'],
-              ['users_desc', 'Most users'],
-              ['users_asc', 'Least users'],
-              ['courses_desc', 'Most courses'],
-              ['most_visits', 'Most visits'],
-              ['most_trails', 'Most engaged'],
-              ['most_admins', 'Most admins'],
-              ['payments_active', 'Payments'],
-              ['recently_updated', 'Updated'],
-              ['oldest', 'Oldest'],
+              ['id', 'Varsayılan'],
+              ['newest', 'En Yeni'],
+              ['users_desc', 'En Çok Kullanıcı'],
+              ['users_asc', 'En Az Kullanıcı'],
+              ['courses_desc', 'En Çok Ders'],
+              ['most_visits', 'En Çok Ziyaret'],
+              ['most_trails', 'En Aktif'],
+              ['most_admins', 'En Çok Yönetici'],
+              ['payments_active', 'Ödemeler'],
+              ['recently_updated', 'Son Güncellenen'],
+              ['oldest', 'En Eski'],
             ] as const).map(([key, label]) => (
               <button
                 key={key}
                 onClick={() => handleSortChange(key)}
                 className={`text-xs px-2.5 py-1 rounded-md transition-colors ${
                   sortBy === key
-                    ? 'bg-white/10 text-white'
+                    ? 'bg-white/10 text-white font-medium'
                     : 'text-white/40 hover:text-white/60 hover:bg-white/[0.05]'
                 }`}
               >
@@ -422,22 +430,22 @@ export default function OrganizationList() {
         ) : !orgs || orgs.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-white/40">
             <Buildings size={48} weight="fill" />
-            <p className="mt-4 text-lg">No organizations found</p>
+            <p className="mt-4 text-lg">Kayıtlı okul bulunamadı</p>
           </div>
         ) : (
           <>
       <table className="w-full text-start">
         <thead>
           <tr className="border-b border-white/[0.08]">
-            <th className="px-4 py-3 text-xs font-medium text-white/40 uppercase tracking-wider">Organization</th>
-            <th className="px-4 py-3 text-xs font-medium text-white/40 uppercase tracking-wider">URL</th>
-            <th className="px-4 py-3 text-xs font-medium text-white/40 uppercase tracking-wider">Visits (7d)</th>
-            <th className="px-4 py-3 text-xs font-medium text-white/40 uppercase tracking-wider">Users</th>
-            <th className="px-4 py-3 text-xs font-medium text-white/40 uppercase tracking-wider">Courses</th>
-            <th className="px-4 py-3 text-xs font-medium text-white/40 uppercase tracking-wider">Admins</th>
+            <th className="px-4 py-3 text-xs font-medium text-white/40 uppercase tracking-wider">Okul / Kurum</th>
+            <th className="px-4 py-3 text-xs font-medium text-white/40 uppercase tracking-wider">Alan Adı (URL)</th>
+            <th className="px-4 py-3 text-xs font-medium text-white/40 uppercase tracking-wider">Ziyaret (7 Gün)</th>
+            <th className="px-4 py-3 text-xs font-medium text-white/40 uppercase tracking-wider">Kullanıcılar</th>
+            <th className="px-4 py-3 text-xs font-medium text-white/40 uppercase tracking-wider">Dersler</th>
+            <th className="px-4 py-3 text-xs font-medium text-white/40 uppercase tracking-wider">Yöneticiler</th>
             <th className="px-4 py-3 text-xs font-medium text-white/40 uppercase tracking-wider">Plan</th>
-            <th className="px-4 py-3 text-xs font-medium text-white/40 uppercase tracking-wider">Created</th>
-            <th className="px-4 py-3 text-xs font-medium text-white/40 uppercase tracking-wider">Updated</th>
+            <th className="px-4 py-3 text-xs font-medium text-white/40 uppercase tracking-wider">Kayıt Tarihi</th>
+            <th className="px-4 py-3 text-xs font-medium text-white/40 uppercase tracking-wider">Güncelleme</th>
             <th className="px-4 py-3 text-xs font-medium text-white/40 uppercase tracking-wider"></th>
           </tr>
         </thead>
@@ -461,7 +469,14 @@ export default function OrganizationList() {
                       logoFallback
                     )}
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-white">{org.name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-white">{org.name}</p>
+                        {org.active === false && (
+                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                            Donduruldu
+                          </span>
+                        )}
+                      </div>
                       {org.description ? (
                         <p className="text-xs text-white/30 truncate max-w-[260px]">{org.description}</p>
                       ) : (
@@ -520,10 +535,10 @@ export default function OrganizationList() {
                     href={safeHref(`${orgUrl}/dash`)}
                     rel="noopener"
                     className="inline-flex items-center gap-1.5 text-xs text-white/40 hover:text-white hover:bg-white/[0.08] px-2.5 py-1.5 rounded-lg transition-colors"
-                    title="Open org dashboard"
+                    title="Okul yönetim panelini aç"
                   >
                     <ArrowSquareOut size={14} weight="bold" />
-                    Dashboard
+                    Okul Paneli
                   </a>
                 </td>
               </tr>
@@ -536,7 +551,7 @@ export default function OrganizationList() {
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-4 px-4">
           <span className="text-xs text-white/30">
-            Page {page} of {totalPages}
+            Sayfa {page} / {totalPages}
           </span>
           <div className="flex items-center gap-1">
             <button

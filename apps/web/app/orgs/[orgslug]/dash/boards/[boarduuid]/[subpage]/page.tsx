@@ -2,7 +2,7 @@
 import React, { use } from 'react'
 import Link from 'next/link'
 import { motion } from 'motion/react'
-import { Info, Globe, Users, Image as ImageIcon, Eye } from 'lucide-react'
+import { Info, Globe, Users, Image as ImageIcon, Eye, Sparkles } from 'lucide-react'
 import { ChalkboardSimple } from '@phosphor-icons/react'
 import { useOrg } from '@components/Contexts/OrgContext'
 import { useLHSession } from '@components/Contexts/LHSessionContext'
@@ -16,6 +16,7 @@ import BoardGeneralTab from '@components/Dashboard/Boards/Tabs/BoardGeneralTab'
 import BoardThumbnailTab from '@components/Dashboard/Boards/Tabs/BoardThumbnailTab'
 import BoardAccessTab from '@components/Dashboard/Boards/Tabs/BoardAccessTab'
 import BoardMembersTab from '@components/Dashboard/Boards/Tabs/BoardMembersTab'
+import BoardFeaturesTab from '@components/Dashboard/Boards/Tabs/BoardFeaturesTab'
 import { DashTabBar, DashTabItem } from '@components/Dashboard/Shared/DashTabBar/DashTabBar'
 
 export type BoardSettingsParams = {
@@ -58,6 +59,13 @@ function BoardSettingsPage(props: { params: Promise<BoardSettingsParams> }) {
       icon: <ImageIcon size={16} />,
       href: getUriWithOrg(params.orgslug, '') + `/dash/boards/${params.boarduuid}/thumbnail`,
       active: params.subpage === 'thumbnail',
+    },
+    {
+      key: 'features',
+      label: 'Features',
+      icon: <Sparkles size={16} />,
+      href: getUriWithOrg(params.orgslug, '') + `/dash/boards/${params.boarduuid}/features`,
+      active: params.subpage === 'features',
     },
     {
       key: 'access',
@@ -171,6 +179,9 @@ function BoardSettingsPage(props: { params: Promise<BoardSettingsParams> }) {
         )}
         {params.subpage === 'thumbnail' && (
           <BoardThumbnailTab board={board} boardUuid={boardUuid} orgUuid={org?.org_uuid} boardKey={boardKey} />
+        )}
+        {params.subpage === 'features' && (
+          <BoardFeaturesTab board={board} boardUuid={boardUuid} />
         )}
         {params.subpage === 'access' && (
           <BoardAccessTab board={board} boardUuid={boardUuid} orgId={org?.id} boardKey={boardKey} />

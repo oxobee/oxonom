@@ -4,6 +4,7 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import en from '../locales/en.json';
+import tr from '../locales/tr.json';
 import { loadDateLocale } from './format';
 
 const LOCALE_LOADERS: Record<string, () => Promise<{ default: any }>> = {
@@ -30,14 +31,15 @@ const LOCALE_LOADERS: Record<string, () => Promise<{ default: any }>> = {
   sk: () => import('../locales/sk.json'),
 };
 
-// Only bundle English; lazy-load all other locales on demand
+// Bundle Turkish and English; lazy-load other locales on demand
 const resources = {
+  tr: { common: tr },
   en: { common: en },
 };
 
 async function loadLocale(lng: string) {
-  const code = lng.split('-')[0]
-  if (code === 'en' || !LOCALE_LOADERS[code]) return;
+  const code = lng ? lng.split('-')[0] : 'tr'
+  if (code === 'en' || code === 'tr' || !LOCALE_LOADERS[code]) return;
   if (i18n.hasResourceBundle(code, 'common')) return;
 
   try {
@@ -48,19 +50,29 @@ async function loadLocale(lng: string) {
   }
 }
 
+if (typeof window !== 'undefined') {
+  try {
+    const userPicked = localStorage.getItem('i18nextLng_userPicked');
+    if (!userPicked) {
+      localStorage.setItem('i18nextLng', 'tr');
+    }
+  } catch {}
+}
+
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({
     resources,
-    fallbackLng: 'en',
+    lng: typeof window !== 'undefined' && localStorage.getItem('i18nextLng_userPicked') ? (localStorage.getItem('i18nextLng') || 'tr') : 'tr',
+    fallbackLng: 'tr',
     ns: ['common'],
     defaultNS: 'common',
     interpolation: {
       escapeValue: false, // react already safes from xss
     },
     detection: {
-      order: ['localStorage', 'cookie', 'querystring', 'navigator', 'path', 'subdomain'],
+      order: ['localStorage', 'cookie', 'querystring'],
       caches: ['localStorage', 'cookie'],
       lookupLocalStorage: 'i18nextLng',
       lookupCookie: 'i18next',
@@ -70,13 +82,9 @@ i18n
     }
   });
 
-// Load the detected language if it's not English — export the promise
-// so I18nProvider can wait for resources before rendering.
-// The date locale rides along: dayjs keeps its own registry, and without this
-// every "2 hours ago" renders in English no matter the language.
 export const initialLocaleReady = Promise.all([
-  loadLocale(i18n.language.split('-')[0]),
-  loadDateLocale(i18n.language),
+  loadLocale(i18n.language ? i18n.language.split('-')[0] : 'tr'),
+  loadDateLocale(i18n.language || 'tr'),
 ]).then(() => undefined);
 
 /**

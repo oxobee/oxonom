@@ -11,7 +11,12 @@ import {
   X,
   Save,
   Wand2,
+  RotateCcw,
 } from 'lucide-react'
+import { Cube } from '@phosphor-icons/react'
+import { useQuery } from '@tanstack/react-query'
+import { getAPIUrl } from '@services/config/config'
+import { useOrg } from '@components/Contexts/OrgContext'
 import { cn } from '@/lib/utils'
 import BoardBlockWrapper from './BoardBlockWrapper'
 import DragHandle from './DragHandle'
@@ -132,6 +137,26 @@ export default function PlaygroundBlockComponent({
   const boardCtx = editor?.storage?.boardContext
   const accessToken: string = boardCtx?.accessToken || ''
 
+  const org = useOrg() as any
+  const orgId = org?.id
+
+  const { data: playgrounds = [], isLoading: isLoadingPlaygrounds } = useQuery({
+    queryKey: ['board-playgrounds-picker', orgId],
+    queryFn: async () => {
+      try {
+        const res = await fetch(`${getAPIUrl()}playgrounds/org/${orgId || 1}`, {
+          credentials: 'include',
+        })
+        if (!res.ok) return []
+        const data = await res.json()
+        return Array.isArray(data) ? data : data?.data || []
+      } catch {
+        return []
+      }
+    },
+    enabled: true,
+  })
+
   // ── Build srcdoc ──────────────────────────────────────────────────────
   const [srcdoc, setSrcdoc] = useState<string | null>(null)
   const htmlContentRef = useRef<string | null>(null)
@@ -239,8 +264,12 @@ export default function PlaygroundBlockComponent({
     />
   ) : null
 
-  // ── Render: Empty State ───────────────────────────────────────────────
+  // ── Render: Empty State (Module Picker) ───────────────────────────────
   if (!htmlContent) {
+    const publishedModules = (Array.isArray(playgrounds) ? playgrounds : []).filter(
+      (p: any) => p.published !== false && p.html_content
+    )
+
     return (
       <BoardBlockWrapper
         selected={selected}
@@ -250,47 +279,77 @@ export default function PlaygroundBlockComponent({
         x={x}
         y={y}
         width={width}
-        className="rounded-2xl flex flex-col"
-        style={{ minHeight: height }}
+        className="rounded-2xl flex flex-col bg-white border border-neutral-200/90 shadow-lg overflow-hidden"
+        style={{ minHeight: height || 460 }}
       >
-        {/* Top gradient */}
-        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-purple-50/80 to-transparent rounded-t-2xl pointer-events-none z-0" />
-
         <DragHandle onMouseDown={handleDragStart} />
 
         {/* Header */}
-        <div className="flex items-center px-4 pt-4 pb-0.5 relative z-[1]">
-          <div className="flex items-center gap-1.5 flex-1">
-            <div className="w-5 h-5 rounded-md bg-purple-100 flex items-center justify-center">
-              <Sparkles size={10} className="text-purple-500" />
+        <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-neutral-100 bg-neutral-50/70">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center">
+              <Cube size={14} weight="bold" />
             </div>
-            <span className="text-[9px] font-semibold tracking-wider uppercase select-none text-neutral-400">
-              {t('boards.playground_block.title')}
+            <span className="text-xs font-bold text-neutral-800">
+              Etkileşimli MEB Modülü Seçin
             </span>
           </div>
+          <span className="text-[10px] text-neutral-400 font-medium">MEB Müfredatı</span>
         </div>
 
-        {/* Centered content */}
-        <div className="flex-1 flex flex-col items-center justify-center gap-4 px-5 py-6">
-          <SparkleIllustration />
-          <div className="text-center">
-            <p className="text-sm font-semibold text-neutral-700">{t('boards.playground_block.title')}</p>
-            <p className="text-[11px] text-neutral-400 mt-1 max-w-[260px]">
-              {t('boards.playground_block.description')}
-            </p>
-          </div>
-          <div className="w-12 h-px bg-neutral-200/80" />
-          <button
-            onClick={handleOpenModal}
-            className="flex items-center gap-2 px-4 py-2.5 text-[11px] font-semibold rounded-xl bg-neutral-900 text-white hover:bg-neutral-700 transition-colors"
-          >
-            <Wand2 size={12} />
-            {t('boards.playground_block.generate')}
-          </button>
+        {/* Content: Module Cards */}
+        <div className="flex-1 flex flex-col p-4 overflow-y-auto max-h-[420px]">
+          {isLoadingPlaygrounds ? (
+            <div className="flex-1 flex items-center justify-center py-12 text-xs text-neutral-400">
+              Modüller yükleniyor...
+            </div>
+          ) : publishedModules.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-center py-8">
+              <Cube size={32} className="text-neutral-300 mb-2" />
+              <p className="text-xs font-bold text-neutral-600">Henüz yayınlanmış modül bulunmuyor</p>
+              <p className="text-[11px] text-neutral-400 mt-1 max-w-xs">
+                Öğretmen veya yönetici panelinden yeni modül tanımlayabilirsiniz.
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2.5">
+              {publishedModules.map((pg: any) => (
+                <div
+                  key={pg.playground_uuid || pg.id}
+                  onClick={() => {
+                    updateAttributes({
+                      htmlContent: pg.html_content,
+                      sessionUuid: pg.playground_uuid,
+                    })
+                  }}
+                  className="p-3.5 rounded-xl border border-neutral-200 bg-white hover:border-emerald-500 hover:bg-emerald-50/30 transition-all cursor-pointer flex items-center justify-between group shadow-xs hover:shadow-md"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-700 flex items-center justify-center font-black text-sm shrink-0 border border-emerald-500/20">
+                      {pg.name?.includes('1. Sınıf') ? '1' : pg.name?.includes('2. Sınıf') ? '2' : '📚'}
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-neutral-900 group-hover:text-emerald-800 transition-colors">
+                        {pg.name}
+                      </h4>
+                      <p className="text-[11px] text-neutral-500 line-clamp-1 mt-0.5">
+                        {pg.description}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="px-3 py-1.5 rounded-lg bg-neutral-900 text-white text-[11px] font-bold group-hover:bg-emerald-600 transition-colors shrink-0 shadow-xs"
+                  >
+                    Tahtaya Ekle
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <ResizeHandle onMouseDown={handleResizeStart} selected={selected} />
-        {modal}
       </BoardBlockWrapper>
     )
   }
@@ -311,20 +370,25 @@ export default function PlaygroundBlockComponent({
       {/* Floating toolbar — appears on hover or when selected */}
       <div className={`absolute inset-x-0 top-0 z-20 flex justify-center pt-2.5 transition-opacity pointer-events-none ${isBlockSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
         <div
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/90 backdrop-blur-sm nice-shadow pointer-events-auto cursor-grab active:cursor-grabbing"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/95 backdrop-blur-sm nice-shadow pointer-events-auto cursor-grab active:cursor-grabbing border border-neutral-200/80"
           onMouseDown={handleDragStart}
         >
-          <Sparkles size={11} className="text-purple-500 shrink-0" />
-          <span className="text-[10px] font-medium text-neutral-500">
-            {t('boards.playground_block.title')}
+          <Cube size={13} weight="bold" className="text-emerald-600 shrink-0" />
+          <span className="text-[10px] font-bold text-neutral-700">
+            Etkileşimli Modül
           </span>
           <div className="w-px h-3.5 bg-neutral-200 mx-0.5" />
           <button
-            onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); handleOpenModal() }}
-            className="text-neutral-400 hover:text-neutral-600 transition-colors shrink-0 p-0.5 rounded hover:bg-neutral-100"
-            title={t('boards.playground_block.edit')}
+            onMouseDown={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+              updateAttributes({ htmlContent: null })
+            }}
+            className="flex items-center gap-1 text-[10px] font-bold text-neutral-600 hover:text-emerald-700 px-2 py-0.5 rounded-md hover:bg-emerald-50 transition-colors cursor-pointer"
+            title="Farklı bir modül seç"
           >
-            <Pencil size={11} />
+            <RotateCcw size={11} />
+            <span>Modülü Değiştir</span>
           </button>
         </div>
       </div>

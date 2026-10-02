@@ -1,651 +1,682 @@
-'use client';
-import { useLHSession } from '@components/Contexts/LHSessionContext';
-import { useOrg } from '@components/Contexts/OrgContext';
+'use client'
+
+import React, { useMemo, useState } from 'react'
+import { useLHSession } from '@components/Contexts/LHSessionContext'
+import { useOrg } from '@components/Contexts/OrgContext'
 import { Breadcrumbs } from '@components/Objects/Breadcrumbs/Breadcrumbs'
-import { getUriWithOrg } from '@services/config/config';
-import { getAssignmentsFromACourse } from '@services/courses/assignments';
-import { getCourseThumbnailMediaDirectory } from '@services/media/media';
-import { getOrgCourses } from '@services/courses/courses';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { queryKeys } from '@/lib/query/keys';
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  ALargeSmall,
-  Backpack,
+  BookOpen,
   Calendar,
   CheckCircle2,
-  EyeOff,
-  GalleryVerticalEnd,
+  Clock,
+  Eye,
+  FileText,
+  Filter,
   GraduationCap,
-  Hash,
-  Inbox,
-  Layers2,
-  Percent,
+  HelpCircle,
+  Layers,
+  Loader2,
+  PenTool,
   Plus,
   Search,
-  Shield,
-  ThumbsUp,
-  UserRoundPen,
-  X,
-  Zap,
-} from 'lucide-react';
-import Link from 'next/link';
-import React, { useMemo, useState } from 'react'
-import { useTranslation } from 'react-i18next';
-import NewAssignmentModal from './_components/NewAssignmentModal';
+  Sparkles,
+  Users,
+} from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { getUserGroups } from '@services/usergroups/usergroups'
+import { getBoards } from '@services/boards/boards'
+import { asArray } from '@services/utils/ts/requests'
+import {
+  getSchoolAssignments,
+  getStudentAssignments,
+  SchoolAssignmentItem,
+} from '@services/school_assignments/school_assignments'
+import CreateSchoolAssignmentModal from '@components/Dashboard/Assignments/CreateSchoolAssignmentModal'
+import DoAssignmentModal from '@components/Dashboard/Assignments/DoAssignmentModal'
+import AssignmentSubmissionsModal from '@components/Dashboard/Assignments/AssignmentSubmissionsModal'
 
-type StatusFilter = 'all' | 'published' | 'drafts';
-
-// Skeuomorphic badge color presets. Each value combines a vertical gradient
-// (lighter at the top, slightly darker at the bottom), a thin colored ring
-// for the "edge" of the pill, an inset white highlight for the lifted feel,
-// and a soft colored drop shadow tinted to match the badge color. Keep the
-// shapes consistent across all badges so they feel like a set.
-const BADGE_BASE =
-  'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ring-1 ring-inset whitespace-nowrap'
-
-const BADGE_VIOLET =
-  'bg-gradient-to-b from-violet-50 to-violet-100 text-violet-700 ring-violet-300/40 shadow-[0_1px_2px_rgba(139,92,246,0.18),inset_0_1px_0_rgba(255,255,255,0.85)]'
-const BADGE_BLUE =
-  'bg-gradient-to-b from-blue-50 to-blue-100 text-blue-700 ring-blue-300/40 shadow-[0_1px_2px_rgba(59,130,246,0.18),inset_0_1px_0_rgba(255,255,255,0.85)]'
-const BADGE_EMERALD =
-  'bg-gradient-to-b from-emerald-50 to-emerald-100 text-emerald-700 ring-emerald-300/40 shadow-[0_1px_2px_rgba(16,185,129,0.18),inset_0_1px_0_rgba(255,255,255,0.85)]'
-const BADGE_AMBER =
-  'bg-gradient-to-b from-amber-50 to-amber-100 text-amber-700 ring-amber-300/40 shadow-[0_1px_2px_rgba(245,158,11,0.18),inset_0_1px_0_rgba(255,255,255,0.85)]'
-const BADGE_ROSE =
-  'bg-gradient-to-b from-rose-50 to-rose-100 text-rose-700 ring-rose-300/40 shadow-[0_1px_2px_rgba(244,63,94,0.18),inset_0_1px_0_rgba(255,255,255,0.85)]'
-const BADGE_CYAN =
-  'bg-gradient-to-b from-cyan-50 to-cyan-100 text-cyan-700 ring-cyan-300/40 shadow-[0_1px_2px_rgba(6,182,212,0.18),inset_0_1px_0_rgba(255,255,255,0.85)]'
-
-// Inline lookup table for grading-type badges. Same colors as the assignment
-// editor's header badges so the design language stays consistent.
-const GRADING_TYPE_BADGE: Record<string, { icon: React.ReactNode; labelKey: string; color: string }> = {
-  ALPHABET: { icon: <ALargeSmall size={13} />, labelKey: 'dashboard.assignments.modals.edit.form.grading_types.alphabet', color: BADGE_VIOLET },
-  NUMERIC: { icon: <Hash size={13} />, labelKey: 'dashboard.assignments.modals.edit.form.grading_types.numeric', color: BADGE_BLUE },
-  PERCENTAGE: { icon: <Percent size={13} />, labelKey: 'dashboard.assignments.modals.edit.form.grading_types.percentage', color: BADGE_EMERALD },
-  PASS_FAIL: { icon: <ThumbsUp size={13} />, labelKey: 'dashboard.assignments.modals.edit.form.grading_types.pass_fail', color: BADGE_AMBER },
-  GPA_SCALE: { icon: <GraduationCap size={13} />, labelKey: 'dashboard.assignments.modals.edit.form.grading_types.gpa_scale', color: BADGE_ROSE },
-};
-
-function AssignmentsHome() {
+export default function SchoolAssignmentsPage() {
   const { t } = useTranslation()
-  const session = useLHSession() as any;
-  const access_token = session?.data?.tokens?.access_token;
-  const org = useOrg() as any;
-  const queryClient = useQueryClient();
-  const [showNewAssignment, setShowNewAssignment] = useState(false);
+  const session = useLHSession() as any
+  const org = useOrg() as any
+  const queryClient = useQueryClient()
+  const access_token = session?.data?.tokens?.access_token
+  const user = session?.data?.user
 
-  const invalidateAssignments = () => {
-    queryClient.invalidateQueries({ queryKey: ['assignments-all'] });
-    queryClient.invalidateQueries({ queryKey: ['assignments'] });
-    queryClient.invalidateQueries({ queryKey: queryKeys.courses.list(org?.slug ?? '') });
-  };
+  // Check if current user is student
+  const isActualStudent =
+    user?.email?.toLowerCase().includes('ogrenci') ||
+    user?.roles?.some((r: any) => r.role === 'Student' || r.role === 'Learner')
 
-  const { data: courses } = useQuery({
-    queryKey: queryKeys.courses.list(org?.slug ?? ''),
-    queryFn: () => getOrgCourses(org.slug, {}, access_token, true),
-    enabled: !!(org?.slug && access_token),
-    staleTime: 60_000,
-  })
+  // View mode toggle (teachers can switch between management & student preview)
+  const [viewMode, setViewMode] = useState<'teacher' | 'student'>(isActualStudent ? 'student' : 'teacher')
 
-  // Fetch all course assignments in a single query call to avoid N+1 requests
-  const courseUuids = useMemo(() => courses?.map((c: any) => c.course_uuid) || [], [courses])
-  const { data: courseAssignments } = useQuery({
-    queryKey: ['assignments-all', ...courseUuids],
-    queryFn: async () => {
-      // allSettled, not all: a single rejected request (network blip, one bad
-      // course) used to take the whole dashboard down with it.
-      const settled = await Promise.allSettled(
-        courseUuids.map((uuid: string) => getAssignmentsFromACourse(uuid, access_token))
-      )
-      // The response helper does not throw — a 404 resolves to
-      // `{ success: false, data: { detail: 'Course not found' } }`. That object
-      // is truthy, so the downstream `|| []` guards never fired and the error
-      // body reached `.filter(...)` during render, blanking the page (no error
-      // boundary under this segment) and counting as a phantom draft in the
-      // stats. Anything that isn't a real array collapses to an empty list —
-      // note we map rather than filter so the result stays index-aligned with
-      // `courseUuids` / `courses`, otherwise a single failing course would
-      // shift every later course's assignments onto the wrong course.
-      return settled.map((r: any) =>
-        r.status === 'fulfilled' && r.value?.success && Array.isArray(r.value.data)
-          ? r.value.data
-          : []
-      )
-    },
-    enabled: courseUuids.length > 0 && !!access_token,
-    staleTime: 60_000,
-  })
+  // Modals state
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [selectedAssignmentForDo, setSelectedAssignmentForDo] = useState<SchoolAssignmentItem | null>(null)
+  const [selectedAssignmentForSubmissions, setSelectedAssignmentForSubmissions] = useState<SchoolAssignmentItem | null>(null)
 
-  // === Filter / search state ===
+  // Filters state
+  const [selectedUsergroupId, setSelectedUsergroupId] = useState<number | null>(null)
+  const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const [selectedGradeLevel, setSelectedGradeLevel] = useState<string>('all')
+  const [selectedSubject, setSelectedSubject] = useState<string>('all')
+  const [selectedToolType, setSelectedToolType] = useState<string>('all')
   const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
-  const [autoGradedOnly, setAutoGradedOnly] = useState(false)
 
-  // === Stats — computed from the unfiltered data ===
+  // Student specific filter tab
+  const [studentTab, setStudentTab] = useState<'pending' | 'submitted' | 'graded'>('pending')
+
+  // 1. Fetch classrooms
+  const { data: rawUserGroups } = useQuery({
+    queryKey: ['org-classrooms', org?.id],
+    queryFn: () => getUserGroups(org?.id, access_token),
+    enabled: !!(org?.id && access_token),
+  })
+  const classrooms = asArray<any>(rawUserGroups?.data || rawUserGroups)
+
+  // 2. Fetch boards
+  const { data: rawBoards } = useQuery({
+    queryKey: ['org-boards', org?.id],
+    queryFn: () => getBoards(org?.id, access_token),
+    enabled: !!(org?.id && access_token),
+  })
+  const boards = asArray<any>(rawBoards?.data || rawBoards)
+
+  // 3. Fetch school assignments (Teacher view)
+  const {
+    data: assignments = [],
+    isLoading: isLoadingAssignments,
+    refetch: refetchAssignments,
+  } = useQuery({
+    queryKey: [
+      'school-assignments',
+      org?.id,
+      selectedUsergroupId,
+      selectedCategory,
+      selectedGradeLevel,
+      selectedSubject,
+      selectedToolType,
+    ],
+    queryFn: () =>
+      getSchoolAssignments(
+        org?.id,
+        {
+          usergroup_id: selectedUsergroupId,
+          grade_category: selectedCategory,
+          grade_level: selectedGradeLevel,
+          subject: selectedSubject,
+          tool_type: selectedToolType,
+        },
+        access_token
+      ),
+    enabled: !!(org?.id && access_token && viewMode === 'teacher'),
+  })
+
+  // 4. Fetch student assignments (Student view)
+  const {
+    data: studentAssignments = [],
+    isLoading: isLoadingStudentAssignments,
+    refetch: refetchStudentAssignments,
+  } = useQuery({
+    queryKey: ['student-school-assignments', org?.id],
+    queryFn: () => getStudentAssignments(org?.id, access_token),
+    enabled: !!(org?.id && access_token && viewMode === 'student'),
+  })
+
+  // Filtered teacher assignments with search
+  const filteredTeacherAssignments = useMemo(() => {
+    return assignments.filter((a) => {
+      if (!searchQuery.trim()) return true
+      const q = searchQuery.toLowerCase()
+      return (
+        a.title.toLowerCase().includes(q) ||
+        (a.description || '').toLowerCase().includes(q) ||
+        a.subject.toLowerCase().includes(q)
+      )
+    })
+  }, [assignments, searchQuery])
+
+  // Filtered student assignments by tab
+  const filteredStudentAssignments = useMemo(() => {
+    return studentAssignments.filter((a) => {
+      const status = a.submission?.status || 'PENDING'
+      if (studentTab === 'pending') return status === 'PENDING'
+      if (studentTab === 'submitted') return status === 'SUBMITTED'
+      if (studentTab === 'graded') return status === 'GRADED'
+      return true
+    })
+  }, [studentAssignments, studentTab])
+
+  // Stats calculation
   const stats = useMemo(() => {
-    const allAssignments: any[] = (courseAssignments || []).flat()
-    return {
-      total: allAssignments.length,
-      published: allAssignments.filter((a: any) => a.published).length,
-      drafts: allAssignments.filter((a: any) => !a.published).length,
-      auto_graded: allAssignments.filter((a: any) => a.auto_grading).length,
+    const total = assignments.length
+    const totalSubs = assignments.reduce((acc, a) => acc + (a.total_submissions || 0), 0)
+    const gradedSubs = assignments.reduce((acc, a) => acc + (a.graded_submissions || 0), 0)
+    const pendingSubs = Math.max(0, totalSubs - gradedSubs)
+    return { total, totalSubs, gradedSubs, pendingSubs }
+  }, [assignments])
+
+  const renderToolBadge = (toolType: string) => {
+    switch (toolType) {
+      case 'WHITEBOARD':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+            <PenTool size={12} /> Akıllı Tahta
+          </span>
+        )
+      case 'WORKSHEET':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <FileText size={12} /> Çalışma Kağıdı
+          </span>
+        )
+      case 'QUIZ':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+            <HelpCircle size={12} /> İnteraktif Test
+          </span>
+        )
+      case 'READING':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">
+            <BookOpen size={12} /> Okuma & Özet
+          </span>
+        )
+      default:
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-gray-50 text-gray-700 border border-gray-200">
+            <Layers size={12} /> Genel Görev
+          </span>
+        )
     }
-  }, [courseAssignments])
-
-  // === Filtering ===
-  // Match an assignment against the active filters. Returns true if it should be shown.
-  const matchesFilters = (assignment: any) => {
-    // Search by title or description (case-insensitive)
-    if (searchQuery.trim()) {
-      const q = searchQuery.trim().toLowerCase()
-      const title = (assignment.title || '').toLowerCase()
-      const desc = (assignment.description || '').toLowerCase()
-      if (!title.includes(q) && !desc.includes(q)) return false
-    }
-    // Status pill
-    if (statusFilter === 'published' && !assignment.published) return false
-    if (statusFilter === 'drafts' && assignment.published) return false
-    // Auto-graded toggle
-    if (autoGradedOnly && !assignment.auto_grading) return false
-    return true
-  }
-
-  // Build the filtered course rows. Each entry has { course, assignments } where
-  // assignments has been filtered. Courses with zero assignments are always
-  // hidden — empty courses are noise on this dashboard, the teacher uses the
-  // course editor for those.
-  const filteredCourseRows = useMemo(() => {
-    if (!courseAssignments || !courses) return []
-    return courseAssignments
-      .map((assignments: any[], index: number) => {
-        const filtered = (assignments || []).filter(matchesFilters)
-        return { course: courses[index], assignments: filtered, originalCount: (assignments || []).length }
-      })
-      .filter((r: any) => r.assignments.length > 0)
-  }, [courseAssignments, courses, searchQuery, statusFilter, autoGradedOnly])
-
-  const filteredAssignmentTotal = filteredCourseRows.reduce(
-    (sum: number, row: any) => sum + row.assignments.length,
-    0
-  )
-
-  function removeAssignmentPrefix(assignment_uuid: string) {
-    return assignment_uuid.replace('assignment_', '')
-  }
-
-  function removeCoursePrefix(course_uuid: string) {
-    return course_uuid.replace('course_', '')
   }
 
   return (
-    <div className='flex w-full'>
-      <div className='ps-4 sm:ps-10 me-4 sm:me-10 tracking-tighter flex flex-col space-y-5 w-full'>
-        <div className='flex items-start justify-between gap-4 pt-6'>
-          <div className='flex flex-col space-y-2'>
-            <Breadcrumbs items={[
-              { label: t('common.assignments'), href: '/dash/assignments', icon: <Backpack size={14} /> }
-            ]} />
-            <h1 className="pt-3 flex font-bold text-4xl">{t('dashboard.assignments.home.title')}</h1>
-          </div>
-          <button
-            onClick={() => setShowNewAssignment(true)}
-            className="flex-none inline-flex items-center gap-1.5 bg-black text-white text-sm font-semibold rounded-lg px-4 py-2.5 nice-shadow hover:bg-gray-800 transition-colors"
-          >
-            <Plus size={16} />
-            {t('dashboard.assignments.home.new_assignment', { defaultValue: 'New Assignment' })}
-          </button>
-        </div>
-
-        {/* Stats bar */}
-        <div className="flex flex-wrap gap-3">
-          <StatPill
-            icon={<Backpack size={14} className="text-gray-500" />}
-            label={t('dashboard.assignments.home.stats.total')}
-            value={stats.total}
-          />
-          <StatPill
-            icon={<CheckCircle2 size={14} className="text-emerald-500" />}
-            label={t('dashboard.assignments.home.stats.published')}
-            value={stats.published}
-          />
-          <StatPill
-            icon={<EyeOff size={14} className="text-gray-500" />}
-            label={t('dashboard.assignments.home.stats.drafts')}
-            value={stats.drafts}
-          />
-          <StatPill
-            icon={<Zap size={14} className="text-amber-500" />}
-            label={t('dashboard.assignments.home.stats.auto_graded')}
-            value={stats.auto_graded}
-          />
-        </div>
-
-        {/* Toolbar */}
-        <div className='flex flex-col sm:flex-row gap-3 items-stretch sm:items-center'>
-          {/* Search input */}
-          <div className='relative flex-1 max-w-md'>
-            <Search size={14} className='absolute start-3 top-1/2 -translate-y-1/2 text-gray-400' />
-            <input
-              type='text'
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t('dashboard.assignments.home.search_placeholder')}
-              className='w-full ps-9 pe-8 py-2 text-sm bg-white nice-shadow rounded-lg focus:outline-none focus:ring-2 focus:ring-black/5 placeholder:text-gray-400'
+    <div className="flex w-full">
+      <div className="px-4 sm:px-10 py-6 tracking-tighter flex flex-col space-y-6 w-full max-w-7xl mx-auto">
+        {/* TOP BAR: Breadcrumbs, Title, View Switcher & Action */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1.5">
+            <Breadcrumbs
+              items={[{ label: 'Ödevler', href: '/dash/assignments', icon: <FileText size={14} /> }]}
             />
-            {searchQuery && (
+            <div className="flex items-center gap-3 pt-1">
+              <h1 className="font-black text-2xl sm:text-3xl text-gray-900 tracking-tight">
+                {viewMode === 'teacher' ? 'Okul & Sınıf Ev Ödevleri' : 'Ödevlerim & Ders Görevlerim'}
+              </h1>
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+                1-12. Sınıf K-12
+              </span>
+            </div>
+            <p className="text-xs text-gray-500">
+              {viewMode === 'teacher'
+                ? 'Kademe, branş ve interaktif akıllı tahta bazında sınıf ödevlerini yönetin ve teslimleri inceleyin.'
+                : 'Sınıfınız kapsamında verilen ödevleri görüntüleyin, akıllı tahtada çözün ve teslim edin.'}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2.5">
+            {/* View switcher for teachers */}
+            {!isActualStudent && (
+              <div className="flex items-center bg-gray-100 p-1 rounded-xl text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('teacher')}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                    viewMode === 'teacher' ? 'bg-white text-gray-900 shadow-xs' : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  Öğretmen Paneli
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('student')}
+                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                    viewMode === 'student' ? 'bg-white text-indigo-700 shadow-xs' : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <Eye size={12} />
+                  <span>Öğrenci Gözüyle</span>
+                </button>
+              </div>
+            )}
+
+            {viewMode === 'teacher' && (
               <button
-                onClick={() => setSearchQuery('')}
-                className='absolute end-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600'
-                aria-label='Clear search'
+                type="button"
+                onClick={() => setIsCreateOpen(true)}
+                className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl px-4 py-2.5 shadow-sm transition-colors cursor-pointer shrink-0"
               >
-                <X size={14} />
+                <Plus size={16} />
+                <span>Yeni Ödev Ver</span>
               </button>
             )}
           </div>
-
-          {/* Status pills */}
-          <div className='flex gap-1.5'>
-            <FilterPill
-              label={t('dashboard.assignments.home.filters.all')}
-              active={statusFilter === 'all'}
-              activeClass='bg-neutral-700 text-white'
-              onClick={() => setStatusFilter('all')}
-            />
-            <FilterPill
-              label={t('dashboard.assignments.home.filters.published')}
-              active={statusFilter === 'published'}
-              activeClass='bg-emerald-600 text-white'
-              onClick={() => setStatusFilter('published')}
-            />
-            <FilterPill
-              label={t('dashboard.assignments.home.filters.drafts')}
-              active={statusFilter === 'drafts'}
-              activeClass='bg-gray-700 text-white'
-              onClick={() => setStatusFilter('drafts')}
-            />
-          </div>
-
-          {/* Toggles */}
-          <div className='flex gap-1.5'>
-            <FilterPill
-              icon={<Zap size={12} />}
-              label={t('dashboard.assignments.home.filters.auto_graded')}
-              active={autoGradedOnly}
-              activeClass='bg-amber-500 text-white'
-              onClick={() => setAutoGradedOnly((v) => !v)}
-            />
-          </div>
         </div>
 
-        {/* Content */}
-        {!courseAssignments && (
-          <div className="animate-pulse space-y-6">
-            {[1, 2].map((i) => (
-              <div key={i} className="flex flex-col space-y-3">
-                {/* Course header skeleton */}
-                <div className="flex items-center justify-between gap-3 px-1">
-                  <div className="flex items-center gap-3">
-                    <div className="w-[70px] h-[40px] bg-gray-200 rounded-lg shrink-0" />
-                    <div className="flex flex-col gap-1.5">
-                      <div className="h-2.5 bg-gray-200 rounded w-16" />
-                      <div className="h-5 bg-gray-200 rounded w-48" />
-                    </div>
-                  </div>
-                  <div className="h-8 bg-gray-200 rounded-lg w-32" />
+        {/* ======================================================== */}
+        {/* TEACHER MANAGEMENT VIEW                                 */}
+        {/* ======================================================== */}
+        {viewMode === 'teacher' && (
+          <>
+            {/* STATS BAR */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="bg-white p-4 rounded-2xl border border-gray-200/90 shadow-xs flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                  <FileText size={20} />
                 </div>
-                {/* Assignment cards skeleton */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {[1, 2, 3].map((j) => (
-                    <div key={j} className="bg-white nice-shadow rounded-xl p-4 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="h-4 bg-gray-100 rounded-full w-20" />
-                        <div className="h-3 bg-gray-100 rounded w-16" />
-                      </div>
-                      <div className="h-5 bg-gray-200 rounded w-3/4" />
-                      <div className="space-y-1.5">
-                        <div className="h-3 bg-gray-100 rounded w-full" />
-                        <div className="h-3 bg-gray-100 rounded w-2/3" />
-                      </div>
-                      <div className="flex gap-1.5">
-                        <div className="h-5 bg-gray-100 rounded-full w-20" />
-                        <div className="h-5 bg-gray-100 rounded-full w-16" />
-                      </div>
-                      <div className="flex gap-2 pt-3 border-t border-gray-100">
-                        <div className="h-6 bg-gray-100 rounded-full w-20" />
-                        <div className="h-6 bg-gray-100 rounded-full w-24" />
-                      </div>
-                    </div>
-                  ))}
+                <div>
+                  <span className="block text-[10px] font-bold uppercase text-gray-400">Toplam Ödev</span>
+                  <span className="text-xl font-black text-gray-900">{stats.total}</span>
                 </div>
               </div>
-            ))}
-          </div>
+
+              <div className="bg-white p-4 rounded-2xl border border-gray-200/90 shadow-xs flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                  <Clock size={20} />
+                </div>
+                <div>
+                  <span className="block text-[10px] font-bold uppercase text-gray-400">Toplam Teslim</span>
+                  <span className="text-xl font-black text-blue-800">{stats.totalSubs}</span>
+                </div>
+              </div>
+
+              <div className="bg-white p-4 rounded-2xl border border-gray-200/90 shadow-xs flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                  <HelpCircle size={20} />
+                </div>
+                <div>
+                  <span className="block text-[10px] font-bold uppercase text-gray-400">İncelenecek</span>
+                  <span className="text-xl font-black text-amber-800">{stats.pendingSubs}</span>
+                </div>
+              </div>
+
+              <div className="bg-white p-4 rounded-2xl border border-gray-200/90 shadow-xs flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                  <CheckCircle2 size={20} />
+                </div>
+                <div>
+                  <span className="block text-[10px] font-bold uppercase text-gray-400">Değerlendirildi</span>
+                  <span className="text-xl font-black text-emerald-800">{stats.gradedSubs}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* CLASSROOM TABS / PILLS (SINIF BAZLI FİLTRELEME) */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <Users size={14} className="text-indigo-600" />
+                  Sınıfsal Kategoriler & Şubeler
+                </span>
+                <span className="text-xs text-gray-400">{classrooms.length} Aktif Şube</span>
+              </div>
+
+              <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                <button
+                  type="button"
+                  onClick={() => setSelectedUsergroupId(null)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                    selectedUsergroupId === null
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  Tüm Sınıflar
+                </button>
+                {classrooms.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setSelectedUsergroupId(c.id)}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+                      selectedUsergroupId === c.id
+                        ? 'bg-indigo-600 text-white shadow-xs'
+                        : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span>{c.name}</span>
+                    {c.invitation_code && (
+                      <span className={`text-[10px] px-1 py-0.2 rounded font-mono ${
+                        selectedUsergroupId === c.id ? 'bg-indigo-700 text-white' : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {c.invitation_code}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* DETAILED CATEGORICAL FILTERS BAR */}
+            <div className="bg-white p-3.5 rounded-2xl border border-gray-200/90 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex flex-wrap items-center gap-2.5">
+                {/* Kademe */}
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl font-semibold text-gray-800 outline-none"
+                >
+                  <option value="all">Tüm Kademeler (1-12)</option>
+                  <option value="İlkokul (1-4)">İlkokul (1-4)</option>
+                  <option value="Ortaokul (5-8)">Ortaokul (5-8)</option>
+                  <option value="Lise (9-12)">Lise (9-12)</option>
+                </select>
+
+                {/* Branş / Ders */}
+                <select
+                  value={selectedSubject}
+                  onChange={(e) => setSelectedSubject(e.target.value)}
+                  className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl font-semibold text-gray-800 outline-none"
+                >
+                  <option value="all">Tüm Branşlar / Dersler</option>
+                  <option value="Matematik">Matematik</option>
+                  <option value="Fizik">Fizik</option>
+                  <option value="Kimya">Kimya</option>
+                  <option value="Biyoloji">Biyoloji</option>
+                  <option value="Türk Dili ve Edebiyatı">Edebiyat</option>
+                  <option value="Türkçe">Türkçe</option>
+                  <option value="Tarih">Tarih</option>
+                  <option value="Coğrafya">Coğrafya</option>
+                  <option value="İngilizce">İngilizce</option>
+                </select>
+
+                {/* Ödev Aracı */}
+                <select
+                  value={selectedToolType}
+                  onChange={(e) => setSelectedToolType(e.target.value)}
+                  className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl font-semibold text-gray-800 outline-none"
+                >
+                  <option value="all">Tüm Ödev Araçları</option>
+                  <option value="WHITEBOARD">🎨 İnteraktif Akıllı Tahta</option>
+                  <option value="WORKSHEET">📝 Çalışma Kağıdı / Dosya</option>
+                  <option value="QUIZ">🧪 İnteraktif Test</option>
+                  <option value="READING">📖 Okuma & Özet</option>
+                </select>
+              </div>
+
+              {/* Search */}
+              <div className="relative min-w-[200px]">
+                <Search size={14} className="absolute left-3 top-2.5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Ödev başlığı veya konu ara..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-indigo-500/20"
+                />
+              </div>
+            </div>
+
+            {/* ASSIGNMENTS LIST (TEACHER CARDS) */}
+            {isLoadingAssignments ? (
+              <div className="py-16 text-center text-gray-400 flex flex-col items-center justify-center gap-2">
+                <Loader2 size={24} className="animate-spin text-indigo-600" />
+                <span className="text-xs">Ödevler yükleniyor...</span>
+              </div>
+            ) : filteredTeacherAssignments.length === 0 ? (
+              <div className="py-16 bg-white border border-gray-200 rounded-2xl text-center space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto">
+                  <FileText size={24} />
+                </div>
+                <h3 className="font-bold text-gray-900 text-base">Henüz Ödev Bulunmuyor</h3>
+                <p className="text-xs text-gray-500 max-w-sm mx-auto">
+                  Seçilen filtrelere uygun ödev bulunamadı. Yeni bir interaktif ödev tanımlayarak başlayabilirsiniz.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setIsCreateOpen(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl"
+                >
+                  <Plus size={14} /> Yeni Ödev Oluştur
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredTeacherAssignments.map((asg) => (
+                  <div
+                    key={asg.id}
+                    className="bg-white rounded-2xl border border-gray-200/90 shadow-xs p-5 flex flex-col justify-between hover:shadow-md transition-shadow group space-y-4"
+                  >
+                    <div className="space-y-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 rounded-md">
+                          {asg.subject}
+                        </span>
+                        {renderToolBadge(asg.tool_type)}
+                      </div>
+
+                      <h3 className="font-bold text-gray-900 text-sm group-hover:text-indigo-600 transition-colors leading-snug">
+                        {asg.title}
+                      </h3>
+
+                      <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">
+                        {asg.description || 'Açıklama belirtilmedi.'}
+                      </p>
+
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {(asg.classes || []).map((c) => (
+                          <span
+                            key={c.id}
+                            className="text-[10px] font-semibold bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md"
+                          >
+                            {c.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-3 pt-3 border-t border-gray-100 text-xs">
+                      <div className="flex items-center justify-between text-gray-500 text-[11px]">
+                        <span className="flex items-center gap-1">
+                          <Calendar size={12} />
+                          {asg.due_date ? new Date(asg.due_date).toLocaleDateString('tr-TR') : 'Süresiz'}
+                        </span>
+                        <span className="font-bold text-gray-800">
+                          {asg.total_submissions || 0} Teslim • {asg.graded_submissions || 0} Notlandı
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedAssignmentForSubmissions(asg)}
+                          className="flex-1 py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-xs transition-colors text-center cursor-pointer text-xs"
+                        >
+                          Teslimleri İncele ({asg.total_submissions || 0})
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedAssignmentForDo(asg)}
+                          className="p-2 border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer"
+                          title="Ödevi Önizle / Çöz"
+                        >
+                          <Eye size={15} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
 
-        {courseAssignments && filteredCourseRows.length === 0 && (
-          <div className='flex flex-col items-center justify-center py-16 text-gray-400 gap-3'>
-            <div className='bg-gray-100 rounded-2xl p-4'>
-              <Inbox size={28} />
+        {/* ======================================================== */}
+        {/* STUDENT ASSIGNMENTS VIEW (ÖDEVLERİM)                      */}
+        {/* ======================================================== */}
+        {viewMode === 'student' && (
+          <div className="space-y-5">
+            {/* TABS: Yapılacaklar vs Teslim Edilenler vs Notlananlar */}
+            <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setStudentTab('pending')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    studentTab === 'pending'
+                      ? 'bg-amber-600 text-white shadow-xs'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  Yapılacaklar / Bekleyenler (
+                  {studentAssignments.filter((a) => (a.submission?.status || 'PENDING') === 'PENDING').length}
+                  )
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStudentTab('submitted')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    studentTab === 'submitted'
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  Teslim Ettiklerim / İnceleniyor (
+                  {studentAssignments.filter((a) => a.submission?.status === 'SUBMITTED').length}
+                  )
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStudentTab('graded')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    studentTab === 'graded'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  Tamamlananlar / Notlananlar (
+                  {studentAssignments.filter((a) => a.submission?.status === 'GRADED').length}
+                  )
+                </button>
+              </div>
+
+              <span className="text-xs text-gray-400 font-medium hidden sm:inline">
+                Sınıfınıza atanmış ödevler listelenmektedir
+              </span>
             </div>
-            <p className='text-sm font-semibold'>
-              {searchQuery || statusFilter !== 'all' || autoGradedOnly
-                ? t('dashboard.assignments.home.empty_filtered')
-                : t('dashboard.assignments.home.empty')}
-            </p>
-            {(searchQuery || statusFilter !== 'all' || autoGradedOnly) ? (
-              <button
-                onClick={() => {
-                  setSearchQuery('')
-                  setStatusFilter('all')
-                  setAutoGradedOnly(false)
-                }}
-                className='text-xs text-gray-500 hover:text-gray-700 underline'
-              >
-                {t('dashboard.assignments.home.clear_filters')}
-              </button>
+
+            {isLoadingStudentAssignments ? (
+              <div className="py-16 text-center text-gray-400 flex flex-col items-center justify-center gap-2">
+                <Loader2 size={24} className="animate-spin text-indigo-600" />
+                <span className="text-xs">Ödevleriniz yükleniyor...</span>
+              </div>
+            ) : filteredStudentAssignments.length === 0 ? (
+              <div className="py-16 bg-white border border-gray-200 rounded-2xl text-center space-y-2">
+                <CheckCircle2 size={32} className="text-emerald-500 mx-auto" />
+                <h3 className="font-bold text-gray-900 text-base">Bu Kategoride Ödev Bulunmuyor</h3>
+                <p className="text-xs text-gray-500">
+                  {studentTab === 'pending'
+                    ? 'Harika! Yapılacak bekleyen ev ödeviniz bulunmuyor.'
+                    : studentTab === 'submitted'
+                    ? 'Şu anda öğretmen incelemesinde olan bir ödeviniz yok.'
+                    : 'Henüz notlandırılmış bir ödeviniz bulunmuyor.'}
+                </p>
+              </div>
             ) : (
-              <button
-                onClick={() => setShowNewAssignment(true)}
-                className='mt-1 inline-flex items-center gap-1.5 bg-black text-white text-sm font-semibold rounded-lg px-4 py-2 nice-shadow hover:bg-gray-800 transition-colors'
-              >
-                <Plus size={15} />
-                {t('dashboard.assignments.home.new_assignment', { defaultValue: 'New Assignment' })}
-              </button>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredStudentAssignments.map((asg) => {
+                  const sub = asg.submission
+                  const isGraded = sub?.status === 'GRADED'
+                  const isSubmitted = sub?.status === 'SUBMITTED'
+
+                  return (
+                    <div
+                      key={asg.id}
+                      className="bg-white rounded-2xl border border-gray-200 shadow-xs p-5 flex flex-col justify-between hover:shadow-md transition-shadow space-y-4"
+                    >
+                      <div className="space-y-2.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 rounded-md">
+                            {asg.subject}
+                          </span>
+                          {renderToolBadge(asg.tool_type)}
+                        </div>
+
+                        <h3 className="font-bold text-gray-900 text-sm leading-snug">{asg.title}</h3>
+
+                        <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">
+                          {asg.description}
+                        </p>
+
+                        {/* If graded, show grade pill */}
+                        {isGraded && (
+                          <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-xs">
+                            <span className="font-bold text-emerald-950 flex items-center gap-1">
+                              <GraduationCap size={14} className="text-emerald-600" />
+                              Not:
+                            </span>
+                            <span className="text-emerald-700 font-black">
+                              {sub?.score} / {asg.max_score} Puan
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-xs">
+                        <span className="text-[11px] text-gray-400 flex items-center gap-1">
+                          <Calendar size={12} />
+                          {asg.due_date ? new Date(asg.due_date).toLocaleDateString('tr-TR') : 'Süresiz'}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => setSelectedAssignmentForDo(asg)}
+                          className={`px-4 py-2 rounded-xl font-bold text-xs shadow-xs transition-colors cursor-pointer ${
+                            isGraded
+                              ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                              : isSubmitted
+                              ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                              : 'bg-amber-600 hover:bg-amber-700 text-white'
+                          }`}
+                        >
+                          {isGraded ? 'Değerlendirmeyi Gör' : isSubmitted ? 'Teslimi İncele' : 'Ödevi Çöz'}
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
             )}
           </div>
-        )}
-
-        <div className='flex flex-col space-y-3 w-full'>
-          {filteredCourseRows.map((row: any) => (
-            <CourseCard
-              key={row.course?.course_uuid || Math.random()}
-              course={row.course}
-              assignments={row.assignments}
-              originalCount={row.originalCount}
-              org={org}
-              removeAssignmentPrefix={removeAssignmentPrefix}
-              removeCoursePrefix={removeCoursePrefix}
-            />
-          ))}
-        </div>
-
-        {/* Filter result summary */}
-        {courseAssignments && filteredCourseRows.length > 0 && (
-          <p className='text-xs text-gray-400 pt-1'>
-            {t('dashboard.assignments.home.showing_count', {
-              shown: filteredAssignmentTotal,
-              total: stats.total,
-            })}
-          </p>
         )}
       </div>
 
-      <NewAssignmentModal
-        open={showNewAssignment}
-        onClose={() => setShowNewAssignment(false)}
-        courses={courses}
-        org={org}
-        onCreated={invalidateAssignments}
+      {/* CREATE ASSIGNMENT MODAL (TEACHER) */}
+      <CreateSchoolAssignmentModal
+        isOpen={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        onSuccess={() => {
+          refetchAssignments()
+          refetchStudentAssignments()
+        }}
+        orgId={org?.id}
+        accessToken={access_token}
+        classrooms={classrooms}
+        boards={boards}
+      />
+
+      {/* DO ASSIGNMENT MODAL (STUDENT SOLVER) */}
+      <DoAssignmentModal
+        isOpen={!!selectedAssignmentForDo}
+        onClose={() => setSelectedAssignmentForDo(null)}
+        onSuccess={() => {
+          refetchStudentAssignments()
+          refetchAssignments()
+        }}
+        assignment={selectedAssignmentForDo}
+        accessToken={access_token}
+      />
+
+      {/* SUBMISSIONS REVIEW & GRADING MODAL (TEACHER) */}
+      <AssignmentSubmissionsModal
+        isOpen={!!selectedAssignmentForSubmissions}
+        onClose={() => setSelectedAssignmentForSubmissions(null)}
+        assignment={selectedAssignmentForSubmissions}
+        accessToken={access_token}
       />
     </div>
   )
 }
-
-// ---------- helper components ----------
-
-function StatPill({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode
-  label: string
-  value: number
-}) {
-  return (
-    <div className='flex items-center gap-2 bg-white nice-shadow rounded-xl px-3.5 py-2'>
-      {icon}
-      <span className='text-[10px] uppercase tracking-wider font-semibold text-gray-400'>
-        {label}
-      </span>
-      <span className='text-sm font-bold text-gray-900'>{value}</span>
-    </div>
-  )
-}
-
-function FilterPill({
-  icon,
-  label,
-  active,
-  activeClass,
-  onClick,
-}: {
-  icon?: React.ReactNode
-  label: string
-  active: boolean
-  activeClass: string
-  onClick: () => void
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full transition-colors whitespace-nowrap ${
-        active ? activeClass : 'bg-white nice-shadow text-gray-600 hover:bg-gray-50'
-      }`}
-    >
-      {icon}
-      <span>{label}</span>
-    </button>
-  )
-}
-
-function CourseCard({
-  course,
-  assignments,
-  originalCount,
-  org,
-  removeAssignmentPrefix,
-  removeCoursePrefix,
-}: {
-  course: any
-  assignments: any[]
-  originalCount: number
-  org: any
-  removeAssignmentPrefix: (_uuid: string) => string
-  removeCoursePrefix: (_uuid: string) => string
-}) {
-  const { t } = useTranslation()
-
-  if (!course) return null
-
-  return (
-    <div className='flex flex-col space-y-3'>
-      {/* Course header — sits above the assignment grid as a section title.
-          No outer card wrapper around the whole course because the assignments
-          themselves are now the cards. */}
-      <div className='flex items-center justify-between gap-3 px-1'>
-        <div className='flex items-center gap-3 min-w-0'>
-          <MiniThumbnail course={course} />
-          <div className='flex flex-col min-w-0'>
-            <span className='text-[10px] uppercase tracking-wider font-bold text-gray-400'>
-              {t('dashboard.assignments.home.course_label')} · {assignments.length}
-              {assignments.length !== originalCount && (
-                <span className='text-gray-300'> / {originalCount}</span>
-              )}
-            </span>
-            <p className='font-bold text-lg text-gray-900 truncate leading-tight'>
-              {course.name}
-            </p>
-          </div>
-        </div>
-        <Link
-          href={{
-            pathname: getUriWithOrg(org.slug, `/dash/courses/course/${removeCoursePrefix(course.course_uuid)}/content`),
-            query: { subpage: 'editor' },
-          }}
-          prefetch
-          className='bg-black font-semibold text-xs text-zinc-100 rounded-lg flex space-x-1.5 nice-shadow items-center px-3 py-1.5 flex-none hover:bg-gray-800 transition-colors'
-        >
-          <GalleryVerticalEnd size={14} />
-          <p>{t('dashboard.assignments.home.course_editor')}</p>
-        </Link>
-      </div>
-
-      {/* Assignment grid — 1 column on mobile, 2 on tablet, 3 on desktop */}
-      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3'>
-        {assignments.map((assignment: any) => (
-          <AssignmentCard
-            key={assignment.assignment_uuid}
-            assignment={assignment}
-            org={org}
-            removeAssignmentPrefix={removeAssignmentPrefix}
-          />
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function AssignmentCard({
-  assignment,
-  org,
-  removeAssignmentPrefix,
-}: {
-  assignment: any
-  org: any
-  removeAssignmentPrefix: (_uuid: string) => string
-}) {
-  const { t } = useTranslation()
-  const gradingBadge = assignment.grading_type ? GRADING_TYPE_BADGE[assignment.grading_type] : null
-  const editorHref = {
-    pathname: getUriWithOrg(org.slug, `/dash/assignments/${removeAssignmentPrefix(assignment.assignment_uuid)}`),
-    query: { subpage: 'editor' },
-  }
-  const submissionsHref = {
-    pathname: getUriWithOrg(org.slug, `/dash/assignments/${removeAssignmentPrefix(assignment.assignment_uuid)}`),
-    query: { subpage: 'submissions' },
-  }
-
-  return (
-    <div className='group flex flex-col bg-white nice-shadow rounded-xl p-4 hover:bg-gray-50/40 transition-colors'>
-      {/* Status indicator strip on the very top */}
-      <div className='flex items-center justify-between mb-2'>
-        {assignment.published ? (
-          <span className='flex items-center gap-1 text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700'>
-            <CheckCircle2 size={10} />
-            {t('dashboard.assignments.detail.publishing.published')}
-          </span>
-        ) : (
-          <span className='flex items-center gap-1 text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500'>
-            <EyeOff size={10} />
-            {t('dashboard.assignments.detail.publishing.unpublished')}
-          </span>
-        )}
-        {assignment.due_date && (
-          <span className='flex items-center gap-1 text-[10px] font-medium text-gray-500'>
-            <Calendar size={11} />
-            <span>{assignment.due_date}</span>
-          </span>
-        )}
-      </div>
-
-      {/* Title */}
-      <Link
-        href={editorHref}
-        prefetch
-        className='block text-base font-bold text-gray-900 leading-tight hover:text-black mb-1 line-clamp-2 break-words'
-      >
-        {assignment.title || t('dashboard.assignments.home.untitled')}
-      </Link>
-
-      {/* Description — fixed min-height so cards align even when one has no description */}
-      <p className='text-xs text-gray-500 line-clamp-2 min-h-[2rem] mb-3 break-words'>
-        {assignment.description || ''}
-      </p>
-
-      {/* Badges row */}
-      <div className='flex items-center gap-1.5 flex-wrap mb-3'>
-        {gradingBadge && (
-          <span className={`${BADGE_BASE} ${gradingBadge.color}`}>
-            {gradingBadge.icon}
-            <span>{t(gradingBadge.labelKey)}</span>
-          </span>
-        )}
-        {assignment.auto_grading && (
-          <span className={`${BADGE_BASE} ${BADGE_AMBER}`}>
-            <Zap size={13} />
-            <span>{t('dashboard.assignments.detail.header_badges.auto_grading')}</span>
-          </span>
-        )}
-        {assignment.anti_copy_paste && (
-          <span className={`${BADGE_BASE} ${BADGE_CYAN}`}>
-            <Shield size={13} />
-            <span>{t('dashboard.assignments.detail.header_badges.anti_copy_paste')}</span>
-          </span>
-        )}
-      </div>
-
-      {/* Footer actions — pinned to the bottom of the card. Restored to the
-          classic white pill-with-nice-shadow look. */}
-      <div className='flex items-center gap-2 mt-auto pt-3 border-t border-gray-100'>
-        <Link
-          href={editorHref}
-          prefetch
-          className='bg-white rounded-full flex space-x-1.5 nice-shadow items-center px-3 py-1 text-xs font-bold text-gray-700 hover:bg-gray-50 transition-colors'
-        >
-          <Layers2 size={13} />
-          <p>{t('dashboard.assignments.home.editor')}</p>
-        </Link>
-        <Link
-          href={submissionsHref}
-          prefetch
-          className='bg-white rounded-full flex space-x-1.5 nice-shadow items-center px-3 py-1 text-xs font-bold text-gray-700 hover:bg-gray-50 transition-colors'
-        >
-          <UserRoundPen size={13} />
-          <p>{t('dashboard.assignments.home.submissions')}</p>
-        </Link>
-      </div>
-    </div>
-  )
-}
-
-const MiniThumbnail = (props: { course: any }) => {
-  const org = useOrg() as any
-
-  function removeCoursePrefix(course_uuid: string) {
-    return course_uuid.replace('course_', '')
-  }
-
-  return (
-    <Link
-      href={getUriWithOrg(
-        org.orgslug,
-        '/course/' + removeCoursePrefix(props.course.course_uuid)
-      )}
-    >
-      {props.course.thumbnail_image ? (
-        <div
-          className="inset-0 ring-1 ring-inset ring-black/10 rounded-lg shadow-xl w-[70px] h-[40px] bg-cover flex-none"
-          style={{
-            backgroundImage: `url(${getCourseThumbnailMediaDirectory(
-              org?.org_uuid,
-              props.course.course_uuid,
-              props.course.thumbnail_image
-            )})`,
-          }}
-        />
-      ) : (
-        <div
-          className="inset-0 ring-1 ring-inset ring-black/10 rounded-lg shadow-xl w-[70px] h-[40px] bg-cover flex-none"
-          style={{
-            backgroundImage: `url('/empty_thumbnail.png')`,
-            backgroundSize: 'contain',
-          }}
-        />
-      )}
-    </Link>
-  )
-}
-
-
-export default AssignmentsHome

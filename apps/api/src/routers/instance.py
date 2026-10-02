@@ -82,3 +82,22 @@ async def get_instance_info(db_session: AsyncSession = Depends(get_db_session)):
     }
     set_cached_instance_info(cacheable)
     return {**cacheable, **_live_fields(tenancy)}
+
+
+@router.get(
+    "/branding",
+    summary="Get public branding and footer info",
+    description="Returns public branding information, logo, platform name, and footer signature configuration.",
+)
+async def get_instance_branding():
+    """Public endpoint returning branding and footer configuration."""
+    from src.services.system_settings import get_system_settings
+    settings = get_system_settings()
+    return {
+        "site_name": settings.get("site_name", "Oxonom Edu"),
+        "site_logo": settings.get("site_logo", "/lrn-dash.svg"),
+        "footer_text": settings.get("footer_text", "© 2026 Oxonom Education Technologies. Tüm hakları saklıdır."),
+        "footer_link_text": settings.get("footer_link_text", "Oxonom Technologies"),
+        "footer_link_url": settings.get("footer_link_url", "https://www.oxonom.com"),
+    }
+

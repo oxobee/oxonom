@@ -3,12 +3,21 @@
     "hello": "Merhaba",
     "home": "Ana Sayfa",
     "back_to_home": "Ana Sayfaya Dön",
-    "your_organization": "Organizasyonunuz",
-    "your_organizations": "Organizasyonlarınız",
-    "no_orgs_message": "Henüz bir organizasyonun parçası değilsiniz gibi görünüyor, burada görmek için birine katılın",
+    "your_organization": "Okulunuz",
+    "your_organizations": "Okullarınız",
+    "choose_an_organization_to_continue": "Devam etmek için bir okul seçin",
+    "no_orgs_message": "Henüz bir okulun parçası değilsiniz. Görüntülemek için bir okula katılın veya yeni bir okul oluşturun",
+    "student_hub_title": "Okulunuz ve Sınıflarınız",
+    "student_hub_subtitle": "Derslerinize ve panolarınıza erişmek için okulunuzu seçin veya sınıf kodunuzla derse katılın",
+    "join_class_button": "Sınıf Koduyla Katıl",
+    "student_badge": "Öğrenci",
+    "teacher_badge": "Öğretmen",
+    "admin_badge": "Yönetici",
+    "enrolled_class": "Kayıtlı Sınıf",
+    "create_new_school": "Yeni Okul Oluştur",
     "assignments": "Ödevler",
     "payments": "Ödemeler",
-    "organization": "Organizasyon",
+    "organization": "Okul",
     "dashboard": "Panel",
     "settings": "Ayarlar",
     "language": "Dil",
@@ -39,6 +48,8 @@
     "all": "Hepsi",
     "all_courses": "Tüm kurslar",
     "all_assignments": "Tüm ödevler",
+    "feedback": "Geri Bildirimler",
+    "games": "Oyunlar",
     "recent": "Son",
     "expand": "Genişlet",
     "help": "Yardım",
@@ -92,27 +103,27 @@
           "description": "Topluluklar, yalnızca Standart planımızdaki veya daha üst planlarındaki kuruluşlar için kullanılabilen bir premium özelliktir. Üyeleriniz için tartışma topluluklarının kilidini açmak için yükseltin."
         },
         "analytics": {
-          "description": "Analitik, yalnızca Standart plan ve üzeri organizasyonlar için kullanılabilen premium bir özelliktir. Öğrencileriniz ve içeriğiniz hakkında bilgi edinmek için yükseltin.",
+          "description": "Analitik, yalnızca Standart plan ve üzeri okullar için kullanılabilen premium bir özelliktir. Öğrencileriniz ve içeriğiniz hakkında bilgi edinmek için yükseltin.",
           "title": "Standart Özellik"
         },
         "course_analytics": {
-          "description": "Kurs Analitiği, yalnızca Pro plan ve üzeri organizasyonlar için kullanılabilen premium bir özelliktir. Ayrıntılı etkileşim verileri için yükseltin.",
+          "description": "Kurs Analitiği, yalnızca Pro plan ve üzeri okullar için kullanılabilen premium bir özelliktir. Ayrıntılı etkileşim verileri için yükseltin.",
           "title": "Pro Özellik"
         },
         "custom_domains": {
-          "description": "Özel Alan Adları, yalnızca Standart plan ve üzeri organizasyonlar için kullanılabilen premium bir özelliktir. Markalı deneyim için kendi alan adınızı kullanmak üzere yükseltin.",
+          "description": "Özel Alan Adları, yalnızca Standart plan ve üzeri okullar için kullanılabilen premium bir özelliktir. Markalı deneyim için kendi alan adınızı kullanmak üzere yükseltin.",
           "title": "Standart Özellik"
         },
         "podcasts": {
-          "description": "Podcastler, yalnızca Standart plan ve üzeri organizasyonlar için kullanılabilen premium bir özelliktir. Üyelerinizle podcast oluşturmak ve paylaşmak için yükseltin.",
+          "description": "Podcastler, yalnızca Standart plan ve üzeri okullar için kullanılabilen premium bir özelliktir. Üyelerinizle podcast oluşturmak ve paylaşmak için yükseltin.",
           "title": "Standart Özellik"
         },
         "seo": {
-          "description": "SEO optimizasyon araçları yalnızca Standart plan ve üzeri organizasyonlar için kullanılabilir. Arama motoru görünümünü özelleştirmek için yükseltin.",
+          "description": "SEO optimizasyon araçları yalnızca Standart plan ve üzeri okullar için kullanılabilir. Arama motoru görünümünü özelleştirmek için yükseltin.",
           "title": "Standart Özellik"
         },
         "sso": {
-          "description": "Tek Oturum Açma (SSO), yalnızca Kurumsal plan organizasyonları için kullanılabilen premium bir özelliktir. Organizasyonunuzun kimlik sağlayıcısı ile güvenli kimlik doğrulamayı etkinleştirmek için yükseltin.",
+          "description": "Tek Oturum Açma (SSO), yalnızca Kurumsal plan okulları için kullanılabilen premium bir özelliktir. Okulunuzun kimlik sağlayıcısı ile güvenli kimlik doğrulamayı etkinleştirmek için yükseltin.",
           "title": "Kurumsal Özellik"
         },
         "boards": {
@@ -145,14 +156,14 @@
         "enable_feature": "Ayarlara Git",
         "names": {
           "courses": "Kurslar",
-          "communities": "Topluluklar",
+          "communities": "Veli Forum",
           "podcasts": "Podcastler",
           "payments": "Ödemeler",
           "trail": "İlerleme Takibi",
           "boards": "Panolar",
-          "playgrounds": "Playgrounds",
-          "library": "Kütüphane",
-          "folders": "Kütüphane"
+          "playgrounds": "Modüller",
+          "library": "Kaynaklar",
+          "folders": "Kaynaklar"
         },
         "public": {
           "title": "{{feature}} mevcut değil",
@@ -201,10 +212,9 @@
     "boards": "Panolar",
     "close": "Kapat",
     "optional": "isteğe bağlı",
-    "playgrounds": "Playgrounds",
+    "playgrounds": "Modüller",
     "analytics": "Analitik",
     "add": "Ekle",
-    "choose_an_organization_to_continue": "Devam etmek için bir organizasyon seçin",
     "for": "için",
     "powered_by": "Destekleyen",
     "results": "sonuç",
@@ -212,33 +222,44 @@
     "other": "Other",
     "disabled": "Disabled",
     "store": "Store",
-    "organizations": "Organizasyonlar",
+    "organizations": "Okullar",
     "billing": "Faturalandırma",
-    "create_organization": "Organizasyon oluştur",
-    "copyright": "© {{year}} LearnHouse, Inc.",
-    "delete_organization_error": "Bu organizasyon silinemedi. Lütfen tekrar deneyin.",
-    "org_actions": "Organizasyon işlemleri",
+    "create_organization": "Okul Oluştur",
+    "copyright": "© {{year}} Oxonom Edu, Inc.",
+    "delete_organization_error": "Bu okul silinemedi. Lütfen tekrar deneyin.",
+    "org_actions": "Okul işlemleri",
     "manage_upgrade": "Yönet / Yükselt",
-    "delete_organization": "Organizasyonu sil",
-    "delete_organization_warning": "Bu işlem {{name}} organizasyonunu ve tüm verilerini kalıcı olarak siler. Bu işlem geri alınamaz.",
+    "delete_organization": "Okulu sil",
+    "delete_organization_warning": "Bu işlem {{name}} okulunu ve tüm verilerini kalıcı olarak siler. Bu işlem geri alınamaz.",
     "delete_organization_confirm_label": "Onaylamak için {{slug}} yazın",
     "deleting": "Siliniyor…",
     "retry": "Yeniden Dene",
-    "leave_organization": "Kuruluştan ayrıl",
-    "leave_organization_title": "Kuruluştan ayrılmak istiyor musunuz?",
+    "leave_organization": "Okuldan ayrıl",
+    "leave_organization_title": "Okuldan ayrılmak istiyor musunuz?",
     "leave_organization_desc": "{{org}} erişiminizi kaybedecek ve üyelerinden çıkarılacaksınız. Davet edilmeniz hâlinde daha sonra tekrar katılabilirsiniz.",
-    "leave_organization_error": "Bu kuruluştan ayrılamadık. Lütfen tekrar deneyin.",
+    "leave_organization_error": "Bu okuldan ayrılamadık. Lütfen tekrar deneyin.",
     "leaving": "Ayrılıyor…"
   },
   "banner": {
     "viewing_as_guest": "{{name}} sitesini misafir olarak görüntülüyorsunuz.",
-    "join_organization": "Bu organizasyona katılın",
+    "join_organization": "Bu okula katılın",
     "to_access_features": "tüm özelliklere erişmek için.",
     "free_plan_upgrade": "Ücretsiz plandasınız. Tüm deneyimin kilidini açmak için yükseltin.",
     "free_plan_upgrade_button": "Yükselt"
   },
+  "demo": {
+    "banner_title": "Paylaşımlı demo ortamındasınız.",
+    "banner_body_countdown": "Buradaki tüm veriler örnektir; yaptığınız değişiklikler {{countdown}} sonra sıfırlanır.",
+    "banner_body": "Buradaki tüm veriler örnektir ve periyodik olarak sıfırlanır.",
+    "reset_imminent": "birkaç saniye içinde",
+    "create_org": "Kendi okulunuzu oluşturun",
+    "create_your_own": "Kendi Okulunuzu Oluşturun"
+  },
   "auth": {
     "login": "Giriş Yap",
+    "demo_admin_login": "🛡️ Demo Okul Yönetimi ile Keşfet",
+    "demo_teacher_login": "⚡ Demo Öğretmen Hesabı ile Keşfet",
+    "demo_student_login": "🎓 Demo Öğrenci Hesabı ile Keşfet",
     "email": "E-posta",
     "password": "Şifre",
     "forgot_password": "Şifrenizi mi unuttunuz?",
@@ -307,12 +328,12 @@
     "remember_password": "Şifrenizi hatırladınız mı?",
     "verifying_your_email": "E-postanız doğrulanıyor",
     "try_again_in": "{{minutes}} dk sonra tekrar deneyin",
-    "join_organization": "Organizasyona katıl",
-    "join_organization_desc": "Bu organizasyona katılmak üzeresiniz",
-    "join_organization_success": "Organizasyona başarıyla katıldınız",
+    "join_organization": "Okula katıl",
+    "join_organization_desc": "Bu okula katılmak üzeresiniz",
+    "join_organization_success": "Okula başarıyla katıldınız",
     "joining": "Katılıyor",
     "invite_required": "Davet gerekli",
-    "invite_required_desc": "{{org}} organizasyonuna katılmak için davet kodu gerekli",
+    "invite_required_desc": "{{org}} okuluna katılmak için davet kodu gerekli",
     "invite_code": "Davet kodu",
     "validate_invite": "Daveti doğrula",
     "account_locked_message": "Çok fazla başarısız giriş denemesi nedeniyle hesabınız geçici olarak kilitlendi. Lütfen daha sonra tekrar deneyin.",
@@ -322,7 +343,7 @@
     "create_your_account": "Hesabınızı oluşturun",
     "email_not_verified_message": "Lütfen giriş yapmadan önce e-posta adresinizi doğrulayın. Gelen kutunuzda doğrulama e-postasını kontrol edin.",
     "email_verification_required": "E-posta Doğrulaması Gerekli",
-    "email_verification_required_join": "Lütfen bir organizasyona katılmadan önce e-posta adresinizi doğrulayın. Gelen kutunuzda doğrulama e-postasını kontrol edin.",
+    "email_verification_required_join": "Lütfen bir okula katılmadan önce e-posta adresinizi doğrulayın. Gelen kutunuzda doğrulama e-postasını kontrol edin.",
     "email_verified_message": "E-postanız başarıyla doğrulandı. Artık hesabınıza giriş yapabilirsiniz.",
     "email_verified_success": "E-posta Doğrulandı!",
     "login_failed": "Giriş Başarısız",
@@ -359,7 +380,7 @@
       "success": "Kimlik Doğrulama Başarılı",
       "tips": {
         "access_denied": "Giriş isteğini yanlışlıkla reddettiyseniz, tekrar deneyin ve izinleri kabul edin.",
-        "domain_not_allowed": "E-posta alan adınızın izin verilip verilmediğini doğrulamak için organizasyon yöneticinizle iletişime geçin.",
+        "domain_not_allowed": "E-posta alan adınızın izin verilip verilmediğini doğrulamak için okul yöneticinizle iletişime geçin.",
         "invalid_state": "Oturumunuz sona ermiş olabilir. Lütfen tekrar giriş yapın.",
         "server_error": "Kimlik sağlayıcısı sorunlar yaşıyor. Lütfen daha sonra tekrar deneyin."
       },
@@ -675,7 +696,7 @@
       "all_courses": "Tüm Kurslar",
       "filter_by_group": "Gruba göre filtrele",
       "info_title": "Kullanıcı Grubu Filtresi",
-      "info_description": "Yalnızca belirli bir gruba atanmış kursları görmek için kursları kullanıcı grubuna göre filtreleyin. Aynı organizasyonu paylaşan aileler veya ekipler için kullanışlıdır."
+      "info_description": "Yalnızca belirli bir gruba atanmış kursları görmek için kursları kullanıcı grubuna göre filtreleyin. Aynı okulu paylaşan aileler veya ekipler için kullanışlıdır."
     },
     "copied": "Kopyalandı!",
     "quit_course_confirm": "Bu kurstan çıkmak istediğinizden emin misiniz? Tüm ilerlemenizi kaybedersiniz.",
@@ -690,7 +711,7 @@
     "sign_in_to_see_courses_description": "Bu akademideki kurslar yalnızca giriş yaptıktan sonra görüntülenebilir."
   },
   "communities": {
-    "title": "Topluluklar",
+    "title": "Veli Forum",
     "new_community": "Yeni Topluluk",
     "no_communities": "Henüz topluluk yok",
     "no_communities_description": "Tartışmalara başlamak için bir topluluk oluşturun",
@@ -830,16 +851,16 @@
   },
   "podcasts": {
     "podcasts": "Podcastler",
-    "browse_description": "Bu organizasyonun podcastlerini dinleyin",
+    "browse_description": "Bu okulun podcastlerini dinleyin",
     "new_podcast": "Yeni Podcast",
     "search_placeholder": "Podcast ara...",
     "no_podcasts": "Henüz podcast yok",
     "no_podcasts_description": "Şu anda mevcut podcast yok",
     "no_search_results": "Podcast bulunamadı",
     "try_different_search": "Farklı bir arama terimi deneyin",
-    "episodes": "Bölümler",
-    "no_episodes": "Henüz bölüm yok",
-    "hosted_by": "Sunan",
+    "episodes": "İçerikler",
+    "no_episodes": "Henüz içerik yok",
+    "hosted_by": "Yükleyen",
     "tags": "Etiketler",
     "manage_podcast": "Podcast'i Yönet",
     "published": "Yayınlandı",
@@ -849,12 +870,12 @@
     "listen_now": "Şimdi Dinle",
     "delete_podcast": "Podcast'i Sil",
     "delete_podcast_title": "Podcast silinsin mi?",
-    "delete_podcast_confirm": "Bu podcast'i silmek istediğinizden emin misiniz? Bu işlem geri alınamaz ve tüm bölümler silinecektir.",
+    "delete_podcast_confirm": "Bu podcast'i silmek istediğinizden emin misiniz? Bu işlem geri alınamaz ve tüm içerikler silinecektir.",
     "deleting_podcast": "Podcast siliniyor...",
     "podcast_deleted_success": "Podcast başarıyla silindi",
     "podcast_deleted_error": "Podcast silinemedi",
     "edit_content": "İçeriği Düzenle",
-    "create_new_podcast": "Organizasyonunuz için yeni bir podcast oluşturun",
+    "create_new_podcast": "Okulunuz için yeni bir podcast oluşturun",
     "create_podcast": "Podcast Oluştur",
     "create_podcast_btn": "Podcast Oluştur",
     "create_podcasts_placeholder": "Hedef kitlenizle ses içeriğini paylaşmak için podcastler oluşturun",
@@ -863,35 +884,35 @@
       "episodes": {
         "audio_hint": "MP3, WAV veya M4A dosyaları desteklenir",
         "audio_label": "Ses Dosyası",
-        "create": "Bölüm Oluştur",
-        "create_error": "Bölüm oluşturulamadı",
-        "create_first": "İlk Bölümü Oluştur",
-        "created": "Bölüm oluşturuldu",
-        "creating": "Bölüm oluşturuluyor...",
+        "create": "İçerik Ekle",
+        "create_error": "İçerik eklenemedi",
+        "create_first": "İlk İçeriği Ekle",
+        "created": "İçerik eklendi",
+        "creating": "İçerik yükleniyor...",
         "delete": "Sil",
-        "delete_confirm": "Bu bölümü silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.",
-        "delete_error": "Bölüm silinemedi",
-        "delete_title": "Bölüm Silinsin mi?",
-        "deleted": "Bölüm silindi",
-        "deleting": "Bölüm siliniyor...",
+        "delete_confirm": "Bu içeriği silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.",
+        "delete_error": "İçerik silinemedi",
+        "delete_title": "İçerik Silinsin mi?",
+        "deleted": "İçerik silindi",
+        "deleting": "İçerik siliniyor...",
         "description_label": "Açıklama",
-        "description_placeholder": "Bölüm açıklamasını girin",
+        "description_placeholder": "İçerik açıklamasını girin",
         "edit": "Düzenle",
-        "edit_episode": "Bölümü Düzenle",
-        "edit_episode_description": "Bölüm ayrıntılarını güncelleyin",
-        "new_episode": "Yeni Bölüm",
-        "new_episode_description": "Bu podcasta yeni bir bölüm ekleyin",
+        "edit_episode": "İçeriği Düzenle",
+        "edit_episode_description": "İçerik ayrıntılarını güncelleyin",
+        "new_episode": "Yeni İçerik",
+        "new_episode_description": "Bu podcasta yeni bir içerik ekleyin",
         "no_audio": "Ses dosyası yok",
-        "no_episodes_description": "İlk bölümünüzü ekleyerek başlayın",
+        "no_episodes_description": "İlk içeriğinizi ekleyerek başlayın",
         "publish": "Yayınla",
         "replace_audio": "Ses Dosyasını Değiştir",
         "save": "Değişiklikleri Kaydet",
         "title_label": "Başlık",
-        "title_placeholder": "Bölüm başlığını girin",
+        "title_placeholder": "İçerik başlığını girin",
         "unpublish": "Yayından Kaldır",
-        "update_error": "Bölüm güncellenemedi",
-        "updated": "Bölüm güncellendi",
-        "updating": "Bölüm güncelleniyor...",
+        "update_error": "İçerik güncellenemedi",
+        "updated": "İçerik güncellendi",
+        "updating": "İçerik güncelleniyor...",
         "upload_audio": "Ses Dosyası Yükle"
       },
       "form": {
@@ -899,7 +920,7 @@
         "about_max_length": "Hakkında en fazla 2000 karakter olmalıdır",
         "about_placeholder": "Dinleyicilere bu podcast hakkında daha fazla bilgi verin...",
         "public_hint": "Herkes bu podcasti bulabilir ve dinleyebilir",
-        "published_hint": "Bu podcasti organizasyon sayfanızda görünür yapın",
+        "published_hint": "Bu podcasti okul sayfanızda görünür yapın",
         "tags_hint": "Etiketleri virgülle ayırın",
         "tags_placeholder": "müzik, eğitim, teknoloji",
         "thumbnail": "Küçük Resim",
@@ -912,7 +933,7 @@
       "saved": "Değişiklikler kaydedildi",
       "saving": "Kaydediliyor...",
       "tabs": {
-        "episodes": "Bölümler",
+        "episodes": "İçerikler",
         "general": "Genel"
       },
       "view_podcast": "Podcasti Gör"
@@ -1091,7 +1112,7 @@
     "download_failed": "PDF oluşturulamadı. Lütfen tekrar deneyin."
   },
   "search": {
-    "search_placeholder": "Kursları, kullanıcıları, koleksiyonları ara...",
+    "search_placeholder": "Ders kaynakları, panolar, konular ara...",
     "no_results_found": "Sonuç bulunamadı",
     "no_results_description": "\"{{query}}\" için herhangi bir eşleşme bulamadık. Arama terimlerinizi ayarlamayı deneyin veya öne çıkan içeriklerimize göz atın.",
     "found_results": "\"{{query}}\" için {{count}} sonuç bulundu",
@@ -1159,7 +1180,7 @@
     "no_purchased_courses": "Henüz satın alınmış kurs yok",
     "purchased_courses_description": "Satın aldığınız veya abone olduğunuz kurslar burada görünecek",
     "purchases": "Satın Alımlar",
-    "back_home": "Organizasyonlara dön",
+    "back_home": "Okullara dön",
     "subtitle": "Profilinizi, güvenliğinizi ve hesabınızı yönetin",
     "section": {
       "profile": "Profil",
@@ -1227,7 +1248,7 @@
           "briefcase": "Çanta",
           "education": "Eğitim",
           "location": "Konum",
-          "organization": "Organizasyon",
+          "organization": "Okul",
           "speciality": "Uzmanlık",
           "website": "Web sitesi",
           "tech": "Teknoloji",
@@ -1300,7 +1321,7 @@
           },
           "affiliation": {
             "label": "Bağlılık",
-            "description": "Organizasyonel bağlılıklar ekleyin"
+            "description": "Okulel bağlılıklar ekleyin"
           },
           "courses": {
             "label": "Kurslar",
@@ -1350,8 +1371,8 @@
             "items": "Deneyim Öğeleri",
             "role_title": "Başlık",
             "role_placeholder": "Pozisyon veya rol",
-            "organization": "Organizasyon",
-            "organization_placeholder": "Şirket veya organizasyon",
+            "organization": "Okul",
+            "organization_placeholder": "Şirket veya okul",
             "start_date": "Başlangıç Tarihi",
             "end_date": "Bitiş Tarihi",
             "current": "Mevcut",
@@ -1379,11 +1400,11 @@
             "title": "Bağlılık",
             "affiliations": "Bağlılıklar",
             "name": "Ad",
-            "name_placeholder": "Organizasyon adı",
+            "name_placeholder": "Okul adı",
             "logo_url": "Logo URL'si",
-            "logo_url_placeholder": "Organizasyon logosunun URL'si",
+            "logo_url_placeholder": "Okul logosunun URL'si",
             "description": "Açıklama",
-            "description_placeholder": "Organizasyon açıklaması",
+            "description_placeholder": "Okul açıklaması",
             "add_affiliation": "Bağlılık Ekle"
           },
           "courses": {
@@ -1444,12 +1465,12 @@
           "description": "Kursları, bölümleri ve etkinlikleri oluşturun ve yönetin"
         },
         "organization": {
-          "title": "Organizasyon",
-          "description": "Organizasyonunuzun genel ayarlarını yapılandırın"
+          "title": "Okul",
+          "description": "Okulunuzun genel ayarlarını yapılandırın"
         },
         "users": {
           "title": "Kullanıcılar",
-          "description": "Organizasyonunuzun kullanıcılarını ve rollerini yönetin"
+          "description": "Okulunuzun kullanıcılarını ve rollerini yönetin"
         },
         "account_settings": {
           "title": "Hesap Ayarları",
@@ -1459,12 +1480,12 @@
       "learnhouse_university": "LearnHouse Üniversitesi",
       "welcome_back": "Tekrar hoş geldiniz",
       "plan": "plan",
-      "create_course": "Kurs Oluştur",
+      "create_course": "Pano Oluştur",
       "analytics": "Analitik",
       "members": "Üyeler",
       "settings": "Ayarlar",
-      "courses": "Kurslar",
-      "communities": "Topluluklar",
+      "courses": "Dersler",
+      "communities": "Veli Forum",
       "podcasts": "Podcast'ler",
       "boards": "Panolar",
       "published": "yayınlandı",
@@ -1482,10 +1503,10 @@
       "signups_30d": "Kayıtlar (30g)",
       "enrollments_30d": "Kayıtlar (30g)",
       "completions_30d": "Tamamlamalar (30g)",
-      "recent_courses": "Son Kurslar",
+      "recent_courses": "Son Panolar",
       "view_all": "Tümünü Gör",
-      "no_courses_yet": "Henüz kurs yok",
-      "create_your_first_course": "İlk kursunuzu oluşturun",
+      "no_courses_yet": "Henüz pano yok",
+      "create_your_first_course": "İlk panonuzu oluşturun",
       "chapter": "bölüm",
       "chapters": "bölümler",
       "recent_members": "Son Üyeler",
@@ -1845,7 +1866,8 @@
           "tabs": {
             "general": "Genel",
             "thumbnail": "Küçük Resim",
-            "course": "Bağlı Kurs",
+            "course": "Bağlı Sınıflar",
+            "class": "Bağlı Sınıflar",
             "moderation": "Moderasyon",
             "access": "Erişim"
           },
@@ -1858,8 +1880,12 @@
             "subtitle": "Topluluk kapak resmini güncelleyin"
           },
           "course": {
-            "title": "Bağlı Kurs",
-            "subtitle": "Bu topluluğu bir kursa bağlayın"
+            "title": "Bağlı Sınıflar",
+            "subtitle": "Bu forumun bağlı olduğu sınıfları yönetin"
+          },
+          "class": {
+            "title": "Bağlı Sınıflar",
+            "subtitle": "Bu forumun bağlı olduğu sınıfları yönetin"
           },
           "moderation": {
             "title": "Moderasyon",
@@ -1871,23 +1897,58 @@
           }
         },
         "course": {
-          "title": "Bağlı Kurs",
-          "subtitle": "Kursa özel tartışmalar için bu topluluğu bir kursa bağlayın",
+          "title": "Bağlı Sınıflar",
+          "subtitle": "Sınıfa özel tartışmalar için bu forumu sınıflara bağlayın",
           "currently_linked": "Şu anda bağlı",
           "unlink": "Bağlantıyı Kaldır",
-          "link_button": "Kurs Bağla",
-          "search_placeholder": "Kurs ara...",
-          "no_courses": "Kurs bulunamadı",
-          "course_linked_id": "Kurs bağlandı (ID: {{id}})",
-          "course_not_found": "Bağlı kurs artık mevcut olmayabilir veya erişim izniniz yok",
+          "link_button": "Sınıf Bağla",
+          "search_placeholder": "Sınıf ara...",
+          "no_courses": "Sınıf bulunamadı",
+          "course_linked_id": "Sınıf bağlandı (ID: {{id}})",
+          "course_not_found": "Bağlı sınıf artık mevcut olmayabilir veya erişim izniniz yok",
           "toasts": {
-            "linking": "Kurs bağlanıyor...",
-            "link_success": "Kurs başarıyla bağlandı",
-            "link_error": "Kurs bağlanamadı",
-            "unlinking": "Kurs bağlantısı kaldırılıyor...",
-            "unlink_success": "Kurs bağlantısı başarıyla kaldırıldı",
-            "unlink_error": "Kurs bağlantısı kaldırılamadı"
+            "linking": "Sınıf bağlanıyor...",
+            "link_success": "Sınıf başarıyla bağlandı",
+            "link_error": "Sınıf bağlanamadı",
+            "unlinking": "Sınıf bağlantısı kaldırılıyor...",
+            "unlink_success": "Sınıf bağlantısı başarıyla kaldırıldı",
+            "unlink_error": "Sınıf bağlantısı kaldırılamadı"
           }
+        },
+        "class": {
+          "title": "Bağlı Sınıflar",
+          "subtitle": "Forum erişimini belirli sınıflara sınırlandırın veya birden fazla sınıf bağlayın",
+          "currently_linked": "Bağlı Sınıflar",
+          "no_classes_linked": "Henüz bağlı bir sınıf yok (Bu forum tüm okula açık)",
+          "unlink": "Bağlantıyı Kaldır",
+          "link_button": "Sınıfı Bağla",
+          "search_placeholder": "Sınıf veya şube ara...",
+          "all_classes": "Okuldaki Tüm Sınıflar",
+          "no_classes": "Henüz kayıtlı sınıf bulunmuyor",
+          "students_count": "{{count}} öğrenci",
+          "toasts": {
+            "linking": "Sınıf bağlanıyor...",
+            "link_success": "Sınıf başarıyla bağlandı",
+            "link_error": "Sınıf bağlanamadı",
+            "unlinking": "Sınıf bağlantısı kaldırılıyor...",
+            "unlink_success": "Sınıf bağlantısı kaldırıldı",
+            "unlink_error": "Sınıf bağlantısı kaldırılamadı"
+          }
+        },
+        "scope": {
+          "title": "Forum Görünürlük Kapsamı",
+          "subtitle": "Bu forumun kimler tarafından görüntülenebileceğini belirleyin",
+          "all_school_title": "Okul Geneli (Tüm Okul)",
+          "all_school_desc": "Tüm öğrenci, öğretmen ve okul üyeleri bu foruma erişebilir ve mesaj paylaşabilir.",
+          "class_specific_title": "Sınıf Bazlı (Belirli Sınıflar)",
+          "class_specific_desc": "Yalnızca seçilen sınıflardaki öğrenciler ve yetkili öğretmenler bu forumu görebilir.",
+          "select_classes_label": "Erişimi olan sınıfları seçin:",
+          "search_placeholder": "Sınıf ara...",
+          "select_all": "Tümünü Seç",
+          "deselect_all": "Seçimi Temizle",
+          "selected_count": "{{count}} sınıf seçildi",
+          "must_select_class": "Lütfen en az bir sınıf seçin veya Okul Geneli seçeneğini tercih edin.",
+          "no_classes_warning": "Okulda tanımlı sınıf bulunamadı. Önce Sınıflar panelinden sınıf oluşturun."
         },
         "general": {
           "title": "Topluluk Ayarları",
@@ -2276,8 +2337,8 @@
     },
     "organization": {
       "settings": {
-        "title": "Organizasyon Ayarları",
-        "subtitle": "Organizasyonunuzun profilini ve yapılandırmasını yönetin",
+        "title": "Okul Ayarları",
+        "subtitle": "Okulunuzun profilini ve yapılandırmasını yönetin",
         "tabs": {
           "general": "Genel",
           "landing": "Açılış Sayfası",
@@ -2290,88 +2351,123 @@
           "usage": "Kullanım",
           "seo": "SEO",
           "automations": "Otomasyonlar",
-          "api": "API Access",
-          "menu": "Menu",
+          "api": "API Erişimi",
+          "menu": "Menü",
+          "course_end": "Kurs Sonu Ekranı",
           "danger": "Tehlike Bölgesi"
         },
         "pages": {
           "general": {
             "title": "Genel",
-            "subtitle": "Organizasyon yapılandırmasını yönetin"
+            "subtitle": "Okul yapılandırmasını yönetin"
           },
           "branding": {
             "title": "Marka",
-            "subtitle": "Organizasyonunuzun görsel kimliğini ve sosyal varlığını yönetin"
+            "subtitle": "Okulunuzun görsel kimliğini ve sosyal varlığını yönetin"
           },
           "landing": {
             "title": "Açılış Sayfası",
-            "subtitle": "Organizasyonunuzun açılış sayfasını özelleştirin"
+            "subtitle": "Okulunuzun açılış sayfasını özelleştirin"
           },
           "other": {
             "title": "Diğer",
-            "subtitle": "Diğer organizasyon yapılandırmalarını yönetin"
+            "subtitle": "Diğer okul yapılandırmalarını yönetin"
           },
           "ai": {
             "title": "Yapay Zeka Özellikleri",
-            "subtitle": "Organizasyonunuz için yapay zeka yeteneklerini yapılandırın"
+            "subtitle": "Okulunuz için yapay zeka yeteneklerini yapılandırın"
           },
           "features": {
             "title": "Özellikler",
-            "subtitle": "Organizasyonunuz için özellikleri etkinleştirin veya devre dışı bırakın"
+            "subtitle": "Okulunuz için özellikleri etkinleştirin veya devre dışı bırakın"
           },
           "domains": {
-            "subtitle": "Organizasyonunuz için özel alan adlarını yapılandırın",
+            "subtitle": "Okulunuz için özel alan adlarını yapılandırın",
             "title": "Özel Alan Adları"
           },
           "sso": {
-            "subtitle": "Organizasyonunuz için SSO yapılandırın",
+            "subtitle": "Okulunuz için SSO yapılandırın",
             "title": "Tek Oturum Açma"
           },
           "usage": {
-            "subtitle": "Organizasyonunuzun kaynak kullanımını ve plan limitlerini izleyin",
+            "subtitle": "Okulunuzun kaynak kullanımını ve plan limitlerini izleyin",
             "title": "Kullanım"
           },
           "api": {
-            "title": "API Access",
-            "subtitle": "Manage API tokens and programmatic access"
+            "title": "API Erişimi",
+            "subtitle": "API anahtarlarını ve programatik erişimi yönetin"
           },
           "menu": {
-            "title": "Public menu",
-            "subtitle": "Choose and order the links shown in your public navigation"
+            "title": "Genel Menü",
+            "subtitle": "Genel gezinme çubuğunda gösterilen bağlantıları seçin ve sıralayın"
+          },
+          "course_end": {
+            "title": "Kurs Sonu Ekranı",
+            "subtitle": "Öğrencilerin bir ders veya eğitimi bitirdiklerinde görecekleri tebrik ekranını özelleştirin"
           },
           "danger": {
             "title": "Tehlike Bölgesi",
             "subtitle": "Bu kuruluş için geri alınamaz ve yıkıcı işlemler"
           }
         },
-        "name": "Organizasyon Adı",
-        "name_placeholder": "Organizasyonunuzun adı",
+        "name": "Okul Adı",
+        "name_placeholder": "Okulunuzun adı",
         "short_description": "Kısa Açıklama",
-        "short_description_placeholder": "Organizasyonunuz hakkında kısa bir açıklama",
-        "label": "Organizasyon Etiketi",
-        "label_placeholder": "Bir organizasyon etiketi seçin",
-        "about": "Organizasyon Hakkında",
-        "about_placeholder": "Organizasyonunuzun detaylı açıklaması",
+        "label": "Okul Etiketi",
+        "label_placeholder": "Bir okul etiketi seçin",
+        "categories": {
+          "languages": "Diller & Yabancı Dil",
+          "business": "İş & Yönetim",
+          "ecommerce": "E-Ticaret",
+          "gaming": "Oyun Geliştirme",
+          "music": "Müzik",
+          "sports": "Beden Eğitimi & Spor",
+          "cars": "Otomotiv & Ulaşım",
+          "sales_marketing": "Pazarlama & Satış",
+          "tech": "Bilişim & Yazılım",
+          "photo_video": "Fotoğrafçılık & Medya",
+          "pets": "Veterinerlik & Hayvan Bakımı",
+          "personal_development": "Kişisel Gelişim & Rehberlik",
+          "real_estate": "Gayrimenkul",
+          "beauty_fashion": "Moda & Tasarım",
+          "travel": "Turizm & Seyahat",
+          "productivity": "Verimlilik & Çalışma",
+          "health_fitness": "Sağlık & Beden Gelişimi",
+          "finance": "Ekonomi & Finans",
+          "arts_crafts": "El Sanatları & Tasarım",
+          "education": "Genel Eğitim",
+          "stem": "STEM (Fen, Teknoloji, Mühendislik, Matematik)",
+          "humanities": "Sosyal & Beşeri Bilimler",
+          "professional_skills": "Mesleki Beceriler",
+          "digital_skills": "Dijital Okuryazarlık",
+          "creative_arts": "Görsel & Sahne Sanatları",
+          "social_sciences": "Sosyal Bilgiler & Tarih",
+          "test_prep": "Sınav Hazırlık (LGS / YKS)",
+          "vocational": "Mesleki ve Teknik Eğitim",
+          "early_education": "Okul Öncesi & İlkokul"
+        },
+        "about": "Okul Hakkında",
+        "about_placeholder": "Okulunuzun detaylı açıklaması",
         "showcase_explore": "LearnHouse Explore'da göster",
-        "showcase_description": "Organizasyonunuzun kurslarını ve içeriklerini LearnHouse topluluğuyla paylaşın. Öğrencilerin değerli eğitim kaynaklarını keşfetmelerine yardımcı olmak için bunu etkinleştirin.",
+        "showcase_description": "Okulunuzun kurslarını ve içeriklerini LearnHouse topluluğuyla paylaşın. Öğrencilerin değerli eğitim kaynaklarını keşfetmelerine yardımcı olmak için bunu etkinleştirin.",
         "save_changes": "Değişiklikleri Kaydet",
         "saving": "Kaydediliyor...",
-        "update_success": "Organizasyon bilgileri güncellendi",
-        "update_error": "Organizasyon bilgileri güncellenemedi",
-        "updating": "Organizasyon bilgileri güncelleniyor...",
+        "update_success": "Okul bilgileri güncellendi",
+        "update_error": "Okul bilgileri güncellenemedi",
+        "updating": "Okul bilgileri güncelleniyor...",
         "footer_text": "Alt Bilgi Metni",
         "footer_text_placeholder": "Alt bilgi metnini girin...",
         "footer_text_desc": "Kuruluş sayfalarınızın altında görüntülenen özel metin",
         "default_language": "Varsayılan dil",
         "default_language_desc": "Yeni ziyaretçilerin varsayılan olarak gördüğü ve bu kuruluş adına gönderilen e-postalarda kullanılan dil. Üyeler kendi arayüz dillerini değiştirmeye devam edebilir.",
-        "watermark_desc": "Organizasyon sayfalarınızda LearnHouse marka filigranını gösterin",
+        "watermark_desc": "Okul sayfalarınızda LearnHouse marka filigranını gösterin",
         "watermark_free_plan": "Filigran ücretsiz planda her zaman gösterilir",
         "watermark_label": "\"Made with LearnHouse\" filigranı",
         "watermark_ee": "Enterprise Edition lisansınız tarafından gizlendi"
       },
       "images": {
         "title": "Resimler ve Önizlemeler",
-        "subtitle": "Organizasyonunuzun logosunu, küçük resmini ve önizleme resimlerini yönetin",
+        "subtitle": "Okulunuzun logosunu, küçük resmini ve önizleme resimlerini yönetin",
         "tabs": {
           "logo": "Logo",
           "thumbnail": "Küçük Resim",
@@ -2423,17 +2519,108 @@
       },
       "branding": {
         "title": "Marka",
-        "subtitle": "Organizasyonunuzun görsel kimliğini ve sosyal varlığını yönetin",
+        "subtitle": "Okulunuzun görsel kimliğini ve sosyal varlığını yönetin",
         "tabs": {
           "images": "Resimler ve Önizlemeler",
-          "social": "Sosyal Bağlantılar",
           "theme": "Tema",
-          "auth": "Kimlik Doğrulama"
+          "social": "Sosyal Bağlantılar",
+          "auth": "Giriş Sayfası",
+          "logos": "Logolar",
+          "previews": "Önizlemeler"
+        },
+        "where_it_appears": "Göründüğü Yerler",
+        "specs": {
+          "formats": "PNG veya JPG",
+          "max_size": "En fazla 5 MB",
+          "wide_size": "Yaklaşık 400×200 px",
+          "square_size": "512×512 px, köşesiz",
+          "favicon_size": "64×64 px",
+          "thumbnail_size": "1200×600 px",
+          "transparent_png": "Şeffaf (transparent) PNG önerilir"
+        },
+        "logos": {
+          "wide": {
+            "title": "Geniş Logo",
+            "description": "Ana okul logonuz. Genel üst menüde, sertifikalarda ve yatay logonun kullanıldığı her alanda yer alır.",
+            "add": "Geniş logo ekle",
+            "replace": "Geniş logoyu değiştir"
+          },
+          "square": {
+            "title": "Kare Logo (Simge)",
+            "description": "Kare alanlar için kompakt logo: giriş paneli, okul değiştirici ve sol menü. Bir kare logo eklenene kadar geniş logo kullanılır.",
+            "add": "Kare logo ekle",
+            "replace": "Kare logoyu değiştir",
+            "inherited": "Şu an geniş logo kullanılıyor. Alanı tam doldurması için kare logo yükleyebilirsiniz."
+          },
+          "favicon": {
+            "title": "Favicon (Tarayıcı İkonu)",
+            "description": "Tarayıcı sekmesinde ve yer imlerinde görünen küçük okul simgesi.",
+            "add": "Favicon ekle",
+            "replace": "Faviconu değiştir"
+          },
+          "toasts": {
+            "uploading": "Yükleniyor…",
+            "wide_success": "Geniş logo güncellendi",
+            "wide_error": "Geniş logo yüklenemedi",
+            "square_success": "Kare logo güncellendi",
+            "square_error": "Kare logo yüklenemedi",
+            "favicon_success": "Favicon güncellendi",
+            "favicon_error": "Favicon yüklenemedi"
+          }
+        },
+        "vignettes": {
+          "public_header": "Genel Üst Bilgi",
+          "sign_in": "Giriş Sayfası",
+          "org_switcher": "Okul Değiştirici",
+          "sidebar": "Panel Sol Menüsü",
+          "browser_tab": "Tarayıcı Sekmesi",
+          "certificate": "Sertifika",
+          "explore_card": "Keşfet Kartı",
+          "link_preview": "Bağlantı Önizlemesi",
+          "gallery": "Önizleme Galerisi",
+          "footer": "Alt Bilgi (Footer)"
+        },
+        "theme": {
+          "color_title": "Ana Renk",
+          "color_desc": "Üst gezinme çubuğunu ve arka planı renklendirir. Beyaz başlık için boş bırakabilirsiniz.",
+          "no_color": "Renk yok",
+          "clear": "Temizle",
+          "font_title": "Yazı Tipi (Font)",
+          "font_desc": "Tüm genel sayfalarda kullanılır. Listeden seçin veya Google Fonts'ta arayın.",
+          "search_fonts": "Yazı tipi ara…",
+          "no_fonts": "Yazı tipi bulunamadı",
+          "all_fonts": "Tüm Google Fonts sonuçları gösteriliyor",
+          "default": "varsayılan",
+          "preview": "Canlı Önizleme",
+          "note": "Değişiklikler kaydettiğinizde genel sayfalara uygulanır."
+        },
+        "auth": {
+          "message_title": "Karşılama Mesajı",
+          "message_desc": "Giriş ve kayıt sayfalarında okul adınızın altında gösterilir. Varsayılan için boş bırakabilirsiniz.",
+          "background_title": "Arka Plan",
+          "background_desc": "Giriş panelinde logonuzun arkasında yer alan görsel: varsayılan gradyan veya yükleyeceğiniz özel görsel.",
+          "text_title": "Metin Rengi",
+          "text_desc": "Koyu arka planlar için açık metin, açık arka planlar için koyu metin seçin.",
+          "preview_note": "Logo kutusu kare logonuzu kullanır; yoksa geniş logonuzu sığdırır."
+        },
+        "social": {
+          "title": "Sosyal Medya Profilleri",
+          "description": "Tüm genel sayfaların altbilgi (footer) kısmında listelenir.",
+          "links_title": "Özel Bağlantılar",
+          "links_desc": "Altbilgiye eklenecek en fazla 3 özel bağlantı (örn. resmi web sitesi veya yardım merkezi)."
+        },
+        "previews": {
+          "thumbnail_title": "Kapak Görseli",
+          "thumbnail_desc": "Okulunuz listelendiğinde veya bağlantısı paylaşıldığında görünen kapak resmi.",
+          "thumbnail_add": "Kapak görseli ekle",
+          "thumbnail_replace": "Kapak görselini değiştir",
+          "gallery_title": "Önizleme Galerisi",
+          "gallery_desc": "Okul tanıtımında gösterilecek en fazla 4 resim veya video. Sıralamak için sürükleyin."
         }
       },
       "socials": {
         "title": "Sosyal Bağlantılar",
-        "subtitle": "Organizasyonunuzun sosyal medya varlığını yönetin",
+        "subtitle": "Okulunuzun sosyal medya varlığını yönetin",
         "labels": {
           "social_links": "Sosyal Bağlantılar",
           "custom_links": "Özel Bağlantılar"
@@ -2447,12 +2634,12 @@
           "url": "URL"
         },
         "add_link": "Bağlantı Ekle",
-        "custom_links_desc": "Organizasyon profilinizde görüntülenecek en fazla 3 özel bağlantı ekleyebilirsiniz"
+        "custom_links_desc": "Okul profilinizde görüntülenecek en fazla 3 özel bağlantı ekleyebilirsiniz"
       },
       "scripts": {
         "title": "Scriptler",
-        "subtitle": "Organizasyonunuza özel JavaScript scriptleri ekleyin",
-        "warning": "Lütfen organizasyonunuzun güvenliğini sağlamak için eklemeden önce scriptlere güvendiğinizden ve onları anladığınızdan emin olun. Scriptler organizasyon sayfalarınızla etkileşime girebilir.",
+        "subtitle": "Okulunuza özel JavaScript scriptleri ekleyin",
+        "warning": "Lütfen okulunuzun güvenliğini sağlamak için eklemeden önce scriptlere güvendiğinizden ve onları anladığınızdan emin olun. Scriptler okul sayfalarınızla etkileşime girebilir.",
         "add_script": "Script Ekle",
         "no_scripts": "Henüz eklenmiş script yok",
         "add_first_script": "Başlamak için ilk scriptinizi ekleyin",
@@ -2470,9 +2657,9 @@
       },
       "ai": {
         "title": "Yapay Zeka Özellikleri",
-        "subtitle": "Organizasyonunuz için yapay zeka yeteneklerini yapılandırın",
+        "subtitle": "Okulunuz için yapay zeka yeteneklerini yapılandırın",
         "enable_ai": "Yapay Zeka Özelliklerini Etkinleştir",
-        "enable_ai_description": "Organizasyonunuzun içerik ve öğrenme deneyimlerinde yapay zeka destekli özelliklere izin verin",
+        "enable_ai_description": "Okulunuzun içerik ve öğrenme deneyimlerinde yapay zeka destekli özelliklere izin verin",
         "admin_only": "Yalnızca yöneticiler AI ayarlarını değiştirebilir.",
         "features_enabled": "Mevcut Yapay Zeka Özellikleri",
         "feature_editor": "Yapay zeka destekli içerik editörü yardımı",
@@ -2490,24 +2677,24 @@
       },
       "features": {
         "title": "Özellik Ayarları",
-        "subtitle": "Organizasyonunuz için özellikleri etkinleştirin veya devre dışı bırakın",
-        "admin_only": "Yalnızca organizasyon yöneticileri özellik ayarlarını değiştirebilir.",
+        "subtitle": "Okulunuz için özellikleri etkinleştirin veya devre dışı bırakın",
+        "admin_only": "Yalnızca okul yöneticileri özellik ayarlarını değiştirebilir.",
         "upgrade_notice": "Bu özelliği etkinleştirmek için {{plan}} planına yükseltin",
         "toggles": {
           "communities": {
             "title": "Topluluklar",
-            "description": "Organizasyon üyeleri için tartışma topluluklarını etkinleştir"
+            "description": "Okul üyeleri için tartışma topluluklarını etkinleştir"
           },
           "payments": {
             "title": "Ödemeler",
             "description": "Kurslar ve abonelikler için ödeme işlemlerini etkinleştir"
           },
           "courses": {
-            "description": "Organizasyonunuz için kursları ve ilerleme takibini etkinleştirin",
+            "description": "Okulunuz için kursları ve ilerleme takibini etkinleştirin",
             "title": "Kurslar"
           },
           "podcasts": {
-            "description": "Organizasyonunuz için podcast oluşturma ve ses içeriğini etkinleştirin",
+            "description": "Okulunuz için podcast oluşturma ve ses içeriğini etkinleştirin",
             "title": "Podcastler"
           },
           "boards": {
@@ -2525,12 +2712,12 @@
           "enabled": "{{feature}} etkinleştirildi",
           "disabled": "{{feature}} devre dışı bırakıldı",
           "error": "{{feature}} yapılandırması güncellenemedi",
-          "admin_only": "Yalnızca organizasyon yöneticileri özellikleri etkinleştirebilir veya devre dışı bırakabilir"
+          "admin_only": "Yalnızca okul yöneticileri özellikleri etkinleştirebilir veya devre dışı bırakabilir"
         }
       },
       "audit_logs": {
         "title": "Denetim Kayıtları",
-        "subtitle": "Organizasyonunuzdaki tüm aktiviteleri takip edin ve inceleyin",
+        "subtitle": "Okulunuzdaki tüm aktiviteleri takip edin ve inceleyin",
         "refresh": "Kayıtları Yenile",
         "export": "Dışa Aktar",
         "search_by": "Şuna göre ara",
@@ -2546,7 +2733,7 @@
           "all": "Tüm Kaynaklar",
           "user": "Kullanıcı",
           "course": "Kurs",
-          "org": "Organizasyon"
+          "org": "Okul"
         },
         "date_ranges": {
           "all": "Tüm Zamanlar",
@@ -2587,7 +2774,7 @@
       },
       "landing": {
         "title": "Açılış Sayfası",
-        "subtitle": "Organizasyonunuzun açılış sayfasını özelleştirin",
+        "subtitle": "Okulunuzun açılış sayfasını özelleştirin",
         "beta": "BETA",
         "save_changes": "Değişiklikleri Kaydet",
         "saving": "Kaydediliyor...",
@@ -2734,7 +2921,7 @@
           "selected": "Seçildi",
           "select": "Seç"
         },
-        "org_id_not_found": "Organizasyon kimliği bulunamadı",
+        "org_id_not_found": "Okul kimliği bulunamadı",
         "unknown_section_type": "Unknown section type"
       },
       "theme": {
@@ -2781,7 +2968,7 @@
         "delete_success": "SSO yapılandırması silindi",
         "deleting": "Siliniyor...",
         "enable_sso": "SSO Etkinleştir",
-        "enable_sso_desc": "Kullanıcıların organizasyonunuzun kimlik sağlayıcısını kullanarak kimlik doğrulaması yapmasına izin verin.",
+        "enable_sso_desc": "Kullanıcıların okulunuzun kimlik sağlayıcısını kullanarak kimlik doğrulaması yapmasına izin verin.",
         "load_error": "SSO yapılandırması yüklenemedi",
         "not_configured": "Yapılandırılmadı",
         "oidc_client_id": "İstemci Kimliği",
@@ -2803,10 +2990,10 @@
         "setup_not_available": "Kurulum portalı mevcut değil. Lütfen önce sağlayıcıyı yapılandırın.",
         "status_disabled": "Devre Dışı",
         "status_enabled": "Etkin",
-        "subtitle": "Organizasyonunuz için kurumsal SSO yapılandırın",
+        "subtitle": "Okulunuz için kurumsal SSO yapılandırın",
         "title": "Tek Oturum Açma (SSO)",
         "workos_info": "WorkOS, SAML ve OIDC kimlik sağlayıcıları desteğiyle kurumsal SSO sağlar.",
-        "workos_org_id": "WorkOS Organizasyon Kimliği",
+        "workos_org_id": "WorkOS Okul Kimliği",
         "workos_org_id_help": "Bu kimlik, kurulum portalı aracılığıyla SSO yapılandırdığınızda otomatik olarak oluşturulur."
       },
       "seo": {
@@ -2985,15 +3172,15 @@
         "pages": {
           "users": {
             "title": "Kullanıcılar",
-            "subtitle": "Organizasyonunuzdaki kullanıcıları yönetin ve rolleri ile izinlerini atayın"
+            "subtitle": "Okulunuzdaki kullanıcıları yönetin ve rolleri ile izinlerini atayın"
           },
           "signups": {
             "title": "Kayıtlar & Davet Kodları",
-            "subtitle": "Kullanıcıların organizasyonunuza nasıl katılacağını seçin"
+            "subtitle": "Kullanıcıların okulunuza nasıl katılacağını seçin"
           },
           "add": {
             "title": "Üye Davet Et",
-            "subtitle": "Organizasyonunuza yeni üyeler davet edin"
+            "subtitle": "Okulunuza yeni üyeler davet edin"
           },
           "usergroups": {
             "title": "Kullanıcı Grupları",
@@ -3005,7 +3192,7 @@
           },
           "audit_logs": {
             "title": "Denetim Kayıtları",
-            "subtitle": "Organizasyonunuzdaki tüm aktiviteleri takip edin ve inceleyin"
+            "subtitle": "Okulunuzdaki tüm aktiviteleri takip edin ve inceleyin"
           }
         },
         "mobile": {
@@ -3026,23 +3213,101 @@
         "failed_load": "Öğrenci dosyası yüklenemedi.",
         "back_to_students": "Öğrencilere geri dön",
         "no_behavioral": "Davranışsal veri yok (analitik bu dönem için yapılandırılmamış olabilir).",
-        "ranges": { "d30": "30 gün", "d90": "90 gün", "y1": "1 yıl" },
-        "kpi": { "courses": "Dersler", "completed": "{{count}} tamamlandı", "avg_progress": "Ort. ilerleme", "time_spent": "Harcanan süre", "assignments": "Ödevler", "avg_grade": "ort. {{grade}}", "certificates": "Sertifikalar", "connections": "Bağlantılar", "last": "son {{date}}" },
-        "tabs": { "connections": "Bağlantılar", "courses": "Dersler", "assignments": "Ödevler", "code": "Kod", "community": "Topluluk", "certificates": "Sertifikalar", "behavior": "Davranış" },
-        "identity": { "verified": "Doğrulandı", "unverified": "Doğrulanmadı", "via": "{{method}} ile" },
-        "connections": { "title": "Bağlantılar", "empty": "Henüz kayıtlı bağlantı yok." },
-        "courses": { "title": "Ders ilerlemesi", "empty": "Herhangi bir derse kayıtlı değil.", "activities": "{{done}}/{{total}} etkinlik", "enrolled": "{{date}} tarihinde kaydoldu" },
-        "assignments": { "title": "Ödevler", "empty": "Ödev gönderimi yok.", "attempt": "deneme {{number}}", "feedback": "Geri bildirim:" },
-        "code": { "title": "Kod alıştırmaları", "empty": "Kod gönderimi yok.", "activity": "Etkinlik", "result": "Sonuç", "tests": "Testler", "time": "Süre", "when": "Ne zaman", "passed": "Geçti", "failed": "Başarısız" },
-        "community": { "title": "Topluluk katılımı", "empty": "Topluluk etkinliği yok.", "discussions": "Tartışmalar", "comments": "Yorumlar" },
-        "certificates": { "title": "Kazanılan sertifikalar", "empty": "Kazanılmış sertifika yok." },
-        "behavior": { "title": "Davranışsal analitik", "time_by_course": "Derse göre harcanan süre", "searches": "Aramalar" },
-        "status": { "completed": "tamamlandı", "in_progress": "devam ediyor", "paused": "duraklatıldı", "cancelled": "iptal edildi", "graded": "notlandırıldı", "submitted": "gönderildi", "pending": "beklemede", "late": "geç", "not_submitted": "gönderilmedi" },
-        "comparison": { "student": "Öğrenci", "enrolled": "Kayıtlı", "completed": "Tamamlandı", "certificates": "Sertifikalar", "last_connection": "Son bağlantı", "view": "Görüntüle" }
+        "ranges": {
+          "d30": "30 gün",
+          "d90": "90 gün",
+          "y1": "1 yıl"
+        },
+        "kpi": {
+          "courses": "Dersler",
+          "completed": "{{count}} tamamlandı",
+          "avg_progress": "Ort. ilerleme",
+          "time_spent": "Harcanan süre",
+          "assignments": "Ödevler",
+          "avg_grade": "ort. {{grade}}",
+          "certificates": "Sertifikalar",
+          "connections": "Bağlantılar",
+          "last": "son {{date}}"
+        },
+        "tabs": {
+          "connections": "Bağlantılar",
+          "courses": "Dersler",
+          "assignments": "Ödevler",
+          "code": "Kod",
+          "community": "Topluluk",
+          "certificates": "Sertifikalar",
+          "behavior": "Davranış"
+        },
+        "identity": {
+          "verified": "Doğrulandı",
+          "unverified": "Doğrulanmadı",
+          "via": "{{method}} ile"
+        },
+        "connections": {
+          "title": "Bağlantılar",
+          "empty": "Henüz kayıtlı bağlantı yok."
+        },
+        "courses": {
+          "title": "Ders ilerlemesi",
+          "empty": "Herhangi bir derse kayıtlı değil.",
+          "activities": "{{done}}/{{total}} etkinlik",
+          "enrolled": "{{date}} tarihinde kaydoldu"
+        },
+        "assignments": {
+          "title": "Ödevler",
+          "empty": "Ödev gönderimi yok.",
+          "attempt": "deneme {{number}}",
+          "feedback": "Geri bildirim:"
+        },
+        "code": {
+          "title": "Kod alıştırmaları",
+          "empty": "Kod gönderimi yok.",
+          "activity": "Etkinlik",
+          "result": "Sonuç",
+          "tests": "Testler",
+          "time": "Süre",
+          "when": "Ne zaman",
+          "passed": "Geçti",
+          "failed": "Başarısız"
+        },
+        "community": {
+          "title": "Topluluk katılımı",
+          "empty": "Topluluk etkinliği yok.",
+          "discussions": "Tartışmalar",
+          "comments": "Yorumlar"
+        },
+        "certificates": {
+          "title": "Kazanılan sertifikalar",
+          "empty": "Kazanılmış sertifika yok."
+        },
+        "behavior": {
+          "title": "Davranışsal analitik",
+          "time_by_course": "Derse göre harcanan süre",
+          "searches": "Aramalar"
+        },
+        "status": {
+          "completed": "tamamlandı",
+          "in_progress": "devam ediyor",
+          "paused": "duraklatıldı",
+          "cancelled": "iptal edildi",
+          "graded": "notlandırıldı",
+          "submitted": "gönderildi",
+          "pending": "beklemede",
+          "late": "geç",
+          "not_submitted": "gönderilmedi"
+        },
+        "comparison": {
+          "student": "Öğrenci",
+          "enrolled": "Kayıtlı",
+          "completed": "Tamamlandı",
+          "certificates": "Sertifikalar",
+          "last_connection": "Son bağlantı",
+          "view": "Görüntüle"
+        }
       },
       "active_users": {
         "title": "Aktif Kullanıcılar",
-        "subtitle": "Organizasyonunuzdaki kullanıcıları yönetin ve rolleri ile izinlerini atayın",
+        "subtitle": "Okulunuzdaki kullanıcıları yönetin ve rolleri ile izinlerini atayın",
         "table": {
           "user": "Kullanıcı",
           "groups": "Gruplar",
@@ -3051,9 +3316,9 @@
         },
         "actions": {
           "edit_role": "Rolü Düzenle",
-          "remove_from_org": "Organizasyondan Kaldır",
+          "remove_from_org": "Okuldan Kaldır",
           "removing": "Kaldırılıyor...",
-          "remove_success": "Kullanıcı organizasyondan başarıyla kaldırıldı",
+          "remove_success": "Kullanıcı okuldan başarıyla kaldırıldı",
           "remove_error": "Kullanıcı kaldırılırken hata oluştu",
           "updating_role": "Rol güncelleniyor...",
           "role_update_success": "Rol başarıyla güncellendi",
@@ -3066,7 +3331,7 @@
           },
           "remove_user": {
             "title": "{{username}} kaldırılsın mı?",
-            "message": "Bu kullanıcıyı organizasyondan kaldırmak istediğinizden emin misiniz?",
+            "message": "Bu kullanıcıyı okuldan kaldırmak istediğinizden emin misiniz?",
             "button": "Kullanıcıyı Kaldır"
           }
         },
@@ -3080,13 +3345,13 @@
       },
       "signups": {
         "title": "Kayıt Yöntemleri",
-        "subtitle": "Kullanıcıların organizasyonunuza nasıl katılacağını seçin",
+        "subtitle": "Kullanıcıların okulunuza nasıl katılacağını seçin",
         "open": {
           "title": "Açık",
           "description": "Kullanıcılar kayıt sayfası üzerinden serbestçe kayıt olabilirler.",
           "active": "Aktif",
           "change_to": "Açık Kayıt Sistemine Geç",
-          "confirmation_message": "Kayıt yöntemini Açık olarak değiştirmek istediğinizden emin misiniz? Bu, herkesin organizasyonunuza serbestçe katılmasına izin verecektir.",
+          "confirmation_message": "Kayıt yöntemini Açık olarak değiştirmek istediğinizden emin misiniz? Bu, herkesin okulunuza serbestçe katılmasına izin verecektir.",
           "confirmation_title": "Açık Kayıt Sistemine Geçilsin mi?"
         },
         "closed": {
@@ -3099,7 +3364,7 @@
         },
         "invite_codes": {
           "title": "Davet Kodları",
-          "subtitle": "Davet kodlarını kopyalayabilir ve organizasyona katılmak için kullanabilirsiniz",
+          "subtitle": "Davet kodlarını kopyalayabilir ve okula katılmak için kullanabilirsiniz",
           "table": {
             "code": "Kod",
             "signup_link": "Kayıt Bağlantısı",
@@ -3117,7 +3382,7 @@
             "delete_confirmation_message": "Bu davet kodunu silmek istediğinizden emin misiniz?",
             "generate": "Kod Oluştur",
             "generate_title": "Davet Kodu Oluştur",
-            "generate_description": "Organizasyonunuz için yeni bir davet kodu oluşturun"
+            "generate_description": "Okulunuz için yeni bir davet kodu oluşturun"
           },
           "toasts": {
             "deleting": "Siliniyor...",
@@ -3142,7 +3407,7 @@
         }
       },
       "invite_members": {
-        "title": "Organizasyona Üyeler Davet Et",
+        "title": "Okula Üyeler Davet Et",
         "subtitle": "E-posta yoluyla davet gönderin (virgülle ayırın ,)",
         "email_placeholder": "ör. spike.spiegel@bepop.space, michael.scott@dundermifflin.com",
         "invite_code_label": "Davet Kodu",
@@ -3150,7 +3415,7 @@
         "send_button": "E-posta Davetiyeleri Gönder",
         "invited_users": {
           "title": "Davet Edilen Kullanıcılar",
-          "subtitle": "Organizasyona katılmaya davet edilen kullanıcılar",
+          "subtitle": "Okula katılmaya davet edilen kullanıcılar",
           "table": {
             "email": "E-posta",
             "signup_status": "Kayıt Durumu",
@@ -3196,7 +3461,7 @@
       },
       "usergroups": {
         "title": "Kullanıcı Gruplarını ve Üyeleri Yönetin",
-        "subtitle": "Kullanıcı grupları, organizasyon kaynaklarına (kurslar) erişimi yönetmek için üyeleri gruplandırmanın bir yoludur.",
+        "subtitle": "Kullanıcı grupları, okul kaynaklarına (kurslar) erişimi yönetmek için üyeleri gruplandırmanın bir yoludur.",
         "table": {
           "usergroup": "Kullanıcı Grubu",
           "description": "Açıklama",
@@ -3239,7 +3504,7 @@
               "bulk_removing": "Kullanıcılar gruptan çıkarılıyor..."
             },
             "no_results": "Aramanızla eşleşen kullanıcı bulunamadı",
-            "no_users": "Bu organizasyonda henüz kullanıcı yok",
+            "no_users": "Bu okulda henüz kullanıcı yok",
             "pagination": {
               "page": "Sayfa {{current}} / {{total}}",
               "showing": "{{start}}-{{end}} / {{total}} gösteriliyor"
@@ -3313,7 +3578,7 @@
       },
       "roles": {
         "title": "Rolleri ve İzinleri Yönetin",
-        "subtitle": "Roller, kullanıcıların organizasyonunuzda neler yapabileceğini tanımlar. Farklı kullanıcı türleri için özel izinlere sahip özel roller oluşturun.",
+        "subtitle": "Roller, kullanıcıların okulunuzda neler yapabileceğini tanımlar. Farklı kullanıcı türleri için özel izinlere sahip özel roller oluşturun.",
         "table": {
           "role_name": "Rol Adı",
           "description": "Açıklama",
@@ -3402,7 +3667,7 @@
                 "courses": "Kurslar",
                 "users": "Kullanıcılar",
                 "usergroups": "Kullanıcı Grupları",
-                "organizations": "Organizasyonlar",
+                "organizations": "Okullar",
                 "coursechapters": "Kurs Bölümleri",
                 "activities": "Aktiviteler",
                 "roles": "Roller",
@@ -3466,7 +3731,7 @@
                 "coursechapters": "Kurs Bölümleri",
                 "courses": "Kurslar",
                 "dashboard": "Panel",
-                "organizations": "Organizasyonlar",
+                "organizations": "Okullar",
                 "roles": "Roller",
                 "usergroups": "Kullanıcı Grupları",
                 "users": "Kullanıcılar"
@@ -3497,7 +3762,7 @@
             "coursechapters": "Kurs Bölümleri",
             "courses": "Kurslar",
             "dashboard": "Kontrol Paneli",
-            "organizations": "Organizasyonlar",
+            "organizations": "Okullar",
             "roles": "Roller",
             "usergroups": "Kullanıcı Grupları",
             "users": "Kullanıcılar"
@@ -3508,12 +3773,12 @@
     "assignments": {
       "home": {
         "title": "Ödevler",
-        "course_label": "Kurs",
+        "course_label": "Ders",
         "assignment_label": "Ödev",
-        "course_editor": "Kurs Editörü",
-        "editor": "Editör",
-        "submissions": "Gönderimler",
-        "no_assignments": "Bu kurs için henüz ödev yok. Kurs editöründe bir tane oluşturun.",
+        "course_editor": "Ders Yönetimi",
+        "editor": "Ödev Düzenle",
+        "submissions": "Teslimler",
+        "no_assignments": "Bu ders için henüz ödev yok. Yeni bir ödev oluşturun.",
         "untitled": "Başlıksız ödev",
         "search_placeholder": "Ödevleri isim veya açıklamaya göre ara...",
         "loading": "Ödevler yükleniyor...",
@@ -3914,16 +4179,16 @@
         }
       },
       "create_flow": {
-        "create_course": "Kurs oluştur",
-        "no_chapters_desc": "Kurs düzenleyicisinde bir bölüm ekleyin, ardından içinde bir ödev oluşturun.",
-        "no_chapters_title": "Bu kursta henüz bölüm yok",
-        "no_courses_desc": "Ödevler bir kurs bölümünde yer alır. İlk kursunuzu oluşturun, ardından ödev eklemek için buraya geri dönün.",
-        "no_courses_title": "Önce bir kurs oluşturun",
-        "open_editor": "Kurs düzenleyicisini aç",
-        "pick_chapter": "Bu ödevin yerleştirileceği bölümü seçin.",
-        "pick_course": "Bu ödevin ait olduğu kursu seçin.",
-        "title": "Yeni Ödev",
-        "untitled_chapter": "Adsız bölüm"
+        "create_course": "Ders oluştur",
+        "no_chapters_desc": "Ders düzenleyicisinde bir konu ekleyin, ardından içinde bir ödev oluşturun.",
+        "no_chapters_title": "Bu derste henüz konu yok",
+        "no_courses_desc": "Ödevler bir ders ve konu başlığı altında yer alır. İlk dersinizi oluşturun, ardından ödev eklemek için buraya dönün.",
+        "no_courses_title": "Önce bir ders oluşturun",
+        "open_editor": "Ders düzenleyicisini aç",
+        "pick_chapter": "Bu ödevin yerleştirileceği ders konusunu seçin.",
+        "pick_course": "Bu ödevin ait olduğu dersi seçin.",
+        "title": "Yeni Ev Ödevi",
+        "untitled_chapter": "Adsız konu"
       }
     },
     "search": {
@@ -3935,11 +4200,11 @@
       "type_to_search": "İçerik aramak için en az 2 karakter girin",
       "groups": {
         "pages": "Sayfalar",
-        "courses": "Kurslar",
+        "courses": "Dersler",
         "users": "Kullanıcılar",
-        "communities": "Topluluklar",
+        "communities": "Veli Forum",
         "discussions": "Tartışmalar",
-        "playgrounds": "Playgrounds",
+        "playgrounds": "Modüller",
         "podcasts": "Podcastler"
       },
       "entries": {
@@ -4470,7 +4735,7 @@
     },
     "advanced_widgets": {
       "org_growth_trend": {
-        "title": "Organizasyon Büyüme Trendi",
+        "title": "Okul Büyüme Trendi",
         "description": "Haftalık kayıtlar, kurs kayıtları, tamamlamalar"
       },
       "new_vs_returning": {
@@ -4817,7 +5082,7 @@
         "action": "Kullanıcıları Davet Et"
       },
       "customize_org": {
-        "title": "Organizasyonunuzu özelleştirin",
+        "title": "Okulunuzu özelleştirin",
         "description": "Logonuzu, renklerinizi ekleyin ve kendinize ait yapın.",
         "action": "Özelleştir"
       },
@@ -4835,9 +5100,24 @@
         "action": "İçerik ekle"
       },
       "brand_school": {
-        "title": "Öğrencilerin güvendiği bir okul",
-        "description": "Logonuzu ve renklerinizi ekleyin; böylece güvenilir, profesyonel bir okul gibi görünsün.",
-        "action": "Markala"
+        "title": "Okul Kimliği & Bilgileri",
+        "description": "Okulunuzun adı, logosu, kurumsal renkleri ve temel bilgilerini yapılandırın.",
+        "action": "Okulu Yapılandır"
+      },
+      "create_classes": {
+        "title": "Dönem ve Sınıfları Oluşturun",
+        "description": "Okulunuzun sınıflarını (Örn: 9-A, 10-B) ve şubelerini sisteme tanımlayın.",
+        "action": "Sınıf Ekle"
+      },
+      "add_teachers": {
+        "title": "Öğretmen Kadronuzu Tanımlayın",
+        "description": "Öğretmenlerinizi sisteme dahil edin ve sınıflara ders görevlendirmelerini yapın.",
+        "action": "Öğretmenleri Yönet"
+      },
+      "enroll_students": {
+        "title": "Öğrenci Kayıtlarını Tamamlayın",
+        "description": "Öğrencilerinizi kaydedin, şubelere dağıtın ve sınıf listelerini oluşturun.",
+        "action": "Öğrenci İşleri"
       },
       "share_grow": {
         "title": "Okulunuzun ön kapısı",
@@ -4856,31 +5136,31 @@
       }
     },
     "welcome": {
-      "title": "LearnHouse'a hoş geldiniz",
-      "subtitle": "Kurslar oluşturun, öğrencileri davet edin ve bilgiyi dünyayla paylaşın.",
-      "get_started": "Başla",
-      "features_title": "İhtiyacınız olan her şey",
-      "features_subtitle": "Öğrenme platformunuzu oluşturmak ve büyütmek için tüm araçlar.",
-      "lets_go": "Hadi başlayalım",
+      "title": "Oxonom Edu'ya Hoş Geldiniz",
+      "subtitle": "Sınıflarınızı yönetin, ödevler tanımlayın, akıllı tahtalarla ders anlatın ve velilerinizle iletişimde kalın.",
+      "get_started": "Keşfetmeye Başla",
+      "features_title": "Okulunuz İçin İhtiyacınız Olan Her Şey",
+      "features_subtitle": "Öğretmenler, öğrenciler ve veliler için modern okul yönetim ve eğitim araçları.",
+      "lets_go": "Okul Paneline Geç",
       "features": {
-        "teach": "Her şeyi öğretin",
-        "teach_desc": "Bölümler ve zengin içerikle yapılandırılmış kurslar oluşturun",
-        "interactive": "İnteraktif olun",
-        "interactive_desc": "Öğrencilerin kendi hızlarında keşfettiği playground'lar oluşturun",
-        "community": "Bir topluluk kurun",
-        "community_desc": "Öğrencilerin birbirine yardım ettiği tartışma alanları oluşturun",
-        "assess": "Bilgiyi değerlendirin",
-        "assess_desc": "Ödevler oluşturun ve öğrencilerin gönderimlerini takip edin",
-        "collaborate": "Görsel olarak işbirliği yapın",
-        "collaborate_desc": "Öğrencilere beyin fırtınası ve birlikte çalışma için ortak panolar verin",
-        "voice": "Sesinizi paylaşın",
-        "voice_desc": "Podcast başlatın ve öğrencilere ses bölümleri dağıtın",
-        "certify": "Öğrencileri sertifikalandırın",
-        "certify_desc": "Öğrenciler kurslarınızı tamamladığında sertifika verin",
-        "impact": "Etkinizi anlayın",
-        "impact_desc": "Etkileşimi takip edin ve öğrencilerin zaman içinde nasıl ilerlediğini görün",
-        "team": "Ekibinizi büyütün",
-        "team_desc": "Eğitmenleri davet edin, rolleri yönetin ve öğrenci gruplarını düzenleyin"
+        "classes": "Sınıf Yönetimi & Kodlar",
+        "classes_desc": "6 haneli kodla öğrenci katılımı, şubeler ve akıllı tahta projektör modu",
+        "collaborate": "İnteraktif Beyaz Tahtalar",
+        "collaborate_desc": "Her sınıfa özel dijital beyaz tahtalar ve anlık ders anlatım panoları",
+        "community": "Veli Forumu",
+        "community_desc": "Öğretmenler ve veliler arasında güvenli iletişim ve tartışma alanları",
+        "assess": "Ev Ödevleri & Takip",
+        "assess_desc": "Ders bazlı ev ödevleri tanımlayın, teslimleri ve notları takip edin",
+        "attendance": "Günlük Yoklama",
+        "attendance_desc": "Tek tıkla yoklama oturumları başlatın ve katılım istatistiklerini izleyin",
+        "voice": "Eğitim Podcastleri",
+        "voice_desc": "Sesli ders anlatımları, konu tekrarları ve rehberlik yayınları dağıtın",
+        "modules": "Eğitim Modülleri",
+        "modules_desc": "Etkileşimli eğitim araçları ve okul uygulamaları",
+        "library": "Kütüphane & Kaynaklar",
+        "library_desc": "Ders dokümanları, testler, çalışma kağıtları ve eğitim materyalleri",
+        "team": "Okul Kadrosu & Roller",
+        "team_desc": "Öğretmenler, veliler ve idareciler için yetki ve rol yönetimi"
       }
     },
     "farewell": {
@@ -4917,12 +5197,12 @@
       "no_user_groups_available": "Kullanılabilir kullanıcı grubu yok",
       "private_description": "Yalnızca bağlı Kullanıcı Grupları bu panoya erişebilir",
       "private_option": "Yalnızca Kullanıcılar",
-      "public_description": "Tüm giriş yapmış organizasyon üyeleri bu panoya erişebilir",
+      "public_description": "Tüm giriş yapmış okul üyeleri bu panoya erişebilir",
       "public_option": "Genel",
       "set_to_private": "Özel Yap",
       "set_to_private_confirm": "Yalnızca bağlı Kullanıcı Gruplarının üyeleri bu panoya erişebilecektir.",
       "set_to_public": "Genel Yap",
-      "set_to_public_confirm": "Tüm giriş yapmış organizasyon üyeleri bu panoya erişebilecektir.",
+      "set_to_public_confirm": "Tüm giriş yapmış okul üyeleri bu panoya erişebilecektir.",
       "title": "Erişim Kontrolü",
       "unlink": "Bağlantıyı Kes",
       "unlink_confirm": "Bu kullanıcı grubu artık bu panoya erişemeyecektir.",
@@ -5013,7 +5293,7 @@
     "members": {
       "actions": "İşlemler",
       "add_member": "Üye Ekle",
-      "add_member_description": "Bu panoya eklemek için bir organizasyon üyesi arayın",
+      "add_member_description": "Bu panoya eklemek için bir okul üyesi arayın",
       "adding": "Ekleniyor...",
       "description": "Bu panoda kimlerin işbirliği yapabileceğini yönetin",
       "editor": "Editör",
@@ -5108,12 +5388,19 @@
       "resume": "Devam Et",
       "set_timer": "Zamanlayıcı ayarla",
       "set_timer_title": "Zamanlayıcı Ayarla",
-      "times_up": "Süre doldu!"
+      "times_up": "Süre doldu!",
+      "pomodoro_focus": "Odaklan",
+      "pomodoro_short_break": "Kısa Mola",
+      "pomodoro_long_break": "Uzun Mola",
+      "pomodoro_label": "Pomodoro (25/5)",
+      "minute_short": "dk",
+      "back_to_focus": "Odaklanmaya Dön"
     },
     "toolbar": {
       "activity": "Etkinlik",
       "add_card": "Kart Ekle",
       "ai_playground": "AI Playground",
+      "modules": "Modüller",
       "draw": "Çiz",
       "embed": "Yerleştir",
       "frame": "Çerçeve",
@@ -5163,7 +5450,7 @@
     "accepted_formats": "Videolar (MP4, WebM, MOV), Belgeler (PDF), Resimler (PNG, JPG, WebP), Ses (MP3, WAV)",
     "add_activity": "Etkinlik Ekle",
     "add_chapter": "Bölüm Ekle",
-    "ai_failed": "Yapay zeka önerisi başarısız oldu, manuel organizasyona geçiliyor",
+    "ai_failed": "Yapay zeka önerisi başarısız oldu, manuel okula geçiliyor",
     "all_files_assigned": "Tüm dosyalar atandı",
     "click_to_add_more": "Daha fazla dosya eklemek için tıklayın",
     "course_created": "Kurs başarıyla oluşturuldu!",
@@ -5235,7 +5522,7 @@
           "custom_domain": "Özel alan adı",
           "custom_domain_desc": "Markalı bir akademi için kendi alan adınızı kullanın.",
           "roles": "Özel roller ve izinler",
-          "roles_desc": "Organizasyonunuzda kimin ne yapabileceğini tam olarak kontrol edin.",
+          "roles_desc": "Okulunuzda kimin ne yapabileceğini tam olarak kontrol edin.",
           "api": "API erişimi ve webhook'lar",
           "api_desc": "Mevcut araçlarınızla entegre olun ve iş akışlarını otomatikleştirin."
         }
@@ -5284,22 +5571,22 @@
     "showing_page": "{{total}} sayfadan {{current}}. sayfa gösteriliyor"
   },
   "playgrounds": {
-    "no_playgrounds_yet": "Henüz playground yok",
-    "playgrounds_description": "Öğrencileriniz için AI tarafından oluşturulan etkileşimli deneyimler oluşturun.",
-    "new_playground": "New Playground",
-    "search_placeholder": "Search playgrounds...",
-    "no_results_for": "No results for",
-    "try_different_search": "Try a different search term",
-    "new_playground_modal_title": "New Playground",
-    "new_playground_modal_desc": "Give your playground a name to get started.",
-    "creating": "Creating...",
-    "create": "Create",
-    "failed_create": "Failed to create playground",
+    "no_playgrounds_yet": "Henüz modül yok",
+    "playgrounds_description": "Öğrencileriniz için MEB uyumlu etkileşimli eğitim modülleri ve atölyeler.",
+    "new_playground": "Yeni Modül",
+    "search_placeholder": "Modüllerde ara...",
+    "no_results_for": "Sonuç bulunamadı:",
+    "try_different_search": "Farklı bir arama terimi deneyin",
+    "new_playground_modal_title": "Yeni Modül Oluştur",
+    "new_playground_modal_desc": "Başlamak için modülünüze bir isim verin.",
+    "creating": "Oluşturuluyor...",
+    "create": "Oluştur",
+    "failed_create": "Modül oluşturulamadı",
     "view": {
       "open_editor_to_generate": "İçerik oluşturmak için editörü açın.",
       "check_back_later": "Daha sonra tekrar kontrol edin.",
       "open_editor": "Editörü Aç",
-      "breadcrumb": "Playgrounds",
+      "breadcrumb": "Modüller",
       "about": "Hakkında",
       "author": "Yazar",
       "access": "Erişim",
@@ -5315,16 +5602,16 @@
     }
   },
   "library": {
-    "library": "Library",
-    "my_library": "My Library",
-    "new_folder": "New Folder",
+    "library": "Kaynaklar",
+    "my_library": "Kaynaklarım",
+    "new_folder": "Yeni Klasör",
     "tabs": {
-      "courses": "Courses",
-      "podcasts": "Podcasts",
-      "communities": "Communities",
-      "boards": "Boards",
-      "playgrounds": "Playgrounds",
-      "media": "Media"
+      "courses": "Dersler",
+      "podcasts": "Podcastler",
+      "communities": "Veli Forum",
+      "boards": "Panolar",
+      "playgrounds": "Modüller",
+      "media": "Medya & Dosyalar"
     },
     "add_content": "Add content",
     "upload_media": "Upload media",
@@ -5501,7 +5788,7 @@
     "plan_and_usage": "Plan ve Kullanım",
     "plan_and_usage_subtitle": "Aboneliğinizi yönetin ve kaynak kullanımınızı izleyin.",
     "billing": "Faturalandırma",
-    "org_inactive": "Organizasyonunuz pasif durumda. Erişimi geri kazanmak için planınızı yükseltin.",
+    "org_inactive": "Okulunuz pasif durumda. Erişimi geri kazanmak için planınızı yükseltin.",
     "upgrade": "Yükselt",
     "on_free_plan": "Ücretsiz plandasınız",
     "free_upsell": "Yapay zeka özellikleri, özel alan adları ve daha fazlasının kilidini açmak için yükseltin.",
@@ -5583,7 +5870,7 @@
     "downgrade_scheduled": "Düşürme zamanlandı",
     "canceled_desc": "Aboneliğiniz mevcut faturalandırma döneminin sonunda iptal edilecek. O zamana kadar tam erişiminizi koruyacaksınız.",
     "back_to_plan_usage": "Plan ve Kullanım'a dön",
-    "back_to_orgs": "Organizasyonlara dön",
+    "back_to_orgs": "Okullara dön",
     "pack_purchased": "Ek satın alındı — sınırlarınız güncellendi.",
     "checkout_success": "Abonelik güncellendi — yeni planınıza hoşgeldiniz!",
     "checkout_cancelled": "Ödeme iptal edildi — hiçbir değişiklik yapılmadı.",
@@ -5602,27 +5889,27 @@
   "hub_new": {
     "useType": {
       "personal": {
-        "label": "Bireysel",
-        "subtitle": "Kendi alanınızı öğrenin ve oluşturun.",
-        "badge": "Yeni"
+        "label": "Bireysel Öğrenci",
+        "subtitle": "Kişisel ders ve çalışma alanınızı oluşturun.",
+        "badge": "Öğrenci"
       },
       "organization": {
-        "label": "Organizasyon",
-        "subtitle": "Bir ekibe, okula veya kitleye eğitim verin."
+        "label": "Okul / Kampüs",
+        "subtitle": "Sınıflar, akıllı tahtalar ve öğretmenler için okul portalı."
       }
     },
     "useCases": {
       "personal": {
-        "title": "Kendi kendine öğrenme",
-        "description": "Kursları kendiniz için düzenleyin."
+        "title": "Bireysel Çalışma",
+        "description": "Derslerinizi ve akıllı tahtalarınızı düzenleyin."
       },
       "creators": {
-        "title": "İçerik üreticileri",
-        "description": "Kurslarınızı kitlenize satın."
+        "title": "K-12 / Kolej",
+        "description": "İlkokul, ortaokul ve liseler için sınıf ve tahta yönetimi."
       },
       "business": {
-        "title": "İşletme",
-        "description": "Çalışanlarınızı eğitin."
+        "title": "Akademi / Kurs Merkezi",
+        "description": "Özel öğretim kursları ve atölyeler için eğitim portalı."
       }
     },
     "personalGoals": {
@@ -5642,34 +5929,34 @@
       "gaming": "Oyun"
     },
     "personalUsage": {
-      "title": "Ne öğrenmek istersiniz?",
-      "subtitle": "Size uyan her şeyi seçin."
+      "title": "Hangi alanlarda eğitim alıyorsunuz?",
+      "subtitle": "Size uyan alanları seçin."
     },
     "teamSizes": {
-      "solo": "Tek kişi",
-      "2-10": "2–10",
-      "11-50": "11–50",
-      "51-200": "51–200",
-      "200plus": "200+"
+      "solo": "Tek sınıf",
+      "2-10": "2–10 Sınıf",
+      "11-50": "11–50 Sınıf",
+      "51-200": "51–200 Sınıf",
+      "200plus": "200+ Sınıf"
     },
     "orgUseCases": {
-      "employeeTraining": "Çalışan eğitimi",
-      "onlineCourses": "Çevrimiçi kurslar",
-      "customerEducation": "Müşteri eğitimi",
-      "academicPrograms": "Akademik programlar",
-      "developerDocs": "Geliştirici dokümanları",
-      "communityLearning": "Topluluk öğrenmesi"
+      "employeeTraining": "K-12 Okul Yönetimi",
+      "onlineCourses": "Canlı & Hibrit Sınıflar",
+      "customerEducation": "Sınav Hazırlık & Kurs",
+      "academicPrograms": "Akademik Programlar",
+      "developerDocs": "Fen & Kodlama Atölyeleri",
+      "communityLearning": "Okul Kulüpleri & Veli Forumları"
     },
     "orgUsage": {
-      "teamSizeTitle": "Ekibiniz ne kadar büyük?",
-      "useCaseTitle": "Bunu ne için kullanacaksınız?"
+      "teamSizeTitle": "Okulunuzun şube ve sınıf mevcudu ne kadar?",
+      "useCaseTitle": "Okulunuzun eğitim türü nedir?"
     },
     "createOrg": {
       "testHint": {
         "title": "Denemek mi istiyorsunuz?",
         "body": "Şuraya gidin:",
         "link": "Geliştiriciler sayfası",
-        "suffix": "ve LearnHouse'u deneyin."
+        "suffix": "ve Oxonom Edu'yu deneyin."
       },
       "validation": {
         "required": "Zorunlu",
@@ -5679,29 +5966,29 @@
         "maxLength": "En fazla 20 karakter"
       },
       "fields": {
-        "name": "Organizasyon adı",
+        "name": "Okul / Kurum adı",
         "description": "Açıklama (isteğe bağlı)",
-        "slug": "Adres"
+        "slug": "Okul Web Adresi"
       },
       "placeholders": {
-        "name": "Acme Akademi",
-        "description": "Organizasyonunuz ne hakkında?"
+        "name": "Riverbend Koleji",
+        "description": "Okulunuz veya eğitim merkeziniz hakkında kısa bilgi"
       },
       "submitting": "Oluşturuluyor…",
       "submitPaid": "Oluştur ve ödemeye devam et",
-      "submit": "Organizasyon oluştur"
+      "submit": "Okul Oluştur"
     },
     "success": {
-      "title": "Organizasyonunuz hazır",
-      "description": "Hemen başlayın ve kurslarınızı oluşturmaya koyulun.",
-      "goToOrg": "Organizasyona git",
-      "cta": "Organizasyonlara dön"
+      "title": "Okulunuz hazır!",
+      "description": "Hemen başlayın ve sınıflarınızı oluşturmaya koyulun.",
+      "goToOrg": "Okula Git",
+      "cta": "Okul listesine dön"
     },
     "toast": {
-      "creating": "Organizasyon oluşturuluyor…",
-      "created": "Organizasyon oluşturuldu!",
-      "checkoutFailed": "Organizasyon oluşturuldu — Plan ve Kullanım'dan yükseltebilirsiniz.",
-      "failed": "Organizasyon oluşturulamadı"
+      "creating": "Okul oluşturuluyor…",
+      "created": "Okul başarıyla oluşturuldu!",
+      "checkoutFailed": "Okul oluşturuldu — Plan ve Kullanım'dan yükseltebilirsiniz.",
+      "failed": "Okul oluşturulamadı"
     },
     "steps": {
       "useType": {
@@ -5717,7 +6004,7 @@
         "subtitle": "Bunu istediğiniz zaman değiştirebilirsiniz."
       },
       "createOrg": {
-        "title": "Organizasyonunuza ad verin",
+        "title": "Okulunuza ad verin",
         "subtitle": "Bir ad ve web adresi seçin."
       },
       "success": {
@@ -5725,9 +6012,11 @@
       }
     },
     "topBar": {
-      "back": "Organizasyonlar"
+      "back": "Okul Listesi"
     },
-    "freeLimit": "1 ücretsiz organizasyon sınırına ulaşıldı",
+    "student_callout_title": "Öğrenci misiniz? Sınıf Kodunuz mu Var?",
+    "student_callout_subtitle": "Yeni bir okul açmak yerine öğretmeninizin verdiği kodla sınıfınıza hemen dahil olabilirsiniz.",
+    "freeLimit": "1 ücretsiz okul sınırına ulaşıldı",
     "navigation": {
       "back": "Geri",
       "continue": "Devam et",
@@ -5747,9 +6036,92 @@
     "manage_plan": "Planı yönet",
     "portal_error": "Faturalandırma portalı açılamadı. Lütfen tekrar deneyin.",
     "back_home": "Ana sayfaya dön",
-    "title": "Abonelikler",
-    "subtitle": "Organizasyonlarınız genelinde planlar ve faturalandırma",
-    "opening": "Açılıyor…",
     "manage_billing": "Faturalandırmayı yönet"
+  },
+  "errors": {
+    "generic_title": "Beklenmeyen bir durum oluştu",
+    "generic_description": "İşleminiz gerçekleştirilirken bir hata ile karşılaşıldı. Tekrar denemek veya ana sayfaya dönmek genellikle sorunu çözer.",
+    "hide_details": "Teknik detayları gizle",
+    "show_details": "Teknik detayları göster",
+    "cause": "sebep",
+    "status": "durum",
+    "digest": "özet",
+    "ref": "referans",
+    "admin_only": {
+      "title": "Bu Sayfaya Erişim Yetkiniz Bulunmuyor",
+      "description": "Bu yönetim alanı yalnızca okul yöneticileri ve öğretmenler içindir. Bir öğrenciyseniz sınıflarınıza, derslerinize ve panolarınıza ana sayfadan erişebilirsiniz."
+    },
+    "actions": {
+      "retry": "Tekrar Dene",
+      "reload": "Sayfayı Yenile",
+      "login": "Giriş Yap",
+      "home": "Ana Sayfa",
+      "signout": "Çıkış Yap",
+      "signing_out": "Çıkış yapılıyor…",
+      "contact_support": "Destek",
+      "report": "Sorun Bildir"
+    },
+    "kinds": {
+      "permission": "Yetki Sınırlaması",
+      "auth_session": "Oturum Süresi",
+      "plan_limit": "Plan Sınırı",
+      "rate_limit": "İstek Sınırı",
+      "not_found": "Bulunamadı",
+      "conflict": "Çakışma",
+      "validation": "Doğrulama",
+      "org_config": "Okul Yapılandırması",
+      "payment": "Ödeme / Abonelik",
+      "upload": "Yükleme",
+      "ai": "Yapay Zeka",
+      "offline": "Bağlantı Yok",
+      "service_unavailable": "Hizmet Kullanılamıyor",
+      "timeout": "Zaman Aşımı",
+      "server": "Sunucu Hatası",
+      "version_mismatch": "Sürüm Güncellemesi",
+      "chunk_load": "Yükleme Hatası",
+      "unknown": "Bilinmeyen Hata"
+    },
+    "categories": {
+      "permission": {
+        "title": "Bu alana erişim yetkiniz bulunmuyor",
+        "description": "Hesabınız bu sayfa veya işlem için gerekli izinlere sahip değil. Bunun bir hata olduğunu düşünüyorsanız okul yöneticinizle iletişime geçebilirsiniz."
+      },
+      "auth_session": {
+        "title": "Oturum süreniz doldu",
+        "description": "Oturumunuz sona erdi veya yenilenmesi gerekiyor. Tekrar giriş yaparak erişiminizi sürdürebilirsiniz."
+      },
+      "plan_limit": {
+        "title": "Bu özellik için plan yükseltmesi gerekiyor",
+        "description": "Kullanmaya çalıştığınız özellik mevcut okul planınızda yer almıyor veya okulunuz için etkinleştirilmemiş."
+      },
+      "rate_limit": {
+        "title": "Kısa bir süre yavaşlayalım",
+        "description": "Kısa süre içinde çok fazla istek gönderildi. Güvenliğiniz için işlemler geçici olarak duraklatıldı, kısa süre sonra düzelecektir."
+      },
+      "not_found": {
+        "title": "Aradığınız sayfa veya kayıt bulunamadı",
+        "description": "Aradığınız içerik taşınmış, silinmiş veya okulunuz için erişilebilir olmayabilir."
+      },
+      "conflict": {
+        "title": "Bu kayıt zaten mevcut",
+        "description": "Girdiğiniz bilgiler sistemde zaten var olan bir kayıtla çakışıyor."
+      },
+      "validation": {
+        "title": "Formda düzeltilmesi gereken alanlar var",
+        "description": "Bir alan eksik veya hatalı formatta girilmiş. Lütfen bilgilerinizi kontrol edip tekrar deneyiniz."
+      },
+      "offline": {
+        "title": "İnternet bağlantısı kurulamıyor",
+        "description": "Sunucularımıza ulaşılamadı. Lütfen internet bağlantınızı kontrol edip tekrar deneyiniz."
+      },
+      "server": {
+        "title": "Sunucularımızda geçici bir sorun oluştu",
+        "description": "İsteğiniz işlenirken sunucu kaynaklı beklenmeyen bir durum meydana geldi. Birkaç saniye sonra tekrar deneyebilirsiniz."
+      },
+      "timeout": {
+        "title": "İşlem çok uzun sürdü",
+        "description": "Sunucu yanıt verme süresi aşıldı. Lütfen sayfayı yenileyip tekrar deneyiniz."
+      }
+    }
   }
 }

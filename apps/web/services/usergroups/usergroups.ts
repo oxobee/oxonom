@@ -13,6 +13,33 @@ export async function getUserGroups(org_id: any, access_token: string) {
   return res
 }
 
+export async function getMyUserGroups(org_id: any, access_token: string) {
+  const result: any = await fetch(
+    `${getAPIUrl()}usergroups/my-classes/${org_id}`,
+    RequestBodyWithAuthHeader('GET', null, null, access_token)
+  )
+  const res = await getResponseMetadata(result)
+  return res
+}
+
+export async function getUserGroup(usergroup_id: number, access_token: string) {
+  const result: any = await fetch(
+    `${getAPIUrl()}usergroups/${usergroup_id}`,
+    RequestBodyWithAuthHeader('GET', null, null, access_token)
+  )
+  const res = await getResponseMetadata(result)
+  return res
+}
+
+export async function getUserGroupUsers(usergroup_id: number, access_token: string) {
+  const result: any = await fetch(
+    `${getAPIUrl()}usergroups/${usergroup_id}/users`,
+    RequestBodyWithAuthHeader('GET', null, null, access_token)
+  )
+  const res = await getResponseMetadata(result)
+  return res
+}
+
 export async function createUserGroup(body: any, access_token: string) {
   const result: any = await fetch(
     `${getAPIUrl()}usergroups/?org_id=${body.org_id}`,
@@ -147,3 +174,43 @@ export async function unLinkResourcesToUserGroup(
   const res = await getResponseMetadata(result)
   return res
 }
+
+export async function getUserGroupsByResource(
+  resource_uuid: string,
+  access_token: string
+) {
+  const result: any = await fetch(
+    `${getAPIUrl()}usergroups/resource/${resource_uuid}`,
+    RequestBodyWithAuthHeader('GET', null, null, access_token)
+  )
+  const res = await getResponseMetadata(result)
+  return res
+}
+
+export async function joinClassByCode(code: string, org_id: number | null, access_token: string) {
+  const result: any = await fetch(
+    `${getAPIUrl()}usergroups/join-by-code`,
+    RequestBodyWithAuthHeader('POST', { code, org_id }, null, access_token)
+  )
+  const res = await getResponseMetadata(result)
+  return res
+}
+
+export async function regenerateClassJoinCode(usergroup_id: number, access_token: string) {
+  const result: any = await fetch(
+    `${getAPIUrl()}usergroups/${usergroup_id}/regenerate-code`,
+    RequestBodyWithAuthHeader('POST', null, null, access_token)
+  )
+  const res = await getResponseMetadata(result)
+  return res
+}
+
+export async function getMyClasses(org_id: number, access_token: string) {
+  const result: any = await fetch(
+    `${getAPIUrl()}usergroups/my-classes/${org_id}`,
+    RequestBodyWithAuthHeader('GET', null, null, access_token)
+  )
+  const res = await getResponseMetadata(result)
+  return res
+}
+

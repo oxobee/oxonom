@@ -16,13 +16,17 @@ from src.db.boards import (
     BoardMemberRole,
 )
 from src.db.organizations import Organization
+import random
 from src.db.users import PublicUser, AnonymousUser, APITokenUser, User
-from src.security.auth import resolve_acting_user_id
-from src.db.resource_authors import ResourceAuthor, ResourceAuthorshipEnum, ResourceAuthorshipStatusEnum
+from src.security.auth import resolve_acting_user_id, create_access_token
+from src.db.user_organizations import UserOrganization
+from src.db.usergroups import UserGroup
+from src.db.usergroup_user import UserGroupUser
 from src.security.rbac import AccessAction, check_resource_access
 from src.security.org_auth import require_org_membership
 from src.services.utils.upload_content import upload_file
 from src.services.webhooks.dispatch import dispatch_webhooks
+from src.db.resource_authors import ResourceAuthor, ResourceAuthorshipEnum, ResourceAuthorshipStatusEnum
 
 
 async def create_board(
@@ -99,16 +103,38 @@ async def get_boards_by_org(
     org_id: int,
     current_user: PublicUser | AnonymousUser | APITokenUser,
     db_session: AsyncSession,
+    usergroup_id: Optional[int] = None,
 ) -> List[BoardRead]:
-    # Require org membership before listing boards — prevents unauthenticated
-    # and cross-org enumeration of boards.
-    await require_org_membership(resolve_acting_user_id(current_user), org_id, db_session)
+    acting_user_id = resolve_acting_user_id(current_user)
+    await require_org_membership(acting_user_id, org_id, db_session)
 
     statement = (
         select(Board)
         .where(Board.org_id == org_id)
         .order_by(Board.creation_date.desc())
     )
+
+    if usergroup_id is not None:
+        statement = statement.where(Board.usergroup_id == usergroup_id)
+    else:
+        # Check user's role in this org
+        user_org_stmt = select(UserOrganization).where(
+            UserOrganization.user_id == acting_user_id,
+            UserOrganization.org_id == org_id,
+        )
+        user_org = (await db_session.execute(user_org_stmt)).scalars().first()
+
+        # If user is a student (role_id == 4), show only their enrolled class boards + school-wide public boards
+        if user_org and user_org.role_id == 4:
+            ug_stmt = select(UserGroupUser.usergroup_id).where(UserGroupUser.user_id == acting_user_id)
+            student_ug_ids = (await db_session.execute(ug_stmt)).scalars().all()
+            if student_ug_ids:
+                statement = statement.where(
+                    (Board.usergroup_id.in_(student_ug_ids)) | (Board.usergroup_id.is_(None)) | (Board.public == True)
+                )
+            else:
+                statement = statement.where((Board.usergroup_id.is_(None)) | (Board.public == True))
+
     boards = (await db_session.execute(statement)).scalars().all()
     if not boards:
         return []
@@ -125,6 +151,27 @@ async def get_boards_by_org(
         BoardRead(**b.model_dump(exclude={"ydoc_state"}), member_count=counts.get(b.id, 0))
         for b in boards
     ]
+
+
+async def get_boards_by_classroom(
+    request: Request,
+    usergroup_id: int,
+    current_user: PublicUser | AnonymousUser | APITokenUser,
+    db_session: AsyncSession,
+) -> List[BoardRead]:
+    ug_stmt = select(UserGroup).where(UserGroup.id == usergroup_id)
+    usergroup = (await db_session.execute(ug_stmt)).scalars().first()
+    if not usergroup:
+        raise HTTPException(status_code=404, detail="Sınıf bulunamadı.")
+
+    return await get_boards_by_org(
+        request=request,
+        org_id=usergroup.org_id,
+        current_user=current_user,
+        db_session=db_session,
+        usergroup_id=usergroup_id,
+    )
+
 
 
 async def update_board(
@@ -548,3 +595,134 @@ async def _member_to_read(member: BoardMember, db_session: AsyncSession) -> Boar
         avatar_image=user.avatar_image if user else None,
         user_uuid=user.user_uuid if user else None,
     )
+
+
+async def get_board_public_info(board_uuid: str, db_session: AsyncSession) -> dict:
+    board = await _get_board_or_404(board_uuid, db_session)
+    return {
+        "board_uuid": board.board_uuid,
+        "name": board.name,
+        "description": board.description,
+        "thumbnail_image": board.thumbnail_image,
+        "share_type": board.share_type or ("public" if board.public else "code"),
+        "has_code": bool(board.share_code),
+        "short_code": board.short_code,
+        "created_by": board.created_by,
+    }
+
+
+async def get_board_by_short_code(code: str, db_session: AsyncSession) -> dict:
+    statement = select(Board).where(
+        (Board.short_code == code) | 
+        (Board.board_uuid == code) | 
+        (Board.board_uuid == f"board_{code}")
+    )
+    board = (await db_session.execute(statement)).scalars().first()
+    if not board:
+        raise HTTPException(status_code=404, detail="Pano bulunamadı.")
+    return {
+        "board_uuid": board.board_uuid,
+        "name": board.name,
+        "share_type": board.share_type or ("public" if board.public else "code"),
+        "has_code": bool(board.share_code),
+        "short_code": board.short_code,
+        "created_by": board.created_by,
+    }
+
+
+async def update_board_share_settings(
+    request: Request,
+    board_uuid: str,
+    share_type: str,
+    share_code: Optional[str],
+    current_user: PublicUser | AnonymousUser,
+    db_session: AsyncSession,
+) -> dict:
+    board = await _get_board_or_404(board_uuid, db_session)
+    await check_resource_access(request, db_session, current_user, board.board_uuid, AccessAction.UPDATE)
+
+    board.share_type = share_type
+    if share_type == "code":
+        board.share_code = share_code or f"{random.randint(1000, 9999)}"
+        board.public = False
+    else:
+        board.public = True
+        board.share_code = None
+
+    if not board.short_code:
+        board.short_code = uuid4().hex[:6]
+
+    board.update_date = str(datetime.now())
+    db_session.add(board)
+    await db_session.commit()
+    await db_session.refresh(board)
+
+    return {
+        "share_type": board.share_type,
+        "share_code": board.share_code,
+        "short_code": board.short_code,
+        "board_uuid": board.board_uuid,
+    }
+
+
+async def create_board_guest_token(
+    board_uuid: str,
+    code: Optional[str],
+    db_session: AsyncSession,
+) -> dict:
+    board = await _get_board_or_404(board_uuid, db_session)
+
+    effective_share_type = board.share_type or ("public" if board.public else "code")
+    if effective_share_type == "code":
+        if not code or str(code).strip() != str(board.share_code or "").strip():
+            raise HTTPException(
+                status_code=401,
+                detail="Geçersiz erişim kodu. Lütfen 4 haneli kodu kontrol edin.",
+            )
+
+    # Find or create guest user in DB
+    guest_email = "guest@agenapos.com"
+    guest_stmt = select(User).where(User.email == guest_email)
+    guest_user = (await db_session.execute(guest_stmt)).scalars().first()
+
+    if not guest_user:
+        guest_user = User(
+            email=guest_email,
+            username="misafir",
+            first_name="Misafir",
+            last_name="Öğrenci",
+            user_uuid=f"usr_{uuid4()}",
+            hashed_password="guest_no_direct_login",
+            is_active=True,
+            role_id=4,
+            creation_date=str(datetime.now()),
+            update_date=str(datetime.now()),
+        )
+        db_session.add(guest_user)
+        await db_session.commit()
+        await db_session.refresh(guest_user)
+
+    # Ensure guest is a member of this board
+    member_stmt = select(BoardMember).where(
+        BoardMember.board_id == board.id,
+        BoardMember.user_id == guest_user.id,
+    )
+    existing_member = (await db_session.execute(member_stmt)).scalars().first()
+    if not existing_member:
+        board_member = BoardMember(
+            board_id=board.id,
+            user_id=guest_user.id,
+            role=BoardMemberRole.EDITOR,
+            creation_date=str(datetime.now()),
+        )
+        db_session.add(board_member)
+        await db_session.commit()
+
+    token = create_access_token({"sub": guest_user.email})
+    return {
+        "access_token": token,
+        "username": "Misafir Öğrenci",
+        "board_uuid": board.board_uuid,
+        "board_name": board.name,
+    }
+

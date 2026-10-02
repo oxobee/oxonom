@@ -1,6 +1,6 @@
 import hmac
 import os
-from typing import List
+from typing import List, Optional
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response, UploadFile, File
 
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -20,6 +20,7 @@ from src.services.boards.boards import (
     create_board,
     get_board,
     get_boards_by_org,
+    get_boards_by_classroom,
     update_board,
     duplicate_board,
     delete_board,
@@ -31,7 +32,21 @@ from src.services.boards.boards import (
     update_board_thumbnail,
     get_ydoc_state,
     store_ydoc_state,
+    get_board_public_info,
+    get_board_by_short_code,
+    update_board_share_settings,
+    create_board_guest_token,
 )
+from pydantic import BaseModel
+
+
+class BoardShareUpdate(BaseModel):
+    share_type: str = "public"
+    share_code: Optional[str] = None
+
+
+class BoardGuestAccessRequest(BaseModel):
+    code: Optional[str] = None
 
 router = APIRouter(dependencies=[Depends(require_boards_feature)])
 
@@ -82,10 +97,27 @@ async def api_create_board(
 async def api_get_boards_by_org(
     request: Request,
     org_id: int,
+    usergroup_id: Optional[int] = None,
     db_session: AsyncSession = Depends(get_db_session),
     current_user: PublicUser = Depends(get_current_user),
 ) -> List[BoardRead]:
-    return await get_boards_by_org(request, org_id, current_user, db_session)
+    return await get_boards_by_org(request, org_id, current_user, db_session, usergroup_id=usergroup_id)
+
+
+@router.get(
+    "/classroom/{usergroup_id}",
+    response_model=List[BoardRead],
+    summary="List boards for a specific classroom",
+    description="List all boards belonging to a classroom.",
+)
+async def api_get_boards_by_classroom(
+    request: Request,
+    usergroup_id: int,
+    db_session: AsyncSession = Depends(get_db_session),
+    current_user: PublicUser = Depends(get_current_user),
+) -> List[BoardRead]:
+    return await get_boards_by_classroom(request, usergroup_id, current_user, db_session)
+
 
 
 @router.get(
@@ -129,6 +161,61 @@ async def api_update_board(
     current_user: PublicUser = Depends(get_current_user),
 ) -> BoardRead:
     return await update_board(request, board_uuid, board_object, current_user, db_session)
+
+
+@router.get(
+    "/{board_uuid}/public-info",
+    summary="Get public information about a board",
+    description="Retrieve public board metadata (name, share type, code requirement) without requiring authentication.",
+)
+async def api_get_board_public_info(
+    board_uuid: str,
+    db_session: AsyncSession = Depends(get_db_session),
+):
+    return await get_board_public_info(board_uuid, db_session)
+
+
+@router.get(
+    "/by-short/{short_code}",
+    summary="Get board info by short code",
+    description="Retrieve board info using a short code.",
+)
+async def api_get_board_by_short(
+    short_code: str,
+    db_session: AsyncSession = Depends(get_db_session),
+):
+    return await get_board_by_short_code(short_code, db_session)
+
+
+@router.put(
+    "/{board_uuid}/share-settings",
+    summary="Update board share settings",
+    description="Update share type ('public' or 'code') and optional 4-digit code. Owner or editor only.",
+)
+async def api_update_board_share_settings(
+    request: Request,
+    board_uuid: str,
+    payload: BoardShareUpdate,
+    db_session: AsyncSession = Depends(get_db_session),
+    current_user: PublicUser = Depends(get_current_user),
+):
+    return await update_board_share_settings(
+        request, board_uuid, payload.share_type, payload.share_code, current_user, db_session
+    )
+
+
+@router.post(
+    "/{board_uuid}/guest-access",
+    summary="Get anonymous guest access token for board",
+    description="Validate optional 4-digit code and generate guest token to view/collaborate without an account.",
+)
+async def api_board_guest_access(
+    board_uuid: str,
+    payload: BoardGuestAccessRequest,
+    db_session: AsyncSession = Depends(get_db_session),
+):
+    return await create_board_guest_token(board_uuid, payload.code, db_session)
+
 
 
 @router.post(

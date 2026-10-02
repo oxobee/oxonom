@@ -7,6 +7,7 @@ import PageLoading from '@components/Objects/Loaders/PageLoading';
 import { getUriWithOrg } from '@services/config/config';
 import { useOrg } from '@components/Contexts/OrgContext';
 import ErrorUI from '@components/Objects/StyledElements/Error/Error';
+import { useTranslation } from 'react-i18next';
 
 type AuthorizationProps = {
   children: React.ReactNode;
@@ -18,6 +19,7 @@ type AuthorizationProps = {
 const ADMIN_PATH_PREFIX = '/dash';
 
 const AdminAuthorization: React.FC<AuthorizationProps> = ({ children, authorizationMode }) => {
+  const { t } = useTranslation();
   const session = useLHSession() as any;
   const org = useOrg() as any;
   const pathname = usePathname();
@@ -84,7 +86,16 @@ const AdminAuthorization: React.FC<AuthorizationProps> = ({ children, authorizat
   if (authorizationMode === 'page' && isAuthorized === false) {
     // 403 is what classifyError matches to the catalog's `permission` category,
     // which supplies the copy and the Home / sign out / report actions.
-    return <ErrorUI error={{ status: 403, message: 'admin_only' }} />;
+    return (
+      <ErrorUI
+        error={{ status: 403, message: 'admin_only' }}
+        message={t('errors.admin_only.title', { defaultValue: 'Bu Sayfaya Erişim Yetkiniz Bulunmuyor' })}
+        submessage={t('errors.admin_only.description', {
+          defaultValue:
+            'Bu yönetim alanı yalnızca okul yöneticileri ve öğretmenler içindir. Bir öğrenciyseniz sınıflarınıza, derslerinize ve panolarınıza ana sayfadan erişebilirsiniz.',
+        })}
+      />
+    );
   }
 
   return <>{isAuthorized && children}</>;

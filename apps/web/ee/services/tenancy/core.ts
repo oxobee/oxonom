@@ -111,9 +111,9 @@ export async function resolveMultiTenant(args: {
     return { slug: sub, source: 'subdomain' }
   }
 
-  // 3. Cookie (only on non-base hosts; on the bare apex we want the default
+  // 3. Cookie (on localhost or non-base hosts; on the bare apex we want the default
   // org picker rather than silently restoring the last-visited org)
-  if (cookieOrgslug && host && !isSameHost(host, baseDomain) && !isLocalhost(host)) {
+  if (cookieOrgslug && host && (!isSameHost(host, baseDomain) || isLocalhost(host))) {
     return { slug: cookieOrgslug, source: 'cookie' }
   }
 

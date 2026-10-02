@@ -408,7 +408,7 @@ export default async function proxy(req: NextRequest) {
   if (pathname.match(/^\/course\/[^/]+\/activity\/[^/]+\/edit$/)) {
     return NextResponse.rewrite(new URL(`/editor${pathname}`, req.url))
   }
-  if (pathname.startsWith('/board/')) {
+  if (pathname.startsWith('/board/') || pathname.startsWith('/b/')) {
     const response = NextResponse.rewrite(new URL(pathname + search, req.url))
     setInstanceCookies(response, instance)
     return response
@@ -539,6 +539,22 @@ export default async function proxy(req: NextRequest) {
   // -------------------------------------------------------------------------
   // 11. Tenant-scoped rewrite — the catch-all that puts us under /orgs/{slug}
   // -------------------------------------------------------------------------
+  if (pathname.startsWith('/orgs/')) {
+    const segments = pathname.split('/')
+    const pathOrgSlug = segments[2]
+    const pathResolved: ResolvedTenant = pathOrgSlug
+      ? { slug: pathOrgSlug, source: 'default' }
+      : await resolveTenant(req, instance)
+    const requestHeaders = tenantRequestHeaders(req, pathResolved, instance)
+    const response = NextResponse.rewrite(
+      new URL(`${pathname}${search}`, req.url),
+      { request: { headers: requestHeaders } },
+    )
+    setOrgCookies(response, pathResolved, instance)
+    setInstanceCookies(response, instance)
+    return response
+  }
+
   const resolved = await resolveTenant(req, instance)
   const requestHeaders = tenantRequestHeaders(req, resolved, instance)
   // `${search}` is load-bearing: a rewrite destination built from an absolute

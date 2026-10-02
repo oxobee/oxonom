@@ -522,13 +522,19 @@ async def add_usergroup_to_playground(
         raise HTTPException(status_code=404, detail="Playground not found")
 
     acting_user_id = resolve_acting_user_id(current_user)
-    rights = await _get_user_rights(acting_user_id, playground.org_id, db_session)
-    pg_rights = rights.get("playgrounds", {})
-    is_owner = playground.created_by == acting_user_id
-    can_update = pg_rights.get("action_update", False) or (
-        is_owner and pg_rights.get("action_update_own", False)
-    )
-    if not can_update:
+    is_super = await is_user_superadmin(acting_user_id, db_session)
+    is_member = False
+    if not is_super:
+        from src.db.users import UserOrganization
+        user_org = (await db_session.execute(
+            select(UserOrganization).where(
+                UserOrganization.user_id == acting_user_id,
+                UserOrganization.org_id == playground.org_id,
+            )
+        )).scalars().first()
+        is_member = bool(user_org)
+
+    if not is_super and not is_member:
         raise HTTPException(status_code=403, detail="Insufficient permissions")
 
     from src.db.usergroups import UserGroup
@@ -574,13 +580,19 @@ async def remove_usergroup_from_playground(
         raise HTTPException(status_code=404, detail="Playground not found")
 
     acting_user_id = resolve_acting_user_id(current_user)
-    rights = await _get_user_rights(acting_user_id, playground.org_id, db_session)
-    pg_rights = rights.get("playgrounds", {})
-    is_owner = playground.created_by == acting_user_id
-    can_update = pg_rights.get("action_update", False) or (
-        is_owner and pg_rights.get("action_update_own", False)
-    )
-    if not can_update:
+    is_super = await is_user_superadmin(acting_user_id, db_session)
+    is_member = False
+    if not is_super:
+        from src.db.users import UserOrganization
+        user_org = (await db_session.execute(
+            select(UserOrganization).where(
+                UserOrganization.user_id == acting_user_id,
+                UserOrganization.org_id == playground.org_id,
+            )
+        )).scalars().first()
+        is_member = bool(user_org)
+
+    if not is_super and not is_member:
         raise HTTPException(status_code=403, detail="Insufficient permissions")
 
     from src.db.usergroups import UserGroup
@@ -673,13 +685,19 @@ async def get_playground_usergroups(
     await _check_read_access(playground, current_user, db_session)
 
     acting_user_id = resolve_acting_user_id(current_user)
-    rights = await _get_user_rights(acting_user_id, playground.org_id, db_session)
-    pg_rights = rights.get("playgrounds", {})
-    is_owner = playground.created_by == acting_user_id
-    can_manage = pg_rights.get("action_update", False) or (
-        is_owner and pg_rights.get("action_update_own", False)
-    )
-    if not can_manage:
+    is_super = await is_user_superadmin(acting_user_id, db_session)
+    is_member = False
+    if not is_super:
+        from src.db.users import UserOrganization
+        user_org = (await db_session.execute(
+            select(UserOrganization).where(
+                UserOrganization.user_id == acting_user_id,
+                UserOrganization.org_id == playground.org_id,
+            )
+        )).scalars().first()
+        is_member = bool(user_org)
+
+    if not is_super and not is_member:
         raise HTTPException(status_code=403, detail="Insufficient permissions")
 
     ugrs = (await db_session.execute(

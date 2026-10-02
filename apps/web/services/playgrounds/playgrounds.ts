@@ -161,6 +161,17 @@ export async function removeUserGroupFromPlayground(
   return errorHandling(result)
 }
 
+export async function getPlaygroundUserGroups(
+  playgroundUuid: string,
+  access_token: string
+): Promise<any[]> {
+  const result = await fetch(
+    `${getAPIUrl()}playgrounds/${playgroundUuid}/usergroups`,
+    RequestBodyWithAuthHeader('GET', null, null, access_token)
+  )
+  return errorHandling(result)
+}
+
 // ── Reactions ────────────────────────────────────────────────────────────────
 
 export interface PlaygroundReactionUser {

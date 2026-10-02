@@ -1,4 +1,5 @@
 import os
+import json
 import yaml
 from typing import Literal, Optional
 from pydantic import BaseModel
@@ -479,6 +480,30 @@ def get_learnhouse_config() -> LearnHouseConfig:
         is_ai_enabled = env_is_ai_enabled_str.lower() in ("true", "1", "yes")
     else:
         is_ai_enabled = yaml_ai_config.get("is_ai_enabled", False)
+
+    # Superadmin system_settings.json overrides
+    sys_settings_file = os.path.join(os.path.dirname(__file__), "system_settings.json")
+    if os.path.exists(sys_settings_file):
+        try:
+            with open(sys_settings_file, "r", encoding="utf-8") as f:
+                saved_sys = json.load(f)
+                sys_ai = saved_sys.get("ai", {})
+                if sys_ai.get("provider"):
+                    ai_provider = sys_ai["provider"]
+                if sys_ai.get("api_key"):
+                    ai_api_key = sys_ai["api_key"]
+                if sys_ai.get("base_url"):
+                    ai_base_url = sys_ai["base_url"]
+                if sys_ai.get("model_fast"):
+                    ai_model_fast = sys_ai["model_fast"]
+                if sys_ai.get("model_standard"):
+                    ai_model_standard = sys_ai["model_standard"]
+                if sys_ai.get("model_pro"):
+                    ai_model_pro = sys_ai["model_pro"]
+                if "is_ai_enabled" in sys_ai:
+                    is_ai_enabled = bool(sys_ai["is_ai_enabled"])
+        except Exception:
+            pass
 
     # Redis config
     env_redis_connection_string = os.environ.get("LEARNHOUSE_REDIS_CONNECTION_STRING")

@@ -5,7 +5,7 @@ import FormLayout, {
 import * as Form from '@radix-ui/react-form'
 import { useFormik } from 'formik'
 import React, { useState, useEffect } from 'react'
-import { AlertTriangle, Info, Lock, Mail, Shield, X, Clock, Send, CheckCircle2 } from 'lucide-react'
+import { AlertTriangle, Info, Lock, Mail, Shield, X, Clock, Send, CheckCircle2, Sparkles, GraduationCap } from 'lucide-react'
 import { checkSSOEnabled, redirectToSSOLogin } from '@services/auth/sso'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -435,24 +435,121 @@ const LoginClient = (props: LoginClientProps) => {
     },
   })
 
+  const [demoRoleLoading, setDemoRoleLoading] = useState<'admin' | 'teacher' | 'student' | null>(null)
+
+  const handleQuickDemoLogin = async (role: 'admin' | 'teacher' | 'student') => {
+    setDemoRoleLoading(role)
+    setIsSubmitting(true)
+    setError('')
+    setErrorType(null)
+    setShowErrorModal(false)
+
+    const email = role === 'admin' 
+      ? 'idare@oxonom.com' 
+      : role === 'teacher' 
+        ? 'ogretmen@oxonom.com' 
+        : 'ogrenci@oxonom.com'
+    const password = 'Ugur2803*'
+
+    formik.setFieldValue('email', email)
+    formik.setFieldValue('password', password)
+
+    const targetSlug = props.org?.slug || 'demo'
+    const targetPath = role === 'student' ? `/orgs/${targetSlug}/trail` : `/orgs/${targetSlug}`
+
+    if (typeof document !== 'undefined') {
+      document.cookie = `LH_org=${targetSlug}; path=/; max-age=2592000`
+    }
+
+    // Pre-populate realistic favorite whiteboards for demo student
+    if (typeof window !== 'undefined' && role === 'student') {
+      try {
+        const defaultFavorites = [
+          {
+            id: 41,
+            board_uuid: 'board_6be7ebed-4c00-4243-9a9b-ffef9933803b',
+            name: '10-A Matematik: Fonksiyon Grafikleri & Parabol Çizimleri',
+            category: 'Matematik',
+            favorited_at: new Date().toISOString(),
+          },
+          {
+            id: 42,
+            board_uuid: 'board_2aa88e1a-dcc0-451b-9924-4b075f3f8e2e',
+            name: 'Fizik Laboratuvarı: Elektrik Devreleri & Eşdeğer Direnç',
+            category: 'Fen Bilimleri',
+            favorited_at: new Date(Date.now() - 86400000).toISOString(),
+          },
+          {
+            id: 44,
+            board_uuid: 'board_93a22f1c-4071-4fbc-b42a-82411a2a9faf',
+            name: '10-A Haftalık Ders Programı, Nöbetçi Listesi ve Duyuru Panosu',
+            category: 'Genel Konular',
+            favorited_at: new Date(Date.now() - 172800000).toISOString(),
+          },
+          {
+            id: 43,
+            board_uuid: 'board_2ec16e01-3744-4a40-93dc-228016b8a937',
+            name: 'Kimya: Periyodik Tablo ve Lewis Yapıları Çizim Tahtası',
+            category: 'Fen Bilimleri',
+            favorited_at: new Date(Date.now() - 259200000).toISOString(),
+          },
+        ]
+        localStorage.setItem('oxonom_fav_boards_2', JSON.stringify(defaultFavorites))
+        localStorage.setItem('oxonom_fav_boards', JSON.stringify(defaultFavorites))
+      } catch (_e) {
+        // ignore localStorage error
+      }
+    }
+
+    try {
+      const res: any = await signIn('credentials', {
+        redirect: false,
+        email,
+        password,
+        orgSlug: targetSlug,
+        callbackUrl: targetPath,
+      })
+
+      if (res && res.error) {
+        let errMsg = t('auth.wrong_email_password', { defaultValue: 'Giriş yapılamadı. Bilgilerinizi kontrol ediniz.' })
+        try {
+          const parsed = JSON.parse(res.error)
+          if (parsed.message) errMsg = parsed.message
+        } catch (_e) {}
+        setError(errMsg)
+        setShowErrorModal(true)
+        setIsSubmitting(false)
+        setDemoRoleLoading(null)
+      } else {
+        track(AnalyticsEvent.LoginSucceeded, { method: 'demo_quick_login', role })
+        window.location.href = targetPath
+      }
+    } catch (err: any) {
+      setError(err?.message || t('auth.wrong_email_password', { defaultValue: 'Giriş yapılamadı. Lütfen tekrar deneyiniz.' }))
+      setShowErrorModal(true)
+      setIsSubmitting(false)
+      setDemoRoleLoading(null)
+    }
+  }
+
   return (
     <AuthLayout
       org={props.org}
       welcomeText={t('auth.login_to')}
-      title={t('auth.image_title_login', { defaultValue: 'Welcome back to LearnHouse.' })}
+      title={t('auth.image_title_login', { defaultValue: 'Welcome back to Oxonom Edu.' })}
       subtitle={t('auth.image_subtitle_login', {
-        defaultValue: 'Pick up where you left off — your courses, students, and tools are waiting.',
+        defaultValue: 'Pick up where you left off — your classrooms, students, and tools are waiting.',
       })}
     >
         {/* Error Top Bar */}
         {showErrorModal && (
           <div className={`
             mx-6 md:mx-12 lg:mx-20 mt-6 rounded-xl border px-4 py-3 flex items-center justify-between gap-3 animate-in slide-in-from-top duration-200
-            ${errorType === 'EMAIL_NOT_VERIFIED' && !verificationResent ? 'bg-amber-50 text-amber-700 border-amber-100' : ''}
-            ${verificationResent ? 'bg-green-50 text-green-700 border-green-100' : ''}
-            ${errorType === 'ACCOUNT_LOCKED' ? 'bg-red-50 text-red-700 border-red-100' : ''}
-            ${errorType === 'RATE_LIMITED' ? 'bg-orange-50 text-orange-700 border-orange-100' : ''}
-            ${error && !verificationResent && errorType !== 'EMAIL_NOT_VERIFIED' && errorType !== 'ACCOUNT_LOCKED' && errorType !== 'RATE_LIMITED' ? 'bg-red-50 text-red-700 border-red-100' : ''}
+            ${errorType === 'EMAIL_NOT_VERIFIED' && !verificationResent ? 'bg-amber-50 text-amber-700 border-amber-100' :
+              verificationResent ? 'bg-green-50 text-green-700 border-green-100' :
+              errorType === 'ACCOUNT_LOCKED' ? 'bg-red-50 text-red-700 border-red-100' :
+              errorType === 'RATE_LIMITED' ? 'bg-orange-50 text-orange-700 border-orange-100' :
+              'bg-red-50 text-red-700 border-red-100'}
           `}>
             <div className="flex items-center gap-3 flex-1 min-w-0">
               {errorType === 'EMAIL_NOT_VERIFIED' && !verificationResent && <Mail size={18} className="shrink-0" />}
@@ -793,7 +890,7 @@ const LoginClient = (props: LoginClientProps) => {
                     disabled={isSubmitting || (turnstileRequired && !turnstileToken)}
                     className="box-border w-full inline-flex h-[44px] rounded-lg items-center justify-center bg-black hover:bg-black/85 text-white px-[15px] font-bold text-[14px] leading-none mt-2 transition-all disabled:opacity-50"
                   >
-                    {isSubmitting ? (
+                    {isSubmitting && !demoRoleLoading ? (
                       <span className="flex items-center space-x-2">
                         <span className="w-4 h-4 border-t-2 border-white rounded-full animate-spin" />
                         <span>{t('common.loading')}</span>
@@ -805,6 +902,49 @@ const LoginClient = (props: LoginClientProps) => {
                 </Form.Submit>
               </FormLayout>
               )}
+
+              {/* Quick Demo Access Buttons (Oxonom Edu style) */}
+              <div className="space-y-2 mt-4 pt-3 border-t border-neutral-200">
+                <button
+                  type="button"
+                  onClick={() => handleQuickDemoLogin('admin')}
+                  disabled={isSubmitting}
+                  className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-violet-600/10 hover:from-blue-600/20 hover:via-indigo-600/20 hover:to-violet-600/20 border border-indigo-500/40 text-indigo-900 dark:text-indigo-300 font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
+                >
+                  {demoRoleLoading === 'admin' ? (
+                    <span className="w-3.5 h-3.5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin shrink-0" />
+                  ) : (
+                    <Shield size={16} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+                  )}
+                  <span>{t('auth.demo_admin_login', { defaultValue: '🛡️ Demo Okul Yönetimi ile Keşfet' })}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickDemoLogin('teacher')}
+                  disabled={isSubmitting}
+                  className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500/10 via-purple-600/10 to-blue-600/10 hover:from-amber-500/20 hover:via-purple-600/20 hover:to-blue-600/20 border border-amber-500/40 text-amber-900 dark:text-amber-300 font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
+                >
+                  {demoRoleLoading === 'teacher' ? (
+                    <span className="w-3.5 h-3.5 border-2 border-amber-600 border-t-transparent rounded-full animate-spin shrink-0" />
+                  ) : (
+                    <Sparkles size={16} className="text-amber-500 shrink-0" />
+                  )}
+                  <span>{t('auth.demo_teacher_login', { defaultValue: '⚡ Demo Öğretmen Hesabı ile Keşfet' })}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickDemoLogin('student')}
+                  disabled={isSubmitting}
+                  className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-500/10 via-teal-600/10 to-cyan-600/10 hover:from-emerald-500/20 hover:via-teal-600/20 hover:to-cyan-600/20 border border-emerald-500/40 text-emerald-900 dark:text-emerald-300 font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
+                >
+                  {demoRoleLoading === 'student' ? (
+                    <span className="w-3.5 h-3.5 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin shrink-0" />
+                  ) : (
+                    <GraduationCap size={16} className="text-emerald-500 shrink-0" />
+                  )}
+                  <span>{t('auth.demo_student_login', { defaultValue: '🎓 Demo Öğrenci Hesabı ile Keşfet' })}</span>
+                </button>
+              </div>
 
               {/* Divider — only earns its place between two sets of options. */}
               {passwordAllowed && hasAlternativeMethods && (

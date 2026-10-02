@@ -34,6 +34,7 @@ class UserCreate(UserBase):
     # request could write an arbitrary blob. Values here are validated against
     # the org's declared fields before anything is stored.
     custom_fields: Optional[dict] = None
+    join_code: Optional[str] = None
 
 
 class UserUpdate(UserBase):

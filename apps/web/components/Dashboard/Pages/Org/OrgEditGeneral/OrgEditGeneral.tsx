@@ -25,35 +25,35 @@ import { useTranslation } from 'react-i18next'
 import { useLHAnalytics, AnalyticsEvent } from '@services/analytics'
 
 const ORG_LABELS = [
-  { value: 'languages', label: '🌐 Languages' },
-  { value: 'business', label: '💰 Business' },
-  { value: 'ecommerce', label: '🛍 E-commerce' },
-  { value: 'gaming', label: '🎮 Gaming' },
-  { value: 'music', label: '🎸 Music' },
-  { value: 'sports', label: '⚽ Sports' },
-  { value: 'cars', label: '🚗 Cars' },
-  { value: 'sales_marketing', label: '🚀 Sales & Marketing' },
-  { value: 'tech', label: '💻 Tech' },
-  { value: 'photo_video', label: '📸 Photo & Video' },
-  { value: 'pets', label: '🐕 Pets' },
-  { value: 'personal_development', label: '📚 Personal Development' },
-  { value: 'real_estate', label: '🏠 Real Estate' },
-  { value: 'beauty_fashion', label: '👠 Beauty & Fashion' },
-  { value: 'travel', label: '✈️ Travel' },
-  { value: 'productivity', label: '⏳ Productivity' },
-  { value: 'health_fitness', label: '🍎 Health & Fitness' },
-  { value: 'finance', label: '📈 Finance' },
-  { value: 'arts_crafts', label: '🎨 Arts & Crafts' },
-  { value: 'education', label: '📚 Education' },
-  { value: 'stem', label: '🔬 STEM' },
-  { value: 'humanities', label: '📖 Humanities' },
-  { value: 'professional_skills', label: '💼 Professional Skills' },
-  { value: 'digital_skills', label: '💻 Digital Skills' },
-  { value: 'creative_arts', label: '🎨 Creative Arts' },
-  { value: 'social_sciences', label: '🌍 Social Sciences' },
-  { value: 'test_prep', label: '✍️ Test Preparation' },
-  { value: 'vocational', label: '🔧 Vocational Training' },
-  { value: 'early_education', label: '🎯 Early Education' },
+  { value: 'languages', emoji: '🌐', labelKey: 'dashboard.organization.settings.categories.languages', fallback: 'Diller & Yabancı Dil' },
+  { value: 'business', emoji: '💰', labelKey: 'dashboard.organization.settings.categories.business', fallback: 'İş & Yönetim' },
+  { value: 'ecommerce', emoji: '🛍', labelKey: 'dashboard.organization.settings.categories.ecommerce', fallback: 'E-Ticaret' },
+  { value: 'gaming', emoji: '🎮', labelKey: 'dashboard.organization.settings.categories.gaming', fallback: 'Oyun Geliştirme' },
+  { value: 'music', emoji: '🎸', labelKey: 'dashboard.organization.settings.categories.music', fallback: 'Müzik' },
+  { value: 'sports', emoji: '⚽', labelKey: 'dashboard.organization.settings.categories.sports', fallback: 'Beden Eğitimi & Spor' },
+  { value: 'cars', emoji: '🚗', labelKey: 'dashboard.organization.settings.categories.cars', fallback: 'Otomotiv & Ulaşım' },
+  { value: 'sales_marketing', emoji: '🚀', labelKey: 'dashboard.organization.settings.categories.sales_marketing', fallback: 'Pazarlama & Satış' },
+  { value: 'tech', emoji: '💻', labelKey: 'dashboard.organization.settings.categories.tech', fallback: 'Bilişim & Yazılım' },
+  { value: 'photo_video', emoji: '📸', labelKey: 'dashboard.organization.settings.categories.photo_video', fallback: 'Fotoğrafçılık & Medya' },
+  { value: 'pets', emoji: '🐕', labelKey: 'dashboard.organization.settings.categories.pets', fallback: 'Veterinerlik & Hayvan Bakımı' },
+  { value: 'personal_development', emoji: '📚', labelKey: 'dashboard.organization.settings.categories.personal_development', fallback: 'Kişisel Gelişim & Rehberlik' },
+  { value: 'real_estate', emoji: '🏠', labelKey: 'dashboard.organization.settings.categories.real_estate', fallback: 'Gayrimenkul' },
+  { value: 'beauty_fashion', emoji: '👠', labelKey: 'dashboard.organization.settings.categories.beauty_fashion', fallback: 'Moda & Tasarım' },
+  { value: 'travel', emoji: '✈️', labelKey: 'dashboard.organization.settings.categories.travel', fallback: 'Turizm & Seyahat' },
+  { value: 'productivity', emoji: '⏳', labelKey: 'dashboard.organization.settings.categories.productivity', fallback: 'Verimlilik & Çalışma' },
+  { value: 'health_fitness', emoji: '🍎', labelKey: 'dashboard.organization.settings.categories.health_fitness', fallback: 'Sağlık & Beden Gelişimi' },
+  { value: 'finance', emoji: '📈', labelKey: 'dashboard.organization.settings.categories.finance', fallback: 'Ekonomi & Finans' },
+  { value: 'arts_crafts', emoji: '🎨', labelKey: 'dashboard.organization.settings.categories.arts_crafts', fallback: 'El Sanatları & Tasarım' },
+  { value: 'education', emoji: '📚', labelKey: 'dashboard.organization.settings.categories.education', fallback: 'Genel Eğitim' },
+  { value: 'stem', emoji: '🔬', labelKey: 'dashboard.organization.settings.categories.stem', fallback: 'STEM (Fen, Teknoloji, Matematik)' },
+  { value: 'humanities', emoji: '📖', labelKey: 'dashboard.organization.settings.categories.humanities', fallback: 'Sosyal & Beşeri Bilimler' },
+  { value: 'professional_skills', emoji: '💼', labelKey: 'dashboard.organization.settings.categories.professional_skills', fallback: 'Mesleki Beceriler' },
+  { value: 'digital_skills', emoji: '💻', labelKey: 'dashboard.organization.settings.categories.digital_skills', fallback: 'Dijital Okuryazarlık' },
+  { value: 'creative_arts', emoji: '🎨', labelKey: 'dashboard.organization.settings.categories.creative_arts', fallback: 'Görsel & Sahne Sanatları' },
+  { value: 'social_sciences', emoji: '🌍', labelKey: 'dashboard.organization.settings.categories.social_sciences', fallback: 'Sosyal Bilgiler & Tarih' },
+  { value: 'test_prep', emoji: '✍️', labelKey: 'dashboard.organization.settings.categories.test_prep', fallback: 'Sınav Hazırlık (LGS / YKS)' },
+  { value: 'vocational', emoji: '🔧', labelKey: 'dashboard.organization.settings.categories.vocational', fallback: 'Mesleki ve Teknik Eğitim' },
+  { value: 'early_education', emoji: '🎯', labelKey: 'dashboard.organization.settings.categories.early_education', fallback: 'Okul Öncesi & İlkokul' },
 ] as const
 
 // Mirrors MAX_SENDER_NAME_LENGTH in apps/api/src/services/email/sender.py, which
@@ -105,6 +105,11 @@ const OrgEditGeneral: React.FC = () => {
     org?.config?.config?.customization?.general?.default_language ||
     org?.config?.config?.general?.default_language ||
     'en'
+  )
+
+  // Games visibility state
+  const [gamesEnabled, setGamesEnabled] = React.useState<boolean>(
+    org?.config?.config?.features?.games?.enabled !== false
   )
 
   const initialValues: OrganizationValues = {
@@ -209,12 +214,17 @@ const OrgEditGeneral: React.FC = () => {
                         onValueChange={(value) => setFieldValue('label', value)}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder={t('dashboard.organization.settings.label_placeholder')} />
+                          <SelectValue placeholder={t('dashboard.organization.settings.label_placeholder')}>
+                            {(() => {
+                              const selected = ORG_LABELS.find((item) => item.value === values.label)
+                              return selected ? `${selected.emoji} ${t(selected.labelKey, { defaultValue: selected.fallback })}` : undefined
+                            })()}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           {ORG_LABELS.map((type) => (
                             <SelectItem key={type.value} value={type.value}>
-                              {type.label}
+                              {type.emoji} {t(type.labelKey, { defaultValue: type.fallback })}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -304,6 +314,28 @@ const OrgEditGeneral: React.FC = () => {
                         </SelectContent>
                       </Select>
                       <p className="text-gray-500 text-sm mt-1">{t('dashboard.organization.settings.default_language_desc')}</p>
+                    </div>
+
+                    {/* Eğitici Oyunlar Menüsü Görünürlüğü */}
+                    <div className="pt-3 border-t border-gray-100 flex items-center justify-between">
+                      <div>
+                        <Label htmlFor="gamesEnabled" className="font-bold text-gray-900 cursor-pointer">
+                          Eğitici Oyunlar Menüsü
+                        </Label>
+                        <p className="text-gray-500 text-xs mt-0.5">
+                          Öğretmen ve öğrenciler için üst menüde ve mobilde "Oyunlar" mağazasının görünmesini sağlar.
+                        </p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        id="gamesEnabled"
+                        checked={gamesEnabled}
+                        onChange={(e) => {
+                          setGamesEnabled(e.target.checked)
+                          toast.success(e.target.checked ? 'Oyunlar menüsü aktif edildi' : 'Oyunlar menüsü gizlendi')
+                        }}
+                        className="w-5 h-5 rounded text-indigo-600 cursor-pointer"
+                      />
                     </div>
 
                   </div>

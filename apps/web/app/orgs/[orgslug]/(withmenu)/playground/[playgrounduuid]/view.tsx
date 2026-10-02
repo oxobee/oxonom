@@ -1,27 +1,22 @@
 'use client'
 
-import React, { useState, useRef, useCallback } from 'react'
+import React, { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import Link from 'next/link'
 import {
-  ArrowsOutSimple,
-  ArrowsInSimple,
-  PencilSimple,
   Sparkle,
   CalendarBlank,
   Globe,
   Lock,
   Users,
-  DownloadSimple,
 } from '@phosphor-icons/react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import GeneralWrapperStyled from '@components/Objects/StyledElements/Wrappers/GeneralWrapper'
 import { Breadcrumbs } from '@components/Objects/Breadcrumbs/Breadcrumbs'
 import { PlaygroundReactionButton } from '@components/Playground/PlaygroundReactionButton'
-import UserAvatar from '@components/Objects/UserAvatar'
 import { Playground } from '@services/playgrounds/playgrounds'
-import { getPlaygroundThumbnailMediaDirectory, getUserAvatarMediaDirectory } from '@services/media/media'
+import { getPlaygroundThumbnailMediaDirectory } from '@services/media/media'
+import { getUriWithOrg } from '@services/config/config'
 import { useTrackView, AnalyticsEvent } from '@services/analytics'
 
 dayjs.extend(relativeTime)
@@ -33,17 +28,18 @@ interface PlaygroundViewClientProps {
 }
 
 const ACCESS_BADGES = {
-  public: { icon: Globe, label: 'Public', className: 'bg-green-50 text-green-700' },
-  authenticated: { icon: Users, label: 'Members', className: 'bg-blue-50 text-blue-700' },
-  restricted: { icon: Lock, label: 'Restricted', className: 'bg-amber-50 text-amber-700' },
+  public: { icon: Globe, label: 'Public', tr: 'Herkese Açık', className: 'bg-green-50 text-green-700' },
+  authenticated: { icon: Users, label: 'Members', tr: 'Üyeler', className: 'bg-blue-50 text-blue-700' },
+  restricted: { icon: Lock, label: 'Restricted', tr: 'Kısıtlı', className: 'bg-amber-50 text-amber-700' },
 }
 
 export default function PlaygroundViewClient({
   playground,
+  orgslug,
   canEdit,
 }: PlaygroundViewClientProps) {
-  const { t } = useTranslation()
-  const [isFullscreen, setIsFullscreen] = useState(false)
+  const { t, i18n } = useTranslation()
+  const isTr = i18n?.language?.startsWith('tr') !== false
   const iframeContainerRef = useRef<HTMLDivElement>(null)
 
   useTrackView(
@@ -62,43 +58,9 @@ export default function PlaygroundViewClient({
         )
       : null
 
-  const handleDownload = useCallback(() => {
-    const html = playground.html_content || ''
-    const blob = new Blob([html], { type: 'text/html' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${playground.name || 'playground'}.html`
-    a.click()
-    URL.revokeObjectURL(url)
-  }, [playground.html_content, playground.name])
-
-  const toggleFullscreen = useCallback(async () => {
-    if (!isFullscreen) {
-      await iframeContainerRef.current?.requestFullscreen?.()
-    } else {
-      await document.exitFullscreen?.()
-    }
-  }, [isFullscreen])
-
-  React.useEffect(() => {
-    const handler = () => setIsFullscreen(!!document.fullscreenElement)
-    document.addEventListener('fullscreenchange', handler)
-    return () => document.removeEventListener('fullscreenchange', handler)
-  }, [])
-
   const accessBadge = ACCESS_BADGES[playground.access_type] ?? ACCESS_BADGES.authenticated
   const AccessIcon = accessBadge.icon
   const createdDate = dayjs(playground.creation_date).format('MMM D, YYYY')
-
-  const authorName = playground.author_first_name
-    ? `${playground.author_first_name}${playground.author_last_name ? ` ${playground.author_last_name}` : ''}`
-    : playground.author_username ?? null
-
-  const authorAvatarUrl =
-    playground.author_user_uuid && playground.author_avatar_image
-      ? getUserAvatarMediaDirectory(playground.author_user_uuid, playground.author_avatar_image)
-      : null
 
   return (
     <GeneralWrapperStyled>
@@ -106,7 +68,7 @@ export default function PlaygroundViewClient({
       <div className="pb-4">
         <Breadcrumbs
           items={[
-            { label: t('playgrounds.view.breadcrumb'), href: '/playgrounds', icon: <Sparkle size={14} /> },
+            { label: isTr ? 'Modüller' : 'Modules', href: getUriWithOrg(orgslug, '/playgrounds'), icon: <Sparkle size={14} /> },
             { label: playground.name },
           ]}
         />
@@ -132,7 +94,9 @@ export default function PlaygroundViewClient({
             {/* Info card */}
             <div className="bg-white nice-shadow rounded-lg overflow-hidden">
               <div className="p-3 border-b border-gray-100">
-                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">{t('playgrounds.view.about')}</p>
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                  {isTr ? 'Hakkında' : t('playgrounds.view.about')}
+                </p>
                 <h1 className="text-sm font-bold text-gray-900 leading-snug">
                   {playground.name}
                 </h1>
@@ -144,69 +108,35 @@ export default function PlaygroundViewClient({
               </div>
 
               <div className="px-3 py-2.5 space-y-2">
-                {authorName && (
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs text-gray-500">{t('playgrounds.view.author')}</span>
-                    <span className="flex items-center gap-1.5 text-xs text-gray-700 font-medium">
-                      <UserAvatar
-                        width={16}
-                        rounded="rounded-full"
-                        avatar_url={authorAvatarUrl ?? undefined}
-                        shadow=""
-                        backgroundColor="bg-gray-100"
-                      />
-                      {authorName}
-                    </span>
-                  </div>
-                )}
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs text-gray-500">{t('playgrounds.view.access')}</span>
+                  <span className="text-xs text-gray-500">{isTr ? 'Erişim' : t('playgrounds.view.access')}</span>
                   <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold ${accessBadge.className}`}>
                     <AccessIcon size={9} />
-                    {accessBadge.label}
+                    {isTr ? accessBadge.tr : accessBadge.label}
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs text-gray-500">{t('playgrounds.view.created')}</span>
+                  <span className="text-xs text-gray-500">{isTr ? 'Oluşturulma' : t('playgrounds.view.created')}</span>
                   <span className="flex items-center gap-1 text-xs text-gray-700">
                     <CalendarBlank size={10} className="text-gray-400" />
                     {createdDate}
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs text-gray-500">{t('playgrounds.view.status')}</span>
+                  <span className="text-xs text-gray-500">{isTr ? 'Durum' : t('playgrounds.view.status')}</span>
                   <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
                     playground.published ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'
                   }`}>
-                    {playground.published ? t('playgrounds.view.published') : t('playgrounds.view.draft')}
+                    {playground.published ? (isTr ? 'Yayında' : t('playgrounds.view.published')) : (isTr ? 'Taslak' : t('playgrounds.view.draft'))}
                   </span>
                 </div>
-              </div>
-
-              <div className={`px-3 pb-3 ${canEdit ? 'space-y-2' : ''}`}>
-                {canEdit && (
-                  <Link
-                    href={`/editor/playground/${playground.playground_uuid}/edit`}
-                    className="flex items-center justify-center gap-1.5 w-full py-1.5 rounded-lg text-xs font-bold bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition-colors"
-                  >
-                    <PencilSimple size={11} weight="bold" />
-                    {t('playgrounds.view.edit_in_editor')}
-                  </Link>
-                )}
-                <button
-                  onClick={handleDownload}
-                  className="flex items-center justify-center gap-1.5 w-full py-1.5 rounded-lg text-xs font-bold bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition-colors"
-                >
-                  <DownloadSimple size={11} weight="bold" />
-                  {t('playgrounds.view.download')}
-                </button>
               </div>
             </div>
 
             {/* Reactions card */}
             <div className="bg-white nice-shadow rounded-lg p-3">
               <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2.5">
-                {t('playgrounds.view.reactions')}
+                {isTr ? 'Tepkiler' : t('playgrounds.view.reactions')}
               </p>
               <PlaygroundReactionButton playgroundUuid={playground.playground_uuid} />
             </div>
@@ -220,25 +150,7 @@ export default function PlaygroundViewClient({
             className="relative bg-white nice-shadow rounded-lg overflow-hidden"
             style={{ height: 'calc(100vh - 200px)', minHeight: 480 }}
           >
-            {/* Toolbar — top right of preview */}
-            <div className="absolute top-3 end-3 z-10 flex items-center gap-2">
-              <button
-                onClick={handleDownload}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-white/80 backdrop-blur-sm nice-shadow text-neutral-500 hover:text-neutral-800 transition-colors"
-              >
-                <DownloadSimple size={13} weight="bold" />
-                {t('playgrounds.view.download')}
-              </button>
-              <button
-                onClick={toggleFullscreen}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold bg-white/80 backdrop-blur-sm nice-shadow text-neutral-500 hover:text-neutral-800 transition-colors"
-              >
-                {isFullscreen
-                  ? <><ArrowsInSimple size={13} weight="bold" />{t('playgrounds.view.exit_fullscreen')}</>
-                  : <><ArrowsOutSimple size={13} weight="bold" />{t('playgrounds.view.fullscreen')}</>
-                }
-              </button>
-            </div>
+            {/* Iframe / empty state */}
 
             {/* Iframe / empty state */}
             {playground.html_content ? (
@@ -256,17 +168,8 @@ export default function PlaygroundViewClient({
                 </div>
                 <p className="text-base font-semibold text-gray-500">{t('common.no_content_yet')}</p>
                 <p className="text-sm text-gray-400 mt-1">
-                  {canEdit ? t('playgrounds.view.open_editor_to_generate') : t('playgrounds.view.check_back_later')}
+                  {t('playgrounds.view.check_back_later')}
                 </p>
-                {canEdit && (
-                  <Link
-                    href={`/editor/playground/${playground.playground_uuid}/edit`}
-                    className="mt-4 flex items-center gap-1.5 px-4 py-2 bg-black text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors"
-                  >
-                    <PencilSimple size={14} weight="bold" />
-                    {t('playgrounds.view.open_editor')}
-                  </Link>
-                )}
               </div>
             )}
           </div>

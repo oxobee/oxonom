@@ -50,6 +50,6 @@ export LEARNHOUSE_DEMO_ENABLED=1
 export LEARNHOUSE_DEMO_SLUG=demo
 export LEARNHOUSE_DEMO_REFRESH_MINUTES=10
 
-export LEARNHOUSE_INITIAL_ADMIN_EMAIL=admin@school.dev
+export LEARNHOUSE_INITIAL_ADMIN_EMAIL=${LEARNHOUSE_INITIAL_ADMIN_EMAIL:-admin@oxonom.com}
 
-exec uv run uvicorn app:app --host 0.0.0.0 --port 1348 --log-level info
+exec uv run uvicorn app:app --host 0.0.0.0 --port 1348 --reload --log-level info

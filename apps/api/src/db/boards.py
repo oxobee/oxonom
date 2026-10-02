@@ -1,6 +1,6 @@
 from typing import List, Optional
 from enum import Enum
-from sqlalchemy import Column, ForeignKey, Integer, LargeBinary
+from sqlalchemy import Column, ForeignKey, Integer, LargeBinary, JSON
 from sqlmodel import Field, SQLModel
 
 
@@ -21,6 +21,11 @@ class BoardBase(SQLModel):
     # value, so flipping it does not retroactively change current boards. Owners
     # opt into public sharing via BoardCreate.public=True or BoardUpdate.public.
     public: bool = Field(default=False)
+    usergroup_id: Optional[int] = Field(default=None)
+    features: Optional[dict] = Field(default=None, sa_column=Column(JSON, nullable=True))
+    share_type: str = Field(default="public")
+    share_code: Optional[str] = Field(default=None)
+    short_code: Optional[str] = Field(default=None, index=True)
 
 
 class Board(BoardBase, table=True):
@@ -31,6 +36,10 @@ class Board(BoardBase, table=True):
     board_uuid: str = Field(default="", index=True)
     created_by: int = Field(
         sa_column=Column(Integer, ForeignKey("user.id", ondelete="SET NULL"), nullable=True)
+    )
+    usergroup_id: Optional[int] = Field(
+        default=None,
+        sa_column=Column(Integer, ForeignKey("usergroup.id", ondelete="SET NULL"), nullable=True, index=True)
     )
     ydoc_state: Optional[bytes] = Field(default=None, sa_column=Column(LargeBinary, nullable=True))
     creation_date: str = ""
@@ -53,10 +62,12 @@ class BoardCreate(SQLModel):
     name: str
     description: Optional[str] = None
     thumbnail_image: Optional[str] = Field(default="")
-    # Explicit opt-in for public boards; defaults to private (secure default).
-    # The frontend create flow should surface a "make public" toggle for users
-    # who want the board listed in the public gallery.
     public: bool = Field(default=False)
+    usergroup_id: Optional[int] = Field(default=None)
+    features: Optional[dict] = None
+    share_type: Optional[str] = "public"
+    share_code: Optional[str] = None
+    short_code: Optional[str] = None
 
 
 class BoardUpdate(SQLModel):
@@ -64,6 +75,11 @@ class BoardUpdate(SQLModel):
     description: Optional[str] = None
     thumbnail_image: Optional[str] = None
     public: Optional[bool] = None
+    usergroup_id: Optional[int] = None
+    features: Optional[dict] = None
+    share_type: Optional[str] = None
+    share_code: Optional[str] = None
+    short_code: Optional[str] = None
 
 
 class BoardRead(BoardBase):

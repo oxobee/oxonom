@@ -11,7 +11,8 @@ import { DemoStatus, getDemoStatus } from '@services/demo/demo'
 
 function formatCountdown(
   target: string | null,
-  imminent: string
+  imminent: string,
+  isTurkish: boolean = true
 ): string | null {
   if (!target) return null
   const remaining = new Date(target).getTime() - Date.now()
@@ -22,9 +23,10 @@ function formatCountdown(
   const seconds = totalSeconds % 60
   if (minutes >= 60) {
     const hours = Math.floor(minutes / 60)
-    return `${hours}h ${minutes % 60}m`
+    const remMins = minutes % 60
+    return isTurkish ? `${hours} saat ${remMins} dakika` : `${hours}h ${remMins}m`
   }
-  return `${minutes}m ${String(seconds).padStart(2, '0')}s`
+  return isTurkish ? `${minutes} dakika ${seconds} saniye` : `${minutes}m ${String(seconds).padStart(2, '0')}s`
 }
 
 /**
@@ -35,7 +37,8 @@ function formatCountdown(
  * up front is better than them losing work they thought they had saved.
  */
 export default function DemoBanner() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const isTurkish = (i18n?.language || 'tr').startsWith('tr')
   const org = useOrg() as any
   const [status, setStatus] = useState<DemoStatus | null>(null)
   const [countdown, setCountdown] = useState<string | null>(null)
@@ -63,16 +66,16 @@ export default function DemoBanner() {
     }
   }, [isDemo])
 
-  const imminent = t('demo.reset_imminent', { defaultValue: 'any moment' })
+  const imminent = t('demo.reset_imminent', { defaultValue: 'birkaç saniye içinde' })
 
   useEffect(() => {
     if (!status?.next_refresh_at) return
     const tick = () =>
-      setCountdown(formatCountdown(status.next_refresh_at, imminent))
+      setCountdown(formatCountdown(status.next_refresh_at, imminent, isTurkish))
     tick()
     const timer = setInterval(tick, 1000)
     return () => clearInterval(timer)
-  }, [status?.next_refresh_at, imminent])
+  }, [status?.next_refresh_at, imminent, isTurkish])
 
   if (!isDemo) return null
 
@@ -90,18 +93,18 @@ export default function DemoBanner() {
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">
       <Sparkle size={16} weight="fill" className="shrink-0" />
       <span className="font-semibold">
-        {t('demo.banner_title', { defaultValue: 'You are in the shared demo.' })}
+        {t('demo.banner_title', { defaultValue: 'Paylaşımlı demo ortamındasınız.' })}
       </span>
       <span className="text-amber-800">
         {countdown
           ? t('demo.banner_body_countdown', {
               countdown,
               defaultValue:
-                'Everything here is example data, and anything you change is put back in {{countdown}}.',
+                'Buradaki tüm veriler örnektir; yaptığınız değişiklikler {{countdown}} sonra sıfırlanır.',
             })
           : t('demo.banner_body', {
               defaultValue:
-                'Everything here is example data, and anything you change is put back regularly.',
+                'Buradaki tüm veriler örnektir ve periyodik olarak sıfırlanır.',
             })}
       </span>
       {/* The hub only exists in multi-tenancy; on a single-org install /new is
@@ -109,10 +112,10 @@ export default function DemoBanner() {
       {isMultiOrgModeEnabled() && (
         <Link
           href="/new"
-          className="ms-auto shrink-0 rounded-lg bg-amber-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-800"
+          className="ms-auto shrink-0 rounded-lg bg-amber-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-800 cursor-pointer shadow-xs"
         >
           {t('demo.create_your_own', {
-            defaultValue: 'Create your own organization',
+            defaultValue: 'Kendi Okulunuzu Oluşturun',
           })}
         </Link>
       )}

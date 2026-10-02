@@ -1,7 +1,6 @@
 'use client'
 import React from 'react'
 import { useOrg } from '@components/Contexts/OrgContext'
-import { useCourses } from '@/hooks/queries/useCourses'
 import LandingClassic from '@components/Landings/LandingClassic'
 import LandingCustom from '@components/Landings/LandingCustom'
 import { JsonLd } from '@components/SEO/JsonLd'
@@ -11,7 +10,6 @@ import GeneralWrapperStyled from '@components/Objects/StyledElements/Wrappers/Ge
 
 export default function HomeClient({ orgslug }: { orgslug: string }) {
   const org = useOrg() as any
-  const { data: courses, isLoading: coursesLoading } = useCourses(orgslug)
 
   const landingConfig = org?.config?.config?.customization?.landing || org?.config?.config?.landing
   const hasCustomLanding = landingConfig?.enabled
@@ -29,7 +27,7 @@ export default function HomeClient({ orgslug }: { orgslug: string }) {
       }
     : null
 
-  if (!org || (!hasCustomLanding && coursesLoading)) {
+  if (!org) {
     return (
       <GeneralWrapperStyled>
         <div className="animate-pulse space-y-6 pt-6">
@@ -57,7 +55,6 @@ export default function HomeClient({ orgslug }: { orgslug: string }) {
         <LandingCustom landing={landingConfig} orgslug={orgslug} />
       ) : (
         <LandingClassic
-          courses={courses || []}
           orgslug={orgslug}
           org_id={org.id}
         />

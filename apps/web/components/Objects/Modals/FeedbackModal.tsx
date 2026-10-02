@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils'
 import { useLHAnalytics, AnalyticsEvent } from '@services/analytics'
 import { useTranslation } from 'react-i18next'
 import { getAPIUrl } from '@services/config/config'
+import { useOrg } from '@components/Contexts/OrgContext'
 
 interface FeedbackModalProps {
   open: boolean
@@ -41,10 +42,12 @@ export function FeedbackModal({
 }: FeedbackModalProps) {
   const { t } = useTranslation()
   const { track } = useLHAnalytics()
+  const org = useOrg() as any
   const [feedbackMessage, setFeedbackMessage] = useState('')
   const [feedbackSubmitting, setFeedbackSubmitting] = useState(false)
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
   const [feedbackReaction, setFeedbackReaction] = useState<'happy' | 'neutral' | 'sad' | null>(null)
+  const [category, setCategory] = useState<'suggestion' | 'bug' | 'question' | 'general'>('suggestion')
   const [feedbackImages, setFeedbackImages] = useState<{ file: File; preview: string }[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -90,14 +93,45 @@ export function FeedbackModal({
 
     setFeedbackSubmitting(true)
     try {
-      const reactionEmoji = feedbackReaction === 'happy' ? '😊' : feedbackReaction === 'neutral' ? '😐' : feedbackReaction === 'sad' ? '😞' : ''
-      const fullMessage = `${reactionEmoji ? `[${reactionEmoji}] ` : ''}${feedbackMessage}`
+      // Extract device and browser information
+      const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : ''
+      let device = 'Masaüstü'
+      if (/Mobi|Android/i.test(userAgent)) {
+        device = /iPad|Tablet/i.test(userAgent) ? 'Tablet' : 'Mobil'
+      } else if (/iPad|Tablet/i.test(userAgent)) {
+        device = 'Tablet'
+      }
+      let os = ''
+      if (/Macintosh|Mac OS X/i.test(userAgent)) os = 'macOS'
+      else if (/Windows/i.test(userAgent)) os = 'Windows'
+      else if (/iPhone|iPad|iPod/i.test(userAgent)) os = 'iOS'
+      else if (/Android/i.test(userAgent)) os = 'Android'
+      else if (/Linux/i.test(userAgent)) os = 'Linux'
+      const deviceStr = os ? `${device} (${os})` : device
 
-      // Routed through the backend so adblockers can't drop the Sentry call.
+      let browser = 'Diğer'
+      if (/Chrome/i.test(userAgent) && !/Edg|OPR/i.test(userAgent)) browser = 'Chrome'
+      else if (/Safari/i.test(userAgent) && !/Chrome/i.test(userAgent)) browser = 'Safari'
+      else if (/Firefox/i.test(userAgent)) browser = 'Firefox'
+      else if (/Edg/i.test(userAgent)) browser = 'Edge'
+
+      const currentUrl = typeof window !== 'undefined' ? window.location.href : ''
+      const orgName = org?.name || ''
+      const orgSlug = org?.orgslug || ''
+
+      const msg = feedbackMessage.trim() || (feedbackReaction ? `[${feedbackReaction}]` : 'Geri bildirim')
       const formData = new FormData()
-      formData.append('message', fullMessage)
+      formData.append('message', msg)
       formData.append('name', userName || 'Anonymous')
       if (userEmail) formData.append('email', userEmail)
+      if (feedbackReaction) formData.append('reaction', feedbackReaction)
+      formData.append('category', category)
+      if (orgName) formData.append('org_name', orgName)
+      if (orgSlug) formData.append('org_slug', orgSlug)
+      formData.append('device', deviceStr)
+      formData.append('browser', browser)
+      formData.append('page_url', currentUrl)
+
       for (const img of feedbackImages) {
         formData.append('attachments', img.file, img.file.name)
       }
@@ -241,6 +275,39 @@ export function FeedbackModal({
                     <SmileySad size={28} weight={feedbackReaction === 'sad' ? 'fill' : 'regular'} />
                     <span className="text-xs">{t('common.help_menu.reaction_sad')}</span>
                   </button>
+                </div>
+              </div>
+
+              {/* Category Selection */}
+              <div>
+                <p className={cn('text-xs font-semibold mb-1.5', isDark ? 'text-white/60' : 'text-gray-600')}>
+                  Geri Bildirim Konusu
+                </p>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {[
+                    { id: 'suggestion', label: '💡 Öneri' },
+                    { id: 'bug', label: '🐞 Hata' },
+                    { id: 'question', label: '❓ Soru' },
+                    { id: 'general', label: '💬 Genel' },
+                  ].map((cat) => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setCategory(cat.id as any)}
+                      className={cn(
+                        'py-1.5 px-2 rounded-lg text-xs font-medium border text-center transition-all cursor-pointer',
+                        category === cat.id
+                          ? isDark
+                            ? 'border-indigo-500 bg-indigo-500/20 text-indigo-400 font-bold'
+                            : 'border-black bg-black text-white font-bold'
+                          : isDark
+                          ? 'border-white/10 hover:border-white/20 text-white/60'
+                          : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                      )}
+                    >
+                      {cat.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 

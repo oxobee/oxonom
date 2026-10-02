@@ -674,10 +674,23 @@ async def update_podcast(
             request, acting_user_id, "update", podcast_uuid, db_session
         )
 
-        if not (is_podcast_owner or is_admin_or_maintainer):
+        from src.db.user_organizations import UserOrganization
+        from src.db.roles import Role
+        user_role_stmt = (
+            select(Role)
+            .join(UserOrganization, UserOrganization.role_id == Role.id)
+            .where(
+                UserOrganization.user_id == acting_user_id,
+                UserOrganization.org_id == podcast.org_id,
+            )
+        )
+        roles = (await db_session.execute(user_role_stmt)).scalars().all()
+        is_instructor = any(r.name in ("Instructor", "Admin", "Maintainer") for r in roles)
+
+        if not (is_podcast_owner or is_instructor or is_admin_or_maintainer):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"You must be the podcast owner (CREATOR or MAINTAINER) or have admin role to change access settings: {', '.join(sensitive_fields_updated)}",
+                detail=f"You must be the podcast owner (CREATOR or MAINTAINER) or have teacher/admin role to change access settings: {', '.join(sensitive_fields_updated)}",
             )
 
     # Update only the fields that were passed in

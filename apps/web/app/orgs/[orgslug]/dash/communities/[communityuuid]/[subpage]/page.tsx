@@ -1,14 +1,14 @@
 'use client'
 import { Breadcrumbs } from '@components/Objects/Breadcrumbs/Breadcrumbs'
 import { getUriWithOrg } from '@services/config/config'
-import { Image as ImageIcon, Link2, Shield, MessagesSquare, Users } from 'lucide-react'
+import { Image as ImageIcon, Link2, Shield, MessagesSquare, Users, GraduationCap } from 'lucide-react'
 import React, { useEffect, use } from 'react'
 import { useTranslation } from 'react-i18next'
 import { motion } from 'motion/react'
 import { CommunityProvider, useCommunity } from '@components/Contexts/CommunityContext'
 import CommunityEditGeneral from '@components/Dashboard/Pages/Community/CommunityEditGeneral'
 import CommunityEditThumbnail from '@components/Dashboard/Pages/Community/CommunityEditThumbnail'
-import CommunityEditCourse from '@components/Dashboard/Pages/Community/CommunityEditCourse'
+import CommunityEditClass from '@components/Dashboard/Pages/Community/CommunityEditClass'
 import CommunityEditModeration from '@components/Dashboard/Pages/Community/CommunityEditModeration'
 import CommunityEditAccess from '@components/Dashboard/Pages/Community/CommunityEditAccess'
 import { DashTabBar, DashTabItem } from '@components/Dashboard/Shared/DashTabBar/DashTabBar'
@@ -37,9 +37,9 @@ function CommunitySettingsContent({ params }: { params: CommunityParams }) {
     } else if (params.subpage === 'access') {
       setH1Label(t('dashboard.courses.communities.settings.access.title'))
       setH2Label(t('dashboard.courses.communities.settings.access.subtitle'))
-    } else if (params.subpage === 'course') {
-      setH1Label(t('dashboard.courses.communities.settings.course.title'))
-      setH2Label(t('dashboard.courses.communities.settings.course.subtitle'))
+    } else if (params.subpage === 'course' || params.subpage === 'class') {
+      setH1Label(t('dashboard.courses.communities.settings.class.title', { defaultValue: 'Bağlı Sınıflar' }))
+      setH2Label(t('dashboard.courses.communities.settings.class.subtitle', { defaultValue: 'Bu forumun bağlı olduğu sınıfları yönetin' }))
     } else if (params.subpage === 'moderation') {
       setH1Label(t('dashboard.courses.communities.settings.moderation.title'))
       setH2Label(t('dashboard.courses.communities.settings.moderation.subtitle'))
@@ -75,11 +75,11 @@ function CommunitySettingsContent({ params }: { params: CommunityParams }) {
       active: params.subpage === 'access',
     },
     {
-      key: 'course',
-      label: t('dashboard.courses.communities.settings.tabs.course'),
-      icon: <Link2 size={16} />,
-      href: getUriWithOrg(params.orgslug, '') + `/dash/communities/${params.communityuuid}/course`,
-      active: params.subpage === 'course',
+      key: 'class',
+      label: t('dashboard.courses.communities.settings.tabs.class', { defaultValue: 'Bağlı Sınıflar' }),
+      icon: <GraduationCap size={16} />,
+      href: getUriWithOrg(params.orgslug, '') + `/dash/communities/${params.communityuuid}/class`,
+      active: params.subpage === 'class' || params.subpage === 'course',
     },
     {
       key: 'moderation',
@@ -118,7 +118,7 @@ function CommunitySettingsContent({ params }: { params: CommunityParams }) {
         {params.subpage === 'general' && <CommunityEditGeneral />}
         {params.subpage === 'thumbnail' && <CommunityEditThumbnail />}
         {params.subpage === 'access' && <CommunityEditAccess />}
-        {params.subpage === 'course' && <CommunityEditCourse />}
+        {(params.subpage === 'class' || params.subpage === 'course') && <CommunityEditClass />}
         {params.subpage === 'moderation' && <CommunityEditModeration />}
       </motion.div>
     </div>

@@ -2,18 +2,22 @@
 
 import React, { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useRouter } from 'next/navigation'
-import { Search, X } from 'lucide-react'
+import {
+  Search,
+  X,
+  Sparkles,
+  Calculator,
+  Languages,
+  Microscope,
+  Code2,
+  Layers,
+} from 'lucide-react'
 import { Cube } from '@phosphor-icons/react'
-import toast from 'react-hot-toast'
-import { useQueryClient } from '@tanstack/react-query'
-import { queryKeys } from '@/lib/query/keys'
 import GeneralWrapperStyled from '@components/Objects/StyledElements/Wrappers/GeneralWrapper'
 import TypeOfContentTitle from '@components/Objects/StyledElements/Titles/TypeOfContentTitle'
-import PlaygroundCard from '@components/Playground/PlaygroundCard'
-import { Playground, createPlayground } from '@services/playgrounds/playgrounds'
-import { useLHAnalytics, AnalyticsEvent } from '@services/analytics'
-import { useLHSession } from '@components/Contexts/LHSessionContext'
+import PlaygroundCard, { detectCategory } from '@components/Playground/PlaygroundCard'
+import { Playground } from '@services/playgrounds/playgrounds'
+import { useLHAnalytics } from '@services/analytics'
 import FeatureGate from '@components/Dashboard/Shared/FeatureGate/FeatureGate'
 import useAdminStatus from '@components/Hooks/useAdminStatus'
 import { searchMatchesAny } from '@/lib/search/normalize'
@@ -25,107 +29,137 @@ interface PlaygroundsClientProps {
   initialPlaygrounds: Playground[]
 }
 
+const CATEGORIES = [
+  { id: 'all', labelTr: 'Tüm Modüller', labelEn: 'All Modules', icon: Layers },
+  { id: 'grade1', labelTr: '1. Sınıf Temel Beceriler', labelEn: '1st Grade Essentials', icon: Sparkles },
+  { id: 'math', labelTr: 'Matematik & Sayılar', labelEn: 'Math & Numbers', icon: Calculator },
+  { id: 'turkish', labelTr: 'Türkçe & Okuma-Yazma', labelEn: 'Turkish & Reading', icon: Languages },
+  { id: 'science', labelTr: 'Fen & Doğa', labelEn: 'Science & Nature', icon: Microscope },
+  { id: 'coding', labelTr: 'Mantık & Kodlama', labelEn: 'Logic & Coding', icon: Code2 },
+]
+
 export default function PlaygroundsClient({
   orgslug,
   org_id,
   initialPlaygrounds,
 }: PlaygroundsClientProps) {
-  const router = useRouter()
-  const session = useLHSession() as any
-  const access_token = session?.data?.tokens?.access_token
-  const { isAdmin: isUserAdmin } = useAdminStatus()
-  const queryClient = useQueryClient()
+  const { isAdmin: isUserAdmin, rights, canManageOrg } = useAdminStatus()
   const { track } = useLHAnalytics('learner')
+  const { t, i18n } = useTranslation()
+  const isTr = i18n.language?.startsWith('tr') !== false
+
+  // Teachers/principals can activate/deactivate modules and assign to classes
+  const canManageModule = Boolean(
+    isUserAdmin ||
+    canManageOrg ||
+    rights?.dashboard?.action_access
+  )
 
   const [playgrounds, setPlaygrounds] = useState<Playground[]>(initialPlaygrounds)
   const [searchQuery, setSearchQuery] = useState('')
-  const [isCreating, setIsCreating] = useState(false)
-  const [showNameModal, setShowNameModal] = useState(false)
-  const [newName, setNewName] = useState('')
-  const { t } = useTranslation()
+  const [activeCategory, setActiveCategory] = useState('all')
 
+  // Count items per category
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: playgrounds.length }
+    playgrounds.forEach((pg) => {
+      const cat = detectCategory(pg).key
+      counts[cat] = (counts[cat] || 0) + 1
+    })
+    return counts
+  }, [playgrounds])
+
+  // Filter playgrounds by search and category
   const filtered = useMemo(() => {
-    if (!searchQuery.trim()) return playgrounds
-    return playgrounds.filter((p) =>
-      searchMatchesAny([p.name, p.description], searchQuery)
-    )
-  }, [playgrounds, searchQuery])
+    return playgrounds.filter((pg) => {
+      if (activeCategory !== 'all') {
+        const cat = detectCategory(pg).key
+        if (cat !== activeCategory) return false
+      }
+
+      if (searchQuery.trim()) {
+        return searchMatchesAny([pg.name, pg.description], searchQuery)
+      }
+
+      return true
+    })
+  }, [playgrounds, searchQuery, activeCategory])
 
   const {
+    paginatedItems: paginated,
     currentPage,
     totalPages,
-    paginatedItems: paginated,
     pageNumbers,
     goToPage,
-    resetPage,
-  } = useCatalogPagination(filtered)
-
-  React.useEffect(() => {
-    resetPage()
-  }, [searchQuery, resetPage])
-
-  const openCreateModal = () => {
-    setNewName('')
-    setShowNameModal(true)
-  }
-
-  const handleCreate = async () => {
-    if (!access_token || isCreating) return
-    const name = newName.trim() || 'Untitled Playground'
-    setIsCreating(true)
-    setShowNameModal(false)
-    try {
-      const newPlayground = await createPlayground(
-        org_id,
-        { name, access_type: 'authenticated' },
-        access_token
-      )
-      setPlaygrounds((prev) => [newPlayground, ...prev])
-      track(AnalyticsEvent.PlaygroundCreated, {
-        name_provided: newName.trim().length > 0,
-        source: 'learner',
-      })
-      queryClient.invalidateQueries({ queryKey: queryKeys.playgrounds.list(orgslug) })
-      router.push(`/editor/playground/${newPlayground.playground_uuid}/edit`)
-    } catch {
-      toast.error(t('playgrounds.failed_create'))
-    } finally {
-      setIsCreating(false)
-    }
-  }
+  } = useCatalogPagination<Playground>(filtered, 12)
 
   return (
     <>
-    <FeatureGate feature="playgrounds" orgslug={orgslug} context="public">
-      <div className="w-full">
-        <GeneralWrapperStyled>
-          <div className="flex flex-col space-y-2 mb-2">
-            <div className="flex items-center justify-between">
-              <TypeOfContentTitle title={t('common.playgrounds')} type="pg" />
-              {isUserAdmin && (
-                <button
-                  onClick={openCreateModal}
-                  disabled={isCreating}
-                  className="rounded-lg bg-black transition-all duration-100 ease-linear antialiased p-2 px-5 my-auto font text-xs font-bold text-white nice-shadow flex space-x-2 items-center hover:scale-105 disabled:opacity-50"
-                >
-                  <div>{t('playgrounds.new_playground')}</div>
-                  <div className="text-md bg-neutral-800 px-1 rounded-full">+</div>
-                </button>
-              )}
-            </div>
+      <FeatureGate feature="playgrounds" orgslug={orgslug} context="public">
+        <div className="w-full">
+          <GeneralWrapperStyled>
+            <div className="flex flex-col space-y-4 mb-4">
+              
+              {/* Top Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <TypeOfContentTitle
+                    title={isTr ? 'Etkileşimli Modüller' : t('common.playgrounds')}
+                    type="pg"
+                  />
+                  <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                    {isTr
+                      ? '1. sınıftan 12. sınıfa kadar tüm kademeler için interaktif ders ve beceri modülleri'
+                      : 'Interactive learning and skill modules for all grade levels'}
+                  </p>
+                </div>
+              </div>
 
-            {/* Search */}
-            {playgrounds.length > 0 && (
-              <div className="flex items-center gap-3 mb-4 flex-wrap">
-                <div className="relative w-full sm:w-80">
+              {/* Categorical Navigation Pills */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1.5 pt-1 scrollbar-none">
+                {CATEGORIES.map((cat) => {
+                  const Icon = cat.icon
+                  const isActive = activeCategory === cat.id
+                  const count = categoryCounts[cat.id] || 0
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => setActiveCategory(cat.id)}
+                      className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
+                        isActive
+                          ? 'bg-slate-900 text-white shadow-md'
+                          : 'bg-white text-gray-600 hover:bg-gray-100 hover:text-gray-900 border border-gray-200/80'
+                      }`}
+                    >
+                      <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-amber-400' : 'text-gray-500'}`} />
+                      <span>{isTr ? cat.labelTr : cat.labelEn}</span>
+                      <span
+                        className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                          isActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'
+                        }`}
+                      >
+                        {count}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Multilingual Search Bar */}
+              <div className="flex items-center justify-between gap-3 flex-wrap bg-white p-3 rounded-2xl border border-gray-100 shadow-xs">
+                <div className="relative flex-1 min-w-[240px]">
                   <Search className="absolute start-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     aria-label="Search playgrounds"
-                    placeholder={t('playgrounds.search_placeholder')}
-                    className="w-full ps-10 pe-10 py-2.5 bg-white nice-shadow rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 border-0"
+                    placeholder={
+                      isTr
+                        ? 'Modüllerde veya konularda ara... (örn: Sayma, Hece, 1. Sınıf)'
+                        : t('playgrounds.search_placeholder', 'Search in modules or topics...')
+                    }
+                    className="w-full ps-10 pe-10 py-2 bg-gray-50/80 hover:bg-gray-50 focus:bg-white rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 border border-gray-200 transition-all placeholder:text-gray-400 font-medium"
                   />
                   {searchQuery && (
                     <button
@@ -136,108 +170,60 @@ export default function PlaygroundsClient({
                     </button>
                   )}
                 </div>
-              </div>
-            )}
 
-            {/* Search results info */}
-            {searchQuery && (
-              <div className="mb-2 text-sm text-gray-500">
-                {filtered.length} result{filtered.length !== 1 ? 's' : ''} for &quot;{searchQuery}&quot;
-              </div>
-            )}
-
-            {/* Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {paginated.map((pg) => (
-                <PlaygroundCard
-                  key={pg.playground_uuid}
-                  playground={pg}
-                  orgslug={orgslug}
-                  canEdit={true}
-                />
-              ))}
-
-              {filtered.length === 0 && searchQuery && (
-                <div className="col-span-full flex flex-col justify-center items-center py-12 px-4">
-                  <Search className="w-12 h-12 text-gray-300 mb-4" />
-                  <h2 className="text-xl font-semibold text-gray-600 mb-2">{t('playgrounds.no_results_for')} &quot;{searchQuery}&quot;</h2>
-                  <p className="text-gray-400">{t('playgrounds.try_different_search')}</p>
+                <div className="text-xs text-gray-500 font-medium px-2 shrink-0">
+                  {filtered.length} {isTr ? 'modül listeleniyor' : 'modules listed'}
                 </div>
-              )}
+              </div>
 
-              {playgrounds.length === 0 && !searchQuery && (
-                <div className="col-span-full flex flex-col justify-center items-center py-12 px-4 border-2 border-dashed border-gray-100 rounded-2xl bg-gray-50/30">
-                  <div className="p-4 bg-white rounded-full nice-shadow mb-4">
-                    <Cube className="w-8 h-8 text-gray-300" />
+              {/* Grid of Modules */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pt-2">
+                {paginated.map((pg) => (
+                  <PlaygroundCard
+                    key={pg.playground_uuid}
+                    playground={pg}
+                    orgslug={orgslug}
+                    canManage={canManageModule}
+                  />
+                ))}
+
+                {filtered.length === 0 && (
+                  <div className="col-span-full flex flex-col justify-center items-center py-16 px-4 border-2 border-dashed border-gray-200 rounded-3xl bg-gray-50/40 text-center">
+                    <div className="p-4 bg-white rounded-2xl shadow-sm mb-3">
+                      <Cube className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <h3 className="text-base font-bold text-gray-700 mb-1">
+                      {searchQuery
+                        ? isTr
+                          ? `"${searchQuery}" ile eşleşen modül bulunamadı`
+                          : `No modules found for "${searchQuery}"`
+                        : isTr
+                        ? 'Bu kategoride henüz modül bulunmuyor'
+                        : 'No modules in this category yet'}
+                    </h3>
+                    <p className="text-xs text-gray-400 max-w-sm mb-4">
+                      {isTr
+                        ? 'Arama kriterinizi değiştirebilir veya tüm modülleri listeleyebilirsiniz.'
+                        : 'Try adjusting your search criteria.'}
+                    </p>
                   </div>
-                  <h1 className="text-xl font-bold text-gray-600 mb-2">{t('playgrounds.no_playgrounds_yet')}</h1>
-                  <p className="text-md text-gray-400 mb-6 max-w-xs text-center">
-                    {t('playgrounds.playgrounds_description')}
-                  </p>
-                  {isUserAdmin && (
-                    <button
-                      onClick={openCreateModal}
-                      disabled={isCreating}
-                      className="rounded-lg bg-black transition-all duration-100 ease-linear antialiased p-2 px-5 my-auto font text-xs font-bold text-white nice-shadow flex space-x-2 items-center hover:scale-105 disabled:opacity-50"
-                    >
-                      <div>{t('playgrounds.new_playground')}</div>
-                      <div className="text-md bg-neutral-800 px-1 rounded-full">+</div>
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <CatalogPagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              pageNumbers={pageNumbers}
-              onPageChange={goToPage}
-              previousLabel="Previous"
-              nextLabel="Next"
-              className="mt-8"
-            />
-
-            {totalPages > 1 && (
-              <div className="mt-2 text-center text-sm text-gray-500">
-                Page {currentPage} of {totalPages}
+                )}
               </div>
-            )}
-          </div>
-        </GeneralWrapperStyled>
-      </div>
-    </FeatureGate>
 
-    {/* Create name modal */}
-    {showNameModal && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm" onClick={() => setShowNameModal(false)}>
-        <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
-          <h2 className="text-base font-bold text-gray-900 mb-1">{t('playgrounds.new_playground_modal_title')}</h2>
-          <p className="text-xs text-gray-400 mb-4">{t('playgrounds.new_playground_modal_desc')}</p>
-          <input
-            autoFocus
-            type="text"
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleCreate(); if (e.key === 'Escape') setShowNameModal(false) }}
-            placeholder="e.g. Photosynthesis Quiz"
-            className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-black focus:border-transparent mb-4"
-          />
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => setShowNameModal(false)} className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors">
-              {t('common.cancel')}
-            </button>
-            <button
-              onClick={handleCreate}
-              disabled={isCreating}
-              className="px-4 py-2 bg-black text-white text-sm font-bold rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-colors"
-            >
-              {isCreating ? t('playgrounds.creating') : t('playgrounds.create')}
-            </button>
-          </div>
+              {/* Pagination */}
+              <CatalogPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                pageNumbers={pageNumbers}
+                onPageChange={goToPage}
+                previousLabel={isTr ? 'Önceki' : 'Previous'}
+                nextLabel={isTr ? 'Sonraki' : 'Next'}
+                className="mt-8"
+              />
+            </div>
+          </GeneralWrapperStyled>
         </div>
-      </div>
-    )}
+      </FeatureGate>
     </>
   )
 }

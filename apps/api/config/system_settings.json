@@ -1,0 +1,16 @@
+{
+  "site_name": "Oxonom Edu",
+  "site_logo": "/lrn-dash.svg",
+  "footer_text": "© 2026 Oxonom Education Technologies. Tüm hakları saklıdır.",
+  "footer_link_text": "Oxonom Technologies",
+  "footer_link_url": "https://www.oxonom.com",
+  "ai": {
+    "is_ai_enabled": true,
+    "provider": "openrouter",
+    "api_key": "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",
+    "base_url": "https://openrouter.ai/api/v1",
+    "model_fast": "google/gemini-2.0-flash-001",
+    "model_standard": "google/gemini-2.0-flash-001",
+    "model_pro": "anthropic/claude-3.5-sonnet"
+  }
+}

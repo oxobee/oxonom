@@ -33,6 +33,9 @@ from src.routers.courses.activities import activities, blocks
 from src.routers.podcasts import podcasts as podcasts_router_module
 from src.routers.podcasts import episodes as episodes_router_module
 from src.routers.boards import boards as boards_router_module
+from src.routers import school_assignments as school_assignments_router_module
+from src.routers import games as games_router_module
+from src.routers import educational_resources as educational_resources_router_module
 from src.routers.playgrounds import playgrounds as playgrounds_router_module
 from src.routers.playgrounds import playgrounds_generator as playgrounds_generator_router
 from src.core.ee_hooks import register_ee_routers
@@ -88,6 +91,7 @@ v1_router.include_router(
         Depends(require_plan_for_usergroups("standard", "User Groups")),
     ],
 )
+v1_router.include_router(usergroups.public_router, prefix="/usergroups", tags=["usergroups"])
 v1_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 # Two-factor: enrollment/management plus the /auth/login/mfa challenge.
 v1_router.include_router(mfa_router_module.router, prefix="/auth", tags=["auth"])
@@ -262,6 +266,19 @@ v1_router.include_router(
     boards_router_module.internal_router,
     prefix="/boards",
     tags=["boards-internal"],
+)
+v1_router.include_router(
+    school_assignments_router_module.router,
+    prefix="/school_assignments",
+    tags=["school_assignments"],
+)
+v1_router.include_router(
+    games_router_module.router,
+)
+v1_router.include_router(
+    educational_resources_router_module.router,
+    prefix="/resources",
+    tags=["educational_resources"],
 )
 v1_router.include_router(
     trail.router,

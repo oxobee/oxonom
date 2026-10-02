@@ -12,6 +12,7 @@ import {
   Headphones,
   ChartBar,
   Code,
+  GraduationCap,
 } from '@phosphor-icons/react'
 
 export interface DashboardMenuItem {
@@ -57,6 +58,12 @@ export const DASHBOARD_MENU_ITEMS: DashboardMenuItem[] = [
     icon: ChatsCircle,
     labelKey: 'communities.title',
     featureKey: 'communities',
+  },
+  {
+    id: 'classrooms',
+    href: '/dash/classrooms',
+    icon: GraduationCap,
+    labelKey: 'common.classrooms',
   },
   {
     id: 'podcasts',

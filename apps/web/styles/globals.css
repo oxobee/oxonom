@@ -17,17 +17,29 @@
   animation: fadeIn 0.3s ease-out;
 }
 
+@keyframes pin-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+.animate-pin-shake {
+  animation: pin-shake 0.4s ease-in-out;
+}
+
+
 /* Board load animations */
 @keyframes board-fade-in {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
 @keyframes board-slide-up {
-  from { opacity: 0; transform: translate(-50%, 80px); }
-  to   { opacity: 1; transform: translate(-50%, 0); }
+  from { opacity: 0; transform: translate(-50%, 80px) scale(var(--toolbar-scale, 1)); }
+  to   { opacity: 1; transform: translate(-50%, 0) scale(var(--toolbar-scale, 1)); }
 }
 .board-enter-toolbar {
   animation: board-slide-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform: translate(-50%, 0) scale(var(--toolbar-scale, 1));
+  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
 }
 .board-enter-delayed {
   animation: board-fade-in 0.5s ease-out 1s both;
@@ -1719,8 +1731,10 @@
 
 /* ─── Board Mobile ─── */
 @media (max-width: 768px) {
-  /* Hide: toolbar, back bar, feedback */
-  .board-enter-toolbar { display: none !important; }
+  /* Hide: back bar, feedback */
+  .board-enter-toolbar {
+    display: none !important;
+  }
   .board-backbar { display: none !important; }
   .board-feedback { display: none !important; }
 
@@ -2564,4 +2578,31 @@
   min-height: 200px;
   display: block;
 }
+
+/* Elastic bounce animation for Academic Trail nav icon */
+@keyframes elastic-trail-bounce {
+  0% {
+    transform: scale(1);
+  }
+  20% {
+    transform: scale(1.42) rotate(-8deg);
+  }
+  40% {
+    transform: scale(0.82) rotate(6deg);
+  }
+  60% {
+    transform: scale(1.2) rotate(-3deg);
+  }
+  80% {
+    transform: scale(0.95) rotate(1deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.animate-elastic-trail {
+  animation: elastic-trail-bounce 0.85s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
 

@@ -71,7 +71,7 @@ function OrgListTooltip({ orgs }: { orgs: OrgMembership[] }) {
   }, [open])
 
   if (orgs.length === 0) {
-    return <span className="text-white/25 text-xs">None</span>
+    return <span className="text-white/25 text-xs">Yok</span>
   }
 
   return (
@@ -82,7 +82,7 @@ function OrgListTooltip({ orgs }: { orgs: OrgMembership[] }) {
         onMouseLeave={() => setOpen(false)}
         className="text-sm text-white/60 hover:text-white/80 transition-colors underline decoration-dotted underline-offset-2"
       >
-        {orgs.length} org{orgs.length !== 1 ? 's' : ''}
+        {orgs.length} okul
       </button>
       {open && pos && (
         <div
@@ -246,18 +246,18 @@ export default function UserList() {
               type="text"
               value={search}
               onChange={(e) => handleSearch(e.target.value)}
-              placeholder="Search users..."
+              placeholder="Kullanıcı ara..."
               className="bg-white/[0.05] border border-white/[0.08] rounded-lg ps-8 pe-3 py-1.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-white/20 w-64"
             />
           </div>
           <span className="text-xs text-white/30">
-            {totalCount} user{totalCount !== 1 ? 's' : ''}
+            {totalCount} kullanıcı
           </span>
         </div>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <span className="text-xs text-white/40 me-1">Role:</span>
+              <span className="text-xs text-white/40 me-1">Rol:</span>
               {SUPERADMIN_FILTERS.map((f) => (
                 <button
                   key={f}
@@ -269,15 +269,15 @@ export default function UserList() {
                   }`}
                 >
                   {f === 'all'
-                    ? 'All'
+                    ? 'Tümü'
                     : f === 'yes'
-                      ? 'Superadmin'
-                      : 'Regular'}
+                      ? 'Süper Admin'
+                      : 'Kullanıcı'}
                 </button>
               ))}
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-white/40">Min orgs:</span>
+              <span className="text-xs text-white/40">Min. Okul:</span>
               {[0, 1, 2, 3, 5].map((n) => (
                 <button
                   key={n}
@@ -288,22 +288,22 @@ export default function UserList() {
                       : 'text-white/40 hover:text-white/60 hover:bg-white/[0.05]'
                   }`}
                 >
-                  {n === 0 ? 'Any' : `${n}+`}
+                  {n === 0 ? 'Fark etmez' : `${n}+`}
                 </button>
               ))}
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-white/40 me-1">Sort:</span>
+            <span className="text-xs text-white/40 me-1">Sıralama:</span>
             {(
               [
-                ['id', 'Default'],
-                ['newest', 'Newest'],
-                ['oldest', 'Oldest'],
-                ['orgs_desc', 'Most orgs'],
-                ['orgs_asc', 'Least orgs'],
-                ['username', 'Username'],
-                ['recently_updated', 'Updated'],
+                ['id', 'Varsayılan'],
+                ['newest', 'En Yeni'],
+                ['oldest', 'En Eski'],
+                ['orgs_desc', 'En Çok Okul'],
+                ['orgs_asc', 'En Az Okul'],
+                ['username', 'Kullanıcı Adı'],
+                ['recently_updated', 'Son Güncelleme'],
               ] as const
             ).map(([key, label]) => (
               <button
@@ -336,7 +336,7 @@ export default function UserList() {
         ) : !users || users.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-white/40">
             <User size={48} weight="fill" />
-            <p className="mt-4 text-lg">No users found</p>
+            <p className="mt-4 text-lg">Kullanıcı bulunamadı</p>
           </div>
         ) : (
           <>
@@ -344,22 +344,22 @@ export default function UserList() {
               <thead>
                 <tr className="border-b border-white/[0.08]">
                   <th className="px-4 py-3 text-xs font-medium text-white/40 uppercase tracking-wider">
-                    User
+                    Kullanıcı
                   </th>
                   <th className="px-4 py-3 text-xs font-medium text-white/40 uppercase tracking-wider">
-                    Email
+                    E-posta
                   </th>
                   <th className="px-4 py-3 text-xs font-medium text-white/40 uppercase tracking-wider">
-                    Organizations
+                    Okullar & Kurumlar
                   </th>
                   <th className="px-4 py-3 text-xs font-medium text-white/40 uppercase tracking-wider">
-                    Role
+                    Rol
                   </th>
                   <th className="px-4 py-3 text-xs font-medium text-white/40 uppercase tracking-wider">
-                    Created
+                    Kayıt Tarihi
                   </th>
                   <th className="px-4 py-3 text-xs font-medium text-white/40 uppercase tracking-wider">
-                    Updated
+                    Son Güncelleme
                   </th>
                 </tr>
               </thead>
@@ -420,11 +420,11 @@ export default function UserList() {
                         {u.is_superadmin ? (
                           <span className="inline-flex items-center gap-1 text-xs font-medium uppercase tracking-wider px-2 py-0.5 rounded bg-amber-400/10 text-amber-400">
                             <ShieldStar size={12} weight="fill" />
-                            Superadmin
+                            Süper Admin
                           </span>
                         ) : (
                           <span className="text-xs font-medium uppercase tracking-wider px-2 py-0.5 rounded bg-white/[0.06] text-white/40">
-                            User
+                            Kullanıcı
                           </span>
                         )}
                       </td>
@@ -452,7 +452,7 @@ export default function UserList() {
             {totalPages > 1 && (
               <div className="flex items-center justify-between mt-4 px-4">
                 <span className="text-xs text-white/30">
-                  Page {page} of {totalPages}
+                  Sayfa {page} / {totalPages}
                 </span>
                 <div className="flex items-center gap-1">
                   <button

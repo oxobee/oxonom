@@ -33,6 +33,10 @@ import {
   Robot,
   ArrowClockwise,
   SlidersHorizontal,
+  Trash,
+  Pause,
+  Play,
+  Warning,
 } from '@phosphor-icons/react'
 
 function getLogoUrl(orgUuid: string, logoImage: string): string {
@@ -51,20 +55,19 @@ function getCourseThumbnailUrl(orgUuid: string, courseUuid: string, file: string
 }
 
 const ALL_TABS = [
-  { id: 'overview', label: 'Overview', icon: Buildings },
-  { id: 'courses', label: 'Courses', icon: BookOpen },
-  { id: 'users', label: 'Users', icon: Users },
-  { id: 'analytics', label: 'Analytics', icon: ChartBar },
-  { id: 'plan', label: 'Plan', icon: CreditCard },
-  { id: 'features', label: 'Features', icon: SlidersHorizontal },
-  { id: 'settings', label: 'Settings', icon: GearSix },
+  { id: 'overview', label: 'Genel Bakış', icon: Buildings },
+  { id: 'courses', label: 'Dersler', icon: BookOpen },
+  { id: 'users', label: 'Kullanıcılar', icon: Users },
+  { id: 'analytics', label: 'Analitikler', icon: ChartBar },
+  { id: 'plan', label: 'Plan & Lisans', icon: CreditCard },
+  { id: 'features', label: 'Modüller & Özellikler', icon: SlidersHorizontal },
+  { id: 'settings', label: 'Ayarlar', icon: GearSix },
 ] as const
 
 type TabId = (typeof ALL_TABS)[number]['id']
 
-function getTabsForMode(mode: string) {
-  // In non-SaaS modes (EE/OSS) plans don't apply — hide the Plan tab.
-  return mode === 'saas' ? ALL_TABS : ALL_TABS.filter((t) => t.id !== 'plan')
+function getTabsForMode(_mode: string) {
+  return ALL_TABS
 }
 
 function useUrlParams() {
@@ -140,7 +143,7 @@ export default function OrgDetailPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-white/40">
         <Buildings size={48} weight="fill" />
-        <p className="mt-4 text-lg">Organization not found</p>
+        <p className="mt-4 text-lg">Okul bulunamadı</p>
       </div>
     )
   }
@@ -154,7 +157,7 @@ export default function OrgDetailPage() {
           className="inline-flex items-center gap-1.5 text-sm text-white/40 hover:text-white/60 transition-colors mb-3"
         >
           <ArrowLeft size={14} weight="bold" data-dir-flip />
-          Back to Organizations
+          Okullara Dön
         </Link>
         <div className="flex items-center gap-4">
           {org.logo_image ? (
@@ -221,7 +224,7 @@ export default function OrgDetailPage() {
       {activeTab === 'courses' && <CoursesTab orgId={orgId} accessToken={accessToken} orgUuid={org.org_uuid} orgSlug={org.slug} />}
       {activeTab === 'users' && <UsersTab orgId={orgId} accessToken={accessToken} />}
       {activeTab === 'analytics' && <AnalyticsTab orgId={orgId} accessToken={accessToken} />}
-      {activeTab === 'plan' && mode === 'saas' && <PlanTab orgId={orgId} accessToken={accessToken} currentPlan={org.plan} config={org.config} />}
+      {activeTab === 'plan' && <PlanTab orgId={orgId} accessToken={accessToken} currentPlan={org.plan} config={org.config} />}
       {activeTab === 'features' && <FeaturesTab orgId={orgId} accessToken={accessToken} config={org.config} mode={mode} />}
       {activeTab === 'settings' && <SettingsTab orgId={orgId} accessToken={accessToken} org={org} />}
     </div>
@@ -1234,17 +1237,17 @@ const DEFAULT_ADMIN_TOGGLES: AdminToggles = {
 }
 
 const FEATURE_ORDER: { key: keyof AdminToggles; label: string; description: string }[] = [
-  { key: 'ai', label: 'AI', description: 'AI assistant, copilot, generation tools' },
-  { key: 'analytics', label: 'Analytics', description: 'Dashboards and engagement metrics' },
-  { key: 'api', label: 'API', description: 'API tokens and programmatic access' },
-  { key: 'boards', label: 'Boards', description: 'Kanban-style learning boards' },
-  { key: 'collaboration', label: 'Collaboration', description: 'Real-time co-editing' },
-  { key: 'folders', label: 'Folders', description: 'Organize courses and media into folders' },
-  { key: 'communities', label: 'Communities', description: 'Public/private community spaces' },
-  { key: 'members', label: 'Members', description: 'Member directory and roles' },
-  { key: 'payments', label: 'Payments', description: 'Paid courses and checkout' },
-  { key: 'playgrounds', label: 'Playgrounds', description: 'Interactive code/exec environments' },
-  { key: 'podcasts', label: 'Podcasts', description: 'Audio episodes inside courses' },
+  { key: 'ai', label: 'Yapay Zeka (AI)', description: 'AI asistanı, copilot ve içerik üretme araçları' },
+  { key: 'analytics', label: 'Analitikler', description: 'Kontrol panelleri ve etkileşim metrikleri' },
+  { key: 'api', label: 'API Erişimi', description: 'API belirteçleri ve programatik erişim' },
+  { key: 'boards', label: 'Akıllı Tahta (Panolar)', description: 'Etkileşimli akıllı tahta, çizim ve görsel takip panoları' },
+  { key: 'collaboration', label: 'Eşzamanlı Çalışma', description: 'Gerçek zamanlı ortak ders düzenleme' },
+  { key: 'folders', label: 'Klasörler', description: 'Dersleri ve medyaları klasörler halinde düzenleme' },
+  { key: 'communities', label: 'Topluluklar & Forum', description: 'Okul içi genel ve özel topluluk alanları' },
+  { key: 'members', label: 'Üyeler & Kayıt', description: 'Öğrenci/öğretmen dizini ve roller' },
+  { key: 'payments', label: 'Ödemeler & Kurs Satışı', description: 'Ücretli dersler ve ödeme alma altyapısı' },
+  { key: 'playgrounds', label: 'Kod Çalışma Alanları (Playgrounds)', description: 'Etkileşimli kodlama ve uygulama ortamları' },
+  { key: 'podcasts', label: 'Podcastler & Sesli Yayınlar', description: 'Ders içi sesli bölümler ve yayınlar' },
 ]
 
 function ToggleSwitch({
@@ -1370,11 +1373,11 @@ function FeaturesTab({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-sm font-medium text-white/60 mb-1">Feature toggles</h3>
+        <h3 className="text-sm font-medium text-white/60 mb-1">Modül ve Özellik Tercihleri</h3>
         <p className="text-xs text-white/40 mb-4">
           {mode === 'saas'
-            ? 'Override the plan defaults for this organization. Disabled features are hidden from the org dashboard. Features marked “In plan” are part of a paid plan and stay available to the org regardless of this toggle.'
-            : 'Enable or disable features for this organization.'}
+            ? 'Bu okul için aktif olacak modülleri belirleyin. Kapatılan modüller okul yönetim ve öğretmen panelinde gizlenir. "Planda Dahil" işaretli modüller okulun lisans planı dahilinde sunulmaktadır.'
+            : 'Bu okul için modülleri açın veya kapatın.'}
         </p>
         <div className="bg-white/[0.03] border border-white/[0.08] rounded-xl divide-y divide-white/[0.06]">
           {FEATURE_ORDER.map(({ key, label, description }) => {
@@ -1387,11 +1390,10 @@ function FeaturesTab({
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="text-sm text-white/90 font-medium">{label}</p>
-                      {/* "Available in the org's plan" — separate from the on/off
-                          toggle. On a paid plan these stay enabled regardless. */}
+                      {/* "Available in the org's plan" */}
                       {mode === 'saas' && resolvedFeatures[key]?.available && (
                         <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-violet-400/10 text-violet-300 border border-violet-400/20">
-                          In plan
+                          Planda Dahil
                         </span>
                       )}
                     </div>
@@ -1400,7 +1402,7 @@ function FeaturesTab({
                   <div className="flex items-center gap-3 shrink-0">
                     {mode === 'saas' && limitInfo !== undefined && limitInfo !== null && (
                       <span className="text-[11px] text-white/40">
-                        Limit: {limitInfo === 0 ? '∞' : limitInfo}
+                        Limit: {limitInfo === 0 ? 'Sınırsız' : limitInfo}
                       </span>
                     )}
                     <ToggleSwitch
@@ -1414,8 +1416,8 @@ function FeaturesTab({
                 {key === 'ai' && enabled && (
                   <div className="mt-3 ps-3 border-s-2 border-white/[0.06] flex items-center justify-between">
                     <div>
-                      <p className="text-xs text-white/70">AI Copilot</p>
-                      <p className="text-[11px] text-white/40">Inline writing/coding suggestions</p>
+                      <p className="text-xs text-white/70">AI Asistanı (Copilot)</p>
+                      <p className="text-[11px] text-white/40">Ders ve içerik hazırlama esnasında akıllı öneriler</p>
                     </div>
                     <ToggleSwitch
                       enabled={(draft.ai as AIToggle).copilot_enabled}
@@ -1431,9 +1433,9 @@ function FeaturesTab({
                 {key === 'members' && enabled && (
                   <div className="mt-3 ps-3 border-s-2 border-white/[0.06] flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-xs text-white/70">Signup mode</p>
+                      <p className="text-xs text-white/70">Kayıt Modu</p>
                       <p className="text-[11px] text-white/40">
-                        How new users can join the organization
+                        Yeni kullanıcıların okula nasıl katılabileceğini belirleyin
                       </p>
                     </div>
                     <select
@@ -1449,8 +1451,8 @@ function FeaturesTab({
                       }
                       className="bg-white/[0.05] border border-white/[0.1] rounded-md px-2.5 py-1 text-xs text-white focus:outline-none focus:border-white/30"
                     >
-                      <option value="open">Open</option>
-                      <option value="inviteOnly">Invite only</option>
+                      <option value="open">Açık (Herkes Kaydolabilir)</option>
+                      <option value="inviteOnly">Yalnızca Davet / Kod ile</option>
                     </select>
                   </div>
                 )}
@@ -1466,7 +1468,7 @@ function FeaturesTab({
               disabled={saving || !isDirty}
               className="px-4 py-2 bg-white/10 hover:bg-white/15 text-white text-sm rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              {saving ? 'Saving…' : 'Save changes'}
+              {saving ? 'Kaydediliyor…' : 'Değişiklikleri Kaydet'}
             </button>
             {isDirty && (
               <button
@@ -1474,10 +1476,10 @@ function FeaturesTab({
                 disabled={saving}
                 className="px-4 py-2 text-white/40 hover:text-white/60 text-sm transition-colors"
               >
-                Discard
+                Vazgeç
               </button>
             )}
-            {saved && <p className="text-sm text-emerald-400">Saved</p>}
+            {saved && <p className="text-sm text-emerald-400">Modül ayarları başarıyla kaydedildi</p>}
             {error && <p className="text-sm text-red-400">{error}</p>}
           </div>
         )}
@@ -1503,22 +1505,42 @@ function SettingsTab({
   accessToken: string
   org: any
 }) {
+  const router = useRouter()
   const queryClient = useQueryClient()
+  const contactInfo = org.config?.contact_info || {}
+  const isOrgActive = org.config?.active !== false
+
   const [form, setForm] = useState({
     name: org.name || '',
     slug: org.slug || '',
     email: org.email || '',
     description: org.description || '',
+    contact_name: contactInfo.name || '',
+    contact_phone: contactInfo.phone || '',
+    contact_title: contactInfo.title || '',
+    contact_address: contactInfo.address || '',
+    active: isOrgActive,
+    suspend_reason: org.config?.suspend_reason || '',
   })
+
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [deleting, setDeleting] = useState(false)
 
   const hasChanges =
     form.name !== (org.name || '') ||
     form.slug !== (org.slug || '') ||
     form.email !== (org.email || '') ||
-    form.description !== (org.description || '')
+    form.description !== (org.description || '') ||
+    form.contact_name !== (contactInfo.name || '') ||
+    form.contact_phone !== (contactInfo.phone || '') ||
+    form.contact_title !== (contactInfo.title || '') ||
+    form.contact_address !== (contactInfo.address || '') ||
+    form.active !== isOrgActive ||
+    form.suspend_reason !== (org.config?.suspend_reason || '')
 
   const handleSave = async () => {
     setSaving(true)
@@ -1538,56 +1560,183 @@ function SettingsTab({
       )
       if (!res.ok) {
         const data = await res.json()
-        setError(data.detail || 'Failed to save')
+        setError(data.detail || 'Kaydedilemedi')
         return
       }
       setSaved(true)
       queryClient.invalidateQueries({ queryKey: queryKeys.org.detail(orgId) })
       setTimeout(() => setSaved(false), 2000)
     } catch (_err) {
-      setError('Network error')
+      setError('Bağlantı hatası oluştu')
     } finally {
       setSaving(false)
     }
   }
 
+  const handleDeleteOrg = async () => {
+    if (deleteConfirmText !== org.slug) return
+    setDeleting(true)
+    try {
+      const res = await fetch(
+        `${getAPIUrl()}ee/superadmin/organizations/${orgId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      )
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        alert(data.detail || 'Okul silinemedi')
+        return
+      }
+      queryClient.invalidateQueries({ queryKey: queryKeys.superadmin.orgs() })
+      router.push('/admin/organizations')
+    } catch (_err) {
+      alert('Okul silinirken bağlantı hatası oluştu')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   return (
-    <div className="max-w-2xl space-y-6">
-      <div>
-        <h3 className="text-sm font-medium text-white/60 mb-4">Organization Settings</h3>
-        <div className="space-y-4">
-          <Field label="Name" value={form.name} onChange={(v) => setForm({ ...form, name: v })} />
+    <div className="max-w-3xl space-y-8 pb-12">
+      {/* Okul Durumu Uyarısı */}
+      {!form.active && (
+        <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-3">
+          <Warning size={20} weight="fill" className="text-amber-400 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-amber-300">Bu Okulun Hizmeti Dondurulmuştur</p>
+            <p className="text-xs text-amber-200/70 mt-1">
+              {form.suspend_reason ? `Dondurma Sebebi: ${form.suspend_reason}` : 'Bu okul askıya alınmış olup kullanıcı erişimi sınırlandırılmıştır.'}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* 1. Temel Okul Bilgileri */}
+      <div className="bg-white/[0.02] border border-white/[0.08] rounded-2xl p-6 space-y-4">
+        <h3 className="text-base font-semibold text-white mb-2">Okul Bilgileri</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Okul Adı" value={form.name} onChange={(v) => setForm({ ...form, name: v })} />
           <Field
-            label="Slug"
+            label="Okul Kısa Adı (Slug)"
             value={form.slug}
             onChange={(v) => setForm({ ...form, slug: v })}
             mono
-            hint="Used in URLs. Changing this will break existing links."
+            hint="URL bağlantılarında kullanılır."
           />
-          <Field label="Email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} />
-          <div>
-            <label className="text-xs text-white/40 block mb-1.5">Description</label>
-            <textarea
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              rows={3}
-              className="w-full bg-white/[0.05] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-white/20 resize-none"
-            />
-          </div>
+        </div>
+        <Field label="Okul / Kurum E-posta Adresi" value={form.email} onChange={(v) => setForm({ ...form, email: v })} />
+        <div>
+          <label className="text-xs text-white/40 block mb-1.5">Okul Bilgisi / Tanıtım Özeti</label>
+          <textarea
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+            rows={3}
+            className="w-full bg-white/[0.05] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-white/20 resize-none"
+            placeholder="Okul hakkında kısa açıklama..."
+          />
         </div>
       </div>
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
-      {saved && <p className="text-sm text-emerald-400">Settings saved successfully</p>}
+      {/* 2. Okul Yetkili İletişim Bilgileri */}
+      <div className="bg-white/[0.02] border border-white/[0.08] rounded-2xl p-6 space-y-4">
+        <div>
+          <h3 className="text-base font-semibold text-white">Okul Yetkili İletişim Bilgileri</h3>
+          <p className="text-xs text-white/40 mt-0.5">Okul müdürü veya idari yetkili irtibat detayları</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field
+            label="Yetkili Adı Soyadı"
+            value={form.contact_name}
+            onChange={(v) => setForm({ ...form, contact_name: v })}
+            hint="Örn: Ahmet Yılmaz"
+          />
+          <Field
+            label="Yetkili Telefon Numarası"
+            value={form.contact_phone}
+            onChange={(v) => setForm({ ...form, contact_phone: v })}
+            hint="Örn: 0532 000 00 00"
+          />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field
+            label="Yetkili Unvanı / Görevi"
+            value={form.contact_title}
+            onChange={(v) => setForm({ ...form, contact_title: v })}
+            hint="Örn: Okul Müdürü / Kurucu Temsilcisi"
+          />
+          <Field
+            label="Okul Açık Adresi & Şehir"
+            value={form.contact_address}
+            onChange={(v) => setForm({ ...form, contact_address: v })}
+            hint="Örn: Kadıköy, İstanbul"
+          />
+        </div>
+      </div>
 
+      {/* 3. Okul Durumu (Dondurma / Askıya Alma) */}
+      <div className="bg-white/[0.02] border border-white/[0.08] rounded-2xl p-6 space-y-4">
+        <div>
+          <h3 className="text-base font-semibold text-white">Okul Durumu (Aktiflik / Dondurma)</h3>
+          <p className="text-xs text-white/40 mt-0.5">Okulun sisteme erişimini geçici olarak dondurabilir veya yeniden aktif edebilirsiniz.</p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setForm({ ...form, active: true })}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+              form.active
+                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                : 'bg-white/[0.04] text-white/40 hover:text-white/70 border border-transparent'
+            }`}
+          >
+            <Play size={16} weight="fill" />
+            Aktif (Hizmet Veriyor)
+          </button>
+          <button
+            type="button"
+            onClick={() => setForm({ ...form, active: false })}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+              !form.active
+                ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                : 'bg-white/[0.04] text-white/40 hover:text-white/70 border border-transparent'
+            }`}
+          >
+            <Pause size={16} weight="fill" />
+            Donduruldu (Askıda)
+          </button>
+        </div>
+
+        {!form.active && (
+          <div>
+            <label className="text-xs text-white/40 block mb-1.5">Dondurma Gerekçesi / Açıklama</label>
+            <input
+              type="text"
+              value={form.suspend_reason}
+              onChange={(e) => setForm({ ...form, suspend_reason: e.target.value })}
+              placeholder="Örn: Dönem sonu yenileme bekleniyor / Sözleşme askıda"
+              className="w-full bg-white/[0.05] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-white/20"
+            />
+          </div>
+        )}
+      </div>
+
+      {error && <p className="text-sm text-red-400">{error}</p>}
+      {saved && <p className="text-sm text-emerald-400">Okul ayarları başarıyla kaydedildi</p>}
+
+      {/* Kaydetme Butonları */}
       {hasChanges && (
         <div className="flex items-center gap-3">
           <button
             onClick={handleSave}
             disabled={saving}
-            className="px-4 py-2 bg-white/10 hover:bg-white/15 text-white text-sm rounded-lg transition-colors disabled:opacity-50"
+            className="px-5 py-2.5 bg-emerald-500/80 hover:bg-emerald-500 text-white font-medium text-sm rounded-xl transition-colors disabled:opacity-50"
           >
-            {saving ? 'Saving...' : 'Save Changes'}
+            {saving ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}
           </button>
           <button
             onClick={() =>
@@ -1596,12 +1745,75 @@ function SettingsTab({
                 slug: org.slug || '',
                 email: org.email || '',
                 description: org.description || '',
+                contact_name: contactInfo.name || '',
+                contact_phone: contactInfo.phone || '',
+                contact_title: contactInfo.title || '',
+                contact_address: contactInfo.address || '',
+                active: isOrgActive,
+                suspend_reason: org.config?.suspend_reason || '',
               })
             }
-            className="px-4 py-2 text-white/40 hover:text-white/60 text-sm transition-colors"
+            className="px-4 py-2.5 text-white/40 hover:text-white/60 text-sm transition-colors"
           >
-            Reset
+            Sıfırla
           </button>
+        </div>
+      )}
+
+      {/* 4. Tehlikeli Alan (Okul Silme) */}
+      <div className="border border-red-500/20 bg-red-500/[0.03] rounded-2xl p-6 mt-12">
+        <h4 className="text-base font-semibold text-red-400">Tehlikeli Alan</h4>
+        <p className="text-xs text-white/50 mt-1 mb-4 leading-relaxed">
+          Okulu sildiğinizde, bu okula bağlı tüm sınıflar, dersler, öğretmen eşleşmeleri ve kayıtlı öğrenci verileri kalıcı olarak sistemden kaldırılır. Bu işlem geri alınamaz.
+        </p>
+        <button
+          onClick={() => setShowDeleteModal(true)}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-sm font-medium transition-colors"
+        >
+          <Trash size={16} weight="fill" />
+          Okulu Kalıcı Olarak Sil
+        </button>
+      </div>
+
+      {/* Silme Onay Modalı */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4">
+          <div className="bg-[#18181b] border border-white/[0.12] rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+            <div className="flex items-center gap-3 text-red-400">
+              <Warning size={24} weight="fill" />
+              <h3 className="text-lg font-bold">Okulu Silmek Üzeresiniz</h3>
+            </div>
+            <p className="text-sm text-white/70 leading-relaxed">
+              <strong className="text-white">{org.name}</strong> okulunu silmek istediğinizden emin misiniz? Onaylamak için lütfen aşağıdaki kutuya okulun kısa adını (<code className="text-amber-400">{org.slug}</code>) yazınız:
+            </p>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder={org.slug}
+              className="w-full bg-white/[0.05] border border-white/[0.1] rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-red-500/50 font-mono"
+            />
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDeleteModal(false)
+                  setDeleteConfirmText('')
+                }}
+                className="px-4 py-2 rounded-lg text-sm text-white/50 hover:text-white transition-colors"
+              >
+                Vazgeç
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteOrg}
+                disabled={deleteConfirmText !== org.slug || deleting}
+                className="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-medium text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {deleting ? 'Siliniyor...' : 'Okulu Sil'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -121,12 +121,12 @@ function TrailCourseCard(props: TrailCourseCardProps) {
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuItem asChild>
               <ConfirmationModal
-                confirmationMessage={t('courses.quit_course_confirm')}
-                confirmationButtonText={t('courses.quit_course')}
-                dialogTitle={t('courses.quit_course_title')}
+                confirmationMessage={t('courses.quit_course_confirm', { defaultValue: 'Bu ders konusunu listenizden kaldırmak istediğinize emin misiniz?' })}
+                confirmationButtonText={t('courses.quit_course', { defaultValue: 'Listeden Kaldır' })}
+                dialogTitle={t('courses.quit_course_title', { defaultValue: 'Ders Konusunu Kaldır' })}
                 dialogTrigger={
-                  <button className="w-full text-start flex items-center px-2 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors">
-                    <Trash2 className="me-2 h-4 w-4" /> {t('courses.quit_course')}
+                  <button className="w-full text-start flex items-center px-2 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded-md transition-colors cursor-pointer">
+                    <Trash2 className="me-2 h-3.5 w-3.5" /> Listeden Kaldır
                   </button>
                 }
                 functionToExecute={() => quitCourse(course.course_uuid)}
@@ -180,7 +180,7 @@ function TrailCourseCard(props: TrailCourseCardProps) {
             {course_progress}%
           </span>
           <span className="text-gray-400 text-xs">
-            {t('courses.completed_of', { completed: course_completed_steps, total: course_total_steps })}
+            {t('courses.completed_of', { completed: course_completed_steps, total: course_total_steps, defaultValue: `${course_completed_steps} / ${course_total_steps} Adım` })}
           </span>
         </div>
 
@@ -190,23 +190,23 @@ function TrailCourseCard(props: TrailCourseCardProps) {
             showCertificateUI && (isLoadingCertificate || isLoadingCertificationStatus) ? (
               <div className="flex items-center gap-1.5 text-gray-400">
                 <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-500"></div>
-                <span className="text-[10px] font-bold uppercase tracking-wider">{t('common.loading')}</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider">{t('common.loading', { defaultValue: 'Yükleniyor' })}</span>
               </div>
             ) : showCertificateUI && courseCertificate ? (
               <div className="flex items-center gap-1.5 text-yellow-600">
                 <Award size={12} />
-                <span className="text-[10px] font-bold uppercase tracking-wider">{t('certificate.certificate')}</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider">{t('certificate.certificate', { defaultValue: 'Başarı Belgesi' })}</span>
               </div>
             ) : (
               <div className="flex items-center gap-1.5 text-green-600">
                 <Award size={12} />
-                <span className="text-[10px] font-bold uppercase tracking-wider">{t('common.completed')}</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider">{t('common.completed', { defaultValue: 'Tamamlandı' })}</span>
               </div>
             )
           ) : (
             <div className="flex items-center gap-1.5 text-gray-500">
               <BookOpen size={12} />
-              <span className="text-[10px] font-bold uppercase tracking-wider">{t('courses.course_progress')}</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider">{t('courses.course_progress', { defaultValue: 'Konu İlerlemesi' })}</span>
             </div>
           )}
 
@@ -217,15 +217,15 @@ function TrailCourseCard(props: TrailCourseCardProps) {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:text-blue-700 uppercase tracking-wider"
             >
-              {t('certificate.verify')}
+              {t('certificate.verify', { defaultValue: 'Görüntüle' })}
               <ExternalLink className="w-3 h-3" />
             </Link>
           ) : (
             <Link
               href={courseLink}
-              className="text-[10px] font-bold text-gray-400 hover:text-gray-900 transition-colors uppercase tracking-wider"
+              className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 transition-colors uppercase tracking-wider"
             >
-              {t('courses.continue_learning')}
+              {t('courses.continue_learning', { defaultValue: 'Derse Devam Et' })}
             </Link>
           )}
         </div>

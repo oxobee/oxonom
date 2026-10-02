@@ -171,7 +171,7 @@ PLAN_FEATURE_CONFIGS: dict[str, dict] = {
             "collaboration": {"enabled": True, "limit": 0},
             "courses": {"enabled": True, "limit": 0},
 
-            "members": {"admin_limit": 10, "enabled": True, "limit": 500},
+            "members": {"admin_limit": 50, "enabled": True, "limit": 0},
             "payments": {"enabled": True},
 
             "usergroups": {"enabled": True, "limit": 0},
@@ -241,7 +241,7 @@ AI_CREDIT_LIMITS: dict[str, int] = {
     "personal": 500,
     "personal-family": 3000,
     "standard": 1000,
-    "pro": 2000,
+    "pro": -1,
     "enterprise": -1,
 }
 

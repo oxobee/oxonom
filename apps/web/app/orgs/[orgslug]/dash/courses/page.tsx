@@ -37,9 +37,10 @@ export async function generateMetadata(props: MetadataProps): Promise<Metadata> 
   }
 }
 
+import { redirect } from 'next/navigation'
+
 async function CoursesPage(props: { params: Promise<{ orgslug: string }> }) {
-  const { orgslug } = await props.params
-  return <CoursesHome orgslug={orgslug} />
+  redirect('/dash/boards')
 }
 
 export default CoursesPage

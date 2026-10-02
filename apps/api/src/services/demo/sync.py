@@ -239,9 +239,7 @@ def _demo_org_config() -> dict:
             "members": {"signup_mode": "inviteOnly"},
         },
         "overrides": {
-            # Pro already gives unlimited courses/assignments and 500 members;
-            # these keep headroom as visitors accumulate.
-            "members": {"extra_limit": 500},
+            "members": {"extra_limit": 0},
             # Enterprise tiers the demo can show safely.
             #
             # audit_logs, scorm and sso are deliberately NOT here. Every
@@ -822,10 +820,15 @@ async def _sync_cohorts(
                 )
             ).scalars().first()
 
+        join_code = getattr(cohort, "join_code", None) or (cohort.slug.upper().replace("-", ""))
+        grade_level = getattr(cohort, "grade_level", None) or "10. Sınıf"
+
         if group is None:
             group = UserGroup(
                 name=cohort.name,
                 description=cohort.description,
+                join_code=join_code,
+                grade_level=grade_level,
                 org_id=org.id,
                 usergroup_uuid=entry.entity_uuid if entry else _prefixed("usergroup"),
                 creation_date=_now(),
@@ -834,7 +837,7 @@ async def _sync_cohorts(
             db_session.add(group)
             await db_session.flush()
             stats.created += 1
-        elif _apply(group, name=cohort.name, description=cohort.description):
+        elif _apply(group, name=cohort.name, description=cohort.description, join_code=join_code, grade_level=grade_level):
             group.update_date = _now()
             db_session.add(group)
             stats.updated += 1
@@ -853,6 +856,13 @@ async def _sync_cohorts(
             for plan in students
             if plan.cohort_key == cohort.slug and plan.bundle_key in users
         }
+        # Always enroll demo student ogrenci@oxonom.com into 10-A
+        special_student = (await db_session.execute(
+            select(User).where(User.email == "ogrenci@oxonom.com")
+        )).scalars().first()
+        if special_student and (cohort.slug == "fen-10a" or "10-A" in cohort.name):
+            wanted_user_ids.add(special_student.id)
+
         existing = (
             await db_session.execute(
                 select(UserGroupUser).where(UserGroupUser.usergroup_id == group.id)
@@ -1042,6 +1052,26 @@ async def _sync_resource_author_for(
             )
         )
         stats.created += 1
+
+    # Ensure demo school teacher and admin have CREATOR access so they can manage & save content
+    special_staff = (
+        await db_session.execute(
+            select(User).where(User.email.in_(["ogretmen@oxonom.com", "idare@oxonom.com"]))
+        )
+    ).scalars().all()
+    for staff in special_staff:
+        if not any(row.user_id == staff.id for row in rows):
+            db_session.add(
+                ResourceAuthor(
+                    resource_uuid=resource_uuid,
+                    user_id=staff.id,
+                    authorship=ResourceAuthorshipEnum.CREATOR,
+                    authorship_status=ResourceAuthorshipStatusEnum.ACTIVE,
+                    creation_date=_now(),
+                    update_date=_now(),
+                )
+            )
+            stats.created += 1
 
     # Authorship on bundle content is the bundle's to decide. Adding a
     # contributor is an ordinary admin action and every visitor is an admin, so
@@ -2014,14 +2044,26 @@ async def _sync_board(
 
     canvas = _board_canvas(spec.slug)
 
+    from src.db.usergroups import UserGroup
+    teacher_user = (await db_session.execute(
+        select(User).where(User.email == "ogretmen@oxonom.com")
+    )).scalars().first()
+    class_10a = (await db_session.execute(
+        select(UserGroup).where(UserGroup.org_id == org.id, UserGroup.name.like("%10-A%"))
+    )).scalars().first()
+
+    creator_id = teacher_user.id if teacher_user else owner.id
+    target_ug_id = class_10a.id if class_10a else None
+
     if board is None:
         board = Board(
             name=spec.name,
             description=spec.description,
-            public=spec.public,
+            public=True,
             org_id=org.id,
             board_uuid=entry.entity_uuid if entry else _prefixed("board"),
-            created_by=owner.id,
+            created_by=creator_id,
+            usergroup_id=target_ug_id,
             ydoc_state=canvas,
             creation_date=_days_ago(epoch, HISTORY_DAYS - 5),
             update_date=_now(),
@@ -2031,19 +2073,13 @@ async def _sync_board(
         stats.created += 1
     else:
         changed = _apply(
-            board, name=spec.name, description=spec.description, public=spec.public
+            board,
+            name=spec.name,
+            description=spec.description,
+            public=True,
+            created_by=creator_id,
+            usergroup_id=target_ug_id,
         )
-        # Put the canvas back to the bundle's whenever it differs, not only
-        # when it has been emptied. Restoring only an empty canvas made a
-        # seeded board the one bundle-owned surface where a visitor's edits
-        # were permanent: anything drawn on it greeted every later prospect.
-        #
-        # Comparing the bytes first keeps a settled demo silent. The board is a
-        # live CRDT document, so a visitor drawing at the moment of a refresh
-        # loses that stroke — which is what a demo that resets every ten
-        # minutes is supposed to do. Note the collaboration server holds the
-        # document in memory, so an open session keeps rendering its own copy
-        # until it reconnects.
         if canvas is not None and board.ydoc_state != canvas:
             board.ydoc_state = canvas
             changed = True
@@ -2064,6 +2100,13 @@ async def _sync_board(
     wanted = {
         users[key].id for key in [spec.owner, *spec.members] if key in users
     }
+    # Ensure demo school teacher, student, and admin accounts always retain access
+    special_users = (await db_session.execute(
+        select(User).where(User.email.in_(["ogretmen@oxonom.com", "ogrenci@oxonom.com", "idare@oxonom.com"]))
+    )).scalars().all()
+    for sp in special_users:
+        wanted.add(sp.id)
+
     existing = (
         await db_session.execute(
             select(BoardMember).where(BoardMember.board_id == board.id)
@@ -2072,11 +2115,16 @@ async def _sync_board(
     existing_ids = {row.user_id for row in existing}
 
     for user_id in wanted - existing_ids:
+        role = "owner" if user_id == owner.id else "editor"
+        # If teacher, make owner
+        teacher_match = next((sp for sp in special_users if sp.id == user_id and sp.email == "ogretmen@oxonom.com"), None)
+        if teacher_match:
+            role = "owner"
         db_session.add(
             BoardMember(
                 board_id=board.id,
                 user_id=user_id,
-                role="owner" if user_id == owner.id else "editor",
+                role=role,
                 creation_date=_now(),
             )
         )

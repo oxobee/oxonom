@@ -8,6 +8,8 @@ import FormLayout, {
 } from '@components/Objects/StyledElements/Form/Form'
 import * as Form from '@radix-ui/react-form'
 import { createPodcast } from '@services/podcasts/podcasts'
+import { getUserGroups, linkResourcesToUserGroup } from '@services/usergroups/usergroups'
+import { asArray } from '@services/utils/ts/requests'
 import { useLHAnalytics, AnalyticsEvent } from '@services/analytics'
 import { useUpgradeModal } from '@components/Dashboard/Shared/PlanRestricted/UpgradeModalContext'
 import { getOrganizationContextInfoWithoutCredentials } from '@services/organizations/orgs'
@@ -15,13 +17,13 @@ import React, { useEffect } from 'react'
 import { BarLoader } from 'react-spinners'
 import { revalidateTags } from '@services/utils/ts/requests'
 import { useRouter } from 'next/navigation'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/query/keys'
 import { useLHSession } from '@components/Contexts/LHSessionContext'
 import toast from 'react-hot-toast'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
-import { UploadCloud } from 'lucide-react'
+import { UploadCloud, Globe, GraduationCap } from 'lucide-react'
 import AIImageButton from '@components/Objects/AI/AIImageButton'
 import FormTagInput from "@components/Objects/StyledElements/Form/TagInput"
 import { useTranslation } from "react-i18next"
@@ -33,8 +35,18 @@ function CreatePodcastModal({ closeModal, orgslug }: any) {
   const queryClient = useQueryClient()
   const { track } = useLHAnalytics('learner')
   const { handlePlanLimit } = useUpgradeModal()
-  const [orgId, setOrgId] = React.useState(null) as any
+  const [orgId, setOrgId] = React.useState<number | null>(null)
   const [isUploading, setIsUploading] = React.useState(false)
+
+  const accessToken = session?.data?.tokens?.access_token
+
+  // Fetch classes in organization
+  const { data: rawUserGroups } = useQuery({
+    queryKey: queryKeys.usergroups.list(orgId || 0),
+    queryFn: () => getUserGroups(orgId, accessToken),
+    enabled: !!(orgId && accessToken),
+  })
+  const usergroups = asArray<any>(rawUserGroups?.data || rawUserGroups)
 
   const validationSchema = Yup.object().shape({
     name: Yup.string()
@@ -43,7 +55,12 @@ function CreatePodcastModal({ closeModal, orgslug }: any) {
     description: Yup.string()
       .max(1000, 'Must be 1000 characters or less'),
     tags: Yup.string(),
-    visibility: Yup.boolean(),
+    targetType: Yup.string().oneOf(['all', 'specific']),
+    targetUsergroupIds: Yup.array().when('targetType', {
+      is: 'specific',
+      then: (schema) => schema.min(1, 'Lütfen en az bir sınıf seçiniz'),
+      otherwise: (schema) => schema.optional(),
+    }),
     thumbnail: Yup.mixed().nullable()
   })
 
@@ -51,22 +68,24 @@ function CreatePodcastModal({ closeModal, orgslug }: any) {
     initialValues: {
       name: '',
       description: '',
-      visibility: true,
+      targetType: 'all',
+      targetUsergroupIds: [] as (string | number)[],
       tags: '',
       thumbnail: null
     },
     validationSchema,
     onSubmit: async (values, { setSubmitting }) => {
       const toast_loading = toast.loading(t('podcasts.creating_podcast'))
+      const isPublic = values.targetType === 'all'
 
       try {
         const res = await createPodcast(
-          orgId,
+          String(orgId),
           {
             name: values.name,
             description: values.description,
             tags: values.tags,
-            public: values.visibility
+            public: isPublic
           },
           values.thumbnail,
           session.data?.tokens?.access_token
@@ -74,10 +93,27 @@ function CreatePodcastModal({ closeModal, orgslug }: any) {
 
         if (res.success) {
           track(AnalyticsEvent.PodcastCreated, {
-            is_public: values.visibility,
+            is_public: isPublic,
             has_thumbnail: !!values.thumbnail,
             source: 'create_modal',
           })
+
+          // Link to specific classrooms if selected
+          if (values.targetType === 'specific' && values.targetUsergroupIds?.length > 0 && res.data?.podcast_uuid) {
+            for (const ugId of values.targetUsergroupIds) {
+              try {
+                await linkResourcesToUserGroup(
+                  Number(ugId),
+                  res.data.podcast_uuid,
+                  orgId!,
+                  session.data?.tokens?.access_token
+                )
+              } catch (err) {
+                console.error('Failed to link podcast to class:', err)
+              }
+            }
+          }
+
           await revalidateTags(['podcasts'], orgslug)
           queryClient.invalidateQueries({ queryKey: queryKeys.podcasts.list(orgslug) })
           toast.dismiss(toast_loading)
@@ -238,24 +274,132 @@ function CreatePodcastModal({ closeModal, orgslug }: any) {
         />
       </FormField>
 
-      <FormField name="visibility">
-        <FormLabelAndMessage
-          label={t('podcasts.podcast_visibility')}
-          message={formik.errors.visibility}
-        />
-        <Select
-          value={formik.values.visibility.toString()}
-          onValueChange={(value) => formik.setFieldValue('visibility', value === 'true')}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder={t('courses.select_visibility')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="true">{t('courses.public')} ({t('courses.public_desc')})</SelectItem>
-            <SelectItem value="false">{t('courses.private')} ({t('courses.private_desc')})</SelectItem>
-          </SelectContent>
-        </Select>
-      </FormField>
+      {/* Class Targeting / Audience Selection */}
+      <div className="border border-gray-100 bg-gray-50/50 rounded-xl p-3.5 space-y-3">
+        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
+          Hedef Kitle & Sınıf Erişimi
+        </label>
+        <div className="space-y-2">
+          <label className="flex items-start gap-2.5 p-2 rounded-lg bg-white border border-gray-200 cursor-pointer hover:border-gray-300 transition-colors">
+            <input
+              type="radio"
+              name="targetType"
+              value="all"
+              checked={formik.values.targetType === 'all'}
+              onChange={() => {
+                formik.setFieldValue('targetType', 'all')
+                formik.setFieldValue('targetUsergroupIds', [])
+              }}
+              className="mt-0.5 text-black focus:ring-black"
+            />
+            <div>
+              <div className="flex items-center gap-1.5 text-xs font-bold text-gray-900">
+                <Globe size={13} className="text-emerald-600" />
+                <span>Tüm Okula / Sınıflara Açık</span>
+              </div>
+              <p className="text-[11px] text-gray-500 mt-0.5">
+                Tüm sınıflardaki öğrenciler bu podcasti dinleyebilir.
+              </p>
+            </div>
+          </label>
+
+          <label className="flex items-start gap-2.5 p-2 rounded-lg bg-white border border-gray-200 cursor-pointer hover:border-gray-300 transition-colors">
+            <input
+              type="radio"
+              name="targetType"
+              value="specific"
+              checked={formik.values.targetType === 'specific'}
+              onChange={() => {
+                formik.setFieldValue('targetType', 'specific')
+                if (usergroups.length > 0 && formik.values.targetUsergroupIds.length === 0) {
+                  formik.setFieldValue('targetUsergroupIds', [usergroups[0].id])
+                }
+              }}
+              className="mt-0.5 text-black focus:ring-black"
+            />
+            <div className="flex-1">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-gray-900">
+                <GraduationCap size={14} className="text-purple-600" />
+                <span>Belirli Sınıflara Özel</span>
+              </div>
+              <p className="text-[11px] text-gray-500 mt-0.5">
+                Yalnızca seçilen sınıflardaki öğrenciler erişebilir (birden fazla seçilebilir).
+              </p>
+            </div>
+          </label>
+        </div>
+
+        {formik.values.targetType === 'specific' && (
+          <div className="pt-2 space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-semibold text-gray-700">
+                Erişebilecek Sınıfları Seçiniz *
+              </label>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => formik.setFieldValue('targetUsergroupIds', usergroups.map((ug: any) => ug.id))}
+                  className="text-[11px] text-purple-600 hover:text-purple-800 font-medium"
+                >
+                  Tümünü Seç
+                </button>
+                <span className="text-gray-300 text-[11px]">|</span>
+                <button
+                  type="button"
+                  onClick={() => formik.setFieldValue('targetUsergroupIds', [])}
+                  className="text-[11px] text-gray-500 hover:text-gray-700 font-medium"
+                >
+                  Temizle
+                </button>
+              </div>
+            </div>
+
+            <div className="max-h-48 overflow-y-auto space-y-1.5 pr-0.5">
+              {usergroups.map((ug: any) => {
+                const isChecked = formik.values.targetUsergroupIds?.includes(ug.id)
+                return (
+                  <label
+                    key={ug.id}
+                    className={`flex items-center gap-2.5 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                      isChecked
+                        ? 'bg-purple-50/70 border-purple-300 text-purple-900 font-medium'
+                        : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => {
+                        const current = formik.values.targetUsergroupIds || []
+                        if (isChecked) {
+                          formik.setFieldValue(
+                            'targetUsergroupIds',
+                            current.filter((id: any) => id !== ug.id)
+                          )
+                        } else {
+                          formik.setFieldValue('targetUsergroupIds', [...current, ug.id])
+                        }
+                      }}
+                      className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 border-gray-300"
+                    />
+                    <span className="flex-1">{ug.name}</span>
+                    {ug.invitation_code && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-mono font-normal">
+                        {ug.invitation_code}
+                      </span>
+                    )}
+                  </label>
+                )
+              })}
+            </div>
+            {formik.errors.targetUsergroupIds && (
+              <p className="mt-1 text-xs text-red-500">
+                {formik.errors.targetUsergroupIds as string}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
 
       <div className="flex justify-end mt-6">
         <button

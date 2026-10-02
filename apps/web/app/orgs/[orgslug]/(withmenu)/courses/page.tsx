@@ -67,9 +67,10 @@ export async function generateMetadata(props: MetadataProps): Promise<Metadata> 
   }
 }
 
+import { redirect } from 'next/navigation'
+
 const CoursesPage = async (params: any) => {
-  const orgslug = (await params.params).orgslug
-  return <Courses orgslug={orgslug} />
+  redirect('/library')
 }
 
 export default CoursesPage

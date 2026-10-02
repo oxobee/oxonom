@@ -217,6 +217,7 @@ interface NewAccountBody {
   // Cloudflare Turnstile token collected by the signup form. Optional so OSS /
   // Turnstile-disabled deployments keep working.
   turnstileToken?: string | null
+  join_code?: string
 }
 
 // Signup goes through the same-origin gateway (app/api/signup/route.ts), which

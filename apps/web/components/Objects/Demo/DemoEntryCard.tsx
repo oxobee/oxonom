@@ -37,6 +37,18 @@ export default function DemoEntryCard({ className = '' }: { className?: string }
   const [status, setStatus] = useState<DemoStatus | null>(null)
   const [entering, setEntering] = useState(false)
 
+  const user = session?.data?.user
+  const isDemoUser = Boolean(
+    user?.is_demo ||
+    user?.email?.endsWith('@oxonom.com') ||
+    user?.email?.toLowerCase().includes('demo')
+  )
+
+  // Demo kartı sadece demo hesaplara gösterilir; gerçek kullanıcı hesaplarında gizlenir.
+  if (session?.status === 'authenticated' && !isDemoUser) {
+    return null
+  }
+
   useEffect(() => {
     let cancelled = false
     let poll: ReturnType<typeof setInterval> | null = null
@@ -117,14 +129,14 @@ export default function DemoEntryCard({ className = '' }: { className?: string }
         <div className="min-w-0">
           <p className="text-sm font-semibold text-gray-900">
             {entering
-              ? t('demo.entry_opening', { defaultValue: 'Opening the demo…' })
-              : t('demo.entry_title', { defaultValue: 'Explore a live demo' })}
+              ? t('demo.entry_opening', { defaultValue: 'Demo okul açılıyor…' })
+              : t('demo.entry_title', { defaultValue: 'Canlı Örnek Okulu Keşfet' })}
           </p>
           <p className="mt-1 text-sm leading-snug text-gray-500">
             {t('demo.entry_body', {
               interval: formatInterval(status.refresh_minutes),
               defaultValue:
-                'A full academy with courses, learners, progress and grading — already filled in. Shared with everyone, and reset every {{interval}}.',
+                'Sınıflar, akıllı tahtalar, günlük yoklama, ev ödevleri ve veli forumu ile hazır yapılandırılmış canlı okul ortamını inceleyin. Herkese açıktır ve periyodik olarak sıfırlanır.',
             })}
           </p>
           {!status.ready && (

@@ -41,6 +41,7 @@ import {
   CheckSquare,
   Headphones,
   PencilSimple,
+  Cube,
 } from '@phosphor-icons/react'
 import { Extension } from '@tiptap/core'
 import { BoardYjsProvider } from './BoardYjsContext'
@@ -100,7 +101,7 @@ function BoardEditorInner({
   provider: HocuspocusProvider
 }) {
   const { track } = useLHAnalytics('dashboard')
-  const [toolMode, setToolMode] = useState<'select' | 'pan' | 'draw' | 'card' | 'youtube' | 'playground' | 'activity' | 'embed' | 'webpage' | 'sticker' | 'frame' | 'note' | 'todo' | 'podcast'>('select')
+  const [toolMode, setToolMode] = useState<'select' | 'pan' | 'draw' | 'card' | 'youtube' | 'modules' | 'embed' | 'webpage' | 'sticker' | 'frame' | 'note' | 'todo' | 'podcast'>('select')
   const [zoom, setZoom] = useState(() =>
     typeof window !== 'undefined' && window.innerWidth <= 768 ? 0.6 : 1
   )
@@ -131,8 +132,6 @@ function BoardEditorInner({
     draw: { icon: PencilSimple, label: 'Draw' },
     card: { icon: Square, label: 'Card' },
     youtube: { icon: YoutubeLogo, label: 'YouTube' },
-    playground: { icon: Sparkle, label: 'AI Playground' },
-    activity: { icon: BookOpen, label: 'Activity' },
     embed: { icon: Code, label: 'Embed' },
     webpage: { icon: Globe, label: 'Webpage' },
     note: { icon: Note, label: 'Note' },
@@ -140,6 +139,7 @@ function BoardEditorInner({
     frame: { icon: FrameCorners, label: 'Frame' },
     todo: { icon: CheckSquare, label: 'Todo' },
     podcast: { icon: Headphones, label: 'Podcast' },
+    modules: { icon: Cube, label: 'Modüller' },
   }
   const activePlacement = placementTools[toolMode] ?? null
 
@@ -391,43 +391,6 @@ function BoardEditorInner({
       }).run()
       setToolMode('select')
       track(AnalyticsEvent.BoardBlockAdded, { block_type: 'youtube' })
-    } else if (mode === 'playground' && editor) {
-      const rect = canvasRef.current?.getBoundingClientRect()
-      if (!rect) return
-      toolModeRef.current = 'select'
-      const x = (e.clientX - rect.left - pan.x) / zoom
-      const y = (e.clientY - rect.top - pan.y) / zoom
-      const pos = editor.state.doc.content.size
-      editor.chain().insertContentAt(pos, {
-        type: 'playgroundBlock',
-        attrs: {
-          blockUuid: `pg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-          x: Math.round(x),
-          y: Math.round(y),
-          width: 520,
-          height: 400,
-        },
-      }).run()
-      setToolMode('select')
-      track(AnalyticsEvent.BoardBlockAdded, { block_type: 'playground' })
-    } else if (mode === 'activity' && editor) {
-      const rect = canvasRef.current?.getBoundingClientRect()
-      if (!rect) return
-      toolModeRef.current = 'select'
-      const x = (e.clientX - rect.left - pan.x) / zoom
-      const y = (e.clientY - rect.top - pan.y) / zoom
-      const pos = editor.state.doc.content.size
-      editor.chain().insertContentAt(pos, {
-        type: 'activityBlock',
-        attrs: {
-          x: Math.round(x),
-          y: Math.round(y),
-          width: 520,
-          height: 400,
-        },
-      }).run()
-      setToolMode('select')
-      track(AnalyticsEvent.BoardBlockAdded, { block_type: 'activity' })
     } else if (mode === 'embed' && editor) {
       const rect = canvasRef.current?.getBoundingClientRect()
       if (!rect) return
@@ -540,6 +503,26 @@ function BoardEditorInner({
       }).run()
       setToolMode('select')
       track(AnalyticsEvent.BoardBlockAdded, { block_type: 'frame' })
+    } else if (mode === 'modules' && editor) {
+      const rect = canvasRef.current?.getBoundingClientRect()
+      if (!rect) return
+      toolModeRef.current = 'select'
+      const x = (e.clientX - rect.left - pan.x) / zoom
+      const y = (e.clientY - rect.top - pan.y) / zoom
+      const pos = editor.state.doc.content.size
+      editor.chain().insertContentAt(pos, {
+        type: 'playgroundBlock',
+        attrs: {
+          blockUuid: `pg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+          x: Math.round(x),
+          y: Math.round(y),
+          width: 540,
+          height: 480,
+          htmlContent: null,
+        },
+      }).run()
+      setToolMode('select')
+      track(AnalyticsEvent.BoardBlockAdded, { block_type: 'modules' })
     }
   }, [pan, zoom, editor, track])
 
@@ -855,6 +838,8 @@ function BoardEditorInner({
         <BoardTopBar
           boardName={board.name}
           orgslug={orgslug}
+          board={board}
+          accessToken={accessToken}
         />
       </div>
 
@@ -863,6 +848,8 @@ function BoardEditorInner({
         <BoardTopRight
           provider={provider}
           ydoc={ydoc}
+          board={board}
+          accessToken={accessToken}
         />
       </div>
 
@@ -880,10 +867,14 @@ function BoardEditorInner({
       {/* Bottom right stack: effects → chat → zoom */}
       <div className="absolute bottom-5 end-5 z-20 flex flex-col items-end gap-1.5 pointer-events-none board-enter-delayed board-social">
         {/* Ephemeral Chat */}
-        <EphemeralChat ydoc={ydoc} provider={provider} />
+        {(board.features?.chat_enabled !== false || board.features?.reactions_enabled !== false) && (
+          <EphemeralChat ydoc={ydoc} provider={provider} features={board.features} />
+        )}
 
         {/* Live Effects */}
-        <BoardEffects ydoc={ydoc} provider={provider} />
+        {board.features?.effects_enabled !== false && (
+          <BoardEffects ydoc={ydoc} provider={provider} />
+        )}
 
         {/* Zoom controls */}
         <BoardZoomControls

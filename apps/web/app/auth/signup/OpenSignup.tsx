@@ -6,12 +6,12 @@ import FormLayout, {
   FormField,
 } from '@components/Objects/StyledElements/Form/Form'
 import * as Form from '@radix-ui/react-form'
-import { AlertTriangle, Info, Mail, User } from 'lucide-react'
+import { AlertTriangle, Info, Mail, User, GraduationCap, Check, Sparkles, Phone, Plus, Trash2, Building, MapPin, Users } from 'lucide-react'
 import Link from 'next/link'
 import { signup, resendVerificationEmail } from '@services/auth/auth'
 import { useOrg } from '@components/Contexts/OrgContext'
 import { signIn } from '@components/Contexts/AuthContext'
-import { getLEARNHOUSE_TOP_DOMAIN_VAL, isOnCustomDomain } from '@services/config/config'
+import { getLEARNHOUSE_TOP_DOMAIN_VAL, isOnCustomDomain, getAPIUrl } from '@services/config/config'
 import { getErrorMessage } from '@services/utils/ts/errorMessage'
 import { useTranslation } from 'react-i18next'
 import { PasswordStrengthIndicator, validatePasswordStrength } from '@components/Auth/PasswordStrengthIndicator'
@@ -94,6 +94,74 @@ function OpenSignUpComponent({ org: propOrg }: OpenSignUpComponentProps = {}) {
     [org],
   )
 
+  // Sınıf Katılım Kodu (Oxonom Edu)
+  const [joinCodeInput, setJoinCodeInput] = React.useState('')
+  const [verifiedClass, setVerifiedClass] = React.useState<any>(null)
+  const [verifyingCode, setVerifyingCode] = React.useState(false)
+  const [codeError, setCodeError] = React.useState('')
+
+  // Student Extra & Multi-Parent Information
+  const [tcNo, setTcNo] = React.useState('')
+  const [birthDate, setBirthDate] = React.useState('')
+  const [bloodType, setBloodType] = React.useState('A Rh+')
+  const [address, setAddress] = React.useState('')
+  const [parents, setParents] = React.useState<any[]>([
+    { name: '', relation: 'Anne', phone: '', occupation: '', email: '' },
+  ])
+
+  const handleAddParent = () => {
+    setParents((prev) => [
+      ...prev,
+      { name: '', relation: 'Baba', phone: '', occupation: '', email: '' },
+    ])
+  }
+
+  const handleRemoveParent = (idx: number) => {
+    setParents((prev) => {
+      const filtered = prev.filter((_, i) => i !== idx)
+      return filtered.length > 0 ? filtered : [{ name: '', relation: 'Anne', phone: '', occupation: '', email: '' }]
+    })
+  }
+
+  const handleParentChange = (idx: number, field: string, val: string) => {
+    setParents((prev) => {
+      const copy = [...prev]
+      copy[idx] = { ...copy[idx], [field]: val }
+      return copy
+    })
+  }
+
+  const handleVerifyCode = async (codeToVerify: string) => {
+    const trimmed = codeToVerify.trim().toUpperCase()
+    if (!trimmed) {
+      setVerifiedClass(null)
+      setCodeError('')
+      formik.setFieldValue('join_code', '')
+      return
+    }
+    setVerifyingCode(true)
+    setCodeError('')
+    try {
+      const res = await fetch(`${getAPIUrl()}usergroups/verify-code/${encodeURIComponent(trimmed)}`)
+      if (res.ok) {
+        const data = await res.json()
+        setVerifiedClass(data)
+        setCodeError('')
+        formik.setFieldValue('join_code', data.join_code)
+      } else {
+        const err = await res.json().catch(() => ({}))
+        setVerifiedClass(null)
+        formik.setFieldValue('join_code', '')
+        setCodeError(err.detail || 'Geçersiz sınıf katılım kodu')
+      }
+    } catch {
+      setVerifiedClass(null)
+      setCodeError('Kod doğrulanamadı')
+    } finally {
+      setVerifyingCode(false)
+    }
+  }
+
   const formik = useFormik({
     initialValues: {
       org_slug: org?.slug,
@@ -104,6 +172,7 @@ function OpenSignUpComponent({ org: propOrg }: OpenSignUpComponentProps = {}) {
       bio: '',
       first_name: '',
       last_name: '',
+      join_code: '',
       custom_fields: initialCustomFieldValues(customFields),
       turnstileToken: null as string | null,
     },
@@ -120,20 +189,78 @@ function OpenSignUpComponent({ org: propOrg }: OpenSignUpComponentProps = {}) {
         if (res.status == 200) {
           track(AnalyticsEvent.SignupSucceeded, { email_verified: message.email_verified })
           setMessage(message)
+
+          // Persist student record into oxonom_students so school management sees them immediately in Student Dossier
+          try {
+            const targetOrgId = verifiedClass?.org_id || org?.id || 1
+            const storageKey = `oxonom_students_${targetOrgId}`
+            const existingStr = localStorage.getItem(storageKey)
+            const existingList = existingStr ? JSON.parse(existingStr) : []
+            const newStudent = {
+              id: Date.now(),
+              studentNo: `2026-${Math.floor(100 + Math.random() * 900)}`,
+              tcNo: tcNo.trim() || '—',
+              name: `${values.first_name} ${values.last_name}`.trim() || values.username,
+              email: values.email,
+              gender: 'Kız',
+              birthDate: birthDate.trim() || '2010',
+              bloodType: bloodType || 'A Rh+',
+              address: address.trim() || 'Adres bilgisi girilmedi',
+              classroomId: verifiedClass?.usergroup_id || 1,
+              classroomName: verifiedClass?.usergroup_name || 'Sınıf',
+              mentorTeacher: 'Atanmadı',
+              status: 'active',
+              parentName: parents[0]?.name?.trim() || 'Veli Bilgisi',
+              parentPhone: parents[0]?.phone?.trim() || '—',
+              parentRelation: parents[0]?.relation || 'Veli',
+              parentOccupation: parents[0]?.occupation?.trim() || 'Belirtilmedi',
+              secondParentName: parents[1]?.name?.trim() || undefined,
+              secondParentPhone: parents[1]?.phone?.trim() || undefined,
+              parents: parents,
+              emergencyContact: parents[0]?.name?.trim() || 'Veli',
+              emergencyPhone: parents[0]?.phone?.trim() || '—',
+              enrollmentDate: new Date().toLocaleDateString('tr-TR'),
+              gpa: 85.0,
+              attendanceRate: 100,
+              excusedDays: 0,
+              unexcusedDays: 0,
+              assignmentsDone: 0,
+              assignmentsTotal: 0,
+              notes: `Sınıf Katılım Kodu (${verifiedClass?.join_code || values.join_code}) ile öğrenci kaydı oluşturuldu.`,
+              disciplineStatus: 'Temiz Sicil',
+              guidanceNotes: [
+                {
+                  id: `gn-${Date.now()}`,
+                  date: new Date().toLocaleDateString('tr-TR'),
+                  author: 'Sistem',
+                  category: 'Akademik',
+                  content: `${verifiedClass?.usergroup_name || 'Sınıf'} şubesine katılım koduyla kayıt yapıldı.`,
+                },
+              ],
+              grades: [],
+            }
+            localStorage.setItem(storageKey, JSON.stringify([newStudent, ...existingList]))
+          } catch (e) {
+            console.error('Failed to sync student to local storage', e)
+          }
         } else {
-          // Surface the backend's actual error detail for ANY non-2xx (incl. 409
-          // already-exists, 422 validation, 503 email-service-down) instead of
-          // masking everything past the handful of hardcoded statuses behind a
-          // generic message. Fall back to a generic string only when the backend
-          // gave us nothing readable.
+          // Surface the backend's actual error detail for ANY non-2xx
           track(AnalyticsEvent.SignupFailed, { status_code: res.status })
-          setError(getErrorMessage(message?.detail, t('common.something_went_wrong')))
-          // Turnstile tokens are single-use — fetch a fresh one for the retry.
+          const detail = message?.detail || ''
+          if (typeof detail === 'string' && detail.toLowerCase().includes('already in use')) {
+            setError('Bu e-posta adresi veya kullanıcı adı zaten kayıtlı. Lütfen mevcut hesabınızla giriş yapın.')
+          } else {
+            setError(getErrorMessage(message?.detail, t('common.something_went_wrong')))
+          }
           turnstileRef.current?.reset()
         }
       } catch (err) {
-        // A network throw must not leave the form permanently locked.
-        setError(getErrorMessage((err as any)?.detail, t('common.something_went_wrong')))
+        const detail = (err as any)?.detail || ''
+        if (typeof detail === 'string' && detail.toLowerCase().includes('already in use')) {
+          setError('Bu e-posta adresi veya kullanıcı adı zaten kayıtlı. Lütfen mevcut hesabınızla giriş yapın.')
+        } else {
+          setError(getErrorMessage((err as any)?.detail, t('common.something_went_wrong')))
+        }
         turnstileRef.current?.reset()
       } finally {
         setIsSubmitting(false)
@@ -179,9 +306,22 @@ function OpenSignUpComponent({ org: propOrg }: OpenSignUpComponentProps = {}) {
       <div className="mt-8">
         {/* Error/Success Messages */}
         {error && (
-          <div className="flex justify-center bg-red-50 rounded-xl text-red-600 space-x-2 items-center p-4 mb-6 border border-red-100">
-            <AlertTriangle size={18} className="shrink-0" />
-            <div className="font-medium text-sm">{error}</div>
+          <div className="bg-red-50/90 rounded-2xl text-red-700 p-4 mb-6 border border-red-200 shadow-sm flex flex-col gap-2.5">
+            <div className="flex items-start gap-2.5">
+              <AlertTriangle size={18} className="shrink-0 text-red-500 mt-0.5" />
+              <div className="font-medium text-sm leading-relaxed">{error}</div>
+            </div>
+            {(error.includes('zaten kayıtlı') || error.toLowerCase().includes('already in use')) && (
+              <div className="pt-2 border-t border-red-100 flex items-center justify-end">
+                <Link
+                  href="/login"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all shadow-xs"
+                >
+                  <User size={13} />
+                  <span>Mevcut Hesabınızla Giriş Yapın →</span>
+                </Link>
+              </div>
+            )}
           </div>
         )}
 
@@ -244,6 +384,229 @@ function OpenSignUpComponent({ org: propOrg }: OpenSignUpComponentProps = {}) {
 
         {passwordAllowed && (
         <FormLayout onSubmit={formik.handleSubmit}>
+          {/* Sınıf Katılım Kodu - Oxonom Edu Öğrenci Girişi */}
+          <div className="mb-5 p-3.5 rounded-xl border border-indigo-100 bg-gradient-to-br from-indigo-50/70 to-purple-50/40">
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-[13px] font-bold text-indigo-950 flex items-center gap-1.5">
+                <GraduationCap className="w-4 h-4 text-indigo-600" />
+                <span>Sınıf Katılım Kodu (Öğrenciler İçin)</span>
+              </label>
+              <span className="text-[11px] text-indigo-500 font-medium">Opsiyonel</span>
+            </div>
+            <p className="text-[12px] text-gray-500 mb-2">
+              Öğretmeninizin paylaştığı 6 haneli kodu girerek doğrudan sınıfınıza bağlanabilirsiniz.
+            </p>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Örn: OX-1001"
+                value={joinCodeInput}
+                onChange={(e) => {
+                  const val = e.target.value.toUpperCase()
+                  setJoinCodeInput(val)
+                  if (val.length >= 4) {
+                    handleVerifyCode(val)
+                  } else {
+                    setVerifiedClass(null)
+                    setCodeError('')
+                    formik.setFieldValue('join_code', '')
+                  }
+                }}
+                className="box-border w-full uppercase font-mono tracking-wider bg-white text-black rounded-lg px-4 border border-indigo-200 inline-flex h-[42px] appearance-none items-center focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder:text-gray-400 placeholder:normal-case placeholder:font-sans text-sm font-semibold"
+              />
+              {verifyingCode && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-indigo-500 animate-pulse">
+                  Kontrol ediliyor...
+                </div>
+              )}
+            </div>
+
+            {/* Doğrulanmış Sınıf Rozeti */}
+            {verifiedClass && (
+              <div className="mt-2.5 p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center gap-2.5 text-xs text-emerald-900">
+                <div className="w-7 h-7 rounded-md bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                  <Check className="w-4 h-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="font-bold flex items-center gap-1.5">
+                    <span>{verifiedClass.usergroup_name}</span>
+                    {verifiedClass.grade_level && (
+                      <span className="px-1.5 py-0.5 bg-emerald-200/60 rounded text-[10px] text-emerald-800">
+                        {verifiedClass.grade_level}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-emerald-700 truncate">
+                    {verifiedClass.org_name} • Kod: <span className="font-mono font-bold">{verifiedClass.join_code}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {codeError && (
+              <div className="mt-2 text-xs text-red-600 flex items-center gap-1">
+                <Info size={12} />
+                <span>{codeError}</span>
+              </div>
+            )}
+
+            {/* Öğrenci Kimlik ve Çoklu Veli Bilgileri (Katılım Kodu veya İsteğe Bağlı) */}
+            <div className="mt-4 pt-3 border-t border-indigo-100/80">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-[13px] font-bold text-gray-800 flex items-center gap-1.5">
+                  <Users className="w-4 h-4 text-indigo-600" />
+                  <span>Öğrenci & Veli Bilgileri</span>
+                </div>
+                <span className="text-[11px] text-gray-400 font-medium">Öğrenci Dosyası İçin</span>
+              </div>
+
+              <div className="space-y-3 bg-white/70 p-3 rounded-lg border border-indigo-50">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-gray-600 mb-1">T.C. Kimlik No</label>
+                    <input
+                      type="text"
+                      maxLength={11}
+                      placeholder="11 haneli T.C. No"
+                      value={tcNo}
+                      onChange={(e) => setTcNo(e.target.value.replace(/\D/g, ''))}
+                      className="w-full text-xs px-2.5 py-1.5 rounded-md border border-gray-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-gray-600 mb-1">Doğum Tarihi</label>
+                    <input
+                      type="date"
+                      value={birthDate}
+                      onChange={(e) => setBirthDate(e.target.value)}
+                      className="w-full text-xs px-2.5 py-1.5 rounded-md border border-gray-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-gray-600 mb-1">Kan Grubu</label>
+                    <select
+                      value={bloodType}
+                      onChange={(e) => setBloodType(e.target.value)}
+                      className="w-full text-xs px-2 py-1.5 rounded-md border border-gray-200 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    >
+                      <option value="A Rh+">A Rh+</option>
+                      <option value="A Rh-">A Rh-</option>
+                      <option value="B Rh+">B Rh+</option>
+                      <option value="B Rh-">B Rh-</option>
+                      <option value="AB Rh+">AB Rh+</option>
+                      <option value="AB Rh-">AB Rh-</option>
+                      <option value="0 Rh+">0 Rh+</option>
+                      <option value="0 Rh-">0 Rh-</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold text-gray-600 mb-1">Ev / İkametgah Adresi</label>
+                    <input
+                      type="text"
+                      placeholder="Mahalle, Cadde, No, İlçe/İl"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      className="w-full text-xs px-2.5 py-1.5 rounded-md border border-gray-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Veli Bilgileri - Dinamik Çoklu Veli */}
+                <div className="pt-2 border-t border-gray-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-[12px] font-bold text-gray-700 flex items-center gap-1">
+                      <span>Veli / İletişim Bilgileri</span>
+                      <span className="text-[10px] text-gray-400 font-normal">({parents.length} Veli Kayıtlı)</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleAddParent}
+                      className="text-[11px] text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1 px-2 py-0.5 rounded hover:bg-indigo-50 transition-colors"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>+ Veli Ekle</span>
+                    </button>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {parents.map((parent, pIdx) => (
+                      <div key={pIdx} className="p-2.5 bg-gray-50/80 rounded-lg border border-gray-200/70 text-xs relative">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="font-semibold text-gray-600 text-[11px]">
+                            {pIdx + 1}. Veli Bilgisi
+                          </span>
+                          {parents.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveParent(pIdx)}
+                              className="text-gray-400 hover:text-red-500 p-0.5 rounded"
+                              title="Veliyi Kaldır"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
+                          <div>
+                            <label className="block text-[10px] text-gray-500 mb-0.5">Yakınlık</label>
+                            <select
+                              value={parent.relation || 'Anne'}
+                              onChange={(e) => handleParentChange(pIdx, 'relation', e.target.value)}
+                              className="w-full text-xs px-2 py-1 rounded border border-gray-200 bg-white"
+                            >
+                              <option value="Anne">Anne</option>
+                              <option value="Baba">Baba</option>
+                              <option value="Vasi">Vasi</option>
+                              <option value="Ağabey/Abla">Ağabey / Abla</option>
+                              <option value="Diğer">Diğer</option>
+                            </select>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <label className="block text-[10px] text-gray-500 mb-0.5">Veli Adı Soyadı</label>
+                            <input
+                              type="text"
+                              placeholder="Örn: Ayşe Yılmaz"
+                              value={parent.name || ''}
+                              onChange={(e) => handleParentChange(pIdx, 'name', e.target.value)}
+                              className="w-full text-xs px-2 py-1 rounded border border-gray-200"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[10px] text-gray-500 mb-0.5">Telefon Numarası</label>
+                            <input
+                              type="tel"
+                              placeholder="05XX XXX XX XX"
+                              value={parent.phone || ''}
+                              onChange={(e) => handleParentChange(pIdx, 'phone', e.target.value)}
+                              className="w-full text-xs px-2 py-1 rounded border border-gray-200"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] text-gray-500 mb-0.5">Meslek (İsteğe Bağlı)</label>
+                            <input
+                              type="text"
+                              placeholder="Örn: Mühendis, Esnaf..."
+                              value={parent.occupation || ''}
+                              onChange={(e) => handleParentChange(pIdx, 'occupation', e.target.value)}
+                              className="w-full text-xs px-2 py-1 rounded border border-gray-200"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <FormField name="email">
             <div className="flex items-center space-x-2 mb-1.5">
               <Form.Label className="grow text-[13px] font-semibold text-black/70">{t('auth.email')}</Form.Label>

@@ -2,10 +2,10 @@
   "bundle_version": "1.0.0",
 
   "org": {
-    "name": "Riverbend Academy",
-    "description": "The internal learning platform of Riverbend Supply Co.",
-    "about": "Riverbend Academy is where everyone at Riverbend Supply Co. learns the work: how we onboard, how we write to each other, how we look after customers, and what we are required to get right. Every course here is short, practical and written by the team that does the job.",
-    "email": "academy@riverbend.example",
+    "name": "Atatürk Fen ve Anadolu Lisesi",
+    "description": "Oxonom Edu Dijital Eğitim & Akıllı Okul Portalı",
+    "about": "Atatürk Fen ve Anadolu Lisesi resmi dijital kampüsü. Akıllı tahtalar, ders içerikleri, ödevler ve veli-öğrenci takip sistemi.",
+    "email": "idare@oxonom.com",
     "logo": "org/logo.webp",
     "thumbnail": "org/thumbnail.webp"
   },
@@ -24,23 +24,28 @@
 
   "cohorts": [
     {
-      "slug": "spring-intake",
-      "name": "Spring Intake",
-      "description": "Everyone who joined Riverbend in the first half of the year.",
-      "share": 0.4
+      "slug": "fen-10a",
+      "name": "10-A Fen ve Matematik Şubesi",
+      "description": "Rehber Öğretmen: Ahmet Yılmaz. Sayısal ağırlıklı fen ve matematik şubesi.",
+      "share": 0.5,
+      "join_code": "FEN-10A",
+      "grade_level": "10. Sınıf"
     },
     {
-      "slug": "autumn-intake",
-      "name": "Autumn Intake",
-      "description": "The second intake of the year, still working through the core path.",
-      "share": 0.4
+      "slug": "say-11b",
+      "name": "11-B İleri Sayısal Şubesi",
+      "description": "Rehber Öğretmen: Ahmet Yılmaz. İleri düzey matematik ve fizik hazırlık şubesi.",
+      "share": 0.3,
+      "join_code": "SAY-11B",
+      "grade_level": "11. Sınıf"
     },
     {
-      "slug": "team-leads",
-      "name": "Team Leads",
-      "description": "Anyone who runs a team. Gets the compliance material early.",
+      "slug": "and-9c",
+      "name": "9-C Anadolu Şubesi",
+      "description": "Lise uyum ve temel fen-sosyal bilimler başlangıç şubesi.",
       "share": 0.2,
-      "restricted_courses": ["compliance-essentials"]
+      "join_code": "AND-09C",
+      "grade_level": "9. Sınıf"
     }
   ],
 

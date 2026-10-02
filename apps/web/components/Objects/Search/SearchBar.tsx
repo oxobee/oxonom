@@ -1,5 +1,18 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { Search, ArrowRight, Sparkles, BookCopy, Folder, ArrowUpRight, TextSearch, ScanSearch, Users } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import {
+  Search,
+  ArrowRight,
+  Sparkles,
+  BookCopy,
+  Folder,
+  ArrowUpRight,
+  TextSearch,
+  Users,
+  X,
+  Command,
+  Loader2,
+} from 'lucide-react';
 import { searchOrgContent } from '@services/search/search';
 import { useLHSession } from '@components/Contexts/LHSessionContext';
 import Link from 'next/link';
@@ -77,24 +90,6 @@ interface SearchBarProps {
   primaryColor?: string;
 }
 
-const CourseResultsSkeleton = () => (
-  <div className="p-2 ">
-    <div className="flex items-center gap-2 px-2 py-2">
-      <div className="w-4 h-4 bg-black/5 rounded animate-pulse" />
-      <div className="w-20 h-4 bg-black/5 rounded animate-pulse" />
-    </div>
-    {[1, 2].map((i) => (
-      <div key={i} className="flex items-center gap-3 p-2">
-        <div className="w-10 h-10 bg-black/5 rounded-lg animate-pulse" />
-        <div className="flex-1">
-          <div className="w-48 h-4 bg-black/5 rounded animate-pulse mb-2" />
-          <div className="w-32 h-4 bg-black/5 rounded animate-pulse" />
-        </div>
-      </div>
-    ))}
-  </div>
-);
-
 export const SearchBar: React.FC<SearchBarProps> = ({
   orgslug,
   className = '',
@@ -102,36 +97,56 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   showSearchSuggestions = false,
   primaryColor = '',
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isTr = i18n?.language?.startsWith('tr') !== false;
   const org = useOrg() as any;
   const { track } = useLHAnalytics('learner');
-  const colors = getMenuColorClasses(primaryColor);
+  const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResults>({
     courses: [],
     folders: [],
-    users: []
+    users: [],
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [showResults, setShowResults] = useState(false);
-  const searchRef = useRef<HTMLDivElement>(null);
   const session = useLHSession() as any;
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-
-  // Debounce the search query value
-  const debouncedSearch = useDebounce(searchQuery, 300);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+  const debouncedSearch = useDebounce(searchQuery, 250);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setShowResults(false);
+    setMounted(true);
+  }, []);
+
+  // Global Keyboard shortcut: Cmd+K / Ctrl+K or /
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsOpen((prev) => !prev);
+      } else if (e.key === 'Escape' && isOpen) {
+        setIsOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
 
+  // Auto-focus input when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 50);
+    } else {
+      setSearchQuery('');
+      setSearchResults({ courses: [], folders: [], users: [] });
+    }
+  }, [isOpen]);
+
+  // Fetch search results
   useEffect(() => {
     let stale = false;
 
@@ -150,39 +165,22 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           orgslug,
           debouncedSearch,
           1,
-          3,
+          4,
           null,
           session?.data?.tokens?.access_token
         );
 
         if (stale) return;
 
-        // Type assertion and safe access
-        const typedResponse = response.data as any;
-
-        // Ensure we have the correct structure and handle potential undefined values
-        const processedResults: SearchResults = {
-          courses: Array.isArray(typedResponse?.courses) ? typedResponse.courses : [],
-          folders: Array.isArray(typedResponse?.folders) ? typedResponse.folders : [],
-          users: Array.isArray(typedResponse?.users) ? typedResponse.users : []
-        };
-
-        setSearchResults(processedResults);
-
-        const totalResults = processedResults.courses.length + processedResults.folders.length + processedResults.users.length;
-        track(AnalyticsEvent.SearchQuery, {
-          query: debouncedSearch,
-          results_count: totalResults,
+        setSearchResults({
+          courses: (response as any)?.courses || [],
+          folders: (response as any)?.folders || [],
+          users: (response as any)?.users || [],
         });
-      } catch (error) {
-        console.error('Error searching content:', error);
-        if (!stale) {
-          setSearchResults({ courses: [], folders: [], users: [] });
-        }
-      }
-      if (!stale) {
-        setIsLoading(false);
-        setIsInitialLoad(false);
+      } catch (err) {
+        console.error('Search query error:', err);
+      } finally {
+        if (!stale) setIsLoading(false);
       }
     };
 
@@ -193,242 +191,294 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     };
   }, [debouncedSearch, orgslug, session?.data?.tokens?.access_token]);
 
-  const MemoizedEmptyState = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return (
-        <div className="py-8 px-4">
-          <div className="flex flex-col items-center text-center">
-            <div className="mb-4 p-3 bg-black/5 rounded-full">
-              <Sparkles className="w-6 h-6 text-black/70" />
-            </div>
-            <h3 className="text-sm font-medium text-black/80 mb-1">
-              {t('search.discover_next_journey')}
-            </h3>
-            <p className="text-xs text-black/50 max-w-[240px]">
-              {t('search.start_typing_to_search')}
-            </p>
-          </div>
-        </div>
-      );
-    }
-    return null;
-  }, [searchQuery, t]);
-
-  const searchTerms = useMemo(() => [
-    { term: searchQuery, type: 'exact', icon: <Search size={14} className="text-black/40" /> },
-    { term: `${searchQuery} courses`, type: 'courses', icon: <BookCopy size={14} className="text-black/40" /> },
-    { term: `${searchQuery} folders`, type: 'folders', icon: <Folder size={14} className="text-black/40" /> },
-  ], [searchQuery]);
-
-  const MemoizedSearchSuggestions = useMemo(() => {
-    if (searchQuery.trim()) {
-      return (
-        <div className="p-2">
-          <div className="flex items-center gap-2 px-2 py-2 text-sm text-black/50">
-            <ScanSearch size={16} />
-            <span className="font-medium">{t('search.search_suggestions')}</span>
-          </div>
-          <div className="space-y-1">
-            {searchTerms.map(({ term, type, icon }) => (
-              <Link
-                key={`${term}-${type}`}
-                href={getUriWithOrg(orgslug, `/search?q=${encodeURIComponent(term)}`)}
-                className="flex items-center px-3 py-2 hover:bg-black/[0.02] rounded-lg transition-colors group"
-              >
-                <div className="flex items-center gap-2 flex-1">
-                  {icon}
-                  <span className="text-sm text-black/70">{term}</span>
-                </div>
-                <ArrowUpRight size={14} className="text-black/30 group-hover:text-black/50 transition-colors" />
-              </Link>
-            ))}
-          </div>
-        </div>
-      );
-    }
-    return null;
-  }, [searchQuery, searchTerms, orgslug, t]);
-
-  const MemoizedQuickResults = useMemo(() => {
-    const hasResults = searchResults.courses.length > 0 ||
-                      searchResults.folders.length > 0 ||
-                      searchResults.users.length > 0;
-    
-    if (!hasResults) return null;
-    
-    return (
-      <div className="p-2">
-        <div className="flex items-center gap-2 px-2 py-2 text-sm text-black/50">
-          <TextSearch size={16} />
-          <span className="font-medium">{t('search.quick_results')}</span>
-        </div>
-
-        {/* Courses Section */}
-        {searchResults.courses.length > 0 && (
-          <div className="mb-2">
-            <div className="flex items-center gap-2 px-2 py-1 text-xs text-black/40">
-              <BookCopy size={12} />
-              <span>{t('courses.courses')}</span>
-            </div>
-            {searchResults.courses.map((course) => (
-              <Link
-                key={course.course_uuid}
-                href={getUriWithOrg(orgslug, `/course/${encodeURIComponent(removeCoursePrefix(course.course_uuid))}`)}
-                className="flex items-center gap-3 p-2 hover:bg-black/[0.02] rounded-lg transition-colors"
-              >
-                <div className="relative">
-                  {course.thumbnail_image ? (
-                    <img
-                      src={safeImageSrc(getCourseThumbnailMediaDirectory(org?.org_uuid, course.course_uuid, course.thumbnail_image))}
-                      alt={course.name}
-                      className="w-10 h-10 object-cover rounded-lg"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 bg-black/5 rounded-lg flex items-center justify-center">
-                      <BookCopy size={20} className="text-black/40" />
-                    </div>
-                  )}
-                  <div className="absolute -bottom-1 -end-1 bg-white shadow-sm p-1 rounded-full">
-                    <BookCopy size={11} className="text-black/60" />
-                  </div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-medium text-black/80 truncate">{course.name}</h3>
-                    <span className="text-[10px] font-medium text-black/40 uppercase tracking-wide whitespace-nowrap">{t('search.course')}</span>
-                  </div>
-                  <p className="text-xs text-black/50 truncate">{course.description}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-
-        {/* Folders Section */}
-        {searchResults.folders.length > 0 && (
-          <div className="mb-2">
-            <div className="flex items-center gap-2 px-2 py-1 text-xs text-black/40">
-              <Folder size={12} />
-              <span>{t('folders.folders')}</span>
-            </div>
-            {searchResults.folders.map((folder) => (
-              <Link
-                key={folder.folder_uuid}
-                href={getUriWithOrg(orgslug, `/library/folder/${encodeURIComponent(folder.folder_uuid.replace('folder_', ''))}`)}
-                className="flex items-center gap-3 p-2 hover:bg-black/[0.02] rounded-lg transition-colors"
-              >
-                <div className="w-10 h-10 bg-black/5 rounded-lg flex items-center justify-center">
-                  <Folder size={20} className="text-black/40" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-medium text-black/80 truncate">{folder.name}</h3>
-                    <span className="text-[10px] font-medium text-black/40 uppercase tracking-wide whitespace-nowrap">{t('folders.folder')}</span>
-                  </div>
-                  <p className="text-xs text-black/50 truncate">{folder.description}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-
-        {/* Users Section */}
-        {searchResults.users.length > 0 && (
-          <div className="mb-2">
-            <div className="flex items-center gap-2 px-2 py-1 text-xs text-black/40">
-              <Users size={12} />
-              <span>{t('common.users')}</span>
-            </div>
-            {searchResults.users.map((user) => (
-              <Link
-                key={user.user_uuid}
-                href={getUriWithOrg(orgslug, `/user/${encodeURIComponent(user.username)}`)}
-                className="flex items-center gap-3 p-2 hover:bg-black/[0.02] rounded-lg transition-colors"
-              >
-                <UserAvatar
-                  width={40}
-                  avatar_url={user.avatar_image ? getUserAvatarMediaDirectory(user.user_uuid, user.avatar_image) : ''}
-                  predefined_avatar={user.avatar_image ? undefined : 'empty'}
-                  userId={user.id.toString()}
-                  showProfilePopup
-                  rounded="rounded-full"
-                  backgroundColor="bg-gray-100"
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-medium text-black/80 truncate">
-                      {user.first_name} {user.last_name}
-                    </h3>
-                    <span className="text-[10px] font-medium text-black/40 uppercase tracking-wide whitespace-nowrap">{t('search.user')}</span>
-                  </div>
-                  <p className="text-xs text-black/50 truncate">@{user.username}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }, [searchResults, orgslug, org?.org_uuid, t]);
-
-  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-    setShowResults(true);
-  }, []);
+  const hasAnyResults =
+    searchResults.courses.length > 0 ||
+    searchResults.folders.length > 0 ||
+    searchResults.users.length > 0;
 
   return (
-    <div ref={searchRef} className={`relative ${className}`}>
-      <div className="relative group">
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={handleSearchChange}
-          onFocus={() => setShowResults(true)}
-          aria-label={t('search.search_placeholder')}
-          placeholder={t('search.search_placeholder')}
-          className={`w-full h-9 ps-11 pe-4 rounded-xl
-                     focus:outline-none focus:ring-1 transition-all text-sm
-                     ${colors.searchBg}`}
-        />
-        <div className="absolute inset-y-0 start-0 ps-3.5 flex items-center pointer-events-none">
-          <Search className={`${colors.searchIcon} transition-colors`} size={18} />
-        </div>
-      </div>
-
-      <div 
-        className={`absolute z-dropdown w-full mt-2 bg-white rounded-xl nice-shadow 
-                   overflow-hidden divide-y divide-black/5
-                   transition-all duration-200 ease-in-out transform
-                   ${showResults ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'}
-                   ${isMobile ? 'max-w-full' : 'min-w-[400px]'}`}
+    <>
+      {/* HEADER ICON BUTTON TRIGGER */}
+      <button
+        type="button"
+        onClick={() => setIsOpen(true)}
+        title="Ara (⌘K)"
+        className={`flex items-center gap-2 p-2 sm:px-3 sm:py-1.5 rounded-xl border border-gray-200/80 bg-gray-50/70 hover:bg-gray-100/90 text-gray-500 hover:text-gray-900 transition-all text-xs font-semibold cursor-pointer shadow-xs ${className}`}
       >
-        {(!searchQuery.trim() || isInitialLoad) ? (
-          MemoizedEmptyState
-        ) : (
-          <>
-            {showSearchSuggestions && MemoizedSearchSuggestions}
-            {isLoading ? (
-              <CourseResultsSkeleton />
-            ) : (
-              <>
-                {MemoizedQuickResults}
-                {((searchResults.courses.length > 0 ||
-                   searchResults.folders.length > 0 ||
-                   searchResults.users.length > 0) ||
-                   searchQuery.trim()) && (
-                  <Link
-                    href={getUriWithOrg(orgslug, `/search?q=${encodeURIComponent(searchQuery)}`)}
-                    className="flex items-center justify-between px-4 py-2.5 text-xs text-black/50 hover:text-black/70 hover:bg-black/[0.02] transition-colors"
+        <Search size={16} className="text-gray-500 shrink-0" />
+        <span className="hidden md:inline text-[11px] text-gray-400 font-normal">
+          {isTr ? 'Ara...' : 'Search...'}
+        </span>
+        <kbd className="hidden lg:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono text-gray-400 bg-white border border-gray-200 rounded">
+          ⌘K
+        </kbd>
+      </button>
+
+      {/* ANIMATED SPOTLIGHT MODAL (IN SCREEN CENTER VIA PORTAL) */}
+      {isOpen && mounted && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] w-screen h-screen flex items-start justify-center pt-20 sm:pt-28 px-4 bg-black/60 backdrop-blur-md transition-all duration-200"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsOpen(false);
+          }}
+        >
+          <div
+            ref={modalRef}
+            className="w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden transform transition-all duration-200 animate-in fade-in zoom-in-95"
+          >
+            {/* Top Search Input Box */}
+            <div className="relative flex items-center px-4 py-3.5 border-b border-gray-100">
+              <Search size={18} className="text-gray-400 shrink-0 mr-3" />
+              <input
+                ref={inputRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={isTr ? 'Ders, modül, pano veya kişi ara...' : 'Search courses, modules, boards...'}
+                className="w-full bg-transparent text-sm font-medium text-gray-900 placeholder-gray-400 outline-none"
+              />
+
+              <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                {isLoading ? (
+                  <Loader2 size={16} className="text-indigo-600 animate-spin" />
+                ) : searchQuery ? (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="p-1 text-gray-400 hover:text-gray-600 rounded-lg cursor-pointer"
                   >
-                    <span>{t('search.view_all_results')}</span>
+                    <X size={15} />
+                  </button>
+                ) : null}
+
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  className="px-2 py-1 text-[11px] font-mono font-bold text-gray-400 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors cursor-pointer"
+                >
+                  ESC
+                </button>
+              </div>
+            </div>
+
+            {/* Results or Empty State */}
+            <div className="max-h-[60vh] overflow-y-auto p-3 space-y-3">
+              {!searchQuery.trim() ? (
+                /* Empty state / Quick shortcuts */
+                <div className="py-6 px-4 text-center space-y-3">
+                  <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 mx-auto flex items-center justify-center font-bold">
+                    <Sparkles size={18} />
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-800 text-xs">
+                      {isTr ? 'Okul İçeriğinde Arama Yapın' : 'Search School Content'}
+                    </p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">
+                      {isTr
+                        ? 'Dersler, ödevler, interaktif modüller ve sınıf panolarına anında erişin.'
+                        : 'Quickly find courses, assignments, interactive modules, and boards.'}
+                    </p>
+                  </div>
+
+                  {/* Fast shortcut chips */}
+                  <div className="flex items-center justify-center gap-2 pt-2 flex-wrap text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('Matematik')}
+                      className="px-2.5 py-1 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 cursor-pointer"
+                    >
+                      📐 Matematik
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('Okuma')}
+                      className="px-2.5 py-1 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 cursor-pointer"
+                    >
+                      📖 Okuma
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('Fen')}
+                      className="px-2.5 py-1 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 cursor-pointer"
+                    >
+                      🔬 Fen Bilgisi
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('İngilizce')}
+                      className="px-2.5 py-1 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 cursor-pointer"
+                    >
+                      🇬🇧 İngilizce
+                    </button>
+                  </div>
+                </div>
+              ) : !isLoading && !hasAnyResults ? (
+                /* No results found */
+                <div className="py-8 text-center text-gray-400 space-y-1">
+                  <p className="text-xs font-semibold text-gray-700">
+                    "{searchQuery}" için sonuç bulunamadı
+                  </p>
+                  <p className="text-[11px]">Farklı bir arama terimi deneyebilirsiniz.</p>
+                </div>
+              ) : (
+                /* Results List */
+                <div className="space-y-3">
+                  {/* Courses */}
+                  {searchResults.courses.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-1.5 px-2 py-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                        <BookCopy size={13} />
+                        <span>{isTr ? 'Dersler' : 'Courses'}</span>
+                      </div>
+                      <div className="space-y-1 mt-1">
+                        {searchResults.courses.map((course) => (
+                          <Link
+                            key={course.course_uuid}
+                            href={getUriWithOrg(
+                              orgslug,
+                              `/course/${removeCoursePrefix(course.course_uuid)}`
+                            )}
+                            onClick={() => setIsOpen(false)}
+                            className="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-indigo-50/60 transition-colors group"
+                          >
+                            <div className="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold shrink-0">
+                              <BookCopy size={16} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-gray-900 text-xs group-hover:text-indigo-600 truncate">
+                                {course.name}
+                              </p>
+                              <p className="text-[11px] text-gray-400 truncate">
+                                {course.description || 'Ders içeriği'}
+                              </p>
+                            </div>
+                            <ArrowUpRight
+                              size={14}
+                              className="text-gray-300 group-hover:text-indigo-600 transition-colors"
+                            />
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Folders */}
+                  {searchResults.folders.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-1.5 px-2 py-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                        <Folder size={13} />
+                        <span>{isTr ? 'Klasörler & Kaynaklar' : 'Folders'}</span>
+                      </div>
+                      <div className="space-y-1 mt-1">
+                        {searchResults.folders.map((folder) => (
+                          <Link
+                            key={folder.folder_uuid}
+                            href={getUriWithOrg(
+                              orgslug,
+                              `/library/folder/${encodeURIComponent(
+                                folder.folder_uuid.replace('folder_', '')
+                              )}`
+                            )}
+                            onClick={() => setIsOpen(false)}
+                            className="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-gray-50 transition-colors group"
+                          >
+                            <div className="w-9 h-9 rounded-xl bg-gray-100 text-gray-600 flex items-center justify-center shrink-0">
+                              <Folder size={16} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-gray-900 text-xs group-hover:text-gray-700 truncate">
+                                {folder.name}
+                              </p>
+                              <p className="text-[11px] text-gray-400 truncate">
+                                {folder.description || 'Kaynak klasörü'}
+                              </p>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Users */}
+                  {searchResults.users.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-1.5 px-2 py-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                        <Users size={13} />
+                        <span>{isTr ? 'Kullanıcılar & Öğretmenler' : 'Users'}</span>
+                      </div>
+                      <div className="space-y-1 mt-1">
+                        {searchResults.users.map((user) => (
+                          <Link
+                            key={user.user_uuid}
+                            href={getUriWithOrg(
+                              orgslug,
+                              `/user/${encodeURIComponent(user.username)}`
+                            )}
+                            onClick={() => setIsOpen(false)}
+                            className="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-gray-50 transition-colors group"
+                          >
+                            <UserAvatar
+                              width={36}
+                              avatar_url={
+                                user.avatar_image
+                                  ? getUserAvatarMediaDirectory(
+                                      user.user_uuid,
+                                      user.avatar_image
+                                    )
+                                  : ''
+                              }
+                              predefined_avatar={
+                                user.avatar_image ? undefined : 'empty'
+                              }
+                              userId={user.id.toString()}
+                              rounded="rounded-full"
+                              backgroundColor="bg-gray-100"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-gray-900 text-xs group-hover:text-gray-700 truncate">
+                                {user.first_name} {user.last_name}
+                              </p>
+                              <p className="text-[11px] text-gray-400 truncate">
+                                @{user.username}
+                              </p>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* View all link */}
+                  <Link
+                    href={getUriWithOrg(
+                      orgslug,
+                      `/search?q=${encodeURIComponent(searchQuery)}`
+                    )}
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center justify-between px-3.5 py-2.5 text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50/50 rounded-2xl transition-colors mt-2"
+                  >
+                    <span>"{searchQuery}" için tüm sonuçları gör</span>
                     <ArrowRight size={14} />
                   </Link>
-                )}
-              </>
-            )}
-          </>
-        )}
-      </div>
-    </div>
+                </div>
+              )}
+            </div>
+
+            {/* Bottom Keyboard Hint Bar */}
+            <div className="px-4 py-2 bg-gray-50 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-400">
+              <span className="flex items-center gap-2">
+                <span>↵ Aç</span>
+                <span>•</span>
+                <span>ESC Kapat</span>
+              </span>
+              <span>Spotlight Arama</span>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+    </>
   );
 };
+
+export default SearchBar;

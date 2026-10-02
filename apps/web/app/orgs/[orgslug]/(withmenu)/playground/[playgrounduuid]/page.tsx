@@ -11,11 +11,11 @@ export async function generateMetadata({ params }: { params: PageParams }): Prom
   try {
     const pg = await getPlayground(playgrounduuid)
     return {
-      title: pg.name,
-      description: pg.description || `Interactive playground: ${pg.name}`,
+      title: `${pg.name} | Modüller`,
+      description: pg.description || `Etkileşimli modül: ${pg.name}`,
     }
   } catch {
-    return { title: 'Playground' }
+    return { title: 'Modüller' }
   }
 }
 

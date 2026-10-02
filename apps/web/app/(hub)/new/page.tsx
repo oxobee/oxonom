@@ -58,6 +58,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@components/ui/dropdown-menu'
+import { KeyRound } from 'lucide-react'
+import JoinClassModal from '@components/Dashboard/Classrooms/JoinClassModal'
 
 import {
   findPlan,
@@ -750,6 +752,7 @@ export default function CreateNewOrgPage() {
   const [createdSlug, setCreatedSlug] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [isJoinClassOpen, setIsJoinClassOpen] = useState(false)
 
   // Redirect unauthenticated users (same effect as app/home/home.tsx).
   useEffect(() => {
@@ -975,9 +978,11 @@ export default function CreateNewOrgPage() {
               {t('hub_new.topBar.back', { defaultValue: 'Organizations' })}
             </Link>
             <div className="flex justify-center">
-              <Link href="/home">
-                { }
-                <img src="/lrn.svg" alt="LearnHouse" width={40} height={40} className="opacity-90" />
+              <Link href="/home" className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-black text-white flex items-center justify-center shadow-xs">
+                  <GraduationCap size={18} className="text-white" />
+                </div>
+                <span className="font-bold text-sm tracking-tight text-gray-900">Oxonom Edu</span>
               </Link>
             </div>
             <div className="flex justify-end">
@@ -1054,6 +1059,38 @@ export default function CreateNewOrgPage() {
                   >
                     {step === 'use-type' && (
                       <>
+                        {/* Student quick shortcut */}
+                        <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 border border-emerald-200/90 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-10 h-10 rounded-xl bg-white border border-emerald-200 flex items-center justify-center flex-shrink-0 text-emerald-700 shadow-xs">
+                              <GraduationCap size={22} />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-bold text-emerald-950">
+                                {t('hub_new.student_callout_title', {
+                                  defaultValue: 'Öğrenci misiniz? Sınıf Kodunuz mu Var?',
+                                })}
+                              </p>
+                              <p className="text-xs text-emerald-800/80 mt-0.5">
+                                {t('hub_new.student_callout_subtitle', {
+                                  defaultValue:
+                                    'Yeni bir okul açmak yerine öğretmeninizin verdiği kodla sınıfınıza hemen dahil olabilirsiniz.',
+                                })}
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setIsJoinClassOpen(true)}
+                            className="shrink-0 w-full sm:w-auto px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                          >
+                            <KeyRound size={15} />
+                            <span>
+                              {t('common.join_class_button', { defaultValue: 'Sınıf Koduyla Katıl' })}
+                            </span>
+                          </button>
+                        </div>
+
                         <StepUseType useType={useType} onSelect={setUseType} t={t} />
                         {/* A side path, not a wizard step: creating a real
                             organization is untouched by it, and the card
@@ -1162,6 +1199,15 @@ export default function CreateNewOrgPage() {
           </div>
         </div>
       </div>
+
+      {/* Join Class Modal */}
+      <JoinClassModal
+        isOpen={isJoinClassOpen}
+        onClose={() => setIsJoinClassOpen(false)}
+        onSuccess={() => {
+          router.push('/home')
+        }}
+      />
     </div>
   )
 }

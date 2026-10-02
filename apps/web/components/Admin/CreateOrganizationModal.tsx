@@ -106,33 +106,33 @@ export default function CreateOrganizationModal({
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
           <div className="flex items-center gap-2.5">
             <Buildings size={18} weight="fill" className="text-white/70" />
-            <h2 className="text-base font-semibold text-white">New organization</h2>
+            <h2 className="text-base font-semibold text-white">Yeni Okul / Kurum Ekle</h2>
           </div>
           <button
             onClick={onClose}
             className="text-white/40 hover:text-white/80 transition-colors"
-            aria-label="Close"
+            aria-label="Kapat"
           >
             <X size={18} weight="bold" />
           </button>
         </div>
 
         <div className="px-6 py-5 space-y-4">
-          <Field label="Name" required>
+          <Field label="Okul / Kurum Adı" required>
             <input
               autoFocus
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Acme Learning"
+              placeholder="Örn: Oxonom Fen Lisesi"
               className="w-full bg-white/[0.04] border border-white/[0.1] rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-white/30"
             />
           </Field>
 
           <Field
-            label="Slug"
+            label="URL Kısa Adı (Slug)"
             required
-            hint="Lowercase, hyphens — used in the org URL."
+            hint="Küçük harf ve tire (-). Okulun web adresinde (subdomain) kullanılır."
           >
             <input
               type="text"
@@ -141,42 +141,42 @@ export default function CreateOrganizationModal({
                 setSlugTouched(true)
                 setSlug(slugify(e.target.value))
               }}
-              placeholder="acme-learning"
+              placeholder="oxonom-lisesi"
               className="w-full bg-white/[0.04] border border-white/[0.1] rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-white/30 font-mono"
             />
           </Field>
 
-          <Field label="Email" required>
+          <Field label="İletişim E-postası" required>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@acme.com"
+              placeholder="idare@oxonom.com"
               className="w-full bg-white/[0.04] border border-white/[0.1] rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-white/30"
             />
           </Field>
 
-          <Field label="Description">
+          <Field label="Açıklama (İsteğe Bağlı)">
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Optional"
+              placeholder="Okul hakkında kısa bilgi..."
               rows={2}
               className="w-full bg-white/[0.04] border border-white/[0.1] rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-white/30 resize-none"
             />
           </Field>
 
           {isSaaS && (
-            <Field label="Plan">
+            <Field label="Lisans Planı">
               <select
                 value={plan}
                 onChange={(e) => setPlan(e.target.value)}
                 className="w-full bg-white/[0.04] border border-white/[0.1] rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-white/30"
               >
-                <option value="free">Free</option>
-                <option value="standard">Standard</option>
+                <option value="free">Ücretsiz</option>
+                <option value="standard">Standart</option>
                 <option value="pro">Pro</option>
-                <option value="enterprise">Enterprise</option>
+                <option value="enterprise">Kurumsal</option>
               </select>
             </Field>
           )}
@@ -190,16 +190,16 @@ export default function CreateOrganizationModal({
           <button
             onClick={onClose}
             disabled={submitting}
-            className="px-3.5 py-2 text-sm text-white/60 hover:text-white/90 transition-colors disabled:opacity-40"
+            className="px-3.5 py-2 text-sm text-white/60 hover:text-white/90 transition-colors disabled:opacity-40 cursor-pointer"
           >
-            Cancel
+            Vazgeç
           </button>
           <button
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className="px-3.5 py-2 bg-white/10 hover:bg-white/15 text-white text-sm rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-3.5 py-2 bg-white/10 hover:bg-white/15 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           >
-            {submitting ? 'Creating…' : 'Create organization'}
+            {submitting ? 'Oluşturuluyor…' : 'Okulu Oluştur'}
           </button>
         </div>
       </div>

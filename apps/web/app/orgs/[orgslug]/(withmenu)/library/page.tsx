@@ -1,5 +1,5 @@
 import React from 'react'
-import LibraryClient from './LibraryClient'
+import ResourcesLibraryClient from '@components/Resources/ResourcesLibraryClient'
 import { Metadata } from 'next'
 import { getOrganizationContextInfo } from '@services/organizations/orgs'
 import { getOrgThumbnailMediaDirectory, getOrgOgImageMediaDirectory } from '@services/media/media'
@@ -69,7 +69,7 @@ export async function generateMetadata(props: MetadataProps): Promise<Metadata> 
 
 const LibraryPage = async (params: any) => {
   const orgslug = (await params.params).orgslug
-  return <LibraryClient orgslug={orgslug} />
+  return <ResourcesLibraryClient orgslug={orgslug} />
 }
 
 export default LibraryPage

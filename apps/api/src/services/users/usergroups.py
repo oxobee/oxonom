@@ -1,8 +1,10 @@
 from datetime import datetime
 import logging
+import secrets
 from typing import Literal
 from uuid import uuid4
 from fastapi import HTTPException, Request
+from sqlalchemy import func
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.security.features_utils.usage import (
@@ -21,7 +23,7 @@ from src.db.usergroup_resources import UserGroupResource
 from src.db.usergroup_user import UserGroupUser
 from src.db.user_organizations import UserOrganization
 from src.db.organizations import Organization
-from src.db.usergroups import UserGroup, UserGroupCreate, UserGroupRead, UserGroupUpdate
+from src.db.usergroups import JoinCodeResponse, UserGroup, UserGroupCreate, UserGroupRead, UserGroupUpdate
 from src.db.users import AnonymousUser, APITokenUser, InternalUser, PublicUser, User, UserRead
 from src.services.webhooks.dispatch import dispatch_webhooks
 from src.services.security.rate_limiting import enforce_batch_size_limit
@@ -109,6 +111,22 @@ async def _validate_resource_exists_and_belongs_to_org(
     return True
 
 
+def generate_join_code() -> str:
+    """Generate a clean 6-character uppercase join code like 'OX-8492'."""
+    suffix = "".join(secrets.choice("23456789ABCDEFGHJKLMNPQRSTUVWXYZ") for _ in range(4))
+    return f"OX-{suffix}"
+
+
+async def get_unique_join_code(db_session: AsyncSession) -> str:
+    for _ in range(20):
+        code = generate_join_code()
+        stmt = select(UserGroup).where(UserGroup.join_code == code)
+        existing = (await db_session.execute(stmt)).scalars().first()
+        if not existing:
+            return code
+    return f"OX-{uuid4().hex[:4].upper()}"
+
+
 async def create_usergroup(
     request: Request,
     db_session: AsyncSession,
@@ -163,6 +181,8 @@ async def create_usergroup(
 
     # Complete the object
     usergroup.usergroup_uuid = f"usergroup_{uuid4()}"
+    if not usergroup.join_code:
+        usergroup.join_code = await get_unique_join_code(db_session)
     usergroup.creation_date = str(datetime.now())
     usergroup.update_date = str(datetime.now())
 
@@ -213,6 +233,12 @@ async def read_usergroup_by_id(
         db_session=db_session,
         org_id=usergroup.org_id,
     )
+
+    if not usergroup.join_code:
+        usergroup.join_code = await get_unique_join_code(db_session)
+        db_session.add(usergroup)
+        await db_session.commit()
+        await db_session.refresh(usergroup)
 
     usergroup = UserGroupRead.model_validate(usergroup)
 
@@ -281,9 +307,15 @@ async def read_usergroups_by_org_id(
         db_session=db_session,
     )
 
-    usergroups = [UserGroupRead.model_validate(usergroup) for usergroup in usergroups]
+    usergroup_reads = []
+    for usergroup in usergroups:
+        count_stmt = select(func.count(UserGroupUser.id)).where(UserGroupUser.usergroup_id == usergroup.id)
+        count = (await db_session.execute(count_stmt)).scalar() or 0
+        ug_read = UserGroupRead.model_validate(usergroup)
+        ug_read.member_count = count
+        usergroup_reads.append(ug_read)
 
-    return usergroups
+    return usergroup_reads
 
 
 async def get_usergroups_by_resource(
@@ -790,4 +822,244 @@ async def rbac_check(
             )
 
 
-## 🔒 RBAC Utils ##
+async def join_usergroup_by_code(
+    request: Request,
+    db_session: AsyncSession,
+    current_user: PublicUser | AnonymousUser,
+    code: str,
+    org_id: int | None = None,
+) -> JoinCodeResponse:
+    if not current_user or not getattr(current_user, "id", None):
+        raise HTTPException(status_code=401, detail="Sınıfa katılmak için giriş yapmalısınız.")
+
+    clean_code = code.strip().upper()
+    if clean_code.startswith("OX") and not clean_code.startswith("OX-") and len(clean_code) > 2:
+        normalized_code = f"OX-{clean_code[2:]}"
+    else:
+        normalized_code = clean_code
+
+    statement = select(UserGroup).where(
+        (UserGroup.join_code == normalized_code) | (UserGroup.join_code == clean_code)
+    )
+    if org_id:
+        statement = statement.where(UserGroup.org_id == org_id)
+
+    usergroup = (await db_session.execute(statement)).scalars().first()
+
+    if not usergroup:
+        raise HTTPException(
+            status_code=404,
+            detail="Geçersiz katılım kodu. Lütfen öğretmeninizden kodu kontrol etmesini isteyin.",
+        )
+
+    # Check if user is already enrolled in this class
+    stmt = select(UserGroupUser).where(
+        UserGroupUser.usergroup_id == usergroup.id,
+        UserGroupUser.user_id == current_user.id,
+    )
+    existing_link = (await db_session.execute(stmt)).scalars().first()
+
+    if existing_link:
+        count_stmt = select(func.count(UserGroupUser.id)).where(UserGroupUser.usergroup_id == usergroup.id)
+        count = (await db_session.execute(count_stmt)).scalar() or 0
+        ug_read = UserGroupRead.model_validate(usergroup)
+        ug_read.member_count = count
+        return JoinCodeResponse(
+            status="already_joined",
+            message=f"Zaten '{usergroup.name}' sınıfına kayıtlısınız.",
+            usergroup=ug_read,
+        )
+
+    # Ensure user has an organization membership (assign student/user role 4 if missing)
+    from src.db.user_organizations import UserOrganization
+    from src.db.roles import Role
+
+    org_link_stmt = select(UserOrganization).where(
+        UserOrganization.org_id == usergroup.org_id,
+        UserOrganization.user_id == current_user.id,
+    )
+    org_link = (await db_session.execute(org_link_stmt)).scalars().first()
+    if not org_link:
+        user_role_stmt = select(Role).where(Role.id == 4)
+        role = (await db_session.execute(user_role_stmt)).scalars().first()
+        role_id = role.id if role else 4
+        new_org_link = UserOrganization(
+            user_id=current_user.id,
+            org_id=usergroup.org_id,
+            role_id=role_id,
+            creation_date=str(datetime.now()),
+            update_date=str(datetime.now()),
+        )
+        db_session.add(new_org_link)
+
+    # Add user to class
+    new_usergroup_user = UserGroupUser(
+        usergroup_id=usergroup.id,
+        user_id=current_user.id,
+        org_id=usergroup.org_id,
+        creation_date=str(datetime.now()),
+        update_date=str(datetime.now()),
+    )
+    db_session.add(new_usergroup_user)
+    await db_session.commit()
+    await db_session.refresh(usergroup)
+
+    count_stmt = select(func.count(UserGroupUser.id)).where(UserGroupUser.usergroup_id == usergroup.id)
+    count = (await db_session.execute(count_stmt)).scalar() or 0
+    ug_read = UserGroupRead.model_validate(usergroup)
+    ug_read.member_count = count
+
+    return JoinCodeResponse(
+        status="success",
+        message=f"'{usergroup.name}' sınıfına başarıyla katıldınız!",
+        usergroup=ug_read,
+    )
+
+
+async def regenerate_usergroup_join_code(
+    request: Request,
+    db_session: AsyncSession,
+    current_user: PublicUser | AnonymousUser,
+    usergroup_id: int,
+) -> UserGroupRead:
+    statement = select(UserGroup).where(UserGroup.id == usergroup_id)
+    usergroup = (await db_session.execute(statement)).scalars().first()
+
+    if not usergroup:
+        raise HTTPException(status_code=404, detail="Sınıf bulunamadı.")
+
+    await rbac_check(
+        request,
+        usergroup_uuid=usergroup.usergroup_uuid,
+        current_user=current_user,
+        action="update",
+        db_session=db_session,
+        org_id=usergroup.org_id,
+    )
+
+    new_code = await get_unique_join_code(db_session)
+    usergroup.join_code = new_code
+    usergroup.update_date = str(datetime.now())
+    db_session.add(usergroup)
+    await db_session.commit()
+    await db_session.refresh(usergroup)
+
+    count_stmt = select(func.count(UserGroupUser.id)).where(UserGroupUser.usergroup_id == usergroup.id)
+    count = (await db_session.execute(count_stmt)).scalar() or 0
+    ug_read = UserGroupRead.model_validate(usergroup)
+    ug_read.member_count = count
+
+    return ug_read
+
+
+async def get_my_usergroups(
+    request: Request,
+    db_session: AsyncSession,
+    current_user: PublicUser | AnonymousUser,
+    org_id: int,
+) -> list[UserGroupRead]:
+    from src.security.auth import resolve_acting_user_id
+
+    acting_id = resolve_acting_user_id(current_user)
+    await require_org_membership(acting_id, org_id, db_session)
+
+    statement = (
+        select(UserGroup)
+        .join(UserGroupUser, UserGroupUser.usergroup_id == UserGroup.id)
+        .where(
+            UserGroup.org_id == org_id,
+            UserGroupUser.user_id == acting_id,
+        )
+        .order_by(UserGroup.creation_date.desc())
+    )
+    usergroups = (await db_session.execute(statement)).scalars().all()
+
+    usergroup_reads = []
+    for usergroup in usergroups:
+        count_stmt = select(func.count(UserGroupUser.id)).where(UserGroupUser.usergroup_id == usergroup.id)
+        count = (await db_session.execute(count_stmt)).scalar() or 0
+        ug_read = UserGroupRead.model_validate(usergroup)
+        ug_read.member_count = count
+        usergroup_reads.append(ug_read)
+
+    return usergroup_reads
+
+
+async def verify_join_code(
+    code: str,
+    db_session: AsyncSession,
+) -> dict:
+    clean_code = code.strip().upper()
+    if not clean_code.startswith("OX-") and clean_code.startswith("OX"):
+        clean_code = f"OX-{clean_code[2:]}"
+    elif not clean_code.startswith("OX-"):
+        clean_code = f"OX-{clean_code}"
+
+    statement = select(UserGroup).where(UserGroup.join_code == clean_code)
+    usergroup = (await db_session.execute(statement)).scalars().first()
+
+    if not usergroup:
+        raise HTTPException(
+            status_code=404,
+            detail="Geçersiz sınıf katılım kodu. Lütfen kontrol edip tekrar deneyiniz.",
+        )
+
+    from src.db.organizations import Organization
+    org_stmt = select(Organization).where(Organization.id == usergroup.org_id)
+    org = (await db_session.execute(org_stmt)).scalars().first()
+
+    return {
+        "valid": True,
+        "usergroup_id": usergroup.id,
+        "usergroup_name": usergroup.name,
+        "grade_level": usergroup.grade_level or "",
+        "org_id": usergroup.org_id,
+        "org_name": org.name if org else "",
+        "org_slug": org.slug if org else "",
+        "join_code": usergroup.join_code,
+    }
+
+
+async def add_user_to_usergroup_direct(
+    db_session: AsyncSession,
+    user_id: int,
+    usergroup_id: int,
+    org_id: int,
+):
+    from src.db.user_organizations import UserOrganization
+    from src.db.roles import Role
+
+    org_link_stmt = select(UserOrganization).where(
+        UserOrganization.org_id == org_id,
+        UserOrganization.user_id == user_id,
+    )
+    org_link = (await db_session.execute(org_link_stmt)).scalars().first()
+    if not org_link:
+        user_role_stmt = select(Role).where(Role.id == 4)
+        role = (await db_session.execute(user_role_stmt)).scalars().first()
+        role_id = role.id if role else 4
+        new_org_link = UserOrganization(
+            user_id=user_id,
+            org_id=org_id,
+            role_id=role_id,
+            creation_date=str(datetime.now()),
+            update_date=str(datetime.now()),
+        )
+        db_session.add(new_org_link)
+
+    ug_stmt = select(UserGroupUser).where(
+        UserGroupUser.usergroup_id == usergroup_id,
+        UserGroupUser.user_id == user_id,
+    )
+    existing_ug = (await db_session.execute(ug_stmt)).scalars().first()
+    if not existing_ug:
+        new_ug = UserGroupUser(
+            usergroup_id=usergroup_id,
+            user_id=user_id,
+            org_id=org_id,
+            creation_date=str(datetime.now()),
+            update_date=str(datetime.now()),
+        )
+        db_session.add(new_ug)
+    await db_session.commit()
+

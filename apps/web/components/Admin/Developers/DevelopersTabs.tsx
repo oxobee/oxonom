@@ -16,15 +16,15 @@ interface TabDef {
 const TABS: TabDef[] = [
   {
     key: 'tokens',
-    label: 'API Tokens',
+    label: 'API Anahtarları (Token)',
     icon: <Key size={14} weight="fill" />,
-    description: 'Mint, list, and revoke cross-org superadmin API tokens.',
+    description: 'Süper admin API belirteçleri oluşturun, listeleyin ve iptal edin.',
   },
   {
     key: 'docs',
-    label: 'Documentation & Playground',
+    label: 'Belgeler & Test Alanı',
     icon: <BookOpen size={14} weight="fill" />,
-    description: 'Browse the superadmin API, then call it live with your token.',
+    description: 'Süper admin API uç noktalarını inceleyin ve canlı test edin.',
   },
 ]
 

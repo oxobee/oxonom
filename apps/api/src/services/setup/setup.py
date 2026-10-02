@@ -339,9 +339,9 @@ async def install_default_elements(db_session: AsyncSession):
                 action_access=True,
             ),
             communities=Permission(
-                action_create=False,
+                action_create=True,
                 action_read=True,
-                action_update=False,
+                action_update=True,
                 action_delete=False,
             ),
             discussions=PermissionsWithOwn(
@@ -357,9 +357,9 @@ async def install_default_elements(db_session: AsyncSession):
                 action_create=True,
                 action_read=True,
                 action_read_own=True,
-                action_update=False,
+                action_update=True,
                 action_update_own=True,
-                action_delete=False,
+                action_delete=True,
                 action_delete_own=True,
             ),
             boards=PermissionsWithOwn(

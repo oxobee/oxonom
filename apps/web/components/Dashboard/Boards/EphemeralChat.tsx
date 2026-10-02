@@ -9,6 +9,7 @@ import type { HocuspocusProvider } from '@hocuspocus/provider'
 interface EphemeralChatProps {
   ydoc: Y.Doc | null
   provider: HocuspocusProvider | null
+  features?: any
 }
 
 interface ChatMessage {
@@ -34,7 +35,7 @@ const EMOJI_LIFETIME = 3500
 const MESSAGE_LIFETIME = 3 * 60 * 1000 // 3 minutes
 const CHAT_BUBBLE_LIFETIME = 4000 // 4 seconds on cursor
 
-export default function EphemeralChat({ ydoc, provider }: EphemeralChatProps) {
+export default function EphemeralChat({ ydoc, provider, features }: EphemeralChatProps) {
   const { t } = useTranslation()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [reactions, setReactions] = useState<EmojiReaction[]>([])
@@ -222,7 +223,7 @@ export default function EphemeralChat({ ydoc, provider }: EphemeralChatProps) {
         onMouseLeave={() => setIsHovered(false)}
       >
         {/* Messages area — preview when idle, full list on hover */}
-        {recentMessages.length > 0 && (
+        {features?.chat_enabled !== false && recentMessages.length > 0 && (
           <div
             ref={scrollRef}
             className="flex flex-col items-end gap-1.5 pointer-events-auto"
@@ -258,43 +259,47 @@ export default function EphemeralChat({ ydoc, provider }: EphemeralChatProps) {
         )}
 
         {/* Emoji quick-send bar */}
-        <div
-          className="flex items-center gap-[7px] rounded-[15px] px-3 py-2.5 nice-shadow pointer-events-auto"
-          style={frostedStyle}
-        >
-          {QUICK_EMOJIS.map((emoji) => (
-            <div
-              key={emoji}
-              onClick={() => sendEmoji(emoji)}
-              className="editor-tool-btn cursor-pointer hover:scale-110 transition-transform"
-              style={{ fontSize: 14 }}
-            >
-              {emoji}
-            </div>
-          ))}
-        </div>
+        {features?.reactions_enabled !== false && (
+          <div
+            className="flex items-center gap-[7px] rounded-[15px] px-3 py-2.5 nice-shadow pointer-events-auto"
+            style={frostedStyle}
+          >
+            {QUICK_EMOJIS.map((emoji) => (
+              <div
+                key={emoji}
+                onClick={() => sendEmoji(emoji)}
+                className="editor-tool-btn cursor-pointer hover:scale-110 transition-transform"
+                style={{ fontSize: 14 }}
+              >
+                {emoji}
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Text input bar */}
-        <div
-          className="flex items-center gap-[7px] rounded-[15px] px-3 py-2.5 nice-shadow pointer-events-auto"
-          style={frostedStyle}
-        >
-          <input
-            ref={inputRef}
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={t('boards.chat.placeholder')}
-            className="w-44 px-1 py-0.5 text-xs bg-transparent border-none focus:outline-none text-gray-800 placeholder-gray-400"
-          />
+        {features?.chat_enabled !== false && (
           <div
-            onClick={input.trim() ? sendMessage : undefined}
-            className={`editor-tool-btn editor-tool-btn-info ${!input.trim() ? 'opacity-30 pointer-events-none' : ''}`}
+            className="flex items-center gap-[7px] rounded-[15px] px-3 py-2.5 nice-shadow pointer-events-auto"
+            style={frostedStyle}
           >
-            <Send size={12} />
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={t('boards.chat.placeholder')}
+              className="w-44 px-1 py-0.5 text-xs bg-transparent border-none focus:outline-none text-gray-800 placeholder-gray-400"
+            />
+            <div
+              onClick={input.trim() ? sendMessage : undefined}
+              className={`editor-tool-btn editor-tool-btn-info ${!input.trim() ? 'opacity-30 pointer-events-none' : ''}`}
+            >
+              <Send size={12} />
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </>
   )

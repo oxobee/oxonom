@@ -35,12 +35,12 @@ const UserCertificates: React.FC<UserCertificatesProps> = ({ orgslug }) => {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col space-y-2">
+      <div className="flex flex-col space-y-2 mt-6">
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 bg-yellow-50 rounded-lg">
-            <Award className="w-5 h-5 text-yellow-500" />
+          <div className="p-2 bg-amber-50 rounded-lg">
+            <Award className="w-5 h-5 text-amber-500" />
           </div>
-          <h2 className="text-lg font-bold text-gray-900">{t('certificate.my_certificates')}</h2>
+          <h2 className="text-lg font-bold text-gray-900">{t('certificate.my_certificates', { defaultValue: 'Başarı Belgeleri & Takdirler' })}</h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
@@ -59,18 +59,18 @@ const UserCertificates: React.FC<UserCertificatesProps> = ({ orgslug }) => {
 
   if (error) {
     return (
-      <div className="flex flex-col space-y-2">
+      <div className="flex flex-col space-y-2 mt-6">
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 bg-yellow-50 rounded-lg">
-            <Award className="w-5 h-5 text-yellow-500" />
+          <div className="p-2 bg-amber-50 rounded-lg">
+            <Award className="w-5 h-5 text-amber-500" />
           </div>
-          <h2 className="text-lg font-bold text-gray-900">{t('certificate.my_certificates')}</h2>
+          <h2 className="text-lg font-bold text-gray-900">{t('certificate.my_certificates', { defaultValue: 'Başarı Belgeleri & Takdirler' })}</h2>
         </div>
         <div className="col-span-full flex flex-col justify-center items-center py-12 px-4 border-2 border-dashed border-gray-100 rounded-2xl bg-gray-50/30">
           <div className="p-4 bg-white rounded-full nice-shadow mb-4">
             <Award className="w-8 h-8 text-gray-300" strokeWidth={1.5} />
           </div>
-          <p className="text-gray-500">{t('certificate.failed_load_certificates')}</p>
+          <p className="text-gray-500 text-xs">{t('certificate.failed_load_certificates', { defaultValue: 'Belgeler yüklenemedi.' })}</p>
         </div>
       </div>
     )
@@ -78,22 +78,22 @@ const UserCertificates: React.FC<UserCertificatesProps> = ({ orgslug }) => {
 
   if (!certificatesData || certificatesData.length === 0) {
     return (
-      <div className="flex flex-col space-y-2">
+      <div className="flex flex-col space-y-2 mt-6">
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 bg-yellow-50 rounded-lg">
-            <Award className="w-5 h-5 text-yellow-500" />
+          <div className="p-2 bg-amber-50 rounded-lg">
+            <Award className="w-5 h-5 text-amber-500" />
           </div>
-          <h2 className="text-lg font-bold text-gray-900">{t('certificate.my_certificates')}</h2>
+          <h2 className="text-lg font-bold text-gray-900">{t('certificate.my_certificates', { defaultValue: 'Başarı Belgeleri & Takdirler' })}</h2>
         </div>
-        <div className="col-span-full flex flex-col justify-center items-center py-12 px-4 border-2 border-dashed border-gray-100 rounded-2xl bg-gray-50/30">
-          <div className="p-4 bg-white rounded-full nice-shadow mb-4">
-            <Award className="w-8 h-8 text-gray-300" strokeWidth={1.5} />
+        <div className="col-span-full flex flex-col justify-center items-center py-12 px-4 border border-dashed border-gray-200 rounded-2xl bg-white text-center">
+          <div className="p-3.5 bg-amber-50 text-amber-600 rounded-2xl mb-3 shadow-xs">
+            <Award className="w-8 h-8" strokeWidth={1.75} />
           </div>
-          <h1 className="text-xl font-bold text-gray-600 mb-2">
-            {t('certificate.no_certificates_earned')}
-          </h1>
-          <p className="text-md text-gray-400 mb-6 text-center max-w-xs">
-            {t('certificate.complete_courses_to_earn')}
+          <h3 className="text-base font-bold text-gray-800 mb-1">
+            {t('certificate.no_certificates_earned', { defaultValue: 'Henüz Başarı Belgesi veya Takdir Bulunmuyor' })}
+          </h3>
+          <p className="text-xs text-gray-500 max-w-sm">
+            {t('certificate.complete_courses_to_earn', { defaultValue: 'Dönem sonu başarı belgeleriniz, öğretmen takdirleriniz ve okul etkinlik katılım belgeleriniz burada listelenir.' })}
           </p>
         </div>
       </div>
@@ -101,13 +101,13 @@ const UserCertificates: React.FC<UserCertificatesProps> = ({ orgslug }) => {
   }
 
   return (
-    <div className="flex flex-col space-y-2">
+    <div className="flex flex-col space-y-2 mt-6">
       <div className="flex items-center gap-3 mb-2">
-        <div className="p-2 bg-yellow-50 rounded-lg">
-          <Award className="w-5 h-5 text-yellow-500" />
+        <div className="p-2 bg-amber-50 rounded-lg">
+          <Award className="w-5 h-5 text-amber-500" />
         </div>
-        <h2 className="text-lg font-bold text-gray-900">{t('certificate.my_certificates')}</h2>
-        <span className="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+        <h2 className="text-lg font-bold text-gray-900">{t('certificate.my_certificates', { defaultValue: 'Başarı Belgeleri & Takdirler' })}</h2>
+        <span className="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-0.5 rounded-full">
           {certificatesData.length}
         </span>
       </div>

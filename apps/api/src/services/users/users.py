@@ -288,6 +288,32 @@ async def create_user(
     await db_session.commit()
     await db_session.refresh(user_organization)
 
+    # If join_code was provided, automatically enroll student into the classroom
+    if getattr(user_object, "join_code", None):
+        try:
+            clean_code = user_object.join_code.strip().upper()
+            if not clean_code.startswith("OX-") and clean_code.startswith("OX"):
+                clean_code = f"OX-{clean_code[2:]}"
+            elif not clean_code.startswith("OX-"):
+                clean_code = f"OX-{clean_code}"
+
+            from src.db.usergroups import UserGroup
+            from src.db.usergroup_user import UserGroupUser
+            ug_stmt = select(UserGroup).where(UserGroup.join_code == clean_code)
+            target_ug = (await db_session.execute(ug_stmt)).scalars().first()
+            if target_ug:
+                new_ug_user = UserGroupUser(
+                    usergroup_id=target_ug.id,
+                    user_id=user.id,
+                    org_id=target_ug.org_id,
+                    creation_date=str(datetime.now()),
+                    update_date=str(datetime.now()),
+                )
+                db_session.add(new_ug_user)
+                await db_session.commit()
+        except Exception as e:
+            logging.getLogger(__name__).warning("Failed to auto-enroll user in classroom: %s", e)
+
     user_read = UserRead.model_validate(user)
 
     await increase_feature_usage("members", org_id, db_session)
@@ -322,18 +348,31 @@ async def create_user(
         # its logo/color/From name, in its language.
         from src.services.email.branding import resolve_org_email_branding
         org_stmt = select(Organization).where(Organization.id == org_id)
-        org = (await db_session.execute(org_stmt)).scalars().first()
-        send_account_creation_email(
-            user=user_read,
-            email=user_read.email,
-            cta_url=await _get_welcome_cta_url(request, db_session, org_id),
-            org_name=org.name if org else None,
-            **resolve_org_email_branding(org, org_config, request).as_kwargs(),
-        )
+        try:
+            send_account_creation_email(
+                user=user_read,
+                email=user_read.email,
+                cta_url=await _get_welcome_cta_url(request, db_session, org_id),
+                org_name=org.name if org else None,
+                **resolve_org_email_branding(org, org_config, request).as_kwargs(),
+            )
+        except Exception as e:
+            logger.warning(f"Could not send account creation email: {e}")
     elif get_deployment_mode() == 'saas':
-        # Import here to avoid circular imports
-        from src.services.users.email_verification import send_verification_email
-        await send_verification_email(request, db_session, user, org_id)
+        from src.services.dev.dev import isDevModeEnabled
+        if isDevModeEnabled():
+            user.email_verified = True
+            db_session.add(user)
+            await db_session.commit()
+            await db_session.refresh(user)
+            user_read = UserRead.model_validate(user)
+        else:
+            # Import here to avoid circular imports
+            from src.services.users.email_verification import send_verification_email
+            try:
+                await send_verification_email(request, db_session, user, org_id)
+            except Exception as e:
+                logger.warning(f"Could not send verification email to {user.email}: {e}")
 
     return user_read
 
@@ -506,14 +545,28 @@ async def create_user_without_org(
     # OAuth users get welcome email (already verified)
     # Non-OAuth SaaS users get verification email (no org needed)
     if is_oauth or get_deployment_mode() != 'saas':
-        send_account_creation_email(
-            user=user_read,
-            email=user_read.email,
-            cta_url=await _get_welcome_cta_url(request, db_session, org_id=None),
-        )
+        try:
+            send_account_creation_email(
+                user=user_read,
+                email=user_read.email,
+                cta_url=await _get_welcome_cta_url(request, db_session, org_id=None),
+            )
+        except Exception as e:
+            logger.warning(f"Could not send account creation email to {user_read.email}: {e}")
     else:
-        from src.services.users.email_verification import send_verification_email
-        await send_verification_email(request, db_session, user, org_id=None)
+        from src.services.dev.dev import isDevModeEnabled
+        if isDevModeEnabled():
+            user.email_verified = True
+            db_session.add(user)
+            await db_session.commit()
+            await db_session.refresh(user)
+            user_read = UserRead.model_validate(user)
+        else:
+            from src.services.users.email_verification import send_verification_email
+            try:
+                await send_verification_email(request, db_session, user, org_id=None)
+            except Exception as e:
+                logger.warning(f"Could not send verification email to {user.email}: {e}")
 
     return user_read
 

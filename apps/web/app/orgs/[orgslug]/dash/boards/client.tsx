@@ -43,11 +43,23 @@ function CreateBoardForm({ onCreated, orgId, accessToken }: {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
 
+  const [effectsEnabled, setEffectsEnabled] = useState(true)
+  const [chatEnabled, setChatEnabled] = useState(true)
+  const [reactionsEnabled, setReactionsEnabled] = useState(true)
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim()) return
     try {
-      await createBoard(orgId, { name, description }, accessToken)
+      await createBoard(orgId, { 
+        name, 
+        description,
+        features: {
+          effects_enabled: effectsEnabled,
+          chat_enabled: chatEnabled,
+          reactions_enabled: reactionsEnabled
+        }
+      }, accessToken)
       track(AnalyticsEvent.BoardCreated, { has_description: !!description.trim() })
       toast.success(t('boards.board_created'))
       setName('')
@@ -81,7 +93,42 @@ function CreateBoardForm({ onCreated, orgId, accessToken }: {
           rows={3}
         />
       </div>
-      <div className="flex justify-end">
+
+      <div className="space-y-3 pt-2">
+        <label className="text-sm font-medium text-gray-700">Özellikler (Features)</label>
+        
+        <label className="flex items-center space-x-3 cursor-pointer">
+          <input 
+            type="checkbox" 
+            checked={effectsEnabled}
+            onChange={(e) => setEffectsEnabled(e.target.checked)}
+            className="w-4 h-4 text-black border-gray-300 rounded focus:ring-black"
+          />
+          <span className="text-sm text-gray-700">🎭 Canlı Efektler (Yangın, Kar, Matrix vb.)</span>
+        </label>
+        
+        <label className="flex items-center space-x-3 cursor-pointer">
+          <input 
+            type="checkbox" 
+            checked={chatEnabled}
+            onChange={(e) => setChatEnabled(e.target.checked)}
+            className="w-4 h-4 text-black border-gray-300 rounded focus:ring-black"
+          />
+          <span className="text-sm text-gray-700">💬 Anlık Mesajlaşma</span>
+        </label>
+        
+        <label className="flex items-center space-x-3 cursor-pointer">
+          <input 
+            type="checkbox" 
+            checked={reactionsEnabled}
+            onChange={(e) => setReactionsEnabled(e.target.checked)}
+            className="w-4 h-4 text-black border-gray-300 rounded focus:ring-black"
+          />
+          <span className="text-sm text-gray-700">😊 Emoji Tepkileri</span>
+        </label>
+      </div>
+
+      <div className="flex justify-end pt-2">
         <button
           type="submit"
           disabled={!name.trim()}

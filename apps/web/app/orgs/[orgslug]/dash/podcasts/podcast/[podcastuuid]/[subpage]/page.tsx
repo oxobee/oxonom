@@ -23,6 +23,7 @@ function PodcastOverviewPage(props: { params: Promise<PodcastOverviewParams> }) 
   const params = use(props.params)
 
   function getEntirePodcastUUID(podcastuuid: string) {
+    if (podcastuuid.startsWith('podcast_')) return podcastuuid
     return `podcast_${podcastuuid}`
   }
 
@@ -41,12 +42,6 @@ function PodcastOverviewPage(props: { params: Promise<PodcastOverviewParams> }) 
       icon: ListMusic,
       href: `/dash/podcasts/podcast/${params.podcastuuid}/content`,
     },
-    {
-      key: 'distribution',
-      label: 'Distribution',
-      icon: Rss,
-      href: `/dash/podcasts/podcast/${params.podcastuuid}/distribution`,
-    },
   ]
 
   return (
@@ -61,14 +56,11 @@ function PodcastOverviewPage(props: { params: Promise<PodcastOverviewParams> }) 
           className="h-full overflow-y-auto"
         >
           <div>
-            {params.subpage === 'general' && (
+            {(params.subpage === 'general' || params.subpage === 'distribution') && (
               <EditPodcastGeneral orgslug={params.orgslug} />
             )}
             {params.subpage === 'content' && (
               <EditPodcastEpisodes orgslug={params.orgslug} podcastuuid={podcastuuid} />
-            )}
-            {params.subpage === 'distribution' && (
-              <PodcastDistribution orgslug={params.orgslug} podcastuuid={podcastuuid} />
             )}
           </div>
         </motion.div>

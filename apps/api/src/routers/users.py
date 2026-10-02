@@ -205,12 +205,13 @@ async def api_create_user_with_orgid(
         await get_org_join_mechanism(request, org_id, current_user, db_session)
         == "inviteOnly"
     ):
-        raise HTTPException(
-            status_code=403,
-            detail="You need an invite to join this organization",
-        )
-    else:
-        return await create_user(request, db_session, current_user, user_object, org_id)
+        if not user_object.join_code:
+            raise HTTPException(
+                status_code=403,
+                detail="You need an invite to join this organization",
+            )
+
+    return await create_user(request, db_session, current_user, user_object, org_id)
 
 
 @router.post(

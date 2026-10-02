@@ -1,26 +1,31 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlmodel.ext.asyncio.session import AsyncSession
-from src.db.usergroups import UserGroupCreate, UserGroupRead, UserGroupUpdate
+from src.db.usergroups import JoinCodeRequest, JoinCodeResponse, UserGroupCreate, UserGroupRead, UserGroupUpdate
 from src.db.users import PublicUser, UserReadPublic
 from src.services.users.usergroups import (
     add_resources_to_usergroup,
     add_users_to_usergroup,
     create_usergroup,
     delete_usergroup_by_id,
+    get_my_usergroups,
     get_resources_by_usergroup,
     get_usergroups_by_resource,
     get_users_linked_to_usergroup,
+    join_usergroup_by_code,
     read_usergroup_by_id,
     read_usergroups_by_org_id,
+    regenerate_usergroup_join_code,
     remove_resources_from_usergroup,
     remove_users_from_usergroup,
     update_usergroup_by_id,
+    verify_join_code,
 )
 from src.security.auth import get_current_user
 from src.core.events.database import get_db_session
 
 
 router = APIRouter()
+public_router = APIRouter()
 
 
 @router.post(
@@ -366,3 +371,81 @@ async def api_delete_resources_from_usergroup(
     return await remove_resources_from_usergroup(
         request, db_session, current_user, usergroup_id, resource_uuids
     )
+
+
+@router.post(
+    "/join-by-code",
+    response_model=JoinCodeResponse,
+    tags=["usergroups"],
+    summary="Join a class / usergroup by 6-digit code",
+)
+async def api_join_usergroup_by_code(
+    *,
+    request: Request,
+    db_session: AsyncSession = Depends(get_db_session),
+    current_user: PublicUser = Depends(get_current_user),
+    join_data: JoinCodeRequest,
+) -> JoinCodeResponse:
+    """
+    Join class by 6-digit code
+    """
+    return await join_usergroup_by_code(
+        request, db_session, current_user, join_data.code, join_data.org_id
+    )
+
+
+@router.post(
+    "/{usergroup_id}/regenerate-code",
+    response_model=UserGroupRead,
+    tags=["usergroups"],
+    summary="Regenerate join code for a class / usergroup",
+)
+async def api_regenerate_usergroup_join_code(
+    *,
+    request: Request,
+    db_session: AsyncSession = Depends(get_db_session),
+    current_user: PublicUser = Depends(get_current_user),
+    usergroup_id: int,
+) -> UserGroupRead:
+    """
+    Regenerate class join code
+    """
+    return await regenerate_usergroup_join_code(
+        request, db_session, current_user, usergroup_id
+    )
+
+
+@router.get(
+    "/my-classes/{org_id}",
+    response_model=list[UserGroupRead],
+    tags=["usergroups"],
+    summary="Get classes the current user is enrolled in",
+)
+async def api_get_my_usergroups(
+    *,
+    request: Request,
+    db_session: AsyncSession = Depends(get_db_session),
+    current_user: PublicUser = Depends(get_current_user),
+    org_id: int,
+) -> list[UserGroupRead]:
+    """
+    Get user's enrolled classes
+    """
+    return await get_my_usergroups(request, db_session, current_user, org_id)
+
+
+@public_router.get(
+    "/verify-code/{code}",
+    tags=["usergroups"],
+    summary="Verify a join code for signup without requiring authentication",
+)
+async def api_verify_join_code(
+    code: str,
+    db_session: AsyncSession = Depends(get_db_session),
+) -> dict:
+    """
+    Verify join code and return matching class info
+    """
+    return await verify_join_code(code, db_session)
+
+

@@ -88,7 +88,6 @@ export default function UsageOverview() {
 
   const meters = features
     ? [
-        { key: 'Courses', label: t('dashboard.home.courses'), ...features.courses },
         { key: 'Members', label: t('dashboard.home.members'), ...features.members },
         { key: 'Admin Seats', label: t('dashboard.home.admin_seats'), ...features.admin_seats },
       ]
@@ -98,32 +97,25 @@ export default function UsageOverview() {
   const orgFeatures = org?.config?.config?.resolved_features || org?.config?.config?.features
   const enabledFeatures = [
     {
-      key: 'courses',
-      label: t('dashboard.home.courses'),
-      icon: BookOpen,
-      enabled: orgFeatures?.courses?.enabled !== false,
-      href: '/dash/courses',
+      key: 'boards',
+      label: t('dashboard.home.boards', 'Panolar'),
+      icon: Chalkboard,
+      enabled: orgFeatures?.boards?.enabled === true,
+      href: '/dash/boards',
     },
     {
       key: 'communities',
-      label: t('dashboard.home.communities'),
+      label: 'Veli Forum',
       icon: ChatCircle,
       enabled: orgFeatures?.communities?.enabled !== false,
       href: '/dash/communities',
     },
     {
       key: 'podcasts',
-      label: t('dashboard.home.podcasts'),
+      label: t('dashboard.home.podcasts', 'Podcastler'),
       icon: Microphone,
       enabled: orgFeatures?.podcasts?.enabled === true,
       href: '/dash/podcasts',
-    },
-    {
-      key: 'boards',
-      label: t('dashboard.home.boards'),
-      icon: Chalkboard,
-      enabled: orgFeatures?.boards?.enabled === true,
-      href: '/dash/boards',
     },
   ]
 

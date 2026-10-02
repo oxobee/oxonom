@@ -26,10 +26,10 @@ export default function GlobalAnalytics({ days = 30 }: { days?: number }) {
       <div className="flex flex-col items-center justify-center py-20 text-white/40">
         <ChartBar size={48} weight="fill" />
         <p className="mt-4 text-lg">
-          {error ? 'Failed to load analytics' : 'No analytics data available'}
+          {error ? 'Analitik verileri yüklenemedi' : 'Henüz analitik verisi bulunmuyor'}
         </p>
         <p className="text-sm text-white/25 mt-1">
-          Ensure Tinybird analytics is configured
+          Tinybird analitik servisinin yapılandırıldığından emin olun
         </p>
       </div>
     )

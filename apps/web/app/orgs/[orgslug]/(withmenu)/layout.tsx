@@ -16,6 +16,7 @@ import { PageViewTracker } from '@components/Analytics/PageViewTracker'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { usePlan } from '@components/Hooks/usePlan'
 import { getGoogleFontUrl, DEFAULT_FONT } from '@/lib/fonts'
+import { GlobalEduFooter } from '@components/Footers/GlobalEduFooter'
 
 // Helper to convert hex to rgba
 const hexToRgba = (hex: string, alpha: number): string => {
@@ -32,7 +33,7 @@ function OrgFooter() {
   const plan = usePlan()
   const watermarkConfig = org?.config?.config?.customization?.general?.watermark ?? org?.config?.config?.general?.watermark
   const isFree = plan === 'free'
-  const showWatermark = isFree || watermarkConfig !== false
+  const showWatermark = false
 
   return (
     <footer className="w-full py-8 mt-12">
@@ -125,7 +126,7 @@ function LayoutContent({ children, orgslug }: { children: ReactNode; orgslug: st
       <div className="flex-1 relative" style={{ zIndex: 'var(--z-content)' }}>
         {children}
       </div>
-      {!isFullBleedPage && !chromeless && <OrgFooter />}
+      {!isFullBleedPage && !chromeless && <GlobalEduFooter />}
       {!isFullBleedPage && !chromeless && <Watermark />}
     </div>
   )

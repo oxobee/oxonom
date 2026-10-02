@@ -9,6 +9,7 @@ import { getUriWithOrg } from '@services/config/config'
 import { fetchRAGChatSessions, RAGChatSession } from '@services/ai/ai'
 import { HeaderProfileBox } from '@components/Security/HeaderProfileBox'
 import MenuLinks from './OrgMenuLinks'
+import MobileMenu from './MobileMenu'
 import { getOrgLogoMediaDirectory } from '@services/media/media'
 import { useLHSession } from '@components/Contexts/LHSessionContext'
 import { useOrg } from '@components/Contexts/OrgContext'
@@ -25,6 +26,8 @@ import {
   SquaresFour,
   ChalkboardSimple,
   Signpost,
+  List,
+  X,
 } from '@phosphor-icons/react'
 import { DiscordIcon } from '@components/Objects/Icons/DiscordIcon'
 import {
@@ -58,7 +61,7 @@ export const OrgMenu = (props: any) => {
   const [isFocusMode, setIsFocusMode] = useState(false)
   const pathname = usePathname()
   const { t } = useTranslation()
-  const { rights } = useAdminStatus()
+  const { rights, canManageOrg } = useAdminStatus()
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false)
   const { isVisible: isJoinBannerVisible } = useJoinBannerVisible()
   const { track } = useLHAnalytics()
@@ -89,9 +92,44 @@ export const OrgMenu = (props: any) => {
   const primaryColor = config?.customization?.general?.color || config?.general?.color || ''
   const colors = getMenuColorClasses(primaryColor)
 
+  // Bounce animation when a favorite is added
+  const [isTrailBouncing, setIsTrailBouncing] = useState(false)
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout
+    const handleBounce = () => {
+      setIsTrailBouncing(false)
+      setTimeout(() => {
+        setIsTrailBouncing(true)
+      }, 10)
+      timer = setTimeout(() => {
+        setIsTrailBouncing(false)
+      }, 1200)
+    }
+
+    window.addEventListener('academic-trail-bounce', handleBounce)
+    return () => {
+      window.removeEventListener('academic-trail-bounce', handleBounce)
+      clearTimeout(timer)
+    }
+  }, [])
+
   // Filter dashboard menu items by resolved_features from API
   const rf = config?.resolved_features
+  const teacherAllowedIds = new Set([
+    'home',
+    'assignments',
+    'library',
+    'communities',
+    'classrooms',
+    'podcasts',
+    'boards',
+    'playgrounds',
+  ])
+
   const visibleDashboardItems = DASHBOARD_MENU_ITEMS.filter((item: DashboardMenuItem) => {
+    // For teachers (cannot manage org), only show menus permitted for teachers
+    if (!canManageOrg && !teacherAllowedIds.has(item.id)) return false
     if (!item.featureKey) return true
     if (rf?.[item.featureKey]) return rf[item.featureKey].enabled
     return isFeatureAvailable(item.featureKey)
@@ -151,21 +189,29 @@ export const OrgMenu = (props: any) => {
           top: topOffset
         }}
       >
-        <div className="flex items-center justify-between w-full max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-8 h-full">
-          <div className="flex items-center space-x-5 md:w-auto w-full">
-            <div className="logo flex md:w-auto w-full justify-center">
-              <Link href={getUriWithOrg(orgslug, '/')}>
-                <div className="flex w-auto h-9 rounded-md items-center m-auto py-1 justify-center">
-                  {org?.logo_image ? (
-                    <img
-                      src={`${getOrgLogoMediaDirectory(org.org_uuid, org?.logo_image)}`}
-                      alt="Learnhouse"
-                      style={{ width: 'auto', height: '100%' }}
-                      className="rounded-md"
-                    />
-                  ) : (
-                    <LearnHouseLogo logoFilter={colors.logoFilter} />
-                  )}
+        <div className="flex items-center justify-between w-full max-w-(--breakpoint-2xl) mx-auto px-4 sm:px-6 lg:px-8 h-full gap-2">
+          {/* LEFT: Brand & Identity */}
+          <div className="flex items-center space-x-4 md:space-x-5 shrink-0 min-w-0">
+            <div className="logo flex items-center shrink-0">
+              <Link href={getUriWithOrg(orgslug, '/')} className="flex items-center gap-2.5 py-1 group select-none min-w-0">
+                {org?.logo_image ? (
+                  <img
+                    src={`${getOrgLogoMediaDirectory(org.org_uuid, org?.logo_image)}`}
+                    alt={org?.name || 'Okul Logosu'}
+                    className="w-9 h-9 object-contain rounded-xl border border-gray-100 p-0.5 bg-white shadow-xs shrink-0 group-hover:scale-105 transition-transform"
+                  />
+                ) : (
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-800 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0 group-hover:scale-105 transition-transform">
+                    {org?.name ? org.name.charAt(0).toUpperCase() : 'O'}
+                  </div>
+                )}
+                <div className="flex flex-col min-w-0">
+                  <span className="font-extrabold text-sm sm:text-base tracking-tight text-gray-900 group-hover:text-indigo-600 transition-colors truncate max-w-[150px] sm:max-w-[220px] md:max-w-none leading-snug">
+                    {org?.name || 'Oxonom Edu'}
+                  </span>
+                  <span className="text-[10px] text-gray-400 font-medium truncate hidden min-[380px]:block leading-none mt-0.5">
+                    Eğitim Portalı
+                  </span>
                 </div>
               </Link>
             </div>
@@ -182,20 +228,33 @@ export const OrgMenu = (props: any) => {
           <div className="flex items-center space-x-2">
             {/* Progress / Trail */}
             <AuthenticatedClientElement checkMethod="authentication">
-              <div className="hidden md:flex">
+              <div className="flex">
                 <TooltipProvider delayDuration={0}>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Link
+                        id="nav-academic-trail-btn"
+                        data-academic-trail-nav="true"
                         href={getUriWithOrg(orgslug, '/trail')}
-                        className={`p-2 rounded-lg transition-colors ${colors.iconBtn}`}
-                        aria-label={t('courses.progress')}
+                        className={`p-2 rounded-lg transition-all relative ${colors.iconBtn} ${
+                          isTrailBouncing
+                            ? 'animate-elastic-trail text-amber-500 bg-amber-50 ring-2 ring-amber-400 shadow-md shadow-amber-300/40'
+                            : ''
+                        }`}
+                        aria-label="Akademik Durum & Dersler"
                       >
-                        <Signpost size={20} weight="fill" />
+                        <Signpost
+                          size={20}
+                          weight="fill"
+                          className={`transition-colors ${isTrailBouncing ? 'text-amber-500' : ''}`}
+                        />
+                        {isTrailBouncing && (
+                          <span className="absolute inset-0 rounded-lg bg-amber-400/30 animate-ping pointer-events-none" />
+                        )}
                       </Link>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="text-xs">
-                      {t('courses.progress')}
+                      Akademik Durum & Dersler
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -211,13 +270,13 @@ export const OrgMenu = (props: any) => {
                         <Link
                           href={getUriWithOrg(orgslug, '/boards')}
                           className={`p-2 rounded-lg transition-colors ${colors.iconBtn}`}
-                          aria-label="Boards"
+                          aria-label={t('common.boards', 'Panolar')}
                         >
                           <ChalkboardSimple size={20} weight="fill" />
                         </Link>
                       </TooltipTrigger>
                       <TooltipContent side="bottom" className="text-xs">
-                        Boards
+                        {t('common.boards', 'Panolar')}
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -362,45 +421,33 @@ export const OrgMenu = (props: any) => {
             <div className="hidden md:flex">
               <HeaderProfileBox primaryColor={primaryColor} />
             </div>
+            {/* Mobile Menu Button */}
             <button
-              className={`md:hidden focus:outline-hidden ${colors.text}`}
+              type="button"
+              className="md:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-800 transition-all font-bold text-xs shadow-xs border border-gray-200/80 cursor-pointer shrink-0"
               onClick={toggleMenu}
+              aria-label={isMenuOpen ? 'Menüyü Kapat' : 'Menüyü Aç'}
             >
               {isMenuOpen ? (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X size={18} weight="bold" />
               ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
+                <List size={18} weight="bold" />
               )}
+              <span className="text-xs font-bold text-gray-800 hidden min-[360px]:inline">Menü</span>
             </button>
           </div>
         </div>
       </nav>
-      <div
-        className={`fixed inset-x-0 bg-white/80 backdrop-blur-lg md:hidden shadow-lg transition-all duration-300 ease-in-out ${
-          isMenuOpen ? 'opacity-100' : '-top-full opacity-0'
-        }`}
-        style={{
-          zIndex: 'var(--z-nav-menu)',
-          top: isMenuOpen ? topOffset + 60 : undefined
-        }}
-      >
-        <div className="flex flex-col px-4 py-3 space-y-4 justify-center items-center">
-          {/* Mobile Search */}
-          <div className="w-full px-2">
-            <SearchBar orgslug={orgslug} isMobile={true} />
-          </div>
-          <div className='py-4'>
-            <MenuLinks orgslug={orgslug} />
-          </div>
-          <div className="border-t border-gray-200">
-            <HeaderProfileBox />
-          </div>
-        </div>
-      </div>
+
+      {/* Full-Screen Categorized Mobile Menu */}
+      <MobileMenu
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+        orgslug={orgslug}
+        primaryColor={primaryColor}
+        onOpenFeedback={() => setFeedbackModalOpen(true)}
+        onOpenCopilot={config?.admin_toggles?.ai?.copilot_enabled !== false ? () => setBubbleOpen(true) : undefined}
+      />
 
       {/* Feedback Modal */}
       <FeedbackModal
@@ -412,7 +459,7 @@ export const OrgMenu = (props: any) => {
       />
 
       {/* Copilot floating bubble */}
-      {isBubbleMode && (
+      {config?.admin_toggles?.ai?.copilot_enabled !== false && isBubbleMode && (
         <CopilotBubble
           orgslug={orgslug}
           open={bubbleOpen}

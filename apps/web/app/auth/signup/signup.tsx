@@ -76,7 +76,7 @@ function SignUpClient(props: SignUpClientProps) {
           <Loader2 size={22} className="animate-spin text-black/30" />
         </div>
       )}
-      {session.status !== 'loading' && joinMethod == 'open' &&
+      {session.status !== 'loading' && (joinMethod === 'open' || searchParams.get('join_code')) &&
         (isAuthenticated ? (
           hasOrgToJoin ? (
             <LoggedInJoinScreen inviteCode={inviteCode} org={props.org} />
@@ -91,9 +91,9 @@ function SignUpClient(props: SignUpClientProps) {
             <OpenSignUpComponent org={props.org} />
           </div>
         ))}
-      {session.status !== 'loading' && joinMethod == 'inviteOnly' &&
+      {session.status !== 'loading' && joinMethod === 'inviteOnly' && !searchParams.get('join_code') &&
         (inviteCode ? (
-          session.status == 'authenticated' ? (
+          session.status === 'authenticated' ? (
             <LoggedInJoinScreen inviteCode={inviteCode} org={props.org} />
           ) : (
             <div className="flex-1 flex items-center justify-center px-6 md:px-12 lg:px-20">
@@ -274,6 +274,20 @@ const NoTokenScreen = ({ org }: NoTokenScreenProps) => {
     setShowMessage(false)
 
     try {
+      // 1. First check if it's a student classroom join code (OX-XXXX)
+      const cleanCode = trimmedCode.toUpperCase()
+      const classRes = await fetch(`/api/v1/usergroups/verify-code/${encodeURIComponent(cleanCode)}`)
+      if (classRes.ok) {
+        const classData = await classRes.json()
+        setSuccess(`Sınıf Bulundu: ${classData.usergroup_name} (${classData.grade_level || 'Sınıf'}). Kayda yönlendiriliyorsunuz...`)
+        setShowMessage(true)
+        setTimeout(() => {
+          router.push(`/signup?join_code=${cleanCode}`)
+        }, 1200)
+        return
+      }
+
+      // 2. Otherwise validate as org invite code
       const res = await validateInviteCode(activeOrg.id, trimmedCode, session?.data?.tokens?.access_token)
 
       if (res.success) {
@@ -283,12 +297,11 @@ const NoTokenScreen = ({ org }: NoTokenScreenProps) => {
           router.push(`/signup?inviteCode=${trimmedCode}`)
         }, 1500)
       } else {
-        setError(getErrorMessage(res.data?.detail, t('auth.invite_code_invalid')))
+        setError(getErrorMessage(res.data?.detail, 'Geçersiz davet veya sınıf kodu'))
         setShowMessage(true)
       }
     } catch (err) {
-      // A network throw must not leave the button stuck spinning.
-      setError(getErrorMessage((err as any)?.detail, t('auth.invite_code_invalid')))
+      setError(getErrorMessage((err as any)?.detail, 'Geçersiz davet veya sınıf kodu'))
       setShowMessage(true)
     } finally {
       setIsSubmitting(false)
@@ -322,21 +335,21 @@ const NoTokenScreen = ({ org }: NoTokenScreenProps) => {
           <h1 className="text-[28px] md:text-[32px] font-black text-black tracking-tight leading-tight">{t('auth.invite_required')}</h1>
           <p className="mt-2 text-black/45 text-[15px] font-medium">{t('auth.invite_required_desc', { org: activeOrg?.name })}</p>
 
-          {/* Invite Code Form */}
+          {/* Invite / Class Code Form */}
           <div className="mt-8">
             <FormLayout onSubmit={validateCode}>
               <FormField name="invite_code">
                 <div className="flex items-center space-x-2 mb-1.5">
-                  <Form.Label className="grow text-[13px] font-semibold text-black/70">{t('auth.invite_code')}</Form.Label>
+                  <Form.Label className="grow text-[13px] font-semibold text-black/70">Davet Kodu veya Sınıf Kodu (OX-XXXX)</Form.Label>
                 </div>
                 <Form.Control asChild>
                   <input
                     onChange={(e) => setInviteCode(e.target.value)}
                     value={inviteCode}
                     type="text"
-                    placeholder={t('auth.enter_invite_code')}
+                    placeholder="Örn: OX-1001 veya davet kodu"
                     required
-                    className="box-border w-full bg-neutral-50 text-black rounded-lg px-4 border border-neutral-200 inline-flex h-[44px] appearance-none items-center focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-neutral-400 transition-all placeholder:text-black/25 text-sm"
+                    className="box-border w-full bg-neutral-50 text-black rounded-lg px-4 border border-neutral-200 inline-flex h-[44px] appearance-none items-center focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-neutral-400 transition-all placeholder:text-black/25 text-sm uppercase"
                   />
                 </Form.Control>
               </FormField>
@@ -351,12 +364,23 @@ const NoTokenScreen = ({ org }: NoTokenScreenProps) => {
                   ) : (
                     <>
                       <Ticket size={18} />
-                      {t('auth.validate_invite')}
+                      Kodu Doğrula ve Devam Et
                     </>
                   )}
                 </button>
               </Form.Submit>
             </FormLayout>
+
+            <div className="mt-6 pt-6 border-t border-neutral-100 text-center">
+              <p className="text-xs text-neutral-500 font-medium mb-3">Öğrenci misiniz? Sınıfınızın katılım kodunu girerek doğrudan kayıt olabilirsiniz.</p>
+              <button
+                type="button"
+                onClick={() => router.push('/signup?join_code=true')}
+                className="w-full inline-flex h-[42px] items-center justify-center rounded-lg border border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold text-xs transition gap-1.5"
+              >
+                🎓 Öğrenci Kaydı Aç
+              </button>
+            </div>
           </div>
         </div>
       </div>

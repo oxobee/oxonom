@@ -17,9 +17,9 @@ export async function generateMetadata(props: MetadataProps): Promise<Metadata> 
     tags: ['organizations'],
   })
   return {
-    title: 'Trail — ' + org.name,
+    title: 'Akademik Durum & Dersler — ' + org.name,
     description:
-      'Check your progress using trail and easily navigate through your courses.',
+      'Kayıtlı sınıflarınız, ders içerikleriniz, akıllı tahta panolarınız ve başarı belgeleriniz.',
   }
 }
 
