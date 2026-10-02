@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hafıza Kartları</title>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<style>
+  body { background: #0f172a; color: #fff; font-family: system-ui, sans-serif; }
+  .card-inner { transition: transform 0.5s; transform-style: preserve-3d; }
+  .card.flipped .card-inner { transform: rotateY(180deg); }
+  .card-front, .card-back { backface-visibility: hidden; position: absolute; inset: 0; border-radius: 1rem; }
+  .card-front { background: #1e293b; border: 2px solid #334155; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+  .card-back { background: linear-gradient(135deg, #4f46e5, #7c3aed); transform: rotateY(180deg); display: flex; align-items: center; justify-content: center; font-size: 2.2rem; }
+</style>
+</head>
+<body class="flex flex-col items-center justify-between min-h-screen p-4 select-none">
+  <div class="w-full max-w-md flex items-center justify-between mt-2">
+    <div>
+      <h1 class="text-2xl font-black text-indigo-400">Hafıza & Eşleştirme</h1>
+      <p class="text-xs text-slate-400">Gizli kartları çevirip çiftleri bul</p>
+    </div>
+    <div class="flex gap-2">
+      <div class="bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700 text-center">
+        <span class="text-[10px] text-slate-400 block font-bold">HAMLE</span>
+        <span id="moves" class="text-base font-black text-amber-400">0</span>
+      </div>
+      <button onclick="startGame()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 font-bold rounded-xl text-xs transition">Yenile</button>
+    </div>
+  </div>
+
+  <div id="board" class="grid grid-cols-4 gap-3 w-full max-w-md aspect-square my-auto"></div>
+
+  <div id="winModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl p-6 text-center max-w-xs space-y-3">
+      <span class="text-5xl">🏆</span>
+      <h2 class="text-xl font-black text-white">Tebrikler Kazandın!</h2>
+      <p id="winStats" class="text-xs text-slate-400">Harika bir hafıza başarısı.</p>
+      <button onclick="startGame()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 font-bold rounded-xl text-sm transition">Tekrar Oyna</button>
+    </div>
+  </div>
+
+  <script>
+    const ICONS = ['🚀', '🪐', '🦁', '🍎', '⭐', '🎸', '🎨', '⚽'];
+    let cards = [];
+    let flipped = [];
+    let matched = 0;
+    let moves = 0;
+
+    function startGame() {
+      document.getElementById('winModal').classList.add('hidden');
+      moves = 0;
+      matched = 0;
+      flipped = [];
+      document.getElementById('moves').textContent = moves;
+
+      cards = [...ICONS, ...ICONS].sort(() => Math.random() - 0.5);
+      const board = document.getElementById('board');
+      board.innerHTML = '';
+
+      cards.forEach((icon, idx) => {
+        const card = document.createElement('div');
+        card.className = 'card relative cursor-pointer';
+        card.dataset.index = idx;
+        card.dataset.icon = icon;
+        card.innerHTML = `
+          <div class="card-inner w-full h-full relative">
+            <div class="card-front">❓</div>
+            <div class="card-back">${icon}</div>
+          </div>
+        `;
+        card.onclick = () => flipCard(card);
+        board.appendChild(card);
+      });
+    }
+
+    function flipCard(card) {
+      if (flipped.length >= 2 || card.classList.contains('flipped') || card.classList.contains('matched')) return;
+
+      card.classList.add('flipped');
+      flipped.push(card);
+
+      if (flipped.length === 2) {
+        moves++;
+        document.getElementById('moves').textContent = moves;
+        const [c1, c2] = flipped;
+        if (c1.dataset.icon === c2.dataset.icon) {
+          c1.classList.add('matched');
+          c2.classList.add('matched');
+          matched += 2;
+          flipped = [];
+          if (matched === cards.length) {
+            setTimeout(() => {
+              document.getElementById('winStats').textContent = `${moves} hamlede tüm kartları eşleştirdin!`;
+              document.getElementById('winModal').classList.remove('hidden');
+            }, 500);
+          }
+        } else {
+          setTimeout(() => {
+            c1.classList.remove('flipped');
+            c2.classList.remove('flipped');
+            flipped = [];
+          }, 800);
+        }
+      }
+    }
+
+    window.onload = startGame;
+  </script>
+</body>
+</html>
