@@ -274,6 +274,25 @@ export function getActivityMediaDirectory(
 }
 
 export function getOrgLogoMediaDirectory(orgUUID: string, fileId: string) {
+  if (!fileId) return '/meb_logo.svg'
+  if (fileId.startsWith('http://') || fileId.startsWith('https://') || fileId.startsWith('data:') || fileId.startsWith('/')) {
+    return fileId
+  }
+  if (!orgUUID || orgUUID.includes('necla') || orgUUID.includes('sfg') || orgUUID.includes('ilkokul') || orgUUID.includes('ortaokul')) {
+    return '/meb_logo.svg'
+  }
+  let uri = `${getMediaUrl()}content/orgs/${orgUUID}/logos/${fileId}`
+  return uri
+}
+
+export function getOrgSquareLogoMediaDirectory(orgUUID: string, fileId: string) {
+  if (!fileId) return '/meb_logo.svg'
+  if (fileId.startsWith('http://') || fileId.startsWith('https://') || fileId.startsWith('data:') || fileId.startsWith('/')) {
+    return fileId
+  }
+  if (!orgUUID || orgUUID.includes('necla') || orgUUID.includes('sfg') || orgUUID.includes('ilkokul') || orgUUID.includes('ortaokul')) {
+    return '/meb_logo.svg'
+  }
   let uri = `${getMediaUrl()}content/orgs/${orgUUID}/logos/${fileId}`
   return uri
 }
@@ -295,11 +314,6 @@ export function getOrgOgImageMediaDirectory(orgUUID: string, fileId: string) {
 
 export function getOrgAuthBackgroundMediaDirectory(orgUUID: string, fileId: string) {
   let uri = `${getMediaUrl()}content/orgs/${orgUUID}/auth_backgrounds/${fileId}`
-  return uri
-}
-
-export function getOrgSquareLogoMediaDirectory(orgUUID: string, fileId: string) {
-  let uri = `${getMediaUrl()}content/orgs/${orgUUID}/square_logos/${fileId}`
   return uri
 }
 

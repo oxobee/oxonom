@@ -42,7 +42,7 @@ export const DEFAULT_FALLBACK_ORG = {
   socials: {},
   links: {},
   scripts: {},
-  logo_image: '49631c68-a87f-5f98-86b1-395fa018e2d8_logo.webp',
+  logo_image: '/meb_logo.svg',
   thumbnail_image: '8f7c922b-b2e1-5c27-876d-285dba4b13ff_thumbnail.webp',
   previews: {},
   explore: true,

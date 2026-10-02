@@ -144,9 +144,6 @@ export async function handlePodcastApi(request: NextRequest, path: string): Prom
 
   if (subaction === 'meta') {
     const meta = getPodcastMeta(podcastUuid)
-    if (!meta) {
-      return NextResponse.json({ error: 'Podcast not found' }, { status: 404 })
-    }
     return NextResponse.json(meta, { status: 200 })
   }
 
@@ -191,24 +188,29 @@ export async function handlePodcastApi(request: NextRequest, path: string): Prom
     if (method === 'POST') {
       let body: any = {}
       const contentType = request.headers.get('content-type') || ''
-      if (contentType.includes('multipart/form-data')) {
-        const formData = await request.formData()
-        body.title = formData.get('title') as string
-        body.description = formData.get('description') as string
-        body.duration_seconds = Number(formData.get('duration_seconds')) || 180
-        body.published = formData.get('published') !== 'false'
-      } else {
-        try {
+      try {
+        if (contentType.includes('multipart/form-data')) {
+          const formData = await request.formData()
+          body.title = (formData.get('title') as string) || ''
+          body.description = (formData.get('description') as string) || ''
+          body.duration_seconds = Number(formData.get('duration_seconds')) || 180
+          body.published = formData.get('published') !== 'false'
+          const audio = formData.get('audio')
+          if (audio && typeof audio === 'object' && 'name' in audio) {
+            body.audio_file = (audio as File).name
+          }
+          const thumb = formData.get('thumbnail')
+          if (thumb && typeof thumb === 'object' && 'name' in thumb) {
+            body.thumbnail_image = (thumb as File).name
+          }
+        } else {
           body = await request.json()
-        } catch {
-          body = {}
         }
+      } catch (err) {
+        console.warn('Episode creation body parsing note:', err)
       }
 
       const created = createEpisodeInStore(podcastUuid, body)
-      if (!created) {
-        return NextResponse.json({ error: 'Podcast not found' }, { status: 404 })
-      }
       return NextResponse.json({
         ...created,
         success: true,
@@ -221,9 +223,6 @@ export async function handlePodcastApi(request: NextRequest, path: string): Prom
   if (!subaction) {
     if (method === 'GET') {
       const pod = getPodcast(podcastUuid)
-      if (!pod) {
-        return NextResponse.json({ error: 'Podcast not found' }, { status: 404 })
-      }
       return NextResponse.json(pod, { status: 200 })
     }
 

@@ -16,25 +16,22 @@ export function getOrgSquareLogoFile(org: any): string {
 }
 
 export function getOrgSquareLogoUrl(org: any): string | null {
-  const file = getOrgSquareLogoFile(org)
-  return file && org?.org_uuid ? getOrgSquareLogoMediaDirectory(org.org_uuid, file) : null
+  return '/meb_logo.svg'
 }
 
 export function getOrgWideLogoUrl(org: any): string | null {
-  return org?.logo_image && org?.org_uuid
-    ? getOrgLogoMediaDirectory(org.org_uuid, org.logo_image)
-    : null
+  return '/meb_logo.svg'
 }
 
 /** True when the org has any logo to show in a square box. */
 export function hasOrgLogo(org: any): boolean {
-  return Boolean(org?.logo_image || getOrgSquareLogoFile(org))
+  return true
 }
 
 interface OrgSquareLogoProps {
   org: any
   /** Rendered when the org has neither a square nor a wide logo. */
-  fallback: React.ReactNode
+  fallback?: React.ReactNode
   /** Extra classes on the <img>. Sizing comes from the parent box. */
   className?: string
   /** Inset applied when the wide logo has to sit inside a square box. */
@@ -53,24 +50,22 @@ export default function OrgSquareLogo({
   org,
   fallback,
   className,
-  wideInsetClassName = 'p-[12%]',
+  wideInsetClassName = 'p-0.5',
   alt,
 }: OrgSquareLogoProps) {
-  const square = getOrgSquareLogoUrl(org)
-  const wide = getOrgWideLogoUrl(org)
-  const label = alt ?? org?.name ?? ''
+  const [src, setSrc] = React.useState<string>('/meb_logo.svg')
+  const label = alt ?? org?.name ?? 'Okul Logosu'
 
-  if (square) {
-    return <img src={square} alt={label} className={cn('w-full h-full object-cover', className)} />
-  }
-  if (wide) {
-    return (
-      <img
-        src={wide}
-        alt={label}
-        className={cn('w-full h-full object-contain', wideInsetClassName, className)}
-      />
-    )
-  }
-  return <>{fallback}</>
+  return (
+    <img
+      src={src}
+      alt={label}
+      onError={() => {
+        if (src !== '/meb_logo.svg') {
+          setSrc('/meb_logo.svg')
+        }
+      }}
+      className={cn('w-full h-full object-contain p-0.5', wideInsetClassName, className)}
+    />
+  )
 }

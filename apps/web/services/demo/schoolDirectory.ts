@@ -15,6 +15,7 @@ export interface SchoolOrg {
   phone: string
   email: string
   logo_text: string
+  logo_image?: string
   accent_color: string
 }
 
@@ -33,6 +34,7 @@ export const SCHOOL_ORGS: SchoolOrg[] = [
     phone: '+90 216 322 1020',
     email: 'neclagorer@oxonom.com',
     logo_text: 'NGİ',
+    logo_image: '/meb_logo.svg',
     accent_color: 'emerald',
   },
   {
@@ -49,6 +51,7 @@ export const SCHOOL_ORGS: SchoolOrg[] = [
     phone: '+90 216 411 2030',
     email: 'fevzikalkanci@oxonom.com',
     logo_text: 'ŞFKO',
+    logo_image: '/meb_logo.svg',
     accent_color: 'indigo',
   },
 ]
