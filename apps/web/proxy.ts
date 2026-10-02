@@ -54,10 +54,10 @@ async function getInstanceInfo(): Promise<InstanceInfo> {
     // Backend unavailable — use safe defaults
   }
   return {
-    multi_org_enabled: true,
+    multi_org_enabled: false,
     default_org_slug: 'demo',
     mode: 'saas' as const,
-    tenancy: 'multi',
+    tenancy: 'single',
     frontend_domain: 'learnhouze.vercel.app',
     top_domain: 'learnhouze.vercel.app',
   }
@@ -519,35 +519,18 @@ export default async function proxy(req: NextRequest) {
   }
 
   // -------------------------------------------------------------------------
-  // 10. Apex root (multi tenancy only) — login-first, then org picker.
-  //
-  //     The bare apex (learnhouse.io) is NOT org-scoped. An unauthenticated
-  //     visitor lands on the login page; once signed in they get the /home org
-  //     picker and choose an org — which lives on its own subdomain
-  //     ({slug}.learnhouse.io) or custom domain. Org content is ONLY served on
-  //     a subdomain/custom domain, never at the apex. Mirrors the platform's
-  //     "log in, then choose an org" flow. We branch on the non-httpOnly
-  //     LH_session marker cookie (best-effort; the page itself re-verifies).
+  // 10. Apex root: Serve the default school organization landing directly
   // -------------------------------------------------------------------------
-  if (
-    instance.tenancy === 'multi'
-    && pathname === '/'
-    && fullhost
-    && !isLocalhostCheck(fullhost)
-    && !(await hostIsCustomDomain(fullhost, instance))
-  ) {
+  if (pathname === '/') {
     const resolved = await resolveTenant(req, instance)
-    if (resolved.source === 'default') {
-      const hasSession = !!req.cookies.get('LH_session')?.value
-      const target = hasSession ? `/home${search}` : `/auth/login${search}`
-      const requestHeaders = tenantRequestHeaders(req, resolved, instance)
-      const response = NextResponse.rewrite(new URL(target, req.url), {
-        request: { headers: requestHeaders },
-      })
-      setOrgCookies(response, resolved, instance, fullhost)
-      setInstanceCookies(response, instance)
-      return response
-    }
+    const requestHeaders = tenantRequestHeaders(req, resolved, instance)
+    const response = NextResponse.rewrite(
+      new URL(`/orgs/${resolved.slug}${search}`, req.url),
+      { request: { headers: requestHeaders } },
+    )
+    setOrgCookies(response, resolved, instance, fullhost)
+    setInstanceCookies(response, instance)
+    return response
   }
 
   // -------------------------------------------------------------------------

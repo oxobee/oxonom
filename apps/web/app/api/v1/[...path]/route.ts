@@ -42,12 +42,12 @@ async function handleFallback(request: NextRequest, path: string): Promise<Respo
   // Instance info
   if (path === '/api/v1/instance/info' || path.startsWith('/api/v1/instance/info')) {
     return NextResponse.json({
-      tenancy: 'multi',
+      tenancy: 'single',
       default_org_slug: 'demo',
       frontend_domain: 'learnhouze.vercel.app',
       top_domain: 'learnhouze.vercel.app',
       mode: 'saas',
-      multi_org_enabled: true,
+      multi_org_enabled: false,
     }, { status: 200 })
   }
 
