@@ -51,9 +51,10 @@ type PropsType = {
   orgslug: string
   customLink?: string
   isDashboard?: boolean
+  onDelete?: (podcastUuid: string) => void
 }
 
-function PodcastThumbnail({ podcast, orgslug, customLink, isDashboard = false }: PropsType) {
+function PodcastThumbnail({ podcast, orgslug, customLink, isDashboard = false, onDelete }: PropsType) {
   const { t, i18n } = useTranslation()
   const org = useOrg() as any
   const session = useLHSession() as any
@@ -77,6 +78,8 @@ function PodcastThumbnail({ podcast, orgslug, customLink, isDashboard = false }:
     try {
       await deletePodcast(podcast.podcast_uuid, session.data?.tokens?.access_token)
       queryClient.invalidateQueries({ queryKey: ['podcasts'] })
+      queryClient.invalidateQueries({ queryKey: ['podcast'] })
+      onDelete?.(podcast.podcast_uuid)
       toast.success(t('podcasts.podcast_deleted_success'))
     } catch (_error) {
       toast.error(t('podcasts.podcast_deleted_error'))

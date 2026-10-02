@@ -45,6 +45,7 @@ import {
   TURKISH_FOLDERS,
   TURKISH_COURSES,
 } from '@services/demo/turkishSchoolData'
+import { handlePodcastApi } from './podcastHandler'
 
 export const maxDuration = 300
 export const dynamic = 'force-dynamic'
@@ -371,7 +372,7 @@ async function handleFallback(request: NextRequest, path: string): Promise<Respo
 
   // Podcasts
   if (path.startsWith('/api/v1/podcasts')) {
-    return NextResponse.json(SYNCED_PODCASTS, { status: 200 })
+    return handlePodcastApi(request, path)
   }
 
   // Auth / Login
@@ -420,6 +421,11 @@ async function proxyToBackend(request: NextRequest): Promise<Response> {
   // Fast-path for TC validation / lookup
   if (path.startsWith('/api/v1/tc/validate') || path.startsWith('/api/v1/tc/lookup')) {
     return handleFallback(request, path)
+  }
+
+  // Fast-path for podcasts (Full CRUD handled directly with 0ms latency)
+  if (path.startsWith('/api/v1/podcasts')) {
+    return handlePodcastApi(request, path)
   }
 
   // On Vercel / serverless when no remote backend URL is provided (defaults to localhost),

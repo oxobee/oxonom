@@ -331,6 +331,10 @@ export function getPodcastThumbnailMediaDirectory(
   podcastUUID: string,
   fileId: string
 ) {
+  if (!fileId) return '/empty_thumbnail.png'
+  if (fileId.startsWith('http://') || fileId.startsWith('https://') || fileId.startsWith('data:') || fileId.startsWith('/')) {
+    return fileId
+  }
   let uri = `${getMediaUrl()}content/orgs/${orgUUID}/podcasts/${podcastUUID}/thumbnails/${fileId}`
   return uri
 }
@@ -344,6 +348,10 @@ export function getEpisodeThumbnailMediaDirectory(
   episodeUUID: string,
   fileId: string
 ) {
+  if (!fileId) return '/empty_thumbnail.png'
+  if (fileId.startsWith('http://') || fileId.startsWith('https://') || fileId.startsWith('data:') || fileId.startsWith('/')) {
+    return fileId
+  }
   let uri = `${getMediaUrl()}content/orgs/${orgUUID}/podcasts/${podcastUUID}/episodes/${episodeUUID}/thumbnails/${fileId}`
   return uri
 }
@@ -357,6 +365,10 @@ export function getEpisodeAudioMediaDirectory(
   episodeUUID: string,
   fileId: string
 ) {
+  if (!fileId) return ''
+  if (fileId.startsWith('http://') || fileId.startsWith('https://') || fileId.startsWith('data:') || fileId.startsWith('/')) {
+    return fileId
+  }
   let uri = `${getMediaUrl()}content/orgs/${orgUUID}/podcasts/${podcastUUID}/episodes/${episodeUUID}/audio/${fileId}`
   return uri
 }

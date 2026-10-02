@@ -20,10 +20,20 @@ interface PodcastsDashClientProps {
 const PodcastsDashClient = ({
   org_id,
   orgslug,
-  podcasts,
+  podcasts: initialPodcasts,
 }: PodcastsDashClientProps) => {
   const { t } = useTranslation()
   const org = useOrg() as any
+
+  const [podcasts, setPodcasts] = useState<PodcastWithEpisodeCount[]>(initialPodcasts || [])
+
+  React.useEffect(() => {
+    setPodcasts(initialPodcasts || [])
+  }, [initialPodcasts])
+
+  const handleDeletePodcast = (deletedUuid: string) => {
+    setPodcasts((prev) => prev.filter((p) => p.podcast_uuid !== deletedUuid))
+  }
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
@@ -62,6 +72,7 @@ const PodcastsDashClient = ({
               podcast={podcast}
               orgslug={orgslug}
               isDashboard={true}
+              onDelete={handleDeletePodcast}
             />
           </div>
         ))}

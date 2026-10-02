@@ -30,7 +30,16 @@ export default function PodcastsClient({
   initialPodcasts,
 }: PodcastsClientProps) {
   const { t } = useTranslation()
-  const allPodcasts = initialPodcasts
+  const [allPodcasts, setAllPodcasts] = useState<PodcastWithEpisodeCount[]>(initialPodcasts || [])
+
+  React.useEffect(() => {
+    setAllPodcasts(initialPodcasts || [])
+  }, [initialPodcasts])
+
+  const handleDeletePodcast = (deletedUuid: string) => {
+    setAllPodcasts((prev) => prev.filter((p) => p.podcast_uuid !== deletedUuid))
+  }
+
   const searchParams = useSearchParams()
   const isCreatingPodcast = searchParams.get('new') ? true : false
   const [newPodcastModal, setNewPodcastModal] = useState(isCreatingPodcast)
@@ -140,7 +149,11 @@ export default function PodcastsClient({
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {paginatedPodcasts.map((podcast: PodcastWithEpisodeCount) => (
               <div key={podcast.podcast_uuid} className="">
-                <PodcastThumbnail podcast={podcast} orgslug={orgslug} />
+                <PodcastThumbnail
+                  podcast={podcast}
+                  orgslug={orgslug}
+                  onDelete={handleDeletePodcast}
+                />
               </div>
             ))}
             {filteredPodcasts.length === 0 && searchQuery && (
