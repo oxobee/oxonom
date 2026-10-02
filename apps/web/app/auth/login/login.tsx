@@ -454,8 +454,8 @@ const LoginClient = (props: LoginClientProps) => {
     formik.setFieldValue('email', email)
     formik.setFieldValue('password', password)
 
-    const targetSlug = props.org?.slug || 'demo'
-    const targetPath = role === 'student' ? `/orgs/${targetSlug}/trail` : `/orgs/${targetSlug}`
+    const targetSlug = props.org?.slug || 'neclagorer'
+    const targetPath = role === 'student' ? `/orgs/${targetSlug}` : `/orgs/${targetSlug}/dash`
 
     if (typeof document !== 'undefined') {
       document.cookie = `LH_org=${targetSlug}; path=/; max-age=2592000`

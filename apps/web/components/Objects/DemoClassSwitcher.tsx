@@ -134,56 +134,55 @@ export default function DemoClassSwitcher({
 
   // Full Hero Card View for /home
   return (
-    <div className="relative overflow-hidden rounded-2xl border-2 border-emerald-300/80 bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-cyan-500/10 p-5 sm:p-6 mb-6 shadow-xs">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-        {/* Left Info */}
-        <div className="space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-extrabold bg-emerald-600 text-white shadow-xs">
-              <Sparkles size={13} />
-              <span>Demo Öğrenci Hesabı</span>
-            </span>
-            <span className="text-xs font-extrabold text-emerald-950">
-              {DEMO_STUDENT.name}
-            </span>
-            <span className="text-[11px] font-mono text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-md">
-              No: {DEMO_STUDENT.studentNo} • TC: {DEMO_STUDENT.tcNo}
-            </span>
-          </div>
+    <div className="relative overflow-hidden rounded-3xl border-2 border-emerald-300 bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-cyan-500/10 p-6 sm:p-7 mb-6 shadow-sm">
+      {/* Top Row: Demo Student Profile & School Badge */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-emerald-200/70">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-black bg-emerald-600 text-white shadow-xs">
+            <Sparkles size={14} />
+            <span>Demo Öğrenci Hesabı</span>
+          </span>
+          <span className="text-sm font-black text-emerald-950">
+            {DEMO_STUDENT.name}
+          </span>
+          <span className="text-xs font-mono font-bold text-emerald-800 bg-white/90 border border-emerald-200 px-2.5 py-0.5 rounded-lg shadow-2xs">
+            Okul No: {DEMO_STUDENT.studentNo} • T.C.: {DEMO_STUDENT.tcNo}
+          </span>
+        </div>
 
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
-                Aktif Sınıf: <span className="text-emerald-700 underline decoration-emerald-300">{activeClassItem.name}</span>
-              </h3>
-              <span className="px-2 py-0.5 rounded-md bg-white border border-gray-200 text-xs font-bold text-gray-700 shadow-2xs">
-                {activeClassItem.school_name}
-              </span>
-            </div>
+        <div className="flex items-center gap-2">
+          <span className="px-3 py-1 rounded-xl bg-white border border-emerald-200 text-xs font-bold text-emerald-950 shadow-2xs flex items-center gap-1.5">
+            <School size={14} className="text-emerald-600" />
+            <span>{activeClassItem.school_name}</span>
+          </span>
+          <span className="px-2.5 py-1 rounded-xl bg-emerald-100/80 text-emerald-900 text-xs font-bold">
+            {activeClassItem.grade_level}
+          </span>
+        </div>
+      </div>
 
-            <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs text-gray-700 font-medium">
-              <div className="flex items-center gap-1.5 bg-white/80 backdrop-blur-xs px-3 py-1.5 rounded-xl border border-emerald-100 shadow-2xs">
-                <span className="text-gray-400">Öğretmen:</span>
-                <span className="font-extrabold text-gray-900">{activeClassItem.teacher_name}</span>
-              </div>
-              <div className="flex items-center gap-1.5 bg-white/80 backdrop-blur-xs px-3 py-1.5 rounded-xl border border-emerald-100 shadow-2xs">
-                <span className="text-gray-400">Veli:</span>
-                <span className="font-bold text-gray-900">Ebru & Uğur UĞURLU</span>
-              </div>
-              <div className="flex items-center gap-1.5 bg-white/80 backdrop-blur-xs px-3 py-1.5 rounded-xl border border-emerald-100 shadow-2xs">
-                <span className="text-gray-400">Mevcut:</span>
-                <span className="font-bold text-gray-900">30 Öğrenci (Sınıf Listesi)</span>
-              </div>
-            </div>
+      {/* Middle Row: Active Class & Action Buttons */}
+      <div className="py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">
+            Seçili Sınıfınız
+          </span>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h3 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
+              {activeClassItem.name}
+            </h3>
+            <span className="px-2.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-extrabold">
+              Aktif Şube
+            </span>
           </div>
         </div>
 
-        {/* Right Actions */}
+        {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-2.5 shrink-0">
           <button
             type="button"
             onClick={() => setIsOpen(true)}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs hover:shadow-md cursor-pointer shrink-0"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm hover:shadow-md cursor-pointer shrink-0"
           >
             <RefreshCw size={15} />
             <span>Sınıfımı Değiştir (58 Şube)</span>
@@ -191,19 +190,39 @@ export default function DemoClassSwitcher({
 
           <Link
             href={`/orgs/${activeClassItem.school_slug}/boards`}
-            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 bg-white hover:bg-gray-50 border border-emerald-200 text-emerald-950 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
+            className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 bg-white hover:bg-emerald-50 border border-emerald-200 text-emerald-950 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-2xs cursor-pointer shrink-0"
           >
-            <BookOpen size={14} className="text-emerald-600" />
+            <BookOpen size={15} className="text-emerald-600" />
             <span>Ders Panoları</span>
           </Link>
 
           <Link
             href={`/orgs/${activeClassItem.school_slug}/dash/assignments`}
-            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 bg-white hover:bg-gray-50 border border-emerald-200 text-emerald-950 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer"
+            className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 bg-white hover:bg-emerald-50 border border-emerald-200 text-emerald-950 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-2xs cursor-pointer shrink-0"
           >
-            <ClipboardList size={14} className="text-emerald-600" />
+            <ClipboardList size={15} className="text-emerald-600" />
             <span>Ödevlerim (3)</span>
           </Link>
+        </div>
+      </div>
+
+      {/* Bottom Row: Detailed Info Chips with whitespace-nowrap so they never squash */}
+      <div className="pt-4 border-t border-emerald-200/70 flex flex-wrap items-center gap-2.5 text-xs text-gray-700">
+        <div className="inline-flex items-center gap-1.5 bg-white/95 px-3 py-1.5 rounded-xl border border-emerald-200 shadow-2xs whitespace-nowrap">
+          <span className="text-gray-400 font-medium">Öğretmen:</span>
+          <span className="font-extrabold text-gray-900">{activeClassItem.teacher_name}</span>
+        </div>
+        <div className="inline-flex items-center gap-1.5 bg-white/95 px-3 py-1.5 rounded-xl border border-emerald-200 shadow-2xs whitespace-nowrap">
+          <span className="text-gray-400 font-medium">Veliler:</span>
+          <span className="font-bold text-gray-900">Ebru & Uğur UĞURLU</span>
+        </div>
+        <div className="inline-flex items-center gap-1.5 bg-white/95 px-3 py-1.5 rounded-xl border border-emerald-200 shadow-2xs whitespace-nowrap">
+          <span className="text-gray-400 font-medium">Sınıf Mevcudu:</span>
+          <span className="font-bold text-gray-900">30 Öğrenci</span>
+        </div>
+        <div className="inline-flex items-center gap-1.5 bg-white/95 px-3 py-1.5 rounded-xl border border-emerald-200 shadow-2xs whitespace-nowrap">
+          <span className="text-gray-400 font-medium">Katılım Kodu:</span>
+          <span className="font-mono font-bold text-emerald-800">{activeClassItem.join_code}</span>
         </div>
       </div>
 

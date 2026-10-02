@@ -42,6 +42,7 @@ import { changeLanguage } from '@/lib/i18n'
 import JoinClassModal from '@components/Dashboard/Classrooms/JoinClassModal'
 import TcKimlikModal from '@components/Objects/TcKimlikModal'
 import DemoClassSwitcher from '@components/Objects/DemoClassSwitcher'
+import { SCHOOL_ORGS } from '@services/demo/schoolDirectory'
 import { getMyClasses } from '@services/usergroups/usergroups'
 import { asArray } from '@services/utils/ts/requests'
 import { CopyrightFooter } from '@components/Footers/LegalFooters'
@@ -122,30 +123,38 @@ function HomeClient() {
     }
   }, [isLoading, isAuthenticated, router])
 
+  // Fallback organizations: API -> session roles -> default SCHOOL_ORGS
+  const displayOrgs = useMemo(() => {
+    if (Array.isArray(orgs) && orgs.length > 0) return orgs
+    const sessionOrgs = roles?.map((r: any) => r.org).filter(Boolean)
+    if (sessionOrgs && sessionOrgs.length > 0) return sessionOrgs
+    return SCHOOL_ORGS
+  }, [orgs, roles])
+
   // A brand-new staff user has no orgs yet — send them to create their first org.
   // A brand-new student is prompted to join a class by code instead.
   useEffect(() => {
-    if (isAuthenticated && Array.isArray(orgs) && orgs.length === 0) {
+    if (isAuthenticated && Array.isArray(orgs) && orgs.length === 0 && !displayOrgs?.length) {
       if (!isStudent) {
         router.replace('/new')
       } else {
         setIsJoinClassOpen(true)
       }
     }
-  }, [isAuthenticated, orgs, router, isStudent])
+  }, [isAuthenticated, orgs, router, isStudent, displayOrgs])
 
   // Filter organizations by search
   const filteredOrgs = useMemo(() => {
-    if (!Array.isArray(orgs)) return []
-    if (!searchQuery.trim()) return orgs
+    if (!Array.isArray(displayOrgs)) return []
+    if (!searchQuery.trim()) return displayOrgs
     const q = searchQuery.toLowerCase().trim()
-    return orgs.filter(
+    return displayOrgs.filter(
       (o: any) =>
         o?.name?.toLowerCase().includes(q) ||
         o?.slug?.toLowerCase().includes(q) ||
         o?.description?.toLowerCase().includes(q)
     )
-  }, [orgs, searchQuery])
+  }, [displayOrgs, searchQuery])
 
   const currentLangCode = (i18n.language || 'tr').split('-')[0].toUpperCase()
 
@@ -202,7 +211,7 @@ function HomeClient() {
 
         {/* Top Navbar */}
         <header className="relative z-10 w-full border-b border-gray-200/80 bg-white/80 backdrop-blur-md sticky top-0">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
             {/* Logo */}
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gray-950 text-white flex items-center justify-center shadow-xs">
@@ -320,9 +329,9 @@ function HomeClient() {
         </header>
 
         {/* Main Content Area */}
-        <main className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 pt-8 pb-12">
+        <main className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pt-8 pb-16">
           {/* Hero Welcome Card */}
-          <div className="bg-white rounded-2xl border border-gray-200/90 shadow-xs p-6 sm:p-8 mb-6">
+          <div className="bg-white rounded-3xl border border-gray-200/90 shadow-xs p-6 sm:p-8 mb-8">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2 mb-2">
@@ -336,7 +345,7 @@ function HomeClient() {
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
                   {profileInfo.title}
                 </h1>
-                <p className="mt-1.5 text-sm text-gray-700 max-w-xl leading-relaxed">
+                <p className="mt-1.5 text-sm text-gray-700 max-w-2xl leading-relaxed">
                   {profileInfo.subtitle}
                 </p>
               </div>
@@ -366,39 +375,39 @@ function HomeClient() {
 
             {/* Student-Only Banner: Sınıf Seçici & Katılım Koduyla Katıl */}
             {isStudent && (
-              <div className="mt-6 pt-6 border-t border-gray-100 space-y-4">
+              <div className="mt-6 pt-6 border-t border-gray-100 space-y-5">
                 {/* 58 Classrooms Switcher specifically for Demo Student */}
                 <DemoClassSwitcher />
 
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-gradient-to-r from-emerald-50/80 via-emerald-50/40 to-teal-50/60 border border-emerald-200/80">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-emerald-50/90 via-emerald-50/50 to-teal-50/70 border border-emerald-200 shadow-2xs">
                   <div className="flex items-center gap-3.5">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                      <KeyRound size={20} />
+                    <div className="w-11 h-11 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                      <KeyRound size={22} />
                     </div>
                     <div>
-                      <h2 className="text-sm font-bold text-emerald-950">
+                      <h2 className="text-sm sm:text-base font-bold text-emerald-950">
                         Sınıf Katılım Kodu ile Katıl & Kimlik Doğrulama
                       </h2>
-                      <p className="text-xs text-emerald-700/90 mt-0.5">
+                      <p className="text-xs sm:text-sm text-emerald-700/90 mt-0.5">
                         Öğretmeninizin size ilettiği 6 haneli kod ile sınıfınıza hemen katılın veya T.C. Kimlik ile kütük kaydınızı sorgulayın.
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2.5 shrink-0">
                     <button
                       type="button"
                       onClick={() => setIsTcModalOpen(true)}
-                      className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 bg-white border border-emerald-300 hover:bg-emerald-50 text-emerald-900 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer shrink-0"
+                      className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white border border-emerald-300 hover:bg-emerald-50 text-emerald-900 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-2xs cursor-pointer shrink-0 whitespace-nowrap"
                     >
-                      <Shield size={14} className="text-emerald-700" />
+                      <Shield size={15} className="text-emerald-700" />
                       <span>T.C. Kimlik Sorgula</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setIsJoinClassOpen(true)}
-                      className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs hover:shadow-sm cursor-pointer shrink-0"
+                      className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow-xs hover:shadow-sm cursor-pointer shrink-0 whitespace-nowrap"
                     >
-                      <KeyRound size={14} />
+                      <KeyRound size={15} />
                       <span>Sınıf Kodu Gir</span>
                     </button>
                   </div>
@@ -411,18 +420,18 @@ function HomeClient() {
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
               <div className="flex items-center gap-2.5">
-                <h2 className="text-base font-bold text-gray-900">
+                <h2 className="text-base sm:text-lg font-black text-gray-900">
                   {isAdmin ? 'Yönetiminizdeki Okullar' : isTeacher ? 'Görevli Olduğunuz Okullar' : 'Kayıtlı Okullarınız'}
                 </h2>
-                {Array.isArray(orgs) && (
-                  <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-gray-200/80 text-gray-700">
-                    {orgs.length}
+                {Array.isArray(displayOrgs) && (
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+                    {displayOrgs.length} Okul
                   </span>
                 )}
               </div>
 
               {/* Search Filter when multiple orgs exist */}
-              {Array.isArray(orgs) && orgs.length > 2 && (
+              {Array.isArray(displayOrgs) && displayOrgs.length > 2 && (
                 <div className="relative w-full sm:w-64">
                   <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input
@@ -437,17 +446,17 @@ function HomeClient() {
             </div>
 
             {/* Loading skeletons */}
-            {(isLoading || (isAuthenticated && orgsLoading)) && (
+            {(isLoading || (isAuthenticated && orgsLoading && !displayOrgs?.length)) && (
               <div className="space-y-3">
-                {[0, 1, 2].map((i) => (
+                {[0, 1].map((i) => (
                   <div
                     key={i}
-                    className="h-20 w-full rounded-2xl bg-white border border-gray-200/60 p-4 animate-pulse flex items-center gap-4"
+                    className="h-24 w-full rounded-2xl bg-white border border-gray-200/60 p-5 animate-pulse flex items-center gap-4"
                   >
-                    <div className="w-12 h-12 rounded-xl bg-gray-100 shrink-0" />
+                    <div className="w-14 h-14 rounded-2xl bg-gray-100 shrink-0" />
                     <div className="flex-1 space-y-2">
-                      <div className="h-4 w-40 bg-gray-100 rounded" />
-                      <div className="h-3 w-64 bg-gray-50 rounded" />
+                      <div className="h-5 w-48 bg-gray-100 rounded" />
+                      <div className="h-3 w-72 bg-gray-50 rounded" />
                     </div>
                   </div>
                 ))}
@@ -455,7 +464,7 @@ function HomeClient() {
             )}
 
             {/* Empty States */}
-            {!orgsLoading && isAuthenticated && Array.isArray(orgs) && orgs.length === 0 && (
+            {!orgsLoading && isAuthenticated && displayOrgs.length === 0 && (
               <div className="flex flex-col items-center justify-center py-12 px-6 bg-white rounded-2xl border border-gray-200/80 shadow-xs text-center">
                 <div className="w-14 h-14 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 mb-3">
                   <School size={28} />
@@ -492,8 +501,8 @@ function HomeClient() {
             )}
 
             {/* School Cards Grid */}
-            {!orgsLoading && filteredOrgs.length > 0 && (
-              <div className="space-y-3">
+            {filteredOrgs.length > 0 && (
+              <div className="grid grid-cols-1 gap-4">
                 {filteredOrgs.map((org: any) => (
                   <OrgRow
                     key={org.id ?? org.slug}
@@ -508,7 +517,7 @@ function HomeClient() {
             )}
 
             {/* No search results */}
-            {!orgsLoading && Array.isArray(orgs) && orgs.length > 0 && filteredOrgs.length === 0 && (
+            {displayOrgs.length > 0 && filteredOrgs.length === 0 && (
               <div className="p-8 text-center bg-white rounded-2xl border border-gray-200 text-xs text-gray-500">
                 Aramanızla eşleşen bir okul bulunamadı.
               </div>
@@ -639,96 +648,98 @@ function OrgRow({
   const teacherCount = isPrimary ? '28 Sınıf Öğretmeni' : '30 Branş Öğretmeni'
 
   return (
-    <div className="relative flex flex-col p-4 sm:p-5 bg-white rounded-2xl border border-gray-200/90 shadow-xs hover:shadow-md hover:border-gray-300 transition-all group">
+    <div className="relative flex flex-col p-5 sm:p-6 bg-white rounded-3xl border-2 border-gray-200/90 shadow-sm hover:shadow-md hover:border-emerald-300 transition-all group">
       {/* Clickable Area */}
-      <Link href={destinationHref} className="flex items-center w-full min-w-0">
-        {/* School Logo */}
-        <div className="w-13 h-13 rounded-2xl bg-gray-50 border border-gray-200/80 overflow-hidden flex items-center justify-center shrink-0 shadow-xs group-hover:border-gray-300 transition-colors">
-          <OrgSquareLogo
-            org={org}
-            fallback={
-              <div className="w-full h-full bg-gradient-to-br from-gray-900 to-gray-700 flex items-center justify-center text-white font-extrabold text-lg">
-                {initial}
-              </div>
-            }
-          />
-        </div>
-
-        {/* School Details */}
-        <div className="ms-4 flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap min-w-0">
-            <span className="font-bold text-gray-900 text-base tracking-tight truncate group-hover:text-black transition-colors">
-              {org.name}
-            </span>
-            <span className="shrink-0 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200/80 px-2 py-0.5 text-[10px] font-bold">
-              {gradeLabel}
-            </span>
-            {isAdmin && (
-              <span className="shrink-0 rounded-md bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 text-[10px] font-bold">
-                Yönetici Erişimi
-              </span>
-            )}
+      <Link href={destinationHref} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full min-w-0">
+        <div className="flex items-center min-w-0">
+          {/* School Logo */}
+          <div className="w-14 h-14 rounded-2xl bg-gray-50 border border-gray-200 overflow-hidden flex items-center justify-center shrink-0 shadow-xs group-hover:border-emerald-400 transition-colors">
+            <OrgSquareLogo
+              org={org}
+              fallback={
+                <div className="w-full h-full bg-gradient-to-br from-emerald-950 via-teal-900 to-gray-900 flex items-center justify-center text-white font-black text-xl">
+                  {initial}
+                </div>
+              }
+            />
           </div>
 
-          {/* Subtitle / Classes description */}
-          {isStudent && myClasses && myClasses.length > 0 ? (
-            <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-              <span className="text-[11px] font-semibold text-gray-600">Kayıtlı Sınıfınız:</span>
-              {myClasses.map((cls: any) => (
-                <span
-                  key={cls.id}
-                  className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-lg"
-                >
-                  <GraduationCap size={12} className="text-emerald-600" />
-                  <span>{cls.name}</span>
+          {/* School Details */}
+          <div className="ms-4 flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap min-w-0">
+              <span className="font-black text-gray-900 text-lg tracking-tight truncate group-hover:text-emerald-900 transition-colors">
+                {org.name}
+              </span>
+              <span className="shrink-0 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 text-xs font-black">
+                {gradeLabel}
+              </span>
+              {isAdmin && (
+                <span className="shrink-0 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 px-2.5 py-0.5 text-xs font-bold">
+                  Yönetici Erişimi
                 </span>
-              ))}
+              )}
             </div>
-          ) : org.description ? (
-            <p className="text-xs text-gray-600 truncate mt-1">{org.description}</p>
-          ) : (
-            <p className="text-xs text-gray-600 font-mono truncate mt-1">{org.slug}</p>
-          )}
+
+            {/* Subtitle / Classes description */}
+            {isStudent && myClasses && myClasses.length > 0 ? (
+              <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                <span className="text-xs font-semibold text-gray-600">Kayıtlı Sınıfınız:</span>
+                {myClasses.map((cls: any) => (
+                  <span
+                    key={cls.id}
+                    className="inline-flex items-center gap-1 text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-lg"
+                  >
+                    <GraduationCap size={13} className="text-emerald-600" />
+                    <span>{cls.name}</span>
+                  </span>
+                ))}
+              </div>
+            ) : org.description ? (
+              <p className="text-xs sm:text-sm text-gray-600 truncate mt-1">{org.description}</p>
+            ) : (
+              <p className="text-xs text-gray-500 font-mono truncate mt-1">{org.slug}</p>
+            )}
+          </div>
         </div>
 
         {/* Action button indicator */}
-        <div className="ms-3 hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-50 border border-gray-200/60 text-xs font-bold text-gray-700 group-hover:bg-gray-900 group-hover:text-white group-hover:border-transparent transition-all shrink-0">
-          <span>{isAdmin || isTeacher ? 'Yönetim Paneli' : 'Giriş Yap'}</span>
-          <ArrowRight size={13} className="group-hover:translate-x-0.5 transition-transform" />
+        <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-700 text-white group-hover:bg-emerald-800 text-xs sm:text-sm font-bold shadow-xs transition-all shrink-0 self-start sm:self-center">
+          <span>{isAdmin || isTeacher ? 'Yönetim Paneline Git' : 'Okula Giriş Yap'}</span>
+          <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform" />
         </div>
       </Link>
 
       {/* Sub-navigation Chips */}
-      <div className="mt-3 pt-3 border-t border-gray-100 flex flex-wrap items-center gap-2">
+      <div className="mt-4 pt-3.5 border-t border-gray-100 flex flex-wrap items-center gap-2">
         <Link
           href={`/orgs/${org.slug}/dash/classrooms`}
-          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold transition-colors cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold transition-colors cursor-pointer"
         >
-          <span>{branchCount}</span>
+          <span>📚 {branchCount}</span>
         </Link>
         <Link
           href={`/orgs/${org.slug}/dash/teachers`}
-          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold transition-colors cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold transition-colors cursor-pointer"
         >
-          <span>{teacherCount}</span>
+          <span>👨‍🏫 {teacherCount}</span>
         </Link>
         <Link
           href={`/orgs/${org.slug}/dash/assignments`}
-          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition-colors cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition-colors cursor-pointer"
         >
-          <span>Ödevler & Takip</span>
+          <span>📝 Ödevler & Takip</span>
         </Link>
         <Link
           href={`/orgs/${org.slug}/boards`}
-          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-cyan-50 hover:bg-cyan-100 text-cyan-800 text-xs font-bold transition-colors cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-50 hover:bg-cyan-100 text-cyan-800 text-xs font-bold transition-colors cursor-pointer"
         >
-          <span>Akıllı Tahtalar</span>
+          <span>🖊️ Akıllı Tahtalar</span>
         </Link>
         <Link
           href={`/orgs/${org.slug}/dash/students`}
-          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold transition-colors cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold transition-colors cursor-pointer"
         >
-          <span>Öğrenci Kütüğü</span>
+          <span>👥 Öğrenci Kütüğü</span>
         </Link>
       </div>
 
