@@ -218,8 +218,9 @@ export const config = {
      * 7. /embed (activity embeds)
      * 8. /ingest (PostHog reverse proxy — must reach the next.config rewrite
      *    untouched; otherwise the middleware mis-routes it and ingestion 404s)
+     * 9. /games (inside /public)
      */
-    '/((?!api|_next|fonts|umami|ingest|examples|embed|monitoring|[\\w-]+\\.\\w+).*)',
+    '/((?!api|_next|fonts|games|umami|ingest|examples|embed|monitoring|[\\w-]+\\.\\w+).*)',
     '/sitemap.xml',
     '/robots.txt',
     '/payments/stripe/connect/oauth',
@@ -228,8 +229,14 @@ export const config = {
 }
 
 export default async function proxy(req: NextRequest) {
-  const instance = await getInstanceInfo()
   const { pathname, search } = req.nextUrl
+
+  // Pass-through static games files in /public/games/
+  if (pathname.startsWith('/games/') && pathname.includes('.')) {
+    return NextResponse.next()
+  }
+
+  const instance = await getInstanceInfo()
   const fullhost = req.headers.get('host')
 
   // SEO: canonicalize mixed-case top-level route names (/Login → /login). Scoped

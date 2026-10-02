@@ -1,0 +1,87 @@
+services:
+  # ==============================================================================
+  # 1. PostgreSQL 16 + pgvector (Otomatik Veritabanı Geri Yüklemeli)
+  # ==============================================================================
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: learnhouse_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-learnhouse}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-learnhouse}
+      POSTGRES_DB: ${POSTGRES_DB:-learnhouse}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/learnhouse_dump.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-learnhouse} -d ${POSTGRES_DB:-learnhouse}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ==============================================================================
+  # 2. Redis Cache & Queue
+  # ==============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: learnhouse_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ==============================================================================
+  # 3. LearnHouze v2.0 All-In-One Application (Web + API + Collab + Nginx)
+  # ==============================================================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: learnhouse_app
+    restart: unless-stopped
+    ports:
+      - "80:80"        # Nginx (Ana Web Portu)
+      - "3000:3000"    # Next.js Portu
+      - "1348:9000"    # FastAPI Backend Portu
+      - "4000:4000"    # Hocuspocus Collab WebSocket Portu
+    environment:
+      # Veritabanı ve Redis
+      LEARNHOUSE_SQL_CONNECTION_STRING: postgresql+asyncpg://${POSTGRES_USER:-learnhouse}:${POSTGRES_PASSWORD:-learnhouse}@postgres:5432/${POSTGRES_DB:-learnhouse}
+      LEARNHOUSE_REDIS_CONNECTION_STRING: redis://redis:6379/0
+      LEARNHOUSE_REDIS_URL: redis://redis:6379/0
+
+      # Alan adı ve Tenancy
+      LEARNHOUSE_DOMAIN: ${SERVER_DOMAIN:-localhost}
+      LEARNHOUSE_FRONTEND_DOMAIN: ${SERVER_DOMAIN:-localhost}
+      LEARNHOUSE_COOKIE_DOMAIN: ${COOKIE_DOMAIN:-.localhost}
+      LEARNHOUSE_TENANCY: multi
+      LEARNHOUSE_SAAS: "true"
+      LEARNHOUSE_DEVELOPMENT_MODE: "false"
+
+      # Demo / Okul Yapılandırması
+      LEARNHOUSE_DEMO_ENABLED: "1"
+      LEARNHOUSE_DEMO_SLUG: "demo"
+      LEARNHOUSE_DEMO_NO_SCHEDULER: "1"
+      LEARNHOUSE_INITIAL_ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@oxonom.com}
+      LEARNHOUSE_INITIAL_ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Ugur2803*}
+
+      # Güvenlik Anahtarları
+      LEARNHOUSE_AUTH_JWT_SECRET_KEY: ${JWT_SECRET:-oq_1_U-JOMIt5SWNQrcEq57N9SupBRuQURn80FL32VA}
+      COLLAB_INTERNAL_KEY: ${COLLAB_KEY:-KDyIqH_uBoYFa9gLSmTE3eBGXnPwzSpFN7Hrt2h-hK0}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  redisdata:

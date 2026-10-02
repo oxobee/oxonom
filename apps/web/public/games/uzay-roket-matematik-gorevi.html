@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Uzay Roketi Matematik</title>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<style>
+  body { background: #030712; color: #fff; font-family: system-ui, sans-serif; overflow: hidden; }
+  canvas { background: radial-gradient(circle at center, #111827 0%, #030712 100%); }
+</style>
+</head>
+<body class="flex flex-col items-center justify-between min-h-screen p-3 select-none">
+  <div class="w-full max-w-md flex items-center justify-between z-10">
+    <div class="flex items-center gap-2">
+      <span class="text-2xl">🚀</span>
+      <div>
+        <h1 class="text-sm font-black text-amber-400">Uzay Roketi Matematik</h1>
+        <p class="text-[10px] text-slate-400">Doğru cevabı vur, roketi koru!</p>
+      </div>
+    </div>
+    <div class="flex gap-2">
+      <div class="bg-slate-900/80 px-2.5 py-1 rounded-xl border border-slate-800 text-center">
+        <span class="text-[9px] text-slate-400 block font-bold">PUAN</span>
+        <span id="score" class="text-sm font-black text-emerald-400">0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Question Banner -->
+  <div class="w-full max-w-sm bg-slate-900/90 border border-slate-700 rounded-2xl p-3 text-center my-2 shadow-xl">
+    <span class="text-xs text-indigo-400 font-bold block mb-1">Gelen Soru:</span>
+    <span id="mathQuestion" class="text-2xl font-black text-white">7 + 8 = ?</span>
+  </div>
+
+  <!-- Options Grid -->
+  <div id="options" class="grid grid-cols-3 gap-2.5 w-full max-w-sm mb-4 z-10">
+    <!-- Buttons -->
+  </div>
+
+  <div id="feedback" class="h-6 text-xs font-bold text-center"></div>
+
+  <script>
+    let score = 0;
+    let currentAns = 0;
+
+    function nextQuestion() {
+      const ops = ['+', '-', '*'];
+      const op = ops[Math.floor(Math.random() * ops.length)];
+      let a = Math.floor(Math.random() * 12) + 1;
+      let b = Math.floor(Math.random() * 12) + 1;
+
+      if (op === '+') {
+        currentAns = a + b;
+        document.getElementById('mathQuestion').textContent = `${a} + ${b} = ?`;
+      } else if (op === '-') {
+        if (a < b) [a, b] = [b, a];
+        currentAns = a - b;
+        document.getElementById('mathQuestion').textContent = `${a} - ${b} = ?`;
+      } else {
+        a = Math.floor(Math.random() * 9) + 2;
+        b = Math.floor(Math.random() * 9) + 2;
+        currentAns = a * b;
+        document.getElementById('mathQuestion').textContent = `${a} × ${b} = ?`;
+      }
+
+      const choices = [currentAns];
+      while (choices.length < 3) {
+        const offset = (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 5) + 1);
+        const wrong = Math.max(0, currentAns + offset);
+        if (!choices.includes(wrong)) choices.push(wrong);
+      }
+      choices.sort(() => Math.random() - 0.5);
+
+      const optsContainer = document.getElementById('options');
+      optsContainer.innerHTML = '';
+      choices.forEach(ch => {
+        const btn = document.createElement('button');
+        btn.className = 'py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-black text-xl shadow-lg border border-indigo-400/30 transition cursor-pointer';
+        btn.textContent = ch;
+        btn.onclick = () => check(ch);
+        optsContainer.appendChild(btn);
+      });
+    }
+
+    function check(val) {
+      const fb = document.getElementById('feedback');
+      if (val === currentAns) {
+        score += 10;
+        document.getElementById('score').textContent = score;
+        fb.textContent = '✨ Mükemmel! Roket hızlandı!';
+        fb.className = 'h-6 text-xs font-bold text-center text-emerald-400';
+      } else {
+        fb.textContent = '❌ Dikkat et, doğru cevap: ' + currentAns;
+        fb.className = 'h-6 text-xs font-bold text-center text-rose-400';
+      }
+      setTimeout(nextQuestion, 700);
+    }
+
+    window.onload = nextQuestion;
+  </script>
+</body>
+</html>

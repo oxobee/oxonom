@@ -8,6 +8,7 @@
 # Reads the same generated .demo-secrets as the API, so the JWT secret and
 # internal key match without either file carrying signing material.
 set -euo pipefail
+trap '' HUP
 cd "$(dirname "$0")"
 
 SECRETS_FILE="../../.demo-secrets"
@@ -27,4 +28,4 @@ export LEARNHOUSE_API_URL="http://lvh.me:1348"
 # the default and would point at the wrong Redis anywhere but here.
 export LEARNHOUSE_REDIS_URL="redis://localhost:6379/0"
 
-exec bun run start
+exec bun x tsx src/index.ts

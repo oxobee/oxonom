@@ -15,6 +15,7 @@
 # every deployment that copies this file shares, however clearly it is labelled
 # dev-only.
 set -euo pipefail
+trap '' HUP
 cd "$(dirname "$0")"
 
 SECRETS_FILE="../../.demo-secrets"
@@ -49,6 +50,7 @@ export LEARNHOUSE_SAAS=true
 export LEARNHOUSE_DEMO_ENABLED=1
 export LEARNHOUSE_DEMO_SLUG=demo
 export LEARNHOUSE_DEMO_REFRESH_MINUTES=10
+export LEARNHOUSE_DEMO_NO_SCHEDULER=1
 
 export LEARNHOUSE_INITIAL_ADMIN_EMAIL=${LEARNHOUSE_INITIAL_ADMIN_EMAIL:-admin@oxonom.com}
 

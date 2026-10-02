@@ -34,13 +34,13 @@ Tüm servisleri tek bir komutla başlatıp durdurabilirsiniz:
 
 - **Başlatmak için:**
   ```bash
-  cd ~/Desktop/eduv2
+  cd ~/Desktop/LearnHouze_v2.0
   ./start.sh
   ```
 - **Durdurmak için:**
   ```bash
-  cd ~/Desktop/eduv2
+  cd ~/Desktop/LearnHouze_v2.0
   ./stop.sh
   ```
 
-Log kayıtları `~/Desktop/eduv2/logs/` klasöründe tutulmaktadır.
+Log kayıtları `logs/` klasöründe tutulmaktadır.
