@@ -52,10 +52,10 @@ function LandingClassic({ orgslug, org_id }: LandingClassicProps) {
   const user = session?.data?.user
 
   const { data: boardsData, isLoading: boardsLoading } = useBoards(Number(org_id))
-  const boards: any[] = (boardsData ?? []).filter((b: any) => b.public !== false)
+  const boards: any[] = Array.isArray(boardsData) ? boardsData.filter((b: any) => b.public !== false) : []
 
   const { data: playgroundsData } = usePlaygrounds(Number(org_id))
-  const playgrounds: any[] = playgroundsData ?? []
+  const playgrounds: any[] = Array.isArray(playgroundsData) ? playgroundsData : []
 
   // 6 Claude Educational Modules
   const featuredModules = [
@@ -152,8 +152,11 @@ function LandingClassic({ orgslug, org_id }: LandingClassicProps) {
   ]
 
   const getModuleLink = (matchName: string) => {
+    if (!Array.isArray(playgrounds)) {
+      return getUriWithOrg(orgslug, '/playgrounds')
+    }
     const match = playgrounds.find((p: any) =>
-      p.name?.toLowerCase().includes(matchName.toLowerCase())
+      p?.name?.toLowerCase().includes(matchName.toLowerCase())
     )
     if (match) {
       return getUriWithOrg(orgslug, `/playground/${match.playground_uuid}`)

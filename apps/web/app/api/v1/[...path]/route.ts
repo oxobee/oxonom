@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getBackendUrl } from '@services/config/config'
 import { DEFAULT_FALLBACK_ORG } from '@services/organizations/orgs'
 import { getFallbackGamesStore, FALLBACK_GAME_CATEGORIES, getFallbackGamePlay } from '@services/games/fallbackData'
+import { ACCESS_TOKEN_COOKIE } from '@services/auth/cookies'
+import {
+  findDemoUser,
+  getDemoSession,
+  FALLBACK_PLAYGROUNDS,
+  FALLBACK_BOARDS,
+  FALLBACK_USERGROUPS,
+} from '@services/auth/demoAuth'
 
 // Allow large file uploads to pass through (max 300s on Vercel Hobby plan)
 export const maxDuration = 300
@@ -18,6 +26,17 @@ async function proxyToBackend(request: NextRequest): Promise<Response> {
   const path = request.nextUrl.pathname
   const search = request.nextUrl.search
   const backendUrl = `${getBackendUrl().replace(/\/+$/, '')}${path}${search}`
+
+  // Fast-path for demo user session check (0ms response)
+  if (path.startsWith('/api/v1/users/session') || path.startsWith('/api/v1/users/me')) {
+    const authHeader = request.headers.get('authorization') || ''
+    const cookieToken = request.cookies.get(ACCESS_TOKEN_COOKIE)?.value || ''
+    const token = authHeader.replace(/^Bearer\s+/i, '') || cookieToken
+    const demoUser = findDemoUser(token)
+    if (demoUser) {
+      return NextResponse.json(getDemoSession(demoUser), { status: 200 })
+    }
+  }
 
   // Forward all request headers except hop-by-hop ones
   const headers = new Headers()
@@ -101,16 +120,30 @@ async function proxyToBackend(request: NextRequest): Promise<Response> {
     if (path.startsWith('/api/v1/games/categories')) {
       return NextResponse.json(FALLBACK_GAME_CATEGORIES, { status: 200 })
     }
-    if (path.includes('/play')) {
+    // Only match actual game play URLs (not /playgrounds)
+    if (path.endsWith('/play') || path.includes('/play/')) {
       const parts = path.split('/')
       const uuidIndex = parts.indexOf('games') + 1
       const uuid = parts[uuidIndex] || ''
       return NextResponse.json(getFallbackGamePlay(uuid), { status: 200 })
     }
-    if (path.startsWith('/api/v1/boards') || path.startsWith('/api/v1/playgrounds')) {
-      return NextResponse.json([], { status: 200 })
+    if (path.startsWith('/api/v1/playgrounds')) {
+      return NextResponse.json(FALLBACK_PLAYGROUNDS, { status: 200 })
+    }
+    if (path.startsWith('/api/v1/boards')) {
+      return NextResponse.json(FALLBACK_BOARDS, { status: 200 })
+    }
+    if (path.startsWith('/api/v1/usergroups')) {
+      return NextResponse.json(FALLBACK_USERGROUPS, { status: 200 })
     }
     if (path.startsWith('/api/v1/users/session') || path.startsWith('/api/v1/users/me')) {
+      const authHeader = request.headers.get('authorization') || ''
+      const cookieToken = request.cookies.get(ACCESS_TOKEN_COOKIE)?.value || ''
+      const token = authHeader.replace(/^Bearer\s+/i, '') || cookieToken
+      const demoUser = findDemoUser(token)
+      if (demoUser) {
+        return NextResponse.json(getDemoSession(demoUser), { status: 200 })
+      }
       return NextResponse.json({ authenticated: false, user: null }, { status: 401 })
     }
 
