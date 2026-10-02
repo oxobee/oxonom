@@ -91,7 +91,7 @@ const nextConfig = {
   // multi-tenant run (DEMO_STACK.md) serves orgs from <slug>.lvh.me, so allow
   // that family of hosts. Dev-only; ignored by `next build`/`next start`.
   allowedDevOrigins: ['lvh.me', '*.lvh.me'],
-  output: 'standalone',
+  output: process.env.VERCEL ? undefined : 'standalone',
   images: {
     remotePatterns: [
       {
@@ -168,19 +168,21 @@ if (process.env.NODE_ENV === 'development') {
   )
 }
 
-// Always wrap with Sentry — DSN is resolved at runtime, not build time
-module.exports = withSentryConfig(nextConfig, {
-  org: process.env.SENTRY_ORG,
-  project: process.env.SENTRY_PROJECT,
-  silent: true,
-  disableLogger: true,
-  tunnelRoute: "/monitoring",
-  sourcemaps: {
-    disable: !process.env.SENTRY_ORG || !process.env.SENTRY_PROJECT,
-  },
-  bundleSizeOptimizations: {
-    excludeDebugStatements: true,
-    excludeReplayIframe: true,
-    excludeReplayShadowDom: true,
-  },
-});
+// Wrap with Sentry if SENTRY_AUTH_TOKEN is present and not building on Vercel without token
+module.exports = (process.env.VERCEL || !process.env.SENTRY_AUTH_TOKEN)
+  ? nextConfig
+  : withSentryConfig(nextConfig, {
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      silent: true,
+      disableLogger: true,
+      tunnelRoute: "/monitoring",
+      sourcemaps: {
+        disable: !process.env.SENTRY_ORG || !process.env.SENTRY_PROJECT,
+      },
+      bundleSizeOptimizations: {
+        excludeDebugStatements: true,
+        excludeReplayIframe: true,
+        excludeReplayShadowDom: true,
+      },
+    });
