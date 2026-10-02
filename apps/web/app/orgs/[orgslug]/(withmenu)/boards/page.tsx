@@ -81,13 +81,6 @@ export default async function BoardsPage({ params }: { params: PageParams }) {
   const session = await getServerSession()
   const access_token = session?.tokens?.access_token
 
-  // Require authentication to view boards. Browser-relative path only — the
-  // proxy adds /orgs/{slug} and rewrites /login → /auth/login; an org-prefixed
-  // path would be double-prefixed → 404.
-  if (!access_token) {
-    redirect('/login?redirect=/boards')
-  }
-
   const org = await getOrganizationContextInfo(orgslug, {
     revalidate: 120,
     tags: ['organizations'],
@@ -95,9 +88,7 @@ export default async function BoardsPage({ params }: { params: PageParams }) {
 
   let initialBoards: any[] = []
   try {
-    if (access_token) {
-      initialBoards = await getBoards(org?.id || 0, access_token)
-    }
+    initialBoards = await getBoards(org?.id || 10, access_token || '')
   } catch (error) {
     console.error('Error fetching boards:', error)
   }

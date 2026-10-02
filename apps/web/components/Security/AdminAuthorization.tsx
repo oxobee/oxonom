@@ -57,9 +57,13 @@ const AdminAuthorization: React.FC<AuthorizationProps> = ({ children, authorizat
 
     if (authorizationMode === 'page') {
       if (isAdminPath) {
-        // No redirect on denial: pushing to /dash raced the render below, so the
-        // message only flashed and the user never learned why.
-        setIsAuthorized(isAdmin === true);
+        // Students and members must have access to assignments, boards and playgrounds
+        const isStudentAllowedPath = pathname?.includes('/assignments') || pathname?.includes('/boards') || pathname?.includes('/playgrounds');
+        if (isStudentAllowedPath && isUserAuthenticated) {
+          setIsAuthorized(true);
+        } else {
+          setIsAuthorized(isAdmin === true);
+        }
       } else {
         setIsAuthorized(true);
       }

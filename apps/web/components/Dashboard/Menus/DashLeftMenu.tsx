@@ -326,8 +326,7 @@ function DashLeftMenu() {
 
       {/* Main Navigation - Vertically Centered */}
       <div className="flex-1 flex flex-col justify-center py-4 px-3">
-        <AdminAuthorization authorizationMode="component">
-          <div className="space-y-1">
+        <div className="space-y-1">
             {canManageOrg ? (
               /* =================================================== */
               /* OKUL YÖNETİMİ MENÜSÜ                                */
@@ -625,7 +624,6 @@ function DashLeftMenu() {
               </HoverMenu>
             )}
           </div>
-        </AdminAuthorization>
       </div>
 
       {/* Free-plan upgrade box — replaces the old full-width top banner.

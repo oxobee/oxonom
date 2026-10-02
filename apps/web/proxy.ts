@@ -350,12 +350,6 @@ export default async function proxy(req: NextRequest) {
   if (authPaths.includes(pathname)) {
     const hasSession = !!req.cookies.get('LH_session')?.value
 
-    // A logged-in user has no business on /login — bounce them to the hub (the
-    // page itself re-verifies, so this is a best-effort UX shortcut).
-    if (pathname === '/login' && hasSession) {
-      return NextResponse.redirect(new URL('/home', req.url))
-    }
-
     const resolved = await resolveTenant(req, instance)
 
     // `/signup` is NOT only a signup page: for a signed-in user on an org host

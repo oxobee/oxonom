@@ -50,14 +50,6 @@ const LoginClient = (props: LoginClientProps) => {
   // SSO counts only once it is actually configured for the org (ssoEnabled).
   const hasAlternativeMethods = googleAllowed || magicLoginAllowed || (ssoAllowed && ssoEnabled)
 
-  // A signed-in user has nothing to do on /login → bounce to the hub. The proxy
-  // does this best-effort, but pages must self-handle it too (mirrors signup.tsx).
-  // Guarded by !isSubmitting so a FRESH login (which flips the session to
-  // authenticated) doesn't race the onSubmit's own post-login navigation.
-  useEffect(() => {
-    if (isAuthenticated && !isSubmitting) router.replace('/home')
-  }, [isAuthenticated, isSubmitting, router])
-
   // Error state with type information
   const [error, setError] = useState('')
   const [errorType, setErrorType] = useState<string | null>(null)
@@ -455,7 +447,7 @@ const LoginClient = (props: LoginClientProps) => {
     formik.setFieldValue('password', password)
 
     const targetSlug = props.org?.slug || 'neclagorer'
-    const targetPath = role === 'student' ? `/orgs/${targetSlug}` : `/orgs/${targetSlug}/dash`
+    const targetPath = role === 'student' ? '/home' : `/orgs/${targetSlug}/dash`
 
     if (typeof document !== 'undefined') {
       document.cookie = `LH_org=${targetSlug}; path=/; max-age=2592000`

@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/query/keys'
-import { getOrganizationContextInfo, DEFAULT_FALLBACK_ORG } from '@services/organizations/orgs'
+import { getOrganizationContextInfo, DEFAULT_FALLBACK_ORG, getFallbackOrgForSlug } from '@services/organizations/orgs'
 import { useLHSession } from '@components/Contexts/LHSessionContext'
 import ErrorUI from '@components/Objects/StyledElements/Error/Error'
 
@@ -39,7 +39,7 @@ export function OrgProvider({
     enabled: !!orgslug,
   })
 
-  const org = fetchedOrg || DEFAULT_FALLBACK_ORG
+  const org = (fetchedOrg && fetchedOrg.slug !== 'default') ? fetchedOrg : getFallbackOrgForSlug(orgslug)
 
   const isOrgActive = useMemo(() => (org?.config?.config?.active ?? org?.config?.config?.general?.enabled) !== false, [org])
 

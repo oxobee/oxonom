@@ -35,10 +35,10 @@ export async function deleteOrganizationFromBackend(
 export const DEFAULT_FALLBACK_ORG = {
   id: 1,
   org_uuid: 'org_e6503d4f-caf3-4e73-bd09-bf9af570ffd9',
-  name: 'Atatürk Fen ve Anadolu Lisesi',
-  slug: 'default',
-  description: 'Oxonom Edu Dijital Eğitim & Akıllı Okul Portalı',
-  about: 'Atatürk Fen ve Anadolu Lisesi resmi dijital kampüsü. Akıllı tahtalar, ders içerikleri, ödevler ve veli-öğrenci takip sistemi.',
+  name: 'Necla Görer İlkokulu',
+  slug: 'neclagorer',
+  description: '1, 2, 3 ve 4. Sınıflar — MEB Temel Eğitim & Akıllı İlkokul Portalı',
+  about: 'Necla Görer İlkokulu resmi dijital eğitim kampüsü. 1. sınıftan 4. sınıfa kadar tüm şubeler, sınıf öğretmenleri, akıllı tahtalar ve ödev takip sistemi.',
   socials: {},
   links: {},
   scripts: {},
@@ -46,8 +46,8 @@ export const DEFAULT_FALLBACK_ORG = {
   thumbnail_image: '8f7c922b-b2e1-5c27-876d-285dba4b13ff_thumbnail.webp',
   previews: {},
   explore: true,
-  label: 'Oxonom',
-  email: 'idare@oxonom.com',
+  label: 'Necla Görer',
+  email: 'neclagorer@oxonom.com',
   is_demo: false,
   creation_date: '2026-09-30 10:00:43.058047',
   update_date: '2026-09-30 10:00:43.058056',
@@ -140,23 +140,57 @@ export const DEFAULT_FALLBACK_ORG = {
   },
 }
 
+export const NECLA_GORER_FALLBACK_ORG = {
+  ...DEFAULT_FALLBACK_ORG,
+  id: 10,
+  org_uuid: 'org_necla_gorer_ilkokulu',
+  name: 'Necla Görer İlkokulu',
+  slug: 'neclagorer',
+  description: '1, 2, 3 ve 4. Sınıflar — MEB Temel Eğitim & Akıllı İlkokul Portalı',
+  about: 'Necla Görer İlkokulu resmi dijital eğitim kampüsü. 1. sınıftan 4. sınıfa kadar tüm şubeler, sınıf öğretmenleri, akıllı tahtalar ve ödev takip sistemi.',
+  label: 'Necla Görer',
+}
+
+export const FEVZI_KALKANCI_FALLBACK_ORG = {
+  ...DEFAULT_FALLBACK_ORG,
+  id: 20,
+  org_uuid: 'org_sfg_ortaokulu',
+  name: 'Şair Fevzi Kutlu Kalkancı Ortaokulu',
+  slug: 'fevzikalkanci',
+  description: '5, 6, 7 ve 8. Sınıflar — LGS Hazırlık & Akıllı Ortaokul Portalı',
+  about: 'Şair Fevzi Kutlu Kalkancı Ortaokulu resmi dijital eğitim kampüsü. 5. sınıftan 8. sınıfa kadar branş dersleri, LGS hazırlık denemeleri, akıllı tahtalar ve ödev platformu.',
+  label: 'Şair Fevzi Kutlu Kalkancı',
+}
+
+export function getFallbackOrgForSlug(slug?: string) {
+  const s = String(slug || '').toLowerCase().trim()
+  if (s === 'fevzikalkanci' || s.includes('fevzi') || s.includes('kalkanci') || s === '20') {
+    return FEVZI_KALKANCI_FALLBACK_ORG
+  }
+  if (s === 'neclagorer' || s.includes('necla') || s.includes('gorer') || s === '10' || s === 'demo') {
+    return NECLA_GORER_FALLBACK_ORG
+  }
+  return DEFAULT_FALLBACK_ORG
+}
+
 export async function getOrganizationContextInfo(
   org_slug: any,
   next: any,
   access_token?: string
 ) {
+  const fallback = getFallbackOrgForSlug(org_slug)
   try {
     const result = await fetch(
       `${getAPIUrl()}orgs/slug/${org_slug}`,
       RequestBodyWithAuthHeader('GET', null, next, access_token)
     )
     if (!result.ok) {
-      return DEFAULT_FALLBACK_ORG
+      return fallback
     }
     const res = await errorHandling(result)
-    return res || DEFAULT_FALLBACK_ORG
+    return res || fallback
   } catch (_err) {
-    return DEFAULT_FALLBACK_ORG
+    return fallback
   }
 }
 
@@ -165,18 +199,20 @@ export async function getOrganizationContextInfoWithUUID(
   next: any,
   access_token?: string
 ) {
+  const isFevzi = org_uuid === 'org_sfg_ortaokulu'
+  const fallback = isFevzi ? FEVZI_KALKANCI_FALLBACK_ORG : NECLA_GORER_FALLBACK_ORG
   try {
     const result = await fetch(
       `${getAPIUrl()}orgs/uuid/${org_uuid}`,
       RequestBodyWithAuthHeader('GET', null, next, access_token)
     )
     if (!result.ok) {
-      return DEFAULT_FALLBACK_ORG
+      return fallback
     }
     const res = await errorHandling(result)
-    return res || DEFAULT_FALLBACK_ORG
+    return res || fallback
   } catch (_err) {
-    return DEFAULT_FALLBACK_ORG
+    return fallback
   }
 }
 
@@ -184,6 +220,7 @@ export async function getOrganizationContextInfoWithoutCredentials(
   org_slug: any,
   _next?: any
 ) {
+  const fallback = getFallbackOrgForSlug(org_slug)
   try {
     let HeadersConfig = new Headers({ 'Content-Type': 'application/json' })
     let options: any = {
@@ -195,12 +232,12 @@ export async function getOrganizationContextInfoWithoutCredentials(
 
     const result = await fetch(`${getAPIUrl()}orgs/slug/${org_slug}`, options)
     if (!result.ok) {
-      return DEFAULT_FALLBACK_ORG
+      return fallback
     }
     const res = await errorHandling(result)
-    return res || DEFAULT_FALLBACK_ORG
+    return res || fallback
   } catch (_err) {
-    return DEFAULT_FALLBACK_ORG
+    return fallback
   }
 }
 

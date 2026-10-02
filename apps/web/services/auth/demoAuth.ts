@@ -103,7 +103,7 @@ export const DEMO_USERS: Record<string, DemoUser> = {
         coursechapters: { action_create: false, action_read: true, action_update: false, action_delete: false },
         activities: { action_create: false, action_read: true, action_update: false, action_delete: false },
         roles: { action_create: false, action_read: false, action_update: false, action_delete: false },
-        dashboard: { action_access: false },
+        dashboard: { action_access: true },
       },
     },
   },
@@ -190,7 +190,7 @@ export const DEMO_USERS: Record<string, DemoUser> = {
         coursechapters: { action_create: false, action_read: true, action_update: false, action_delete: false },
         activities: { action_create: false, action_read: true, action_update: false, action_delete: false },
         roles: { action_create: false, action_read: false, action_update: false, action_delete: false },
-        dashboard: { action_access: false },
+        dashboard: { action_access: true },
       },
     },
   },
@@ -263,6 +263,11 @@ export function getDemoSession(demoUser: DemoUser) {
     description: '5, 6, 7 ve 8. Sınıflar — LGS Hazırlık & Akıllı Ortaokul Portalı',
     is_demo: true,
   }
+  const defaultOrg = {
+    ...DEFAULT_FALLBACK_ORG,
+    id: 1,
+    is_demo: true,
+  }
   return {
     user: {
       id: demoUser.id,
@@ -294,6 +299,15 @@ export function getDemoSession(demoUser: DemoUser) {
           rights: demoUser.role.rights,
         },
         org: fevziKutluOrg,
+      },
+      {
+        role: {
+          id: demoUser.role.id,
+          role_uuid: demoUser.role.role_uuid,
+          name: demoUser.role.name,
+          rights: demoUser.role.rights,
+        },
+        org: defaultOrg,
       },
     ],
   }

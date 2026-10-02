@@ -19,6 +19,7 @@ import AdminAuthorization from '@components/Security/AdminAuthorization'
 import { usePlan } from '@components/Hooks/usePlan'
 import useAdminStatus from '@components/Hooks/useAdminStatus'
 import SchoolAdminDashboard from './SchoolAdminDashboard'
+import TeacherDashboard from './TeacherDashboard'
 import QuickStats from './QuickStats'
 import RecentBoards from './RecentBoards'
 import RecentMembers from './RecentMembers'
@@ -137,28 +138,11 @@ export default function DashboardHome() {
             )}
           </div>
 
-          <AdminAuthorization authorizationMode="component">
-            {canManageOrg ? (
-              <SchoolAdminDashboard />
-            ) : (
-              <div className="space-y-6">
-                {/* Content counts row */}
-                <ContentOverview />
-
-                {/* Main grid: boards + members + usage */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  <div className="lg:col-span-2 space-y-6">
-                    <RecentBoards />
-                    <RecentMembers />
-                  </div>
-                  <div className="space-y-6">
-                    <UsageOverview />
-                    <QuickStats />
-                  </div>
-                </div>
-              </div>
-            )}
-          </AdminAuthorization>
+          {canManageOrg ? (
+            <SchoolAdminDashboard />
+          ) : (
+            <TeacherDashboard />
+          )}
         </div>
       </div>
     </div>

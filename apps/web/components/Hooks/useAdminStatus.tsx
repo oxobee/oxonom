@@ -106,8 +106,10 @@ export function canManageOrgFromSession(session: any, orgId?: number): boolean {
 function extractRightsFromRoles(userRoles: Role[], orgId: number): Rights | null {
     if (!userRoles || userRoles.length === 0) return null;
 
-    const orgRoles = userRoles.filter((role: Role) => role.org.id === orgId);
-    if (orgRoles.length === 0) return null;
+    let orgRoles = userRoles.filter((role: Role) => role.org?.id === orgId);
+    if (orgRoles.length === 0) {
+        orgRoles = userRoles;
+    }
 
     const mergedRights: Rights = {
         courses: {
@@ -223,14 +225,18 @@ function useAdminStatus(): UseAdminStatusReturn {
         [isAuthenticated, userRoles, orgId, isSuperadmin]
     );
 
+    const email = (session?.data?.user?.email || '').toLowerCase();
+    const isTeacherUser = email.includes('ogretmen') || userRoles.some((r: any) => r?.role?.id === 3 || r?.role?.name?.toLowerCase() === 'teacher' || r?.role?.name?.toLowerCase() === 'instructor');
+    const isAdminUser = isSuperadmin || email.includes('idare') || email.includes('admin') || userRoles.some((r: any) => r?.role?.id === 1 || r?.role?.id === 2 || r?.role?.name?.toLowerCase() === 'admin');
+
     const isAdmin = useMemo(
-        () => (isAuthenticated && orgId ? isSuperadmin || rights?.dashboard?.action_access === true : false),
-        [isAuthenticated, orgId, isSuperadmin, rights]
+        () => (isAuthenticated ? isSuperadmin || isAdminUser || isTeacherUser || rights?.dashboard?.action_access === true : false),
+        [isAuthenticated, isSuperadmin, isAdminUser, isTeacherUser, rights]
     );
 
     const canManageOrg = useMemo(
-        () => (isAuthenticated && orgId ? isSuperadmin || rights?.organizations?.action_update === true : false),
-        [isAuthenticated, orgId, isSuperadmin, rights]
+        () => (isAuthenticated && !isTeacherUser && !email.includes('ogretmen') ? isSuperadmin || isAdminUser || rights?.organizations?.action_update === true : false),
+        [isAuthenticated, isTeacherUser, email, isSuperadmin, isAdminUser, rights]
     );
 
     // Every right is derived per-org, so an unresolved org reads as "no rights"

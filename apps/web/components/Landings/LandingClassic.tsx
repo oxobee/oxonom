@@ -50,6 +50,11 @@ function LandingClassic({ orgslug, org_id }: LandingClassicProps) {
   const org = useOrg() as any
   const isAuthenticated = session?.status === 'authenticated'
   const user = session?.data?.user
+  const isStudent = !user?.is_superadmin && (
+    user?.email?.toLowerCase().includes('ogrenci') ||
+    user?.email?.toLowerCase().includes('student') ||
+    !user?.roles?.some((r: any) => [1, 2, 3].includes(r?.role?.id) || ['admin', 'teacher', 'instructor'].includes(r?.role?.name?.toLowerCase()))
+  )
 
   const { data: boardsData, isLoading: boardsLoading } = useBoards(Number(org_id))
   const boards: any[] = Array.isArray(boardsData) ? boardsData.filter((b: any) => b.public !== false) : []
@@ -261,29 +266,62 @@ function LandingClassic({ orgslug, org_id }: LandingClassicProps) {
               {/* Quick Action CTAs */}
               <div className="mt-8 flex items-center gap-3.5 flex-wrap">
                 {isAuthenticated ? (
-                  <>
-                    <Link
-                      href={getUriWithOrg(orgslug, '/dash')}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-slate-950 text-xs sm:text-sm font-bold hover:bg-slate-100 transition-all shadow-md active:scale-95"
-                    >
-                      <span>Yönetim Paneli</span>
-                      <ArrowRight size={14} weight="bold" />
-                    </Link>
-                    <Link
-                      href={getUriWithOrg(orgslug, '/playgrounds')}
-                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs sm:text-sm font-semibold backdrop-blur-sm transition-all border border-white/15"
-                    >
-                      <Cube size={16} weight="fill" className="text-amber-400" />
-                      <span>Modüllere Git</span>
-                    </Link>
-                    <Link
-                      href={getUriWithOrg(orgslug, '/boards')}
-                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs sm:text-sm font-semibold backdrop-blur-sm transition-all border border-white/15"
-                    >
-                      <ChalkboardSimple size={16} weight="fill" className="text-rose-400" />
-                      <span>Panolar</span>
-                    </Link>
-                  </>
+                  isStudent ? (
+                    <>
+                      <Link
+                        href="/home"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 text-white text-xs sm:text-sm font-bold hover:bg-emerald-700 transition-all shadow-md active:scale-95 cursor-pointer"
+                      >
+                        <GraduationCap size={16} weight="bold" />
+                        <span>Öğrenci Portalı</span>
+                      </Link>
+                      <Link
+                        href={getUriWithOrg(orgslug, '/boards')}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs sm:text-sm font-semibold backdrop-blur-sm transition-all border border-white/15"
+                      >
+                        <ChalkboardSimple size={16} weight="fill" className="text-rose-400" />
+                        <span>Ders Panoları</span>
+                      </Link>
+                      <Link
+                        href={getUriWithOrg(orgslug, '/dash/assignments')}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs sm:text-sm font-semibold backdrop-blur-sm transition-all border border-white/15"
+                      >
+                        <Files size={16} weight="fill" className="text-cyan-400" />
+                        <span>Ödevlerim</span>
+                      </Link>
+                      <Link
+                        href={getUriWithOrg(orgslug, '/playgrounds')}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs sm:text-sm font-semibold backdrop-blur-sm transition-all border border-white/15"
+                      >
+                        <Cube size={16} weight="fill" className="text-amber-400" />
+                        <span>Modüllere Git</span>
+                      </Link>
+                    </>
+                  ) : (
+                    <>
+                      <Link
+                        href={getUriWithOrg(orgslug, '/dash')}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-slate-950 text-xs sm:text-sm font-bold hover:bg-slate-100 transition-all shadow-md active:scale-95"
+                      >
+                        <span>Öğretmen Paneli</span>
+                        <ArrowRight size={14} weight="bold" />
+                      </Link>
+                      <Link
+                        href={getUriWithOrg(orgslug, '/boards')}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs sm:text-sm font-semibold backdrop-blur-sm transition-all border border-white/15"
+                      >
+                        <ChalkboardSimple size={16} weight="fill" className="text-rose-400" />
+                        <span>Panolar</span>
+                      </Link>
+                      <Link
+                        href={getUriWithOrg(orgslug, '/playgrounds')}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs sm:text-sm font-semibold backdrop-blur-sm transition-all border border-white/15"
+                      >
+                        <Cube size={16} weight="fill" className="text-amber-400" />
+                        <span>Modüllere Git</span>
+                      </Link>
+                    </>
+                  )
                 ) : (
                   <>
                     <Link
