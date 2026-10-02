@@ -222,7 +222,7 @@ export const config = {
      *    untouched; otherwise the middleware mis-routes it and ingestion 404s)
      * 9. /games (inside /public)
      */
-    '/((?!api|_next|fonts|games|umami|ingest|examples|embed|monitoring|[\\w-]+\\.\\w+).*)',
+    '/((?!api|_next|fonts|umami|ingest|examples|embed|monitoring|[\\w-]+\\.\\w+).*)',
     '/sitemap.xml',
     '/robots.txt',
     '/payments/stripe/connect/oauth',
