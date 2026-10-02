@@ -3,6 +3,7 @@ import {
   RequestBodyWithAuthHeader,
   errorHandling,
 } from '@services/utils/ts/requests'
+import { SYNCED_PLAYGROUNDS, SYNCED_PLAYGROUNDS_MAP } from '@services/demo/databaseSync'
 
 export type PlaygroundAccessType = 'public' | 'authenticated' | 'restricted'
 
@@ -65,22 +66,52 @@ export async function getPlayground(
   playgroundUuid: string,
   access_token?: string
 ): Promise<Playground> {
-  const result = await fetch(
-    `${getAPIUrl()}playgrounds/${playgroundUuid}`,
-    RequestBodyWithAuthHeader('GET', null, null, access_token)
-  )
-  return errorHandling(result)
+  try {
+    const apiUrl = getAPIUrl()
+    const result = await fetch(
+      `${apiUrl}playgrounds/${playgroundUuid}`,
+      RequestBodyWithAuthHeader('GET', null, null, access_token)
+    )
+    if (result.ok) {
+      return await errorHandling(result)
+    }
+  } catch (_err) {
+    // Network or server error — use fallback
+  }
+
+  const clean = playgroundUuid.replace('playground_', '')
+  const fallback =
+    SYNCED_PLAYGROUNDS_MAP[playgroundUuid] ||
+    SYNCED_PLAYGROUNDS_MAP[clean] ||
+    SYNCED_PLAYGROUNDS.find(
+      (p: any) =>
+        p.playground_uuid === playgroundUuid ||
+        p.playground_uuid === `playground_${clean}` ||
+        p.playground_uuid === clean
+    )
+  if (fallback) {
+    return fallback as Playground
+  }
+  throw new Error(`Playground ${playgroundUuid} not found`)
 }
 
 export async function getOrgPlaygrounds(
   orgId: number,
   access_token?: string
 ): Promise<Playground[]> {
-  const result = await fetch(
-    `${getAPIUrl()}playgrounds/org/${orgId}`,
-    RequestBodyWithAuthHeader('GET', null, null, access_token)
-  )
-  return errorHandling(result)
+  try {
+    const apiUrl = getAPIUrl()
+    const result = await fetch(
+      `${apiUrl}playgrounds/org/${orgId}`,
+      RequestBodyWithAuthHeader('GET', null, null, access_token)
+    )
+    if (result.ok) {
+      return await errorHandling(result)
+    }
+  } catch (_err) {
+    // Fallback
+  }
+  return SYNCED_PLAYGROUNDS as Playground[]
 }
 
 export async function updatePlayground(

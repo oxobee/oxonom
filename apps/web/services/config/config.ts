@@ -147,16 +147,33 @@ const deriveAPIUrl = (): string => {
   // Backward compat: if explicit API URL is set, use it
   const explicitApiUrl = getConfig('NEXT_PUBLIC_LEARNHOUSE_API_URL')
   if (explicitApiUrl) return explicitApiUrl
-  // Derive from backend URL
+
+  if (typeof window !== 'undefined') {
+    // Client-side: use relative /api/v1/ unless pointing to an external remote backend
+    const backendUrl = getLEARNHOUSE_BACKEND_URL()
+    if (!backendUrl || backendUrl.includes('localhost') || window.location.hostname !== 'localhost') {
+      return '/api/v1/'
+    }
+    return `${backendUrl.replace(/\/+$/, '')}/api/v1/`
+  }
+
+  // Server-side
   const backendUrl = getLEARNHOUSE_BACKEND_URL().replace(/\/+$/, '')
+  if (!backendUrl || backendUrl.includes('localhost')) {
+    const host = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : 'http://127.0.0.1:3000'
+    return `${host}/api/v1/`
+  }
   return `${backendUrl}/api/v1/`
 }
 
 // For direct usage, these call the getters
 export const getAPIUrl = () => {
-  // On custom domains (client-side), use relative path to go through Next.js proxy
-  // This ensures cookies work correctly (same-origin)
-  if (isOnCustomDomain()) {
+  // Client-side in browser: always use relative path to go through Next.js route handlers
+  if (typeof window !== 'undefined') {
+    const explicitApiUrl = getConfig('NEXT_PUBLIC_LEARNHOUSE_API_URL')
+    if (explicitApiUrl) return explicitApiUrl
     return '/api/v1/'
   }
   return deriveAPIUrl()

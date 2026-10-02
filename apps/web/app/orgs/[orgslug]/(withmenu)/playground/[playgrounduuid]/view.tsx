@@ -58,7 +58,8 @@ export default function PlaygroundViewClient({
         )
       : null
 
-  const accessBadge = ACCESS_BADGES[playground.access_type] ?? ACCESS_BADGES.authenticated
+  const accessTypeKey = (playground.access_type || 'authenticated').toLowerCase() as keyof typeof ACCESS_BADGES
+  const accessBadge = ACCESS_BADGES[accessTypeKey] ?? ACCESS_BADGES.authenticated
   const AccessIcon = accessBadge.icon
   const createdDate = dayjs(playground.creation_date).format('MMM D, YYYY')
 

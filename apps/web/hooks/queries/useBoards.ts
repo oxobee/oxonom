@@ -11,8 +11,8 @@ export function useBoards(orgId: number) {
 
   return useQuery({
     queryKey: queryKeys.boards.list(orgId),
-    queryFn: () => getBoards(orgId, accessToken!),
-    enabled: !!orgId && !!accessToken,
+    queryFn: () => getBoards(orgId, accessToken || ''),
+    enabled: !!orgId,
     staleTime: 60_000,
   })
 }
@@ -23,8 +23,8 @@ export function useBoard(boardUuid: string) {
 
   return useQuery({
     queryKey: queryKeys.boards.detail(boardUuid),
-    queryFn: () => getBoard(boardUuid, accessToken!),
-    enabled: !!boardUuid && !!accessToken,
+    queryFn: () => getBoard(boardUuid, accessToken || ''),
+    enabled: !!boardUuid,
     staleTime: 60_000,
   })
 }

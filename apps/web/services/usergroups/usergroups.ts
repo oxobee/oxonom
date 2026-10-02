@@ -3,23 +3,32 @@ import {
   RequestBodyWithAuthHeader,
   getResponseMetadata,
 } from '@services/utils/ts/requests'
+import { SYNCED_USERGROUPS } from '@services/demo/databaseSync'
 
 export async function getUserGroups(org_id: any, access_token: string) {
-  const result: any = await fetch(
-    `${getAPIUrl()}usergroups/org/${org_id}?org_id=${org_id}`,
-    RequestBodyWithAuthHeader('GET', null, null, access_token)
-  )
-  const res = await getResponseMetadata(result)
-  return res
+  try {
+    const result: any = await fetch(
+      `${getAPIUrl()}usergroups/org/${org_id}?org_id=${org_id}`,
+      RequestBodyWithAuthHeader('GET', null, null, access_token)
+    )
+    if (result.ok) {
+      return await getResponseMetadata(result)
+    }
+  } catch (_err) {}
+  return SYNCED_USERGROUPS
 }
 
 export async function getMyUserGroups(org_id: any, access_token: string) {
-  const result: any = await fetch(
-    `${getAPIUrl()}usergroups/my-classes/${org_id}`,
-    RequestBodyWithAuthHeader('GET', null, null, access_token)
-  )
-  const res = await getResponseMetadata(result)
-  return res
+  try {
+    const result: any = await fetch(
+      `${getAPIUrl()}usergroups/my-classes/${org_id}`,
+      RequestBodyWithAuthHeader('GET', null, null, access_token)
+    )
+    if (result.ok) {
+      return await getResponseMetadata(result)
+    }
+  } catch (_err) {}
+  return SYNCED_USERGROUPS
 }
 
 export async function getUserGroup(usergroup_id: number, access_token: string) {

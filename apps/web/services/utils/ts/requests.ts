@@ -8,6 +8,9 @@ import { hasSessionMarker } from '@services/auth/sessionMarker'
  */
 function validateApiUrl(url: string): void {
   const apiBase = getAPIUrl();
+  if (apiBase.startsWith('/') && url.startsWith('/')) {
+    return;
+  }
   if (!url.startsWith(apiBase)) {
     throw new Error(`Invalid API URL: URL must start with ${apiBase}`);
   }

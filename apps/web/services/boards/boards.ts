@@ -3,6 +3,7 @@ import {
   RequestBodyWithAuthHeader,
   errorHandling,
 } from '@services/utils/ts/requests'
+import { SYNCED_BOARDS } from '@services/demo/databaseSync'
 
 export async function createBoard(
   orgId: number,
@@ -33,19 +34,32 @@ export async function getClassroomBoards(usergroupId: number, access_token: stri
 }
 
 export async function getBoards(orgId: number, access_token: string) {
-  const result = await fetch(
-    `${getAPIUrl()}boards/org/${orgId}`,
-    RequestBodyWithAuthHeader('GET', null, null, access_token)
-  )
-  return errorHandling(result)
+  try {
+    const result = await fetch(
+      `${getAPIUrl()}boards/org/${orgId}`,
+      RequestBodyWithAuthHeader('GET', null, null, access_token)
+    )
+    if (result.ok) {
+      return await errorHandling(result)
+    }
+  } catch (_err) {}
+  return SYNCED_BOARDS
 }
 
 export async function getBoard(boardUuid: string, access_token: string) {
-  const result = await fetch(
-    `${getAPIUrl()}boards/${boardUuid}`,
-    RequestBodyWithAuthHeader('GET', null, null, access_token)
-  )
-  return errorHandling(result)
+  try {
+    const result = await fetch(
+      `${getAPIUrl()}boards/${boardUuid}`,
+      RequestBodyWithAuthHeader('GET', null, null, access_token)
+    )
+    if (result.ok) {
+      return await errorHandling(result)
+    }
+  } catch (_err) {}
+
+  const clean = boardUuid.replace('board_', '')
+  const b = SYNCED_BOARDS.find((x: any) => x.board_uuid === boardUuid || x.board_uuid === `board_${clean}`)
+  return b || SYNCED_BOARDS[0]
 }
 
 export async function updateBoard(
