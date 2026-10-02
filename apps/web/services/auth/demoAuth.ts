@@ -296,84 +296,18 @@ export function getDemoSession(demoUser: DemoUser) {
   }
 }
 
-export const FALLBACK_PLAYGROUNDS = [
-  {
-    id: 21,
-    playground_uuid: 'playground_1-dk-okuma',
-    name: '1 Dk Okuma & Hızlı Okuma Atölyesi',
-    description: 'Öğrencinin okuma hızını, dakikadaki kelime sayısını ve okuma akıcılığını canlı sayaçla ölçün.',
-    access_type: 'public',
-    published: true,
-    org_id: 1,
-    creation_date: '2026-10-01T00:00:00Z',
-    update_date: '2026-10-02T00:00:00Z',
-  },
-  {
-    id: 22,
-    playground_uuid: 'playground_harf-cizgi-atolyesi',
-    name: 'Harf Çizgi & Yazılış Yönü Atölyesi',
-    description: 'MEB dik temel harf standartlarına uygun, numaralandırılmış oklar ve adım adım harf çizim animasyonu.',
-    access_type: 'public',
-    published: true,
-    org_id: 1,
-    creation_date: '2026-10-01T00:00:00Z',
-    update_date: '2026-10-02T00:00:00Z',
-  },
-  {
-    id: 23,
-    playground_uuid: 'playground_ritmik-sayma-atolyesi',
-    name: 'Ritmik Sayma & Sayı Doğrusu Atölyesi',
-    description: 'Elastik zıplayan sevimli maskot ve parabolik yay mekaniği ile 1’er, 2’şer, 5’er ve 10’ar ritmik sayma.',
-    access_type: 'public',
-    published: true,
-    org_id: 1,
-    creation_date: '2026-10-01T00:00:00Z',
-    update_date: '2026-10-02T00:00:00Z',
-  },
-  {
-    id: 24,
-    playground_uuid: 'playground_gunes-sistemi-atolyesi',
-    name: 'Güneş Sistemi & Gezegenler Keşif Atölyesi',
-    description: 'Gezegenlerin yörüngelerini ve özelliklerini 3 boyutlu uzay ortamında etkileşimli olarak keşfedin.',
-    access_type: 'public',
-    published: true,
-    org_id: 1,
-    creation_date: '2026-10-01T00:00:00Z',
-    update_date: '2026-10-02T00:00:00Z',
-  },
-  {
-    id: 19,
-    playground_uuid: 'playground_sinif-carki-zamanlayici',
-    name: 'Sınıf Çarkı & Geri Sayım Araçları',
-    description: 'Öğrenci seçme çarkı, ders içi geri sayım sayacı ve interaktif sınıf içi motivasyon araçları.',
-    access_type: 'public',
-    published: true,
-    org_id: 1,
-    creation_date: '2026-10-01T00:00:00Z',
-    update_date: '2026-10-02T00:00:00Z',
-  },
-  {
-    id: 20,
-    playground_uuid: 'playground_ingilizce-kelime-atolyesi',
-    name: 'İngilizce Kelime & Görsel Macera Atölyesi',
-    description: 'Temel İngilizce kelimeleri görsel hafıza kartları ve sesli telaffuz ile eğlenceli öğrenme.',
-    access_type: 'public',
-    published: true,
-    org_id: 1,
-    creation_date: '2026-10-01T00:00:00Z',
-    update_date: '2026-10-02T00:00:00Z',
-  },
-]
-
 import {
   SYNCED_BOARDS,
   SYNCED_USERGROUPS,
   SYNCED_ASSIGNMENTS,
   SYNCED_DISCUSSIONS,
+  SYNCED_PLAYGROUNDS,
 } from '../demo/databaseSync'
 
+export const FALLBACK_PLAYGROUNDS = SYNCED_PLAYGROUNDS
 export const FALLBACK_BOARDS = SYNCED_BOARDS
 export const FALLBACK_USERGROUPS = SYNCED_USERGROUPS
 export const FALLBACK_ASSIGNMENTS = SYNCED_ASSIGNMENTS
 export const FALLBACK_DISCUSSIONS = SYNCED_DISCUSSIONS
+
 

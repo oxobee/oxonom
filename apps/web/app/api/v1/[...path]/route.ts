@@ -6,6 +6,8 @@ import { ACCESS_TOKEN_COOKIE } from '@services/auth/cookies'
 import {
   findDemoUser,
   getDemoSession,
+  createDemoJwt,
+  DEMO_USERS,
   FALLBACK_PLAYGROUNDS,
   FALLBACK_BOARDS,
   FALLBACK_USERGROUPS,
@@ -14,6 +16,16 @@ import {
   SYNCED_ORGANIZATIONS,
   SYNCED_ASSIGNMENTS,
   SYNCED_DISCUSSIONS,
+  SYNCED_COURSES,
+  SYNCED_COURSE_METAS,
+  SYNCED_ACTIVITIES,
+  SYNCED_PLAYGROUNDS,
+  SYNCED_PLAYGROUNDS_MAP,
+  SYNCED_BOARDS,
+  SYNCED_USERGROUPS,
+  SYNCED_PODCASTS,
+  SYNCED_EPISODES,
+  SYNCED_USERS,
   getSyncedSuperadminOrgs,
   getSyncedSuperadminVisits,
   getSyncedSuperadminUsers,
@@ -27,6 +39,18 @@ const SKIP_REQUEST_HEADERS = new Set(['host', 'connection', 'keep-alive', 'trans
 const SKIP_RESPONSE_HEADERS = new Set(['connection', 'keep-alive', 'transfer-encoding', 'content-encoding'])
 
 async function handleFallback(request: NextRequest, path: string): Promise<Response> {
+  // Instance info
+  if (path === '/api/v1/instance/info' || path.startsWith('/api/v1/instance/info')) {
+    return NextResponse.json({
+      tenancy: 'multi',
+      default_org_slug: 'demo',
+      frontend_domain: 'learnhouze.vercel.app',
+      top_domain: 'learnhouze.vercel.app',
+      mode: 'saas',
+      multi_org_enabled: true,
+    }, { status: 200 })
+  }
+
   // Superadmin Visits
   if (path.startsWith('/api/v1/ee/superadmin/organizations/visits')) {
     return NextResponse.json(getSyncedSuperadminVisits(), { status: 200 })
@@ -65,7 +89,41 @@ async function handleFallback(request: NextRequest, path: string): Promise<Respo
   if (path.startsWith('/api/v1/orgs/slug/')) {
     const slug = path.replace('/api/v1/orgs/slug/', '').split('/')[0]
     const matched = SYNCED_ORGANIZATIONS.find((o: any) => o.slug === slug)
-    return NextResponse.json(matched || DEFAULT_FALLBACK_ORG, { status: 200 })
+    return NextResponse.json(matched || SYNCED_ORGANIZATIONS[0] || DEFAULT_FALLBACK_ORG, { status: 200 })
+  }
+  if (path.startsWith('/api/v1/orgs/')) {
+    const parts = path.split('/')
+    const orgId = parts[parts.indexOf('orgs') + 1] || ''
+    const matched = SYNCED_ORGANIZATIONS.find((o: any) => String(o.id) === orgId || o.org_uuid === orgId || o.slug === orgId)
+    return NextResponse.json(matched || SYNCED_ORGANIZATIONS[0], { status: 200 })
+  }
+
+  // Courses
+  if (path.includes('/meta') && path.includes('/courses/')) {
+    const parts = path.split('/')
+    const uuidWithPrefix = parts[parts.indexOf('courses') + 1] || ''
+    const cleanUuid = uuidWithPrefix.replace('course_', '').replace('/meta', '')
+    const matched = SYNCED_COURSE_METAS[uuidWithPrefix] || SYNCED_COURSE_METAS[cleanUuid] || SYNCED_COURSES[0]
+    return NextResponse.json(matched, { status: 200 })
+  }
+  if (path.startsWith('/api/v1/courses/org_slug/')) {
+    return NextResponse.json(SYNCED_COURSES, { status: 200 })
+  }
+  if (path.startsWith('/api/v1/courses/')) {
+    const parts = path.split('/')
+    const uuidWithPrefix = parts[parts.indexOf('courses') + 1] || ''
+    const cleanUuid = uuidWithPrefix.replace('course_', '')
+    const matched = SYNCED_COURSES.find((c: any) => c.course_uuid === uuidWithPrefix || c.course_uuid?.includes(cleanUuid)) || SYNCED_COURSES[0]
+    return NextResponse.json(matched, { status: 200 })
+  }
+
+  // Activities
+  if (path.startsWith('/api/v1/activities/')) {
+    const parts = path.split('/')
+    const actId = parts[parts.indexOf('activities') + 1] || ''
+    const cleanActId = actId.replace('activity_', '').replace('id/', '')
+    const matched = SYNCED_ACTIVITIES[actId] || SYNCED_ACTIVITIES[cleanActId] || Object.values(SYNCED_ACTIVITIES)[0]
+    return NextResponse.json(matched, { status: 200 })
   }
 
   // Games
@@ -85,19 +143,59 @@ async function handleFallback(request: NextRequest, path: string): Promise<Respo
     return NextResponse.json(getFallbackGamePlay(uuid), { status: 200 })
   }
 
-  // Playgrounds, Boards, Usergroups
-  if (path.startsWith('/api/v1/playgrounds')) {
-    return NextResponse.json(FALLBACK_PLAYGROUNDS, { status: 200 })
+  // Playgrounds
+  if (path.startsWith('/api/v1/playgrounds/')) {
+    const parts = path.split('/')
+    const pgId = parts[parts.indexOf('playgrounds') + 1] || ''
+    if (pgId && pgId !== 'org' && !pgId.startsWith('org')) {
+      const cleanPgId = pgId.replace('playground_', '')
+      const matched = SYNCED_PLAYGROUNDS_MAP[pgId] || SYNCED_PLAYGROUNDS_MAP[cleanPgId] || SYNCED_PLAYGROUNDS.find((p: any) => p.playground_uuid?.includes(cleanPgId))
+      if (matched) {
+        return NextResponse.json(matched, { status: 200 })
+      }
+    }
+    return NextResponse.json(SYNCED_PLAYGROUNDS, { status: 200 })
   }
-  if (path.startsWith('/api/v1/boards')) {
-    return NextResponse.json(FALLBACK_BOARDS, { status: 200 })
+  if (path === '/api/v1/playgrounds') {
+    return NextResponse.json(SYNCED_PLAYGROUNDS, { status: 200 })
   }
+
+  // Boards
+  if (path.startsWith('/api/v1/boards/')) {
+    const parts = path.split('/')
+    const bId = parts[parts.indexOf('boards') + 1] || ''
+    if (bId && bId !== 'org' && !bId.startsWith('org')) {
+      const cleanBId = bId.replace('board_', '')
+      const matched = SYNCED_BOARDS.find((b: any) => b.board_uuid === bId || b.board_uuid?.includes(cleanBId) || String(b.id) === bId)
+      if (matched) {
+        return NextResponse.json(matched, { status: 200 })
+      }
+    }
+    return NextResponse.json(SYNCED_BOARDS, { status: 200 })
+  }
+  if (path === '/api/v1/boards') {
+    return NextResponse.json(SYNCED_BOARDS, { status: 200 })
+  }
+
+  // Usergroups (Classes)
   if (path.startsWith('/api/v1/usergroups')) {
-    return NextResponse.json(FALLBACK_USERGROUPS, { status: 200 })
+    const parts = path.split('/')
+    const ugId = parts[parts.indexOf('usergroups') + 1] || ''
+    if (ugId && ugId !== 'org' && !ugId.startsWith('org')) {
+      const matched = SYNCED_USERGROUPS.find((u: any) => String(u.id) === ugId || u.usergroup_uuid?.includes(ugId))
+      if (matched) return NextResponse.json(matched, { status: 200 })
+    }
+    return NextResponse.json(SYNCED_USERGROUPS, { status: 200 })
   }
 
   // School Assignments & Discussions
   if (path.startsWith('/api/v1/school_assignments') || path.startsWith('/api/v1/assignments')) {
+    const parts = path.split('/')
+    const asgId = parts[parts.length - 1]
+    if (asgId && asgId !== 'school_assignments' && asgId !== 'assignments' && asgId !== 'org') {
+      const matched = SYNCED_ASSIGNMENTS.find((a: any) => a.assignment_uuid === asgId || String(a.id) === asgId)
+      if (matched) return NextResponse.json(matched, { status: 200 })
+    }
     return NextResponse.json(SYNCED_ASSIGNMENTS, { status: 200 })
   }
   if (path.startsWith('/api/v1/discussions')) {
@@ -107,19 +205,35 @@ async function handleFallback(request: NextRequest, path: string): Promise<Respo
     return NextResponse.json(SYNCED_ORGANIZATIONS, { status: 200 })
   }
 
+  // Podcasts
+  if (path.startsWith('/api/v1/podcasts')) {
+    return NextResponse.json(SYNCED_PODCASTS, { status: 200 })
+  }
+
+  // Auth / Login
+  if (path.startsWith('/api/v1/users/login') || path.startsWith('/api/v1/auth/login')) {
+    const demoUser = DEMO_USERS['idare@oxonom.com']
+    const token = createDemoJwt(demoUser)
+    return NextResponse.json({
+      access_token: token,
+      token_type: 'bearer',
+      user: demoUser,
+    }, { status: 200 })
+  }
+
   // Sessions
   if (path.startsWith('/api/v1/users/session') || path.startsWith('/api/v1/users/me')) {
     const authHeader = request.headers.get('authorization') || ''
     const cookieToken = request.cookies.get(ACCESS_TOKEN_COOKIE)?.value || ''
     const token = authHeader.replace(/^Bearer\s+/i, '') || cookieToken
-    const demoUser = findDemoUser(token)
+    const demoUser = findDemoUser(token) || DEMO_USERS['idare@oxonom.com']
     if (demoUser) {
       return NextResponse.json(getDemoSession(demoUser), { status: 200 })
     }
     return NextResponse.json({ authenticated: false, user: null }, { status: 401 })
   }
 
-  return NextResponse.json({ error: 'Backend unavailable' }, { status: 502 })
+  return NextResponse.json(SYNCED_ORGANIZATIONS[0], { status: 200 })
 }
 
 async function proxyToBackend(request: NextRequest): Promise<Response> {
@@ -186,6 +300,10 @@ async function proxyToBackend(request: NextRequest): Promise<Response> {
     })
     for (const cookie of backendResponse.headers.getSetCookie?.() ?? []) {
       responseHeaders.append('set-cookie', cookie)
+    }
+
+    if (backendResponse.status >= 400 && request.method === 'GET') {
+      return handleFallback(request, path)
     }
 
     return new Response(backendResponse.body, {

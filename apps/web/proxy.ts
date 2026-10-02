@@ -54,12 +54,12 @@ async function getInstanceInfo(): Promise<InstanceInfo> {
     // Backend unavailable — use safe defaults
   }
   return {
-    multi_org_enabled: false,
-    default_org_slug: 'default',
-    mode: 'oss' as const,
-    tenancy: 'single',
-    frontend_domain: 'localhost:3000',
-    top_domain: 'localhost',
+    multi_org_enabled: true,
+    default_org_slug: 'demo',
+    mode: 'saas' as const,
+    tenancy: 'multi',
+    frontend_domain: 'learnhouze.vercel.app',
+    top_domain: 'learnhouze.vercel.app',
   }
 }
 
@@ -222,7 +222,7 @@ export const config = {
      *    untouched; otherwise the middleware mis-routes it and ingestion 404s)
      * 9. /games (inside /public)
      */
-    '/((?!api|_next|fonts|games|umami|ingest|examples|embed|monitoring|[\\w-]+\\.\\w+).*)',
+    '/((?!api|_next|fonts|games|content|umami|ingest|examples|embed|monitoring|[\\w-]+\\.\\w+).*)',
     '/sitemap.xml',
     '/robots.txt',
     '/payments/stripe/connect/oauth',
@@ -232,6 +232,11 @@ export const config = {
 
 export default async function proxy(req: NextRequest) {
   const { pathname, search } = req.nextUrl
+
+  // Pass-through static content files in /public/content/
+  if (pathname.startsWith('/content/')) {
+    return NextResponse.next()
+  }
 
   // Pass-through static games files in /public/games/
   if (pathname.startsWith('/games/') && pathname.includes('.')) {

@@ -1,10 +1,20 @@
 import { getBackendUrl, getConfig } from '@services/config/config'
 
 function getMediaUrl() {
-  const raw = getConfig('NEXT_PUBLIC_LEARNHOUSE_MEDIA_URL') || getBackendUrl();
-  // Guarantee a trailing slash so callers can concatenate "content/..." without
-  // producing "https://api.example.iocontent/..." when the base lacks a slash.
-  return raw.endsWith('/') ? raw : `${raw}/`;
+  const explicit = getConfig('NEXT_PUBLIC_LEARNHOUSE_MEDIA_URL')
+  if (explicit) {
+    return explicit.endsWith('/') ? explicit : `${explicit}/`
+  }
+  const raw = getBackendUrl()
+  const isVercel = Boolean(
+    process.env.VERCEL ||
+    process.env.NEXT_PUBLIC_VERCEL_ENV ||
+    (typeof window !== 'undefined' && (window.location.hostname.includes('vercel.app') || window.location.hostname === 'localhost' || window.location.hostname.includes('lvh.me')))
+  )
+  if (isVercel || raw.includes('localhost') || raw.includes('127.0.0.1')) {
+    return '/'
+  }
+  return raw.endsWith('/') ? raw : `${raw}/`
 }
 
 function getApiUrl() {
