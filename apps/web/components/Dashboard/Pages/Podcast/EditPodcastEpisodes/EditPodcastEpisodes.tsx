@@ -10,6 +10,7 @@ import {
   deleteEpisode,
   updateEpisode,
   uploadEpisodeAudio,
+  uploadEpisodeThumbnail,
   PodcastEpisode,
   formatDuration,
 } from '@services/podcasts/episodes'
@@ -546,6 +547,8 @@ function EditEpisodeModal({
   const [title, setTitle] = useState(episode.title)
   const [description, setDescription] = useState(episode.description || '')
   const [audioFile, setAudioFile] = useState<File | null>(null)
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null)
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -560,6 +563,12 @@ function EditEpisodeModal({
         const formData = new FormData()
         formData.append('audio', audioFile)
         await uploadEpisodeAudio(episode.episode_uuid, formData, accessToken)
+      }
+
+      if (thumbnailFile) {
+        const formData = new FormData()
+        formData.append('thumbnail', thumbnailFile)
+        await uploadEpisodeThumbnail(episode.episode_uuid, formData, accessToken)
       }
 
       await revalidateTags(['podcasts'], orgslug)
@@ -578,6 +587,10 @@ function EditEpisodeModal({
   const currentAudioUrl = episode.audio_file
     ? getEpisodeAudioMediaDirectory(orgUuid, podcastUuid, episode.episode_uuid, episode.audio_file)
     : null
+
+  const currentThumbnailUrl = thumbnailPreview || (episode.thumbnail_image
+    ? getEpisodeThumbnailMediaDirectory(orgUuid, podcastUuid, episode.episode_uuid, episode.thumbnail_image)
+    : null)
 
   return (
     <Modal
@@ -613,6 +626,46 @@ function EditEpisodeModal({
               rows={3}
               className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-black/20 focus:border-transparent outline-none transition-all resize-none"
             />
+          </div>
+
+          {/* Episode Thumbnail */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Bölüm Kapak Görseli
+            </label>
+            <div className="flex items-center gap-4">
+              {currentThumbnailUrl ? (
+                <div className="w-16 h-16 rounded-lg overflow-hidden border border-gray-200 flex-shrink-0">
+                  <img src={currentThumbnailUrl} alt="Thumbnail preview" className="w-full h-full object-cover" />
+                </div>
+              ) : (
+                <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 flex-shrink-0">
+                  <Upload size={20} />
+                </div>
+              )}
+              <div className="flex-1">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) {
+                      setThumbnailFile(file)
+                      setThumbnailPreview(URL.createObjectURL(file))
+                    }
+                  }}
+                  className="hidden"
+                  id="thumbnail-upload-edit"
+                />
+                <label
+                  htmlFor="thumbnail-upload-edit"
+                  className="inline-flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg hover:border-gray-300 text-sm font-medium text-gray-700 cursor-pointer transition-colors"
+                >
+                  <Upload size={14} />
+                  <span>{currentThumbnailUrl ? 'Görseli Değiştir' : 'Görsel Yükle'}</span>
+                </label>
+              </div>
+            </div>
           </div>
 
           <div>

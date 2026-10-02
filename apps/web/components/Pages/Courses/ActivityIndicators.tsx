@@ -253,15 +253,16 @@ const MobileChapterSelector = memo(({
           style={{ zIndex: 'var(--z-dropdown)' }}
         >
           {chapters.map((chapter: any, chapterIdx: number) => {
-            const completedInChapter = chapter.activities.filter((a: any) => isActivityDone(a)).length
+            const chapterActivities = Array.isArray(chapter?.activities) ? chapter.activities : []
+            const completedInChapter = chapterActivities.filter((a: any) => isActivityDone(a)).length
             const isCurrentChapter = chapterIdx === currentChapterIndex
 
             return (
               <div key={chapter.id}>
                 <div className={`px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide ${isCurrentChapter ? 'text-teal-600' : 'text-gray-400'}`}>
-                  {t('courses.chapter')} {chapterIdx + 1} — {completedInChapter}/{chapter.activities.length}
+                  {t('courses.chapter')} {chapterIdx + 1} — {completedInChapter}/{chapterActivities.length}
                 </div>
-                {chapter.activities.map((activity: any) => {
+                {chapterActivities.map((activity: any) => {
                   const isDone = isActivityDone(activity)
                   const isCurrent = isActivityCurrent(activity)
                   const activityId = activity.activity_uuid.replace('activity_', '')
@@ -406,17 +407,19 @@ function ActivityIndicators(props: Props) {
 
   // Check if all activities are completed
   const isCourseCompleted = useMemo(() => {
-    const totalActivities = allActivities.length;
-    const completedActivities = allActivities.filter((activity: any) => isActivityDone(activity)).length;
+    const safeActivities = Array.isArray(allActivities) ? allActivities : [];
+    const totalActivities = safeActivities.length;
+    const completedActivities = safeActivities.filter((activity: any) => isActivityDone(activity)).length;
     return totalActivities > 0 && completedActivities === totalActivities;
   }, [allActivities, isActivityDone]);
 
   // Computed values for mobile compact view
   const completedCount = useMemo(() => {
-    return allActivities.filter((activity: any) => isActivityDone(activity)).length;
+    const safeActivities = Array.isArray(allActivities) ? allActivities : [];
+    return safeActivities.filter((activity: any) => isActivityDone(activity)).length;
   }, [allActivities, isActivityDone]);
 
-  const totalCount = allActivities.length;
+  const totalCount = Array.isArray(allActivities) ? allActivities.length : 0;
   const progressPercent = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
 
   // Find which chapter the current activity belongs to

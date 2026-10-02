@@ -718,7 +718,7 @@ export default function ResourcesLibraryClient({ orgslug }: ResourcesLibraryClie
                       {/* Uploader Meta */}
                       <div className="flex items-center justify-between text-[10px] text-slate-400 mb-2.5">
                         <span className="truncate font-medium">{res.uploader_name || 'Öğretmen'}</span>
-                        <span>{new Date(res.creation_date).toLocaleDateString('tr-TR')}</span>
+                        <span>{new Date(res.creation_date || Date.now()).toLocaleDateString('tr-TR')}</span>
                       </div>
 
                       {/* Bottom Footer Actions */}

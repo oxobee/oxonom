@@ -55,23 +55,25 @@ export default function PlaygroundsClient({
     rights?.dashboard?.action_access
   )
 
-  const [playgrounds, setPlaygrounds] = useState<Playground[]>(initialPlaygrounds)
+  const [playgrounds, setPlaygrounds] = useState<Playground[]>(Array.isArray(initialPlaygrounds) ? initialPlaygrounds : [])
   const [searchQuery, setSearchQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState('all')
 
+  const safePlaygrounds = Array.isArray(playgrounds) ? playgrounds : []
+
   // Count items per category
   const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: playgrounds.length }
-    playgrounds.forEach((pg) => {
+    const counts: Record<string, number> = { all: safePlaygrounds.length }
+    safePlaygrounds.forEach((pg) => {
       const cat = detectCategory(pg).key
       counts[cat] = (counts[cat] || 0) + 1
     })
     return counts
-  }, [playgrounds])
+  }, [safePlaygrounds])
 
   // Filter playgrounds by search and category
   const filtered = useMemo(() => {
-    return playgrounds.filter((pg) => {
+    return safePlaygrounds.filter((pg) => {
       if (activeCategory !== 'all') {
         const cat = detectCategory(pg).key
         if (cat !== activeCategory) return false
@@ -83,7 +85,7 @@ export default function PlaygroundsClient({
 
       return true
     })
-  }, [playgrounds, searchQuery, activeCategory])
+  }, [safePlaygrounds, searchQuery, activeCategory])
 
   const {
     paginatedItems: paginated,

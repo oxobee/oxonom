@@ -28,6 +28,17 @@ import {
   Signpost,
   List,
   X,
+  House,
+  GraduationCap,
+  Student,
+  ChalkboardTeacher,
+  Receipt,
+  Buildings,
+  Files,
+  FolderSimple,
+  ChatsCircle,
+  Headphones,
+  Cube,
 } from '@phosphor-icons/react'
 import { DiscordIcon } from '@components/Objects/Icons/DiscordIcon'
 import {
@@ -319,23 +330,41 @@ export const OrgMenu = (props: any) => {
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel className="flex items-center gap-2">
-                      <SquaresFour size={16} weight="fill" />
-                      <span>{t('common.dashboard')}</span>
+                  <DropdownMenuContent align="end" className="w-60 p-1.5 shadow-xl rounded-2xl border border-gray-100">
+                    <DropdownMenuLabel className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-gray-900 border-b border-gray-100 mb-1">
+                      <SquaresFour size={16} weight="fill" className="text-indigo-600" />
+                      <span>{canManageOrg ? 'Okul Yönetimi Paneli' : 'Öğretmen Paneli'}</span>
                     </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    {visibleDashboardItems.map((item) => {
+                    {(canManageOrg ? [
+                      { id: 'home', href: getUriWithOrg(orgslug, '/dash'), icon: House, label: 'Ana Sayfa' },
+                      { id: 'classrooms', href: getUriWithOrg(orgslug, '/dash/classrooms'), icon: GraduationCap, label: 'Sınıflar & Şubeler' },
+                      { id: 'students', href: getUriWithOrg(orgslug, '/dash/students'), icon: Student, label: 'Öğrenci İşleri' },
+                      { id: 'teachers', href: getUriWithOrg(orgslug, '/dash/teachers'), icon: ChalkboardTeacher, label: 'Öğretmenler' },
+                      { id: 'finance', href: getUriWithOrg(orgslug, '/dash/finance'), icon: Receipt, label: 'Finans & Giderler' },
+                      { id: 'settings', href: getUriWithOrg(orgslug, '/dash/org/settings/general'), icon: Buildings, label: 'Okul Ayarları' },
+                      ...(session?.data?.user?.is_superadmin ? [{ id: 'feedbacks', href: getUriWithOrg(orgslug, '/dash/feedbacks'), icon: ChatCircleDots, label: 'Geri Bildirimler' }] : []),
+                    ] : [
+                      { id: 'home', href: getUriWithOrg(orgslug, '/dash'), icon: House, label: 'Ana Sayfa' },
+                      { id: 'assignments', href: getUriWithOrg(orgslug, '/dash/assignments'), icon: Files, label: 'Ödevler' },
+                      { id: 'library', href: getUriWithOrg(orgslug, '/dash/library'), icon: FolderSimple, label: 'Kütüphane' },
+                      { id: 'communities', href: getUriWithOrg(orgslug, '/dash/communities'), icon: ChatsCircle, label: 'Veli Forum' },
+                      { id: 'classrooms', href: getUriWithOrg(orgslug, '/dash/classrooms'), icon: GraduationCap, label: 'Sınıflar' },
+                      { id: 'podcasts', href: getUriWithOrg(orgslug, '/dash/podcasts'), icon: Headphones, label: 'Podcastler' },
+                      { id: 'boards', href: getUriWithOrg(orgslug, '/dash/boards'), icon: ChalkboardSimple, label: 'Panolar' },
+                      { id: 'playgrounds', href: getUriWithOrg(orgslug, '/dash/playgrounds'), icon: Cube, label: 'Modüller' },
+                    ]).map((item) => {
                       const IconComponent = item.icon
                       return (
-                        <DropdownMenuItem key={item.id} asChild>
+                        <DropdownMenuItem key={item.id} asChild className="rounded-xl cursor-pointer py-2 px-3 text-xs font-semibold text-gray-700 hover:text-gray-900 hover:bg-gray-50 focus:bg-gray-50 transition-colors">
                           <Link
                             href={item.href}
-                            className="flex items-center gap-2"
-                            onClick={() => track(AnalyticsEvent.DashboardEntered, { source: 'org_menu' })}
+                            className="flex items-center gap-2.5 w-full"
+                            onClick={() => track(AnalyticsEvent.DashboardEntered, { source: 'org_menu', item: item.id })}
                           >
-                            <IconComponent size={16} weight="fill" />
-                            <span>{t(item.labelKey)}</span>
+                            <div className="w-6 h-6 rounded-lg bg-gray-100 flex items-center justify-center text-gray-700 shrink-0">
+                              <IconComponent size={14} weight="fill" />
+                            </div>
+                            <span>{item.label}</span>
                           </Link>
                         </DropdownMenuItem>
                       )

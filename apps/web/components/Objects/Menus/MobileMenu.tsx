@@ -288,27 +288,22 @@ export default function MobileMenu({
               />
             </Link>
 
-            {/* 1.5 Eğitici Oyunlar (Özel Vurgulu & Kategori Sonu) */}
-            {org?.config?.config?.features?.games?.enabled !== false && (
+            {/* 1.5 Eğitici Oyunlar */}
+            {isAuthenticated && org?.config?.config?.features?.games?.enabled !== false && (
               <Link
                 href={getUriWithOrg(orgslug, '/games')}
                 onClick={onClose}
-                className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-purple-500/10 border-2 border-amber-400/50 shadow-xs hover:border-amber-400 active:scale-[0.99] transition-all group"
+                className="flex items-center justify-between p-3.5 rounded-2xl bg-white border border-gray-200/90 shadow-xs hover:border-amber-300 active:scale-[0.99] transition-all group"
               >
                 <div className="flex items-center gap-3.5 min-w-0">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-rose-500 text-white shadow-xs flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                  <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 border border-amber-200/80 shadow-xs flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                     <GameController size={20} weight="fill" />
                   </div>
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-extrabold text-amber-950 group-hover:text-amber-800 transition-colors truncate">
-                        Eğitici Oyunlar
-                      </h3>
-                      <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.2 bg-gradient-to-r from-amber-500 to-rose-500 text-white rounded-full shadow-xs">
-                        YENİ
-                      </span>
-                    </div>
-                    <p className="text-xs text-amber-900/70 truncate mt-0.5">
+                    <h3 className="text-sm font-bold text-gray-900 group-hover:text-amber-700 transition-colors truncate">
+                      Eğitici Oyunlar
+                    </h3>
+                    <p className="text-xs text-gray-500 truncate mt-0.5">
                       Zeka, matematik, fen ve kelime oyunları
                     </p>
                   </div>
@@ -316,7 +311,7 @@ export default function MobileMenu({
                 <ArrowRight
                   size={16}
                   weight="bold"
-                  className="text-amber-600 group-hover:text-amber-800 group-hover:translate-x-1 transition-all shrink-0 ml-2"
+                  className="text-gray-300 group-hover:text-amber-700 group-hover:translate-x-1 transition-all shrink-0 ml-2"
                 />
               </Link>
             )}

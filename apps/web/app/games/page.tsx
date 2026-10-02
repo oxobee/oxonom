@@ -1,11 +1,11 @@
 import React from 'react'
-import GamesStoreClient from '@components/Games/GamesStoreClient'
+import GamesPageClient from './GamesPageClient'
 
 export const metadata = {
-  title: 'Eğitici Oyunlar | Oxonom',
+  title: 'Eğitici Oyunlar | Oxonom Edu',
   description: 'Öğrenciler için eğitici HTML5 zeka, matematik, fen ve dil oyunları.',
 }
 
 export default function GamesDirectPage() {
-  return <GamesStoreClient />
+  return <GamesPageClient />
 }

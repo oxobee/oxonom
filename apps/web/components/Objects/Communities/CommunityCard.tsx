@@ -99,6 +99,11 @@ function CommunityCard(props: PropsType) {
             <span className="text-[10px] font-bold uppercase tracking-wider">
               {props.community.public ? t('courses.public') : t('courses.private')}
             </span>
+            {(props.community as any).is_active === false && (
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">
+                Pasif
+              </span>
+            )}
           </div>
 
           {variant === 'dashboard' ? (

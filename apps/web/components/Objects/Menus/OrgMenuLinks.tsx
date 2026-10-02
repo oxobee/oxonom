@@ -1,4 +1,5 @@
 import { useOrg } from '@components/Contexts/OrgContext'
+import { useLHSession } from '@components/Contexts/LHSessionContext'
 import { getUriWithOrg } from '@services/config/config'
 import { Books, FolderSimple, ChatsCircle, Headphones, Cube, ShoppingBag, ChalkboardSimple, Files, GameController } from '@phosphor-icons/react'
 import { menuIcon } from '@components/Objects/Menus/menuIcons'
@@ -27,6 +28,8 @@ const DEFAULT_ORDER = ['library', 'boards', 'communities', 'playgrounds', 'podca
 function MenuLinks(props: { orgslug: string; primaryColor?: string }) {
   const { t } = useTranslation()
   const org = useOrg() as any
+  const session = useLHSession() as any
+  const isAuthenticated = session?.status === 'authenticated' && !!session?.data?.user
   const colors = getMenuColorClasses(props.primaryColor || '')
 
   const rf = org?.config?.config?.resolved_features
@@ -56,6 +59,8 @@ function MenuLinks(props: { orgslug: string; primaryColor?: string }) {
       }
       if (item.type === 'courses' || item.type === 'store') return null
       if (item.type === 'games') {
+        // Games is strictly auth-guarded like internal menus
+        if (!isAuthenticated) return null
         const gamesDisabled = org?.config?.config?.features?.games?.enabled === false
         if (gamesDisabled) return null
         return {
@@ -80,26 +85,12 @@ function MenuLinks(props: { orgslug: string; primaryColor?: string }) {
     })
     .filter(Boolean) as any[]
 
-  const gamesItem = rendered.find((it) => it.key === 'games')
-  const finalRendered = gamesItem
-    ? [...rendered.filter((it) => it.key !== 'games'), gamesItem]
-    : rendered
-
   return (
     <div className="ps-1">
       <ul className="flex space-x-4 items-center">
-        {finalRendered.map((it) => {
-          const isGames = it.key === 'games'
-          const content = isGames ? (
-            <li className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/15 via-rose-500/15 to-purple-500/15 border border-amber-400/50 text-amber-900 font-bold hover:shadow-xs transition-all hover:scale-105 cursor-pointer">
-              <span className="text-base">🎮</span>
-              <span>{it.label}</span>
-              <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 bg-gradient-to-r from-amber-500 to-rose-500 text-white rounded-full shadow-xs">
-                YENİ
-              </span>
-            </li>
-          ) : (
-            <li className={`flex space-x-2 items-center ${colors.text} font-semibold transition-colors`}>
+        {rendered.map((it) => {
+          const content = (
+            <li className={`flex space-x-2 items-center ${colors.text} font-semibold transition-colors hover:text-black`}>
               <it.Icon size={20} weight="fill" /> <span>{it.label}</span>
             </li>
           )

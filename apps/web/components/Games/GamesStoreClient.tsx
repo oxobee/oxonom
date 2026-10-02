@@ -110,9 +110,21 @@ export default function GamesStoreClient() {
   }, [currentRatingData])
 
   const categories = storeData?.categories || []
-  const featuredGames = storeData?.featured || []
-  const categorySliders = storeData?.sliders || []
   const allGames = storeData?.all_games || []
+  const featuredGames = (storeData?.featured && storeData.featured.length > 0)
+    ? storeData.featured
+    : allGames.filter((g) => g.is_featured).length > 0
+    ? allGames.filter((g) => g.is_featured)
+    : allGames.slice(0, 4)
+
+  const categorySliders = (storeData?.sliders && storeData.sliders.length > 0)
+    ? storeData.sliders
+    : categories
+        .map((cat) => ({
+          category: cat,
+          games: allGames.filter((g) => g.category_id === cat.id || g.category_ids?.includes(cat.id)),
+        }))
+        .filter((s) => s.games.length > 0)
 
   // Auto-advance 3D slider with pause on hover
   useEffect(() => {

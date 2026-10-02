@@ -106,7 +106,8 @@ export async function getOrgPlaygrounds(
       RequestBodyWithAuthHeader('GET', null, null, access_token)
     )
     if (result.ok) {
-      return await errorHandling(result)
+      const data = await errorHandling(result)
+      if (Array.isArray(data)) return data
     }
   } catch (_err) {
     // Fallback

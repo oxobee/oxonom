@@ -2463,7 +2463,10 @@
         "watermark_desc": "Okul sayfalarınızda LearnHouse marka filigranını gösterin",
         "watermark_free_plan": "Filigran ücretsiz planda her zaman gösterilir",
         "watermark_label": "\"Made with LearnHouse\" filigranı",
-        "watermark_ee": "Enterprise Edition lisansınız tarafından gizlendi"
+        "watermark_ee": "Enterprise Edition lisansınız tarafından gizlendi",
+        "email_sender_name": "E-posta Gönderici Adı",
+        "email_sender_name_placeholder": "Okulunuzun / Kurumunuzun Adı",
+        "email_sender_name_desc": "Bu okul için gönderilen e-postalarda (giriş bağlantıları, şifre sıfırlama, davetler, doğrulama ve karşılama e-postaları) alıcıların göreceği isim. Bu e-postalar ayrıca okul logonuzu ve marka renklerinizi taşır. Burada yalnızca isim değişir; gönderici adresi platformda kalır, bu sayede e-postalar SPF ve DKIM doğrulamalarından sorunsuz geçer. Varsayılan okul adını kullanmak için boş bırakın."
       },
       "images": {
         "title": "Resimler ve Önizlemeler",
@@ -2660,20 +2663,21 @@
         "subtitle": "Okulunuz için yapay zeka yeteneklerini yapılandırın",
         "enable_ai": "Yapay Zeka Özelliklerini Etkinleştir",
         "enable_ai_description": "Okulunuzun içerik ve öğrenme deneyimlerinde yapay zeka destekli özelliklere izin verin",
-        "admin_only": "Yalnızca yöneticiler AI ayarlarını değiştirebilir.",
+        "admin_only": "Yalnızca okul yöneticileri Yapay Zeka ayarlarını değiştirebilir.",
         "features_enabled": "Mevcut Yapay Zeka Özellikleri",
-        "feature_editor": "Yapay zeka destekli içerik editörü yardımı",
-        "feature_activity": "Yapay zeka öğrenme etkinliği etkileşimleri",
+        "feature_editor": "Yapay Zeka Destekli İçerik Editörü",
+        "feature_activity": "Öğrenme Etkinlikleri Asistanı",
         "feature_canvas": "Yapay zeka kanvas ve tasarım araçları",
         "toasts": {
           "save_success": "Yapay zeka ayarları başarıyla güncellendi",
           "save_error": "Yapay zeka ayarları güncellenemedi"
         },
-        "ai_copilot": "AI Copilot",
-        "ai_copilot_description": "Let learners ask questions about course content. Uses indexed material to provide grounded answers with source citations.",
-        "feature_editor_description": "AI-powered content editing assistance for course creators.",
-        "feature_activity_description": "AI assistant available within activities to help learners.",
-        "always_on": "Always on"
+        "ai_copilot": "Yapay Zeka Asistanı (AI Copilot)",
+        "ai_copilot_description": "Öğrencilerin ders ve eğitim içerikleri hakkında soru sormasını sağlar. Kaynak göstererek doğrulanmış yanıtlar sunar.",
+        "feature_editor_description": "Öğretmenler için ders hazırlama ve düzenleme asistanı.",
+        "feature_activity_description": "Öğrencilerin etkinlikleri tamamlarken rehberlik almasını sağlayan yapay zeka desteği.",
+        "always_on": "Her Zaman Açık",
+        "currently_disabled": "Yapay Zeka özellikleri şu anda kapalıdır. Aşağıdaki anahtarı açarak etkinleştirebilirsiniz."
       },
       "features": {
         "title": "Özellik Ayarları",
@@ -2922,7 +2926,29 @@
           "select": "Seç"
         },
         "org_id_not_found": "Okul kimliği bulunamadı",
-        "unknown_section_type": "Unknown section type"
+        "unknown_section_type": "Unknown section type",
+        "templates": {
+          "title": "Hazır Şablon ile Başlayın",
+          "description": "Bir başlangıç şablonu seçin ve bölümleri okulunuza göre kolayca özelleştirin.",
+          "sections_count_one": "{{count}} bölüm",
+          "sections_count_other": "{{count}} bölüm",
+          "academy": {
+            "name": "Akademi / Okul",
+            "description": "Ziyaretçiler ve öğrenciler için özel karşılama, okul istatistikleri, nasıl çalışır, öne çıkan dersler, veli görüşleri ve SSS."
+          },
+          "product": {
+            "name": "Eğitim & Tanıtım",
+            "description": "Büyük karşılama başlığı, tanıtım videosu, branş başlıkları, güncel dersler ve iletişim duyurusu."
+          },
+          "minimal": {
+            "name": "Sade & Minimal",
+            "description": "Kısa bir tanıtım yazısı ve öne çıkan okul dersleri."
+          },
+          "launch": {
+            "name": "Dönem Açılışı",
+            "description": "Duyuru bandı, geri sayım sayacı, adım adım kayıt rehberi, okul şubeleri ve sıkça sorulan sorular."
+          }
+        }
       },
       "theme": {
         "primary_color": "Ana Renk",
@@ -3157,6 +3183,37 @@
         "custom_required": "A label and a URL are required",
         "plan_locked": "Requires {{plan}} plan",
         "feature_off": "Feature is off"
+      },
+      "danger_zone": {
+        "title": "Tehlike Bölgesi",
+        "subtitle": "Bu işlemler kalıcıdır ve geri alınamaz.",
+        "remove_members_title": "Tüm üyeleri çıkar",
+        "remove_members_desc": "Sizin dışınızdaki tüm üyeleri bu okuldan kaldırır. Dersler, ödevler ve diğer içerikler korunur.",
+        "remove_members_btn": "Tümünü Çıkar",
+        "remove_members_dialog_title": "Tüm üyeler çıkarılsın mı?",
+        "remove_members_dialog_desc": "Sizin dışınızdaki tüm üyeler bu okuldan çıkarılacaktır. Bu işlem geri alınamaz.",
+        "wipe_content_title": "Tüm içerikleri temizle",
+        "wipe_content_desc": "Tüm dersleri, panoları ve içeriklerini kalıcı olarak siler. Okul ve üyeleri korunur.",
+        "wipe_content_btn": "İçerikleri Temizle",
+        "wipe_content_dialog_title": "Tüm içerikler temizlensin mı?",
+        "wipe_content_dialog_desc": "Tüm dersler ve içerikleri kalıcı olarak silinecektir. Bu işlem geri alınamaz.",
+        "delete_org_title": "Bu okulu sil",
+        "delete_org_desc": "Bu okulu ve içindeki her şeyi (üyeler, dersler, panolar, ödevler ve ayarlar) kalıcı olarak siler. Bu işlem geri alınamaz.",
+        "delete_org_btn": "Okulu Sil",
+        "delete_org_confirm_label": "Onaylamak için {{slug}} yazın.",
+        "delete_org_tooltip": "Okulu kalıcı olarak sil",
+        "no_permission": "Bu okulun tehlike bölgesini yönetme yetkiniz bulunmamaktadır.",
+        "toasts": {
+          "removing_members": "Tüm üyeler çıkarılıyor...",
+          "members_removed": "Diğer tüm üyeler başarıyla çıkarıldı",
+          "remove_members_error": "Üyeler çıkarılamadı",
+          "wiping_content": "Okul içerikleri siliniyor...",
+          "content_wiped": "Tüm içerikler başarıyla silindi",
+          "wipe_content_error": "İçerikler silinemedi",
+          "deleting_org": "Okul siliniyor...",
+          "org_deleted": "Okul başarıyla silindi",
+          "delete_org_error": "Okul silinemedi"
+        }
       }
     },
     "users": {
@@ -5414,7 +5471,7 @@
       "sticky_note": "Yapışkan Not",
       "thick": "Kalın",
       "thin": "İnce",
-      "todo": "Yapılacak",
+      "todo": "Yapılacaklar Stickerı",
       "undo": "Geri Al",
       "webpage": "Web Sayfası",
       "youtube": "YouTube"
@@ -5438,7 +5495,9 @@
       "zoom_out": "Uzaklaştır"
     },
     "no_boards": "Henüz pano yok",
-    "no_search_results": "Pano bulunamadı"
+    "no_search_results": "Pano bulunamadı",
+    "todo_title": "YAPILACAKLAR",
+    "add_item": "+ Madde ekle..."
   },
   "embed": {
     "not_supported_description": "Bu tür etkinlik kimlik doğrulama gerektirir ve yerleştirilemez.",

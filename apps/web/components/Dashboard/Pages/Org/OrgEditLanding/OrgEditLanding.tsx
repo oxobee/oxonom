@@ -228,6 +228,7 @@ const OrgEditLanding = () => {
   const [selectedSection, setSelectedSection] = React.useState<number | null>(null)
   const [isSaving, setIsSaving] = React.useState(false)
   const [showPageSettings, setShowPageSettings] = React.useState(false)
+  const [showTemplates, setShowTemplates] = React.useState(false)
   const importInputRef = React.useRef<HTMLInputElement>(null)
 
   const exportLanding = () => {
@@ -535,7 +536,7 @@ const OrgEditLanding = () => {
                               <div
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
-                                onClick={() => { setSelectedSection(index); setShowPageSettings(false) }}
+                                onClick={() => { setSelectedSection(index); setShowPageSettings(false); setShowTemplates(false) }}
                                 className={`p-4 bg-white/80 backdrop-blur-xs rounded-lg cursor-pointer border  ${
                                   selectedSection === index 
                                     ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-500/20 shadow-xs' 
@@ -660,10 +661,19 @@ const OrgEditLanding = () => {
 
                 <div className="pt-4 mt-4 border-t space-y-2">
                   <Button
+                    id="landing-template-switcher"
+                    variant={showTemplates ? 'default' : 'outline'}
+                    className={`w-full justify-start ${showTemplates ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'text-indigo-700 bg-indigo-50/60 border-indigo-200 hover:bg-indigo-100'}`}
+                    onClick={() => { setShowTemplates(true); setShowPageSettings(false); setSelectedSection(null) }}
+                  >
+                    <Sparkles className="h-4 w-4 me-2 text-indigo-500" />
+                    {t('dashboard.organization.landing.templates.title', { defaultValue: 'Hazır Şablonlar / Temalar' })}
+                  </Button>
+                  <Button
                     id="landing-page-settings"
                     variant={showPageSettings ? 'default' : 'outline'}
                     className="w-full justify-start"
-                    onClick={() => { setShowPageSettings(true); setSelectedSection(null) }}
+                    onClick={() => { setShowPageSettings(true); setShowTemplates(false); setSelectedSection(null) }}
                   >
                     <SlidersHorizontal className="h-4 w-4 me-2" />
                     {t(`${B}.page.title`)}
@@ -689,38 +699,48 @@ const OrgEditLanding = () => {
                     settings={landingData.settings || {}}
                     onChange={(settings) => setLandingData(prev => ({ ...prev, settings }))}
                   />
-                ) : selectedSection !== null ? (
+                ) : selectedSection !== null && !showTemplates ? (
                   <SectionEditor
                     section={landingData.sections[selectedSection]}
                     onChange={(updatedSection) => updateSection(selectedSection, updatedSection)}
                   />
-                ) : landingData.sections.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center gap-5 py-10">
+                ) : (
+                  <div className="h-full flex flex-col items-center justify-center gap-5 py-6">
                     <div className="text-center">
-                      <div className="flex items-center justify-center gap-2 font-medium text-lg">
-                        <Sparkles className="w-5 h-5 text-gray-500" />
-                        {t('dashboard.organization.landing.templates.title')}
+                      <div className="flex items-center justify-center gap-2 font-bold text-xl text-gray-900">
+                        <Sparkles className="w-5 h-5 text-indigo-600" />
+                        {t('dashboard.organization.landing.templates.title', { defaultValue: 'Hazır Şablon ile Başlayın' })}
                       </div>
-                      <p className="text-sm text-gray-500 mt-1">{t('dashboard.organization.landing.templates.description')}</p>
+                      <p className="text-sm text-gray-500 mt-1 max-w-md">
+                        {t('dashboard.organization.landing.templates.description', { defaultValue: 'Bir başlangıç şablonu seçin ve bölümleri okulunuza göre kolayca özelleştirin.' })}
+                      </p>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-3xl">
                       {LANDING_TEMPLATES.map((template) => (
                         <button
                           key={template.id}
                           type="button"
-                          onClick={() => applyTemplate(template.id)}
-                          className="text-start p-5 rounded-xl border border-gray-200 hover:border-gray-400 hover:bg-gray-50 transition-colors"
+                          onClick={() => {
+                            applyTemplate(template.id)
+                            setShowTemplates(false)
+                            toast.success(`${t(`dashboard.organization.landing.templates.${template.id}.name`, { defaultValue: template.id })} şablonu uygulandı!`)
+                          }}
+                          className="text-start p-5 rounded-xl border border-gray-200 hover:border-indigo-500 hover:bg-indigo-50/30 transition-all nice-shadow group"
                         >
-                          <div className="font-semibold text-gray-900">{t(`dashboard.organization.landing.templates.${template.id}.name`)}</div>
-                          <div className="text-sm text-gray-500 mt-1">{t(`dashboard.organization.landing.templates.${template.id}.description`)}</div>
-                          <div className="text-xs text-gray-400 mt-3">{t('dashboard.organization.landing.templates.sections_count', { count: template.sections.length })}</div>
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-gray-900 group-hover:text-indigo-600 transition">
+                              {t(`dashboard.organization.landing.templates.${template.id}.name`, { defaultValue: template.id })}
+                            </span>
+                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                              {t('dashboard.organization.landing.templates.sections_count', { count: template.sections.length, defaultValue: `${template.sections.length} bölüm` })}
+                            </span>
+                          </div>
+                          <div className="text-xs text-gray-500 mt-2 leading-relaxed">
+                            {t(`dashboard.organization.landing.templates.${template.id}.description`, { defaultValue: '' })}
+                          </div>
                         </button>
                       ))}
                     </div>
-                  </div>
-                ) : (
-                  <div className="h-full flex items-center justify-center text-gray-500">
-                    {t('dashboard.organization.landing.select_section')}
                   </div>
                 )}
               </div>

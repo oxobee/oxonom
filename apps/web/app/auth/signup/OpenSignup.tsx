@@ -88,7 +88,8 @@ function OpenSignUpComponent({ org: propOrg }: OpenSignUpComponentProps = {}) {
   // both, so offering them here would only surface a 403.
   const allowedMethods = React.useMemo(() => getAllowedAuthMethods(org), [org])
   const passwordAllowed = allowedMethods.has('password')
-  const googleAllowed = allowedMethods.has('google')
+  // Temporarily hidden per user request
+  const googleAllowed = false
 
   // Field definitions ship with the org config the page already loaded, so no
   // extra request is needed to render them.

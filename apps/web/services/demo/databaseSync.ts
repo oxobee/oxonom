@@ -38191,21 +38191,43 @@ export function getSyncedGamesStore(
   orgSlugOrIdOrParams?: any,
   categorySlugOrParams?: any
 ): any {
-  let catSlug: string | undefined
-  if (typeof categorySlugOrParams === 'string') {
-    catSlug = categorySlugOrParams
-  } else if (categorySlugOrParams?.category_slug) {
-    catSlug = categorySlugOrParams.category_slug
-  } else if (typeof orgSlugOrIdOrParams === 'object' && orgSlugOrIdOrParams?.category_slug) {
-    catSlug = orgSlugOrIdOrParams.category_slug
+  let params: any = {}
+  if (typeof orgSlugOrIdOrParams === 'object' && orgSlugOrIdOrParams !== null) {
+    params = { ...params, ...orgSlugOrIdOrParams }
+  }
+  if (typeof categorySlugOrParams === 'object' && categorySlugOrParams !== null) {
+    params = { ...params, ...categorySlugOrParams }
+  } else if (typeof categorySlugOrParams === 'string') {
+    params.category_slug = categorySlugOrParams
   }
 
+  let catSlug = params.category_slug
+  let gradeLevel = params.grade_level
+  let search = params.search
+
   let filtered = [...SYNCED_GAMES]
-  if (catSlug) {
+  if (catSlug && catSlug !== 'all') {
     const cat = SYNCED_CATEGORIES.find((c: any) => c.slug === catSlug)
     if (cat) {
       filtered = filtered.filter((g: any) => g.category_id === cat.id || g.category_ids?.includes(cat.id))
     }
+  }
+
+  if (gradeLevel && gradeLevel !== 'all') {
+    const gl = String(gradeLevel).trim().toLowerCase()
+    filtered = filtered.filter((g: any) => {
+      if (!g.grade_levels || !Array.isArray(g.grade_levels)) return true
+      return g.grade_levels.some((level: string) => String(level).toLowerCase().includes(gl))
+    })
+  }
+
+  if (search && search.trim()) {
+    const s = search.trim().toLowerCase()
+    filtered = filtered.filter((g: any) =>
+      g.title?.toLowerCase().includes(s) ||
+      g.description?.toLowerCase().includes(s) ||
+      g.learning_objectives?.toLowerCase().includes(s)
+    )
   }
 
   const featured = filtered.filter((g: any) => g.is_featured)
@@ -38217,10 +38239,20 @@ export function getSyncedGamesStore(
     }
   }
 
+  const sliders = SYNCED_CATEGORIES.map((cat: any) => {
+    const games = filtered.filter((g: any) => g.category_id === cat.id || g.category_ids?.includes(cat.id))
+    return {
+      category: cat,
+      games,
+    }
+  }).filter((s) => s.games.length > 0)
+
   return {
-    featured,
-    by_category: byCategory,
     categories: SYNCED_CATEGORIES,
+    featured: featured.length > 0 ? featured : filtered.slice(0, 5),
+    sliders,
+    all_games: filtered,
+    by_category: byCategory,
     total_count: filtered.length,
   }
 }
@@ -38229,7 +38261,8 @@ export function getSyncedGamePlay(identifier: string): any {
   const game = SYNCED_GAMES.find((g: any) => g.game_uuid === identifier || g.slug === identifier || String(g.id) === identifier) || SYNCED_GAMES[0]
   return {
     game,
-    play_url: `/games/${game.slug}.html`,
+    html_content: (game as any)?.html_content || `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${game?.title || 'Eğitici Oyun'}</title><style>body{margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:#090d16;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;text-align:center;padding:24px;box-sizing:border-box}h1{margin-bottom:12px;font-size:28px;color:#38bdf8}p{max-width:500px;line-height:1.6;color:#94a3b8;font-size:16px}.btn{margin-top:20px;padding:12px 28px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;border:none;border-radius:12px;font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 10px 25px -5px rgba(59,130,246,0.5);transition:transform 0.2s}.btn:hover{transform:scale(1.05)}</style></head><body><h1>🎮 ${game?.title || 'Eğitici Oyun'}</h1><p>${game?.description || 'Öğrenciler için eğitici HTML5 öğrenme oyunu.'}</p><button class="btn" onclick="alert('Oyun başlatıldı! Tebrikler!')">Oyuna Başla</button></body></html>`,
+    play_url: `/games/${game?.slug}.html`,
     session_token: 'demo-session-token',
   }
 }

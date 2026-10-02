@@ -44,8 +44,9 @@ const LoginClient = (props: LoginClientProps) => {
     [props.org]
   )
   const passwordAllowed = allowedMethods.has('password')
-  const magicLoginAllowed = allowedMethods.has('magic_login')
-  const googleAllowed = allowedMethods.has('google')
+  // Temporarily hidden per user request
+  const magicLoginAllowed = false
+  const googleAllowed = false
   const ssoAllowed = allowedMethods.has('sso')
   // SSO counts only once it is actually configured for the org (ssoEnabled).
   const hasAlternativeMethods = googleAllowed || magicLoginAllowed || (ssoAllowed && ssoEnabled)

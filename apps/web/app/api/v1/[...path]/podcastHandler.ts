@@ -17,6 +17,21 @@ import {
   reorderEpisodesInStore,
 } from '@services/podcasts/podcastStore'
 
+async function fileToDataUri(file: any): Promise<string> {
+  if (!file) return ''
+  if (typeof file === 'string') return file
+  if (file && typeof file === 'object' && typeof file.arrayBuffer === 'function') {
+    try {
+      const buf = Buffer.from(await file.arrayBuffer())
+      const mime = file.type || 'image/jpeg'
+      return `data:${mime};base64,${buf.toString('base64')}`
+    } catch {
+      return ''
+    }
+  }
+  return ''
+}
+
 export async function handlePodcastApi(request: NextRequest, path: string): Promise<Response> {
   const method = request.method.toUpperCase()
   // Remove leading /api/v1/podcasts
@@ -41,6 +56,9 @@ export async function handlePodcastApi(request: NextRequest, path: string): Prom
         body.tags = formData.get('tags') as string
         body.public = formData.get('public') === 'true'
         body.published = formData.get('published') !== 'false'
+        const thumb = formData.get('thumbnail')
+        const thumbUri = await fileToDataUri(thumb)
+        if (thumbUri) body.thumbnail_image = thumbUri
       } else {
         try {
           body = await request.json()
@@ -60,8 +78,6 @@ export async function handlePodcastApi(request: NextRequest, path: string): Prom
   }
 
   // 2. Org slug routes:
-  // /api/v1/podcasts/org_slug/:slug/count
-  // /api/v1/podcasts/org_slug/:slug/page/:page/limit/:limit
   if (subpath.startsWith('org_slug/')) {
     const parts = subpath.replace('org_slug/', '').split('/')
     const slug = parts[0]
@@ -84,19 +100,36 @@ export async function handlePodcastApi(request: NextRequest, path: string): Prom
   }
 
   // 3. Episode direct routes:
-  // /api/v1/podcasts/episodes/:episode_uuid
-  // /api/v1/podcasts/episodes/:episode_uuid/audio
-  // /api/v1/podcasts/episodes/:episode_uuid/thumbnail
   if (subpath.startsWith('episodes/')) {
     const parts = subpath.replace('episodes/', '').split('/')
     const episodeUuid = parts[0]
     const subaction = parts[1]
 
     if (subaction === 'audio' && (method === 'PUT' || method === 'POST')) {
+      let audioFile = '/sample_podcast.mp3'
+      const contentType = request.headers.get('content-type') || ''
+      if (contentType.includes('multipart/form-data')) {
+        const formData = await request.formData()
+        const audio = formData.get('audio')
+        if (audio && typeof audio === 'object' && 'name' in audio) {
+          audioFile = (audio as File).name || '/sample_podcast.mp3'
+        }
+      }
+      updateEpisodeInStore(episodeUuid, { audio_file: audioFile })
       return NextResponse.json({ success: true, message: 'Audio uploaded' }, { status: 200 })
     }
 
     if (subaction === 'thumbnail' && (method === 'PUT' || method === 'POST')) {
+      let thumbnailImage = ''
+      const contentType = request.headers.get('content-type') || ''
+      if (contentType.includes('multipart/form-data')) {
+        const formData = await request.formData()
+        const thumb = formData.get('thumbnail')
+        thumbnailImage = await fileToDataUri(thumb)
+      }
+      if (thumbnailImage) {
+        updateEpisodeInStore(episodeUuid, { thumbnail_image: thumbnailImage })
+      }
       return NextResponse.json({ success: true, message: 'Thumbnail uploaded' }, { status: 200 })
     }
 
@@ -132,12 +165,6 @@ export async function handlePodcastApi(request: NextRequest, path: string): Prom
   }
 
   // 4. Podcast UUID routes:
-  // /api/v1/podcasts/:podcast_uuid
-  // /api/v1/podcasts/:podcast_uuid/meta
-  // /api/v1/podcasts/:podcast_uuid/rights
-  // /api/v1/podcasts/:podcast_uuid/thumbnail
-  // /api/v1/podcasts/:podcast_uuid/episodes
-  // /api/v1/podcasts/:podcast_uuid/episodes/reorder
   const parts = subpath.split('/')
   const podcastUuid = parts[0]
   const subaction = parts[1]
@@ -152,14 +179,15 @@ export async function handlePodcastApi(request: NextRequest, path: string): Prom
   }
 
   if (subaction === 'thumbnail' && (method === 'PUT' || method === 'POST')) {
-    let thumbnailImage = 'https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=600&auto=format&fit=crop&q=80'
+    let thumbnailImage = ''
     const contentType = request.headers.get('content-type') || ''
     if (contentType.includes('multipart/form-data')) {
       const formData = await request.formData()
       const thumb = formData.get('thumbnail')
-      if (typeof thumb === 'string' && thumb.startsWith('http')) {
-        thumbnailImage = thumb
-      }
+      thumbnailImage = await fileToDataUri(thumb)
+    }
+    if (!thumbnailImage) {
+      thumbnailImage = 'https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=600&auto=format&fit=crop&q=80'
     }
     updatePodcastThumbnailInStore(podcastUuid, thumbnailImage)
     return NextResponse.json({ success: true, message: 'Thumbnail updated successfully' }, { status: 200 })
@@ -197,11 +225,12 @@ export async function handlePodcastApi(request: NextRequest, path: string): Prom
           body.published = formData.get('published') !== 'false'
           const audio = formData.get('audio')
           if (audio && typeof audio === 'object' && 'name' in audio) {
-            body.audio_file = (audio as File).name
+            body.audio_file = (audio as File).name || '/sample_podcast.mp3'
           }
           const thumb = formData.get('thumbnail')
-          if (thumb && typeof thumb === 'object' && 'name' in thumb) {
-            body.thumbnail_image = (thumb as File).name
+          const thumbUri = await fileToDataUri(thumb)
+          if (thumbUri) {
+            body.thumbnail_image = thumbUri
           }
         } else {
           body = await request.json()

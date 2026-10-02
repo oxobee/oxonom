@@ -275,9 +275,9 @@ const OrgEditGeneral: React.FC = () => {
 
                     <div>
                       <Label htmlFor="emailSenderName">
-                        {t('dashboard.organization.settings.email_sender_name')}
+                        {t('dashboard.organization.settings.email_sender_name', { defaultValue: 'E-posta Gönderici Adı' })}
                         <span className="text-gray-500 text-sm ms-2">
-                          ({MAX_EMAIL_SENDER_NAME_LENGTH - (emailSenderName?.length || 0)} characters left)
+                          ({MAX_EMAIL_SENDER_NAME_LENGTH - (emailSenderName?.length || 0)} {t('common.characters_left', { defaultValue: 'karakter kaldı' })})
                         </span>
                       </Label>
                       <Input
@@ -285,10 +285,10 @@ const OrgEditGeneral: React.FC = () => {
                         name="emailSenderName"
                         value={emailSenderName}
                         onChange={(e) => setEmailSenderName(e.target.value)}
-                        placeholder={t('dashboard.organization.settings.email_sender_name_placeholder')}
+                        placeholder={t('dashboard.organization.settings.email_sender_name_placeholder', { defaultValue: 'Okulunuzun / Kurumunuzun Adı' })}
                         maxLength={MAX_EMAIL_SENDER_NAME_LENGTH}
                       />
-                      <p className="text-gray-500 text-sm mt-1">{t('dashboard.organization.settings.email_sender_name_desc')}</p>
+                      <p className="text-gray-500 text-sm mt-1">{t('dashboard.organization.settings.email_sender_name_desc', { defaultValue: 'Bu okul için gönderilen e-postalarda alıcıların göreceği isim.' })}</p>
                     </div>
 
                     <div>

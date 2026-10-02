@@ -39,13 +39,17 @@ import {
   validateTcKimlik,
   lookupTcRecord,
   getOrgTeachers,
+  generateAssignmentSubmissionsData,
 } from '@services/demo/schoolDirectory'
+import { DEFAULT_SCHOOL_ASSIGNMENTS } from '@services/school_assignments/school_assignments'
 import {
   TURKISH_COMMUNITIES,
   TURKISH_FOLDERS,
   TURKISH_COURSES,
 } from '@services/demo/turkishSchoolData'
 import { handlePodcastApi } from './podcastHandler'
+import { handleCommunityApi } from './communityHandler'
+import { handleResourceApi } from './resourceHandler'
 
 export const maxDuration = 300
 export const dynamic = 'force-dynamic'
@@ -274,6 +278,24 @@ async function handleFallback(request: NextRequest, path: string): Promise<Respo
 
   // School Assignments & Homework
   if (path.startsWith('/api/v1/school_assignments') || path.startsWith('/api/v1/assignments')) {
+    if (path.includes('/submissions') || path.endsWith('/submissions')) {
+      const parts = path.split('/')
+      const asgUuid = parts[parts.indexOf('submissions') - 1] || 'asg_ritmik_sayma_01'
+      const matchedAsg = DEFAULT_SCHOOL_ASSIGNMENTS.find((a) => a.assignment_uuid === asgUuid || String(a.id) === asgUuid) || DEFAULT_SCHOOL_ASSIGNMENTS[0]
+      const subData = generateAssignmentSubmissionsData(asgUuid, activeClassItem)
+      return NextResponse.json({
+        assignment: matchedAsg,
+        total_students: subData.total_students,
+        submitted_count: subData.submitted_count,
+        graded_count: subData.graded_count,
+        students: subData.students,
+      }, { status: 200 })
+    }
+
+    if (path.includes('/grade')) {
+      return NextResponse.json({ success: true, message: 'Not ve değerlendirme başarıyla kaydedildi.' }, { status: 200 })
+    }
+
     const classAssignments = generateClassroomAssignments(activeClassItem)
     const parts = path.split('/')
     const asgId = parts[parts.length - 1]
@@ -285,23 +307,17 @@ async function handleFallback(request: NextRequest, path: string): Promise<Respo
     return NextResponse.json(classAssignments, { status: 200 })
   }
 
-  // Communities (Forum & Discussion boards)
-  if (path.startsWith('/api/v1/communities')) {
-    const parts = path.split('/')
-    const commId = parts[parts.indexOf('communities') + 1] || ''
-    if (commId && commId !== 'org' && !commId.startsWith('org')) {
-      const matched = TURKISH_COMMUNITIES.find((c) => c.community_uuid === commId || String(c.id) === commId)
-      if (matched) return NextResponse.json(matched, { status: 200 })
-    }
-    return NextResponse.json(TURKISH_COMMUNITIES, { status: 200 })
+  // Communities & Discussions (Full in-memory Turkish parent forums)
+  if (path.startsWith('/api/v1/communities') || path.startsWith('/api/v1/discussions')) {
+    return handleCommunityApi(request, path)
   }
 
-  // Discussions
-  if (path.startsWith('/api/v1/discussions')) {
-    return NextResponse.json(SYNCED_DISCUSSIONS, { status: 200 })
+  // Educational Resources & Folders (Full library CRUD)
+  if (path.startsWith('/api/v1/resources')) {
+    return handleResourceApi(request, path)
   }
 
-  // Folders (Library & Resources)
+  // Folders (Legacy fallback)
   if (path.startsWith('/api/v1/folders')) {
     return NextResponse.json(TURKISH_FOLDERS, { status: 200 })
   }
@@ -428,6 +444,16 @@ async function proxyToBackend(request: NextRequest): Promise<Response> {
   // Fast-path for podcasts (Full CRUD handled directly with 0ms latency)
   if (path.startsWith('/api/v1/podcasts')) {
     return handlePodcastApi(request, path)
+  }
+
+  // Fast-path for communities & discussions (Full CRUD handled directly with 0ms latency)
+  if (path.startsWith('/api/v1/communities') || path.startsWith('/api/v1/discussions')) {
+    return handleCommunityApi(request, path)
+  }
+
+  // Fast-path for educational resources & folders (Full CRUD handled directly with 0ms latency)
+  if (path.startsWith('/api/v1/resources')) {
+    return handleResourceApi(request, path)
   }
 
   // On Vercel / serverless when no remote backend URL is provided (defaults to localhost),

@@ -600,17 +600,41 @@ function ActivityClient(props: ActivityClientProps) {
                                 fill="none"
                                 strokeLinecap="round"
                                 strokeDasharray={2 * Math.PI * 14}
-                                strokeDashoffset={2 * Math.PI * 14 * (1 - (trailData?.runs?.find((run: any) => run.course_uuid === course.course_uuid)?.steps?.filter((step: any) => step.complete)?.length || 0) / (course.chapters?.reduce((acc: number, chapter: any) => acc + chapter.activities.length, 0) || 1))}
+                                strokeDashoffset={(() => {
+                                  const run = trailData?.runs?.find((r: any) => r.course_uuid === course.course_uuid)
+                                  const steps = Array.isArray(run?.steps) ? run.steps : []
+                                  const completedSteps = steps.filter((step: any) => step?.complete).length
+                                  const totalActivities = Array.isArray(course.chapters)
+                                    ? course.chapters.reduce((acc: number, chapter: any) => acc + (Array.isArray(chapter?.activities) ? chapter.activities.length : 0), 0)
+                                    : 1
+                                  return 2 * Math.PI * 14 * (1 - completedSteps / (totalActivities || 1))
+                                })()}
                               />
                             </svg>
                             <div className="absolute inset-0 flex items-center justify-center">
                               <span className="text-xs font-bold text-gray-800">
-                                {Math.round(((trailData?.runs?.find((run: any) => run.course_uuid === course.course_uuid)?.steps?.filter((step: any) => step.complete)?.length || 0) / (course.chapters?.reduce((acc: number, chapter: any) => acc + chapter.activities.length, 0) || 1)) * 100)}%
+                                {(() => {
+                                  const run = trailData?.runs?.find((r: any) => r.course_uuid === course.course_uuid)
+                                  const steps = Array.isArray(run?.steps) ? run.steps : []
+                                  const completedSteps = steps.filter((step: any) => step?.complete).length
+                                  const totalActivities = Array.isArray(course.chapters)
+                                    ? course.chapters.reduce((acc: number, chapter: any) => acc + (Array.isArray(chapter?.activities) ? chapter.activities.length : 0), 0)
+                                    : 1
+                                  return Math.round((completedSteps / (totalActivities || 1)) * 100)
+                                })()}%
                               </span>
                             </div>
                           </div>
                           <div className="text-xs text-gray-600">
-                            {trailData?.runs?.find((run: any) => run.course_uuid === course.course_uuid)?.steps?.filter((step: any) => step.complete)?.length || 0} {t('common.of')} {course.chapters?.reduce((acc: number, chapter: any) => acc + chapter.activities.length, 0) || 0}
+                            {(() => {
+                              const run = trailData?.runs?.find((r: any) => r.course_uuid === course.course_uuid)
+                              const steps = Array.isArray(run?.steps) ? run.steps : []
+                              const completedSteps = steps.filter((step: any) => step?.complete).length
+                              const totalActivities = Array.isArray(course.chapters)
+                                ? course.chapters.reduce((acc: number, chapter: any) => acc + (Array.isArray(chapter?.activities) ? chapter.activities.length : 0), 0)
+                                : 0
+                              return `${completedSteps} ${t('common.of')} ${totalActivities}`
+                            })()}
                           </div>
                         </motion.div>
                         
@@ -872,7 +896,7 @@ function ActivityClient(props: ActivityClientProps) {
                               {/* Authors and Dates Section */}
                               <div className="flex flex-wrap items-center gap-3 mt-2">
                                 {/* Avatars */}
-                                {course.authors && course.authors.length > 0 && (
+                                {Array.isArray(course?.authors) && course.authors.length > 0 && (
                                   <div className="flex -space-x-3">
                                     {course.authors.filter((a: any) => a.authorship_status === 'ACTIVE').slice(0, 3).map((author: any, idx: number) => (
                                       <div key={author.user.user_uuid} className="relative" style={{ zIndex: 10 - idx }}>
@@ -895,7 +919,7 @@ function ActivityClient(props: ActivityClientProps) {
                                   </div>
                                 )}
                                 {/* Author names */}
-                                {course.authors && course.authors.length > 0 && (
+                                {Array.isArray(course?.authors) && course.authors.length > 0 && (
                                   <div className="text-xs text-gray-700 font-medium flex items-center gap-1">
                                     {course.authors.filter((a: any) => a.authorship_status === 'ACTIVE').length > 1 && (
                                       <span>{t('courses.co_created_by')} </span>

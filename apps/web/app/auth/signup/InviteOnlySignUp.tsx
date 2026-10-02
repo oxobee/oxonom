@@ -361,25 +361,7 @@ function InviteOnlySignUpComponent(props: InviteOnlySignUpProps) {
           </Form.Submit>
         </FormLayout>
 
-        {/* Divider */}
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-neutral-200" />
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-3 text-black/30 bg-white text-xs font-medium">{t('common.or')}</span>
-          </div>
-        </div>
-
-        {/* Google Sign In */}
-        <button
-          onClick={handleGoogleSignIn}
-          disabled={isSubmitting}
-          className="flex justify-center items-center w-full bg-white hover:bg-neutral-50 text-black space-x-3 font-medium p-3 rounded-lg border border-neutral-200 transition-all text-sm disabled:opacity-50"
-        >
-          <img src="https://fonts.gstatic.com/s/i/productlogos/googleg/v6/24px.svg" alt="" className="w-4 h-4" />
-          <span>{t('auth.sign_in_with_google')}</span>
-        </button>
+        {/* Google sign-in temporarily hidden */}
 
         {/* Login Link */}
         <p className="text-center text-sm text-black/35 mt-6">

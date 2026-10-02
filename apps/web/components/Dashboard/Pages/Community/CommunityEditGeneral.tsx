@@ -7,7 +7,8 @@ import { useTranslation } from 'react-i18next'
 import { useLHSession } from '@components/Contexts/LHSessionContext'
 import { useOrg } from '@components/Contexts/OrgContext'
 import { useCommunity, useCommunityDispatch } from '@components/Contexts/CommunityContext'
-import { updateCommunity } from '@services/communities/communities'
+import { updateCommunity, deleteCommunity } from '@services/communities/communities'
+import { getUriWithOrg } from '@services/config/config'
 import {
   getUserGroups,
   getUserGroupsByResource,
@@ -29,6 +30,9 @@ import {
   Users,
   CheckCircle2,
   AlertCircle,
+  Trash2,
+  Power,
+  AlertTriangle,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Label } from '@components/ui/label'
@@ -132,6 +136,31 @@ const CommunityEditGeneral: React.FC = () => {
     name: community.name,
     description: community.description || '',
     public: community.public,
+    is_active: (community as any).is_active !== false,
+  }
+
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  const handleDeleteCommunity = async () => {
+    if (!window.confirm('Bu topluluğu ve altındaki tüm tartışmaları kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.')) {
+      return
+    }
+    setIsDeleting(true)
+    const toastId = toast.loading('Topluluk siliniyor...')
+    try {
+      await deleteCommunity(community.community_uuid, accessToken)
+      await Promise.all([
+        revalidateTags(['communities'], org.slug),
+        queryClient.invalidateQueries({ queryKey: queryKeys.community.list(org.id) }),
+      ])
+      toast.success('Topluluk başarıyla silindi.', { id: toastId })
+      router.push(getUriWithOrg(org.slug, '') + '/dash/communities')
+    } catch (error) {
+      console.error('Failed to delete community:', error)
+      toast.error('Topluluk silinirken bir hata oluştu.', { id: toastId })
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   const toggleClassSelection = (classId: number) => {
@@ -165,14 +194,15 @@ const CommunityEditGeneral: React.FC = () => {
     const loadingToast = toast.loading(t('dashboard.courses.communities.general.toasts.updating'))
 
     try {
-      // 1. Update basic community info (name, description, public status)
+      // 1. Update basic community info (name, description, public status, is_active)
       const result = await updateCommunity(
         community.community_uuid,
         {
           name: values.name,
           description: values.description || null,
           public: values.public,
-        },
+          is_active: values.is_active,
+        } as any,
         accessToken
       )
 
@@ -306,6 +336,40 @@ const CommunityEditGeneral: React.FC = () => {
                           <p className="text-red-500 text-sm mt-1">{errors.description}</p>
                         )}
                       </div>
+                    </div>
+
+                    {/* Status toggle (Aktif / Pasif) */}
+                    <div className="p-4 rounded-xl border border-gray-200 bg-gray-50/70 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-sm text-gray-900">Topluluk Yayın Durumu</span>
+                          {values.is_active ? (
+                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                              Aktif (Yayında)
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                              Pasif (Kullanıcılara Kapalı)
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1 max-w-lg">
+                          Topluluğu pasife aldığınızda veli ve öğrenci menülerinde listelenmez, yeni konu ve yorum açılması durdurulur. Yalnızca okul idaresi görüntüleyebilir.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setFieldValue('is_active', !values.is_active)}
+                        className={`px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 shrink-0 cursor-pointer shadow-sm ${
+                          values.is_active
+                            ? 'bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100'
+                            : 'bg-emerald-600 text-white hover:bg-emerald-700'
+                        }`}
+                      >
+                        <Power size={14} />
+                        <span>{values.is_active ? 'Topluluğu Pasife Al' : 'Topluluğu Aktifleştir'}</span>
+                      </button>
                     </div>
 
                     {/* Scope Selector: Okul Geneli vs Sınıf Bazlı */}
@@ -613,6 +677,31 @@ const CommunityEditGeneral: React.FC = () => {
             )
           }}
         </Formik>
+      </div>
+
+      {/* Danger Zone: Topluluğu Sil */}
+      <div className="sm:mx-10 mx-0 p-6 bg-red-50/70 rounded-xl border border-red-200">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h3 className="font-bold text-base text-red-900 flex items-center gap-2">
+              <AlertTriangle size={18} className="text-red-600" />
+              <span>Tehlikeli Bölge — Topluluğu Kalıcı Olarak Sil</span>
+            </h3>
+            <p className="text-xs text-red-700 mt-1 max-w-xl">
+              Bu işlem geri alınamaz. Topluluk kalıcı olarak silinecek, altındaki tüm veli tartışmaları, mesajlar ve paylaşımlar sistemden temizlenecektir.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={handleDeleteCommunity}
+            disabled={isDeleting}
+            className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold shrink-0 flex items-center gap-2 cursor-pointer"
+          >
+            {isDeleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+            <span>Topluluğu Sil</span>
+          </Button>
+        </div>
       </div>
     </div>
   )

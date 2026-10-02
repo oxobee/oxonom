@@ -177,26 +177,32 @@ const CourseClient = (props: any) => {
       return
     }
 
-    try {
-      // Try to parse as JSON (new format)
-      const parsedLearnings = JSON.parse(courseData.learnings)
-      if (Array.isArray(parsedLearnings)) {
-        // New format: array of learning items with text and emoji
-        setLearnings(parsedLearnings)
-        return
-      }
-    } catch (_e) {
-      // Not valid JSON, continue to legacy format handling
+    if (Array.isArray(courseData.learnings)) {
+      setLearnings(courseData.learnings)
+      return
     }
 
-    // Legacy format: comma-separated string (changed from pipe-separated)
-    const learningItems = courseData.learnings.split(',').map((text: string) => ({
-      id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
-      text: text.trim(), // Trim whitespace that might be present after commas
-      emoji: '📝' // Default emoji for legacy items
-    }))
+    if (typeof courseData.learnings === 'string') {
+      try {
+        const parsedLearnings = JSON.parse(courseData.learnings)
+        if (Array.isArray(parsedLearnings)) {
+          setLearnings(parsedLearnings)
+          return
+        }
+      } catch (_e) {
+        // Not valid JSON, continue to legacy format handling
+      }
 
-    setLearnings(learningItems)
+      const learningItems = courseData.learnings.split(',').map((text: string) => ({
+        id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+        text: text.trim(),
+        emoji: '📝'
+      }))
+      setLearnings(learningItems)
+      return
+    }
+
+    setLearnings([])
   }
 
   const getActivityTypeLabel = (activityType: string, activitySubType?: string) => {
@@ -495,7 +501,8 @@ const CourseClient = (props: any) => {
             </div>
 
             {(() => {
-              const displayLearnings = learnings.filter((l: any) => {
+              const safeLearnings = Array.isArray(learnings) ? learnings : []
+              const displayLearnings = safeLearnings.filter((l: any) => {
                 const text = typeof l === 'string' ? l : l?.text
                 return text && text.trim() !== '' && text !== 'null'
               })

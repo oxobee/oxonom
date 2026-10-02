@@ -63,7 +63,7 @@ export default function PlaygroundsListClient({ org_id, orgslug }: PlaygroundsLi
     staleTime: 60_000,
   })
 
-  const allPlaygrounds: any[] = playgrounds || []
+  const allPlaygrounds: any[] = Array.isArray(playgrounds) ? playgrounds : []
 
   const filtered = useMemo(() => {
     if (!searchQuery.trim()) return allPlaygrounds

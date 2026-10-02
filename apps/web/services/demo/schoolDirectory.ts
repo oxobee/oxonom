@@ -399,6 +399,47 @@ export function generateClassStudents(classItem: ClassroomItem) {
   return students
 }
 
+export function generateAssignmentSubmissionsData(assignmentUuid: string, classItem?: ClassroomItem) {
+  const targetClass = classItem || ALL_CLASSROOMS[0]
+  const students = generateClassStudents(targetClass)
+
+  const studentRows = students.map((std, idx) => {
+    const isErcil = std.username === 'demo_ogrenci' || std.name.includes('Erçil')
+    const isGraded = idx < 26
+    const score = isErcil ? 95 : (84 + (idx % 16))
+    const submissionDate = `2026-10-0${Math.min(9, Math.max(1, (idx % 5) + 1))}T${14 + (idx % 6)}:${10 + (idx * 2) % 50}:00`
+
+    return {
+      user_id: std.id,
+      name: std.name,
+      username: std.username,
+      avatar_image: (std as any).avatar_image || null,
+      classroom_name: targetClass.name,
+      classroom_id: targetClass.id,
+      submission_id: 500 + idx,
+      status: (isGraded ? 'GRADED' : 'SUBMITTED') as 'GRADED' | 'SUBMITTED',
+      submission_date: submissionDate,
+      score: isGraded ? score : null,
+      teacher_feedback: isErcil
+        ? 'Harika bir çalışma Erçil Evren, tebrikler!'
+        : isGraded
+        ? (idx % 3 === 0 ? 'Özenli ve eksiksiz hazırlanmış, tebrikler.' : idx % 3 === 1 ? 'Adımlar ve çözümler gayet net ve başarılı.' : 'Ders içi gayretin ödeve çok güzel yansımış.')
+        : null,
+      student_content: {
+        type: 'text_and_board',
+        text: `${std.name} ödev teslim dokümanı ve tahta çalışması.`,
+      },
+    }
+  })
+
+  return {
+    total_students: 30,
+    submitted_count: 30,
+    graded_count: 26,
+    students: studentRows,
+  }
+}
+
 export function getActiveClassroom(classCode?: string): ClassroomItem {
   if (!classCode) return ALL_CLASSROOMS[0]
   const clean = classCode.trim().toUpperCase()

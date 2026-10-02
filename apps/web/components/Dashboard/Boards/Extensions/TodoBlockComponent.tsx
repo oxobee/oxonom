@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { CheckSquare, Plus, X } from '@phosphor-icons/react'
+import { useTranslation } from 'react-i18next'
 import BoardBlockWrapper from './BoardBlockWrapper'
 import DragHandle from './DragHandle'
 import ResizeHandle from './ResizeHandle'
@@ -31,6 +32,11 @@ function genId() {
 }
 
 export default function TodoBlockComponent({ node, updateAttributes, selected, deleteNode, editor, getPos }: any) {
+  const { t } = useTranslation()
+  const defaultTitle = t('boards.todo_title', { defaultValue: 'YAPILACAKLAR' })
+  const addItemPlaceholder = t('boards.add_item', { defaultValue: '+ Madde ekle...' })
+  const addBtnLabel = t('common.add', { defaultValue: 'Ekle' })
+
   const { x, y, width, height, color, zIndex, title, items: savedItems } = node.attrs
   const colorSet = getColorSet(color)
 
@@ -38,7 +44,7 @@ export default function TodoBlockComponent({ node, updateAttributes, selected, d
     Array.isArray(savedItems) ? savedItems : []
   )
   const [editingTitle, setEditingTitle] = useState(false)
-  const [titleValue, setTitleValue] = useState(title)
+  const [titleValue, setTitleValue] = useState(() => (title === 'To-do' || !title ? defaultTitle : title))
   const [newItemText, setNewItemText] = useState('')
   const newItemRef = useRef<HTMLInputElement>(null)
   const titleInputRef = useRef<HTMLInputElement>(null)
@@ -94,7 +100,7 @@ export default function TodoBlockComponent({ node, updateAttributes, selected, d
 
   const commitTitle = () => {
     setEditingTitle(false)
-    const trimmed = titleValue.trim() || 'To-do'
+    const trimmed = titleValue.trim() || defaultTitle
     setTitleValue(trimmed)
     updateAttributes({ title: trimmed })
   }
@@ -262,7 +268,7 @@ export default function TodoBlockComponent({ node, updateAttributes, selected, d
             onChange={(e) => setNewItemText(e.target.value)}
             onKeyDown={handleKeyDown}
             onMouseDown={(e) => e.stopPropagation()}
-            placeholder="Add item..."
+            placeholder={addItemPlaceholder}
             className="flex-1 text-[13px] bg-transparent border-none outline-none placeholder:opacity-40"
             style={{ color: colorSet.text }}
           />
@@ -279,7 +285,7 @@ export default function TodoBlockComponent({ node, updateAttributes, selected, d
                 color: 'white',
               }}
             >
-              Add
+              {addBtnLabel}
             </button>
           )}
         </div>

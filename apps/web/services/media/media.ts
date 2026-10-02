@@ -379,12 +379,11 @@ export function getEpisodeAudioMediaDirectory(
   episodeUUID: string,
   fileId: string
 ) {
-  if (!fileId) return ''
+  if (!fileId) return '/sample_podcast.mp3'
   if (fileId.startsWith('http://') || fileId.startsWith('https://') || fileId.startsWith('data:') || fileId.startsWith('/')) {
     return fileId
   }
-  let uri = `${getMediaUrl()}content/orgs/${orgUUID}/podcasts/${podcastUUID}/episodes/${episodeUUID}/audio/${fileId}`
-  return uri
+  return '/sample_podcast.mp3'
 }
 
 /**

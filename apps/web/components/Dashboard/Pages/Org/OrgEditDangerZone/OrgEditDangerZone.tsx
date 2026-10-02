@@ -41,7 +41,7 @@ const OrgEditDangerZone: React.FC = () => {
     return (
       <div className="sm:mx-10 mx-0">
         <div className="bg-white rounded-xl nice-shadow p-6 text-gray-500">
-          You don&apos;t have permission to manage this organization&apos;s danger zone.
+          {t('dashboard.organization.danger_zone.no_permission', { defaultValue: 'Bu okulun tehlike bölgesini yönetme yetkiniz bulunmamaktadır.' })}
         </div>
       </div>
     )
@@ -49,12 +49,12 @@ const OrgEditDangerZone: React.FC = () => {
 
   const handleRemoveAllUsers = async () => {
     setIsRemovingUsers(true)
-    const loadingToast = toast.loading('Removing all members…')
+    const loadingToast = toast.loading(t('dashboard.organization.danger_zone.toasts.removing_members', { defaultValue: 'Tüm üyeler çıkarılıyor…' }))
     try {
       await removeAllUsersFromOrg(org.id, access_token)
-      toast.success('All other members removed', { id: loadingToast })
+      toast.success(t('dashboard.organization.danger_zone.toasts.members_removed', { defaultValue: 'Diğer tüm üyeler başarıyla çıkarıldı' }), { id: loadingToast })
     } catch (err: any) {
-      toast.error(err?.message || 'Failed to remove members', { id: loadingToast })
+      toast.error(err?.message || t('dashboard.organization.danger_zone.toasts.remove_members_error', { defaultValue: 'Üyeler çıkarılamadı' }), { id: loadingToast })
     } finally {
       setIsRemovingUsers(false)
     }
@@ -62,15 +62,15 @@ const OrgEditDangerZone: React.FC = () => {
 
   const handleWipeContent = async () => {
     setIsWipingContent(true)
-    const loadingToast = toast.loading('Wiping organization content…')
+    const loadingToast = toast.loading(t('dashboard.organization.danger_zone.toasts.wiping_content', { defaultValue: 'Okul içerikleri siliniyor…' }))
     try {
       const res = await wipeOrgContent(org.id, access_token)
       toast.success(
-        `Content wiped${typeof res?.deleted_courses === 'number' ? ` (${res.deleted_courses} course(s) deleted)` : ''}`,
+        t('dashboard.organization.danger_zone.toasts.content_wiped', { defaultValue: 'Tüm içerikler başarıyla silindi' }),
         { id: loadingToast }
       )
     } catch (err: any) {
-      toast.error(err?.message || 'Failed to wipe content', { id: loadingToast })
+      toast.error(err?.message || t('dashboard.organization.danger_zone.toasts.wipe_content_error', { defaultValue: 'İçerikler silinemedi' }), { id: loadingToast })
     } finally {
       setIsWipingContent(false)
     }
@@ -79,17 +79,17 @@ const OrgEditDangerZone: React.FC = () => {
   const handleDeleteOrg = async () => {
     if (confirmText !== org.slug) return
     setIsDeletingOrg(true)
-    const loadingToast = toast.loading('Deleting organization…')
+    const loadingToast = toast.loading(t('dashboard.organization.danger_zone.toasts.deleting_org', { defaultValue: 'Okul siliniyor…' }))
     try {
       await deleteOrganizationFromBackend(org.id, access_token)
-      toast.success('Organization deleted', { id: loadingToast })
+      toast.success(t('dashboard.organization.danger_zone.toasts.org_deleted', { defaultValue: 'Okul başarıyla silindi' }), { id: loadingToast })
       // The org no longer exists — send the user back to the root so they land
       // on org selection / login rather than a broken dashboard.
       setTimeout(() => {
         window.location.href = '/'
       }, 800)
     } catch (err: any) {
-      toast.error(err?.message || 'Failed to delete organization', { id: loadingToast })
+      toast.error(err?.message || t('dashboard.organization.danger_zone.toasts.delete_org_error', { defaultValue: 'Okul silinemedi' }), { id: loadingToast })
       setIsDeletingOrg(false)
     }
   }
@@ -100,9 +100,11 @@ const OrgEditDangerZone: React.FC = () => {
         <div className="flex items-center space-x-2 bg-red-50 px-5 py-3 border-b border-red-100">
           <AlertTriangle className="h-5 w-5 text-red-600" />
           <div>
-            <h1 className="font-bold text-xl text-red-700">Danger Zone</h1>
+            <h1 className="font-bold text-xl text-red-700">
+              {t('dashboard.organization.danger_zone.title', { defaultValue: 'Tehlike Bölgesi' })}
+            </h1>
             <h2 className="text-red-500/80 text-sm">
-              These actions are permanent and cannot be undone.
+              {t('dashboard.organization.danger_zone.subtitle', { defaultValue: 'Bu işlemler kalıcıdır ve geri alınamaz.' })}
             </h2>
           </div>
         </div>
@@ -113,17 +115,18 @@ const OrgEditDangerZone: React.FC = () => {
             <div className="space-y-0.5">
               <div className="flex items-center space-x-2">
                 <Users className="h-4 w-4 text-gray-700" />
-                <span className="font-semibold text-gray-800">Remove all members</span>
+                <span className="font-semibold text-gray-800">
+                  {t('dashboard.organization.danger_zone.remove_members_title', { defaultValue: 'Tüm üyeleri çıkar' })}
+                </span>
               </div>
               <p className="text-sm text-gray-500 max-w-xl">
-                Remove every member from this organization except you. Courses and
-                other content are kept.
+                {t('dashboard.organization.danger_zone.remove_members_desc', { defaultValue: 'Sizin dışınızdaki tüm üyeleri bu okuldan kaldırır. Dersler, ödevler ve diğer içerikler korunur.' })}
               </p>
             </div>
             <ConfirmationModal
-              confirmationButtonText="Remove all members"
-              confirmationMessage="Every member except you will be removed from this organization. This cannot be undone."
-              dialogTitle="Remove all members?"
+              confirmationButtonText={t('dashboard.organization.danger_zone.remove_members_btn', { defaultValue: 'Tümünü Çıkar' })}
+              confirmationMessage={t('dashboard.organization.danger_zone.remove_members_dialog_desc', { defaultValue: 'Sizin dışınızdaki tüm üyeler bu okuldan çıkarılacaktır. Bu işlem geri alınamaz.' })}
+              dialogTitle={t('dashboard.organization.danger_zone.remove_members_dialog_title', { defaultValue: 'Tüm üyeler çıkarılsın mı?' })}
               status="warning"
               functionToExecute={handleRemoveAllUsers}
               dialogTrigger={
@@ -133,7 +136,7 @@ const OrgEditDangerZone: React.FC = () => {
                   className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 transition disabled:opacity-50"
                 >
                   {isRemovingUsers ? <Loader2 className="h-4 w-4 animate-spin" /> : <Users className="h-4 w-4" />}
-                  <span>Remove all</span>
+                  <span>{t('dashboard.organization.danger_zone.remove_members_btn', { defaultValue: 'Tümünü Çıkar' })}</span>
                 </button>
               }
             />
@@ -144,17 +147,18 @@ const OrgEditDangerZone: React.FC = () => {
             <div className="space-y-0.5">
               <div className="flex items-center space-x-2">
                 <Eraser className="h-4 w-4 text-gray-700" />
-                <span className="font-semibold text-gray-800">Wipe all content</span>
+                <span className="font-semibold text-gray-800">
+                  {t('dashboard.organization.danger_zone.wipe_content_title', { defaultValue: 'Tüm içerikleri temizle' })}
+                </span>
               </div>
               <p className="text-sm text-gray-500 max-w-xl">
-                Permanently delete all courses and their content. The organization
-                and its members are kept.
+                {t('dashboard.organization.danger_zone.wipe_content_desc', { defaultValue: 'Tüm dersleri, panoları ve içeriklerini kalıcı olarak siler. Okul ve üyeleri korunur.' })}
               </p>
             </div>
             <ConfirmationModal
-              confirmationButtonText="Wipe all content"
-              confirmationMessage="All courses and their content will be permanently deleted. This cannot be undone."
-              dialogTitle="Wipe all content?"
+              confirmationButtonText={t('dashboard.organization.danger_zone.wipe_content_btn', { defaultValue: 'İçerikleri Temizle' })}
+              confirmationMessage={t('dashboard.organization.danger_zone.wipe_content_dialog_desc', { defaultValue: 'Tüm dersler ve içerikleri kalıcı olarak silinecektir. Bu işlem geri alınamaz.' })}
+              dialogTitle={t('dashboard.organization.danger_zone.wipe_content_dialog_title', { defaultValue: 'Tüm içerikler temizlensin mi?' })}
               status="warning"
               functionToExecute={handleWipeContent}
               dialogTrigger={
@@ -164,7 +168,7 @@ const OrgEditDangerZone: React.FC = () => {
                   className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 transition disabled:opacity-50"
                 >
                   {isWipingContent ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eraser className="h-4 w-4" />}
-                  <span>Wipe content</span>
+                  <span>{t('dashboard.organization.danger_zone.wipe_content_btn', { defaultValue: 'İçerikleri Temizle' })}</span>
                 </button>
               }
             />
@@ -176,17 +180,17 @@ const OrgEditDangerZone: React.FC = () => {
               <div className="space-y-0.5">
                 <div className="flex items-center space-x-2">
                   <Trash2 className="h-4 w-4 text-red-700" />
-                  <span className="font-semibold text-red-800">Delete this organization</span>
+                  <span className="font-semibold text-red-800">
+                    {t('dashboard.organization.danger_zone.delete_org_title', { defaultValue: 'Bu okulu sil' })}
+                  </span>
                 </div>
                 <p className="text-sm text-gray-500 max-w-xl">
-                  Permanently delete <span className="font-semibold">{org.name}</span> and
-                  everything in it — members, courses, content and settings. This
-                  cannot be undone.
+                  {t('dashboard.organization.danger_zone.delete_org_desc', { defaultValue: 'Bu okulu ve içindeki her şeyi (üyeler, dersler, panolar, ödevler ve ayarlar) kalıcı olarak siler. Bu işlem geri alınamaz.' })}
                 </p>
               </div>
               <div className="space-y-2">
                 <label className="text-xs text-gray-500">
-                  Type <span data-ltr-content className="font-mono font-semibold text-gray-700">{org.slug}</span> to confirm.
+                  {t('dashboard.organization.danger_zone.delete_org_confirm_label', { slug: org.slug, defaultValue: `Onaylamak için ${org.slug} yazın.` })}
                 </label>
                 <div className="flex items-center gap-3">
                   <input
@@ -196,7 +200,7 @@ const OrgEditDangerZone: React.FC = () => {
                     placeholder={org.slug}
                     className="w-full max-w-xs px-3 py-2 border border-red-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
                   />
-                  <ToolTip content={t('dashboard.organization.danger_zone.delete_org_tooltip', { defaultValue: 'Permanently delete org' })} side="top" slateBlack>
+                  <ToolTip content={t('dashboard.organization.danger_zone.delete_org_tooltip', { defaultValue: 'Okulu kalıcı olarak sil' })} side="top" slateBlack>
                     <button
                       type="button"
                       onClick={handleDeleteOrg}
@@ -204,7 +208,7 @@ const OrgEditDangerZone: React.FC = () => {
                       className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-bold text-white bg-red-600 hover:bg-red-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       {isDeletingOrg ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                      <span>Delete organization</span>
+                      <span>{t('dashboard.organization.danger_zone.delete_org_btn', { defaultValue: 'Okulu Sil' })}</span>
                     </button>
                   </ToolTip>
                 </div>
