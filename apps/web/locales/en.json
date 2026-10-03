@@ -3678,6 +3678,10 @@
           "description": "Pick a starting point, then edit every section. Or add sections one by one.",
           "sections_count_one": "{{count}} section",
           "sections_count_other": "{{count}} sections",
+          "classic": {
+            "name": "School Portal (Default)",
+            "description": "Primary school hero, live statistics, smartboard & interactive module spotlights, courses, parent testimonials and FAQ."
+          },
           "academy": {
             "name": "Academy",
             "description": "Separate heroes for visitors and members, stats, how it works, courses, testimonials, FAQ and a sign-up banner."

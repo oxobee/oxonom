@@ -158,7 +158,7 @@ const BackgroundField: React.FC<{
   const type = value?.type || (allowNone ? 'none' : 'solid')
   return (
     <div className="space-y-3">
-      <Field id={`${idPrefix}-background-type`} label={t(`${K}.background`)}>
+      <Field id={`${idPrefix}-background-type`} label={t(`${K}.background`, { defaultValue: 'Arka Plan' })}>
         <Select
           value={type}
           onValueChange={(next) => {
@@ -170,26 +170,26 @@ const BackgroundField: React.FC<{
         >
           <SelectTrigger id={`${idPrefix}-background-type`}><SelectValue /></SelectTrigger>
           <SelectContent>
-            {allowNone && <SelectItem value="none">{t(`${K}.background_none`)}</SelectItem>}
-            <SelectItem value="solid">{t(`${K}.background_solid`)}</SelectItem>
-            <SelectItem value="gradient">{t(`${K}.background_gradient`)}</SelectItem>
-            <SelectItem value="image">{t(`${K}.background_image`)}</SelectItem>
+            {allowNone && <SelectItem value="none">{t(`${K}.background_none`, { defaultValue: 'Yok (Varsayılan)' })}</SelectItem>}
+            <SelectItem value="solid">{t(`${K}.background_solid`, { defaultValue: 'Düz Renk' })}</SelectItem>
+            <SelectItem value="gradient">{t(`${K}.background_gradient`, { defaultValue: 'Gradyan' })}</SelectItem>
+            <SelectItem value="image">{t(`${K}.background_image`, { defaultValue: 'Resim' })}</SelectItem>
           </SelectContent>
         </Select>
       </Field>
       {value?.type === 'solid' && (
-        <ColorField id={`${idPrefix}-background-color`} label={t(`${K}.color`)} value={value.color || ''} onChange={(color) => onChange({ ...value, color })} />
+        <ColorField id={`${idPrefix}-background-color`} label={t(`${K}.color`, { defaultValue: 'Renk' })} value={value.color || ''} onChange={(color) => onChange({ ...value, color })} />
       )}
       {value?.type === 'gradient' && (
         <div className="grid grid-cols-2 gap-3">
-          <ColorField id={`${idPrefix}-gradient-from`} label={t(`${K}.gradient_from`)} value={value.colors?.[0] || ''} onChange={(color) => onChange({ ...value, colors: [color, value.colors?.[1] || color] })} />
-          <ColorField id={`${idPrefix}-gradient-to`} label={t(`${K}.gradient_to`)} value={value.colors?.[1] || ''} onChange={(color) => onChange({ ...value, colors: [value.colors?.[0] || color, color] })} />
+          <ColorField id={`${idPrefix}-gradient-from`} label={t(`${K}.gradient_from`, { defaultValue: 'Başlangıç Rengi' })} value={value.colors?.[0] || ''} onChange={(color) => onChange({ ...value, colors: [color, value.colors?.[1] || color] })} />
+          <ColorField id={`${idPrefix}-gradient-to`} label={t(`${K}.gradient_to`, { defaultValue: 'Bitiş Rengi' })} value={value.colors?.[1] || ''} onChange={(color) => onChange({ ...value, colors: [value.colors?.[0] || color, color] })} />
         </div>
       )}
       {value?.type === 'image' && (
         <div className="space-y-2">
           <Input value={value.image || ''} onChange={(e) => onChange({ ...value, image: e.target.value })} placeholder="https://" />
-          <ImageUploader id={`${idPrefix}-background`} onImageUploaded={(image) => onChange({ ...value, image })} buttonText={t(`${K}.upload_image`)} />
+          <ImageUploader id={`${idPrefix}-background`} onImageUploaded={(image) => onChange({ ...value, image })} buttonText={t(`${K}.upload_image`, { defaultValue: 'Görsel Yükle' })} />
         </div>
       )}
     </div>
@@ -246,22 +246,22 @@ export const SectionSettingsEditor: React.FC<EditorProps<LandingSection>> = ({ s
         <div>
           <div className="flex items-center space-x-2">
             <Settings2 className="w-5 h-5 text-gray-500" />
-            <h3 className="font-medium text-lg">{t('dashboard.organization.landing.visibility.title')}</h3>
+            <h3 className="font-medium text-lg">{t('dashboard.organization.landing.visibility.title', { defaultValue: 'Bölüm Görünürlüğü' })}</h3>
           </div>
-          <p className="text-sm text-gray-500 mt-1">{t('dashboard.organization.landing.visibility.description')}</p>
+          <p className="text-sm text-gray-500 mt-1">{t('dashboard.organization.landing.visibility.description', { defaultValue: 'Bu bölümün açılış sayfasında kimlere gösterileceğini belirleyin' })}</p>
         </div>
         <div className="w-56 shrink-0">
           <Select
             value={section.visibility || 'everyone'}
             onValueChange={(value) => onChange({ ...section, visibility: value as LandingVisibility })}
           >
-            <SelectTrigger id="section-visibility" aria-label={t('dashboard.organization.landing.visibility.title')}>
+            <SelectTrigger id="section-visibility" aria-label={t('dashboard.organization.landing.visibility.title', { defaultValue: 'Bölüm Görünürlüğü' })}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="everyone">{t('dashboard.organization.landing.visibility.everyone')}</SelectItem>
-              <SelectItem value="logged_in">{t('dashboard.organization.landing.visibility.logged_in')}</SelectItem>
-              <SelectItem value="logged_out">{t('dashboard.organization.landing.visibility.logged_out')}</SelectItem>
+              <SelectItem value="everyone">{t('dashboard.organization.landing.visibility.everyone', { defaultValue: 'Herkes (Ziyaretçiler ve Üyeler)' })}</SelectItem>
+              <SelectItem value="logged_in">{t('dashboard.organization.landing.visibility.logged_in', { defaultValue: 'Yalnızca Giriş Yapmış Kullanıcılar' })}</SelectItem>
+              <SelectItem value="logged_out">{t('dashboard.organization.landing.visibility.logged_out', { defaultValue: 'Yalnızca Giriş Yapmamış Ziyaretçiler' })}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -269,73 +269,73 @@ export const SectionSettingsEditor: React.FC<EditorProps<LandingSection>> = ({ s
 
       <div className="flex items-center justify-between gap-6 border-t pt-4">
         <div>
-          <Label htmlFor="section-hidden">{t(`${K}.hidden`)}</Label>
-          <p className="text-sm text-gray-500">{t(`${K}.hidden_help`)}</p>
+          <Label htmlFor="section-hidden">{t(`${K}.hidden`, { defaultValue: 'Bu Bölümü Gizle' })}</Label>
+          <p className="text-sm text-gray-500">{t(`${K}.hidden_help`, { defaultValue: 'Bölüm editörde saklanır ancak açılış sayfasında ziyaretçilere gösterilmez.' })}</p>
         </div>
         <Switch id="section-hidden" checked={!!section.hidden} onCheckedChange={(hidden) => onChange({ ...section, hidden: hidden || undefined })} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t pt-4">
-        <Field id="section-device" label={t(`${K}.device`)}>
+        <Field id="section-device" label={t(`${K}.device`, { defaultValue: 'Cihaz Görünürlüğü' })}>
           <Select value={section.device || 'all'} onValueChange={(device) => onChange({ ...section, device: device === 'all' ? undefined : (device as LandingSection['device']) })}>
             <SelectTrigger id="section-device"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{t(`${K}.device_all`)}</SelectItem>
-              <SelectItem value="desktop">{t(`${K}.device_desktop`)}</SelectItem>
-              <SelectItem value="mobile">{t(`${K}.device_mobile`)}</SelectItem>
+              <SelectItem value="all">{t(`${K}.device_all`, { defaultValue: 'Tüm Cihazlar' })}</SelectItem>
+              <SelectItem value="desktop">{t(`${K}.device_desktop`, { defaultValue: 'Sadece Masaüstü' })}</SelectItem>
+              <SelectItem value="mobile">{t(`${K}.device_mobile`, { defaultValue: 'Sadece Mobil' })}</SelectItem>
             </SelectContent>
           </Select>
         </Field>
-        <Field id="section-show-from" label={t(`${K}.show_from`)}>
+        <Field id="section-show-from" label={t(`${K}.show_from`, { defaultValue: 'Yayın Başlangıç' })}>
           <Input id="section-show-from" type="datetime-local" value={section.showFrom || ''} onChange={(e) => onChange({ ...section, showFrom: e.target.value || undefined })} />
         </Field>
-        <Field id="section-show-until" label={t(`${K}.show_until`)}>
+        <Field id="section-show-until" label={t(`${K}.show_until`, { defaultValue: 'Yayın Bitiş' })}>
           <Input id="section-show-until" type="datetime-local" value={section.showUntil || ''} onChange={(e) => onChange({ ...section, showUntil: e.target.value || undefined })} />
         </Field>
       </div>
 
       <div className="border-t pt-4">
         <button type="button" id="section-style-toggle" onClick={() => setOpen(!open)} className="text-sm font-medium text-gray-700 hover:text-black" aria-expanded={open}>
-          {open ? '−' : '+'} {t(`${K}.style`)}
+          {open ? '−' : '+'} {t(`${K}.style`, { defaultValue: 'Arka Plan, Renk ve Boşluk Ayarları' })}
         </button>
         {open && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-4">
             <BackgroundField idPrefix="section" allowNone value={style.background} onChange={(background) => setStyle({ background })} />
             <div className="space-y-3">
-              <ColorField id="section-text-color" label={t(`${K}.text_color`)} value={style.textColor || ''} onChange={(textColor) => setStyle({ textColor })} />
-              <Field id="section-spacing" label={t(`${K}.spacing`)}>
+              <ColorField id="section-text-color" label={t(`${K}.text_color`, { defaultValue: 'Metin Rengi' })} value={style.textColor || ''} onChange={(textColor) => setStyle({ textColor })} />
+              <Field id="section-spacing" label={t(`${K}.spacing`, { defaultValue: 'Dikey Boşluk' })}>
                 <Select value={style.spacing || 'medium'} onValueChange={(spacing) => setStyle({ spacing: spacing === 'medium' ? undefined : (spacing as LandingSectionStyle['spacing']) })}>
                   <SelectTrigger id="section-spacing"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">{t(`${K}.spacing_none`)}</SelectItem>
-                    <SelectItem value="small">{t(`${K}.spacing_small`)}</SelectItem>
-                    <SelectItem value="medium">{t(`${K}.spacing_medium`)}</SelectItem>
-                    <SelectItem value="large">{t(`${K}.spacing_large`)}</SelectItem>
+                    <SelectItem value="none">{t(`${K}.spacing_none`, { defaultValue: 'Yok' })}</SelectItem>
+                    <SelectItem value="small">{t(`${K}.spacing_small`, { defaultValue: 'Küçük' })}</SelectItem>
+                    <SelectItem value="medium">{t(`${K}.spacing_medium`, { defaultValue: 'Orta' })}</SelectItem>
+                    <SelectItem value="large">{t(`${K}.spacing_large`, { defaultValue: 'Büyük' })}</SelectItem>
                   </SelectContent>
                 </Select>
               </Field>
-              <Field id="section-anchor" label={t(`${K}.anchor`)}>
+              <Field id="section-anchor" label={t(`${K}.anchor`, { defaultValue: 'Sayfa İçi Bağlantı (Çapa / ID)' })}>
                 <Input id="section-anchor" value={style.anchor || ''} onChange={(e) => setStyle({ anchor: e.target.value })} placeholder="pricing" />
                 <p className="text-xs text-gray-500 mt-1">
-                  {t(`${K}.anchor_help`)} {sanitizeAnchor(style.anchor) ? <code>#{sanitizeAnchor(style.anchor)}</code> : null}
+                  {t(`${K}.anchor_help`, { defaultValue: 'Butonların tıklandığında doğrudan bu bölüme kaymasını sağlar.' })} {sanitizeAnchor(style.anchor) ? <code>#{sanitizeAnchor(style.anchor)}</code> : null}
                 </p>
               </Field>
             </div>
-            <Field id="section-width" label={t(`${K}.width`)}>
+            <Field id="section-width" label={t(`${K}.width`, { defaultValue: 'Genişlik' })}>
               <Select value={style.width || 'normal'} onValueChange={(width) => setStyle({ width: width === 'narrow' ? 'narrow' : undefined })}>
                 <SelectTrigger id="section-width"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="normal">{t(`${K}.width_normal`)}</SelectItem>
-                  <SelectItem value="narrow">{t(`${K}.width_narrow`)}</SelectItem>
+                  <SelectItem value="normal">{t(`${K}.width_normal`, { defaultValue: 'Standart' })}</SelectItem>
+                  <SelectItem value="narrow">{t(`${K}.width_narrow`, { defaultValue: 'Dar' })}</SelectItem>
                 </SelectContent>
               </Select>
             </Field>
-            <Field id="section-title-align" label={t(`${K}.title_align`)}>
+            <Field id="section-title-align" label={t(`${K}.title_align`, { defaultValue: 'Başlık Hizalaması' })}>
               <Select value={style.titleAlign || 'start'} onValueChange={(align) => setStyle({ titleAlign: align === 'center' ? 'center' : undefined })}>
                 <SelectTrigger id="section-title-align"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="start">{t(`${K}.align_start`)}</SelectItem>
-                  <SelectItem value="center">{t(`${K}.align_center`)}</SelectItem>
+                  <SelectItem value="start">{t(`${K}.align_start`, { defaultValue: 'Sola Hizala' })}</SelectItem>
+                  <SelectItem value="center">{t(`${K}.align_center`, { defaultValue: 'Ortala' })}</SelectItem>
                 </SelectContent>
               </Select>
             </Field>
@@ -858,27 +858,27 @@ export const CountdownEditor: React.FC<EditorProps<LandingCountdownSection>> = (
 export const PageSettingsEditor: React.FC<{ settings: LandingPageSettings; onChange: (settings: LandingPageSettings) => void }> = ({ settings, onChange }) => {
   const { t } = useTranslation()
   return (
-    <Card icon={SlidersHorizontal} title={t(`${K}.page.title`)}>
-      <p className="text-sm text-gray-500 -mt-3">{t(`${K}.page.description`)}</p>
+    <Card icon={SlidersHorizontal} title={t(`${K}.page.title`, { defaultValue: 'Sayfa Genel Ayarları' })}>
+      <p className="text-sm text-gray-500 -mt-3">{t(`${K}.page.description`, { defaultValue: 'Tüm açılış sayfası için genel arka plan, içerik genişliği ve bölüm boşlukları.' })}</p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <BackgroundField idPrefix="page" allowNone value={settings.background} onChange={(background) => onChange({ ...settings, background })} />
         <div className="space-y-3">
-          <Field id="page-width" label={t(`${K}.page.width`)}>
+          <Field id="page-width" label={t(`${K}.page.width`, { defaultValue: 'İçerik Genişliği' })}>
             <Select value={settings.width || 'normal'} onValueChange={(width) => onChange({ ...settings, width: width === 'wide' ? 'wide' : undefined })}>
               <SelectTrigger id="page-width"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="normal">{t(`${K}.width_normal`)}</SelectItem>
-                <SelectItem value="wide">{t(`${K}.page.width_wide`)}</SelectItem>
+                <SelectItem value="normal">{t(`${K}.width_normal`, { defaultValue: 'Standart' })}</SelectItem>
+                <SelectItem value="wide">{t(`${K}.page.width_wide`, { defaultValue: 'Geniş' })}</SelectItem>
               </SelectContent>
             </Select>
           </Field>
-          <Field id="page-gap" label={t(`${K}.page.gap`)}>
+          <Field id="page-gap" label={t(`${K}.page.gap`, { defaultValue: 'Bölümler Arası Boşluk' })}>
             <Select value={settings.gap || 'none'} onValueChange={(gap) => onChange({ ...settings, gap: gap === 'none' ? undefined : (gap as LandingPageSettings['gap']) })}>
               <SelectTrigger id="page-gap"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">{t(`${K}.spacing_none`)}</SelectItem>
-                <SelectItem value="small">{t(`${K}.spacing_small`)}</SelectItem>
-                <SelectItem value="medium">{t(`${K}.spacing_medium`)}</SelectItem>
+                <SelectItem value="none">{t(`${K}.spacing_none`, { defaultValue: 'Yok' })}</SelectItem>
+                <SelectItem value="small">{t(`${K}.spacing_small`, { defaultValue: 'Küçük' })}</SelectItem>
+                <SelectItem value="medium">{t(`${K}.spacing_medium`, { defaultValue: 'Orta' })}</SelectItem>
               </SelectContent>
             </Select>
           </Field>

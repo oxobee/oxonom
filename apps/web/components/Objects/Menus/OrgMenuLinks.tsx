@@ -3,7 +3,7 @@ import { useLHSession } from '@components/Contexts/LHSessionContext'
 import { getUriWithOrg } from '@services/config/config'
 import {
   Books, FolderSimple, ChatsCircle, Headphones, Cube, ShoppingBag,
-  ChalkboardSimple, Files, GameController, GraduationCap, Airplay
+  ChalkboardSimple, Files, GameController, GraduationCap
 } from '@phosphor-icons/react'
 import { menuIcon } from '@components/Objects/Menus/menuIcons'
 import Link from 'next/link'
@@ -16,20 +16,19 @@ type Builtin = { feature: string; link: string; labelKey: string; Icon: any }
 
 const BUILTIN: Record<string, Builtin> = {
   classrooms: { feature: 'classrooms', link: '/dash/classrooms', labelKey: 'common.classrooms', Icon: GraduationCap },
-  yansit: { feature: 'boards', link: '/boards', labelKey: 'common.yansit', Icon: Airplay },
   boards: { feature: 'boards', link: '/boards', labelKey: 'boards.boards', Icon: ChalkboardSimple },
-  games: { feature: 'games', link: '/games', labelKey: 'common.games', Icon: GameController },
   library: { feature: 'folders', link: '/library', labelKey: 'library.library', Icon: FolderSimple },
-  podcasts: { feature: 'podcasts', link: '/podcasts', labelKey: 'podcasts.podcasts', Icon: Headphones },
   communities: { feature: 'communities', link: '/communities', labelKey: 'communities.title', Icon: ChatsCircle },
   playgrounds: { feature: 'playgrounds', link: '/playgrounds', labelKey: 'common.playgrounds', Icon: Cube },
+  podcasts: { feature: 'podcasts', link: '/podcasts', labelKey: 'podcasts.podcasts', Icon: Headphones },
   assignments: { feature: 'assignments', link: '/dash/assignments', labelKey: 'common.assignments', Icon: Files },
+  games: { feature: 'games', link: '/games', labelKey: 'common.games', Icon: GameController },
   courses: { feature: 'courses', link: '/courses', labelKey: 'courses.courses', Icon: Books },
   store: { feature: 'payments', link: '/store', labelKey: 'common.store', Icon: ShoppingBag },
 }
 
-// Default order for Oxonom Edu (classrooms, yansit, boards, games, library, communities, playgrounds, podcasts)
-const DEFAULT_ORDER = ['classrooms', 'yansit', 'boards', 'games', 'library', 'communities', 'playgrounds', 'podcasts']
+// Default order for Oxonom Edu (Games is at the very end)
+const DEFAULT_ORDER = ['classrooms', 'boards', 'library', 'communities', 'playgrounds', 'podcasts', 'games']
 
 function MenuLinks(props: { orgslug: string; primaryColor?: string }) {
   const { t } = useTranslation()
@@ -49,10 +48,16 @@ function MenuLinks(props: { orgslug: string; primaryColor?: string }) {
   const configItems: any[] | undefined =
     org?.config?.config?.customization?.menu?.items ?? org?.config?.config?.general?.menu?.items
 
-  // Build the items to render (config-driven, else feature-driven defaults)
+  // Build the items to render (games is always at the very end as requested)
   const source =
     configItems && configItems.length
-      ? [...configItems].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+      ? [...configItems]
+          .filter((it) => it.type !== 'yansit')
+          .sort((a, b) => {
+            if (a.type === 'games') return 1
+            if (b.type === 'games') return -1
+            return (a.order ?? 0) - (b.order ?? 0)
+          })
       : DEFAULT_ORDER.map((type, i) => ({ type, enabled: true, order: i, label: '', url: '' }))
 
   const rendered = source
@@ -66,10 +71,10 @@ function MenuLinks(props: { orgslug: string; primaryColor?: string }) {
           Icon: menuIcon(item.icon),
           href: external ? item.url : getUriWithOrg(props.orgslug, item.url),
           external,
-          isButton: false,
+          isSpecialGameTab: false,
         }
       }
-      if (item.type === 'courses' || item.type === 'store') return null
+      if (item.type === 'courses' || item.type === 'store' || item.type === 'yansit') return null
       if (item.type === 'classrooms') {
         if (!item.enabled) return null
         // Students should not have classrooms menu per policy
@@ -80,18 +85,7 @@ function MenuLinks(props: { orgslug: string; primaryColor?: string }) {
           Icon: GraduationCap,
           href: getUriWithOrg(props.orgslug, '/dash/classrooms'),
           external: false,
-          isButton: false,
-        }
-      }
-      if (item.type === 'yansit') {
-        if (!item.enabled) return null
-        return {
-          key: 'yansit',
-          label: item.label || t('common.yansit', { defaultValue: 'Yansıt' }),
-          Icon: Airplay,
-          href: getUriWithOrg(props.orgslug, '/boards'),
-          external: false,
-          isButton: true,
+          isSpecialGameTab: false,
         }
       }
       if (item.type === 'games') {
@@ -106,7 +100,7 @@ function MenuLinks(props: { orgslug: string; primaryColor?: string }) {
           Icon: GameController,
           href: getUriWithOrg(props.orgslug, '/games'),
           external: false,
-          isButton: false,
+          isSpecialGameTab: true,
         }
       }
       const meta = BUILTIN[item.type]
@@ -119,7 +113,7 @@ function MenuLinks(props: { orgslug: string; primaryColor?: string }) {
         Icon: meta.Icon,
         href: getUriWithOrg(props.orgslug, meta.link),
         external: false,
-        isButton: false,
+        isSpecialGameTab: false,
       }
     })
     .filter(Boolean) as any[]
@@ -128,11 +122,12 @@ function MenuLinks(props: { orgslug: string; primaryColor?: string }) {
     <div className="ps-1">
       <ul className="flex space-x-4 items-center">
         {rendered.map((it) => {
-          const content = it.isButton ? (
+          const content = it.isSpecialGameTab ? (
             <li className="flex items-center">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 rounded-xl shadow-xs hover:shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer">
-                <it.Icon size={16} weight="bold" className="animate-pulse" />
-                <span>{it.label}</span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-500 hover:from-purple-700 hover:via-indigo-700 hover:to-pink-600 rounded-xl shadow-xs hover:shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer ring-1 ring-purple-400/30">
+                <it.Icon size={16} weight="fill" className="text-amber-300 animate-bounce" />
+                <span className="tracking-wide">{it.label}</span>
+                <span className="text-[10px] font-black uppercase bg-white/20 text-white px-1.5 py-0.2 rounded-md">Yeni</span>
               </span>
             </li>
           ) : (

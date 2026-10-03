@@ -423,7 +423,7 @@ const OrgEditLanding = () => {
     setSelectedSection(index + 1)
   }
 
-  const applyTemplate = (id: string) => {
+  const applyTemplate = async (id: string) => {
     const template = LANDING_TEMPLATES.find((tpl) => tpl.id === id)
     if (!template) return
     const sections = (JSON.parse(JSON.stringify(template.sections)) as LandingSection[]).map((section) =>
@@ -433,7 +433,25 @@ const OrgEditLanding = () => {
         : section
     )
     setLandingData(prev => ({ ...prev, sections }))
-    setSelectedSection(null)
+    setIsLandingEnabled(true)
+    setSelectedSection(0)
+    setShowTemplates(false)
+    setShowPageSettings(false)
+
+    if (org?.id) {
+      try {
+        await updateOrgLanding(org.id, {
+          sections,
+          enabled: true,
+          ...(landingData.settings ? { settings: landingData.settings } : {})
+        }, access_token)
+        queryClient.invalidateQueries({ queryKey: queryKeys.org.detail(org.slug) })
+        toast.success(`"${t(`dashboard.organization.landing.templates.${template.id}.name`, { defaultValue: template.id })}" şablonu uygulandı ve ana sayfaya kaydedildi!`)
+      } catch (err) {
+        console.error('Failed to auto-save template:', err)
+        toast.success(`"${t(`dashboard.organization.landing.templates.${template.id}.name`, { defaultValue: template.id })}" şablonu uygulandı.`)
+      }
+    }
   }
 
   const onDragEnd = (result: any) => {
@@ -720,11 +738,7 @@ const OrgEditLanding = () => {
                         <button
                           key={template.id}
                           type="button"
-                          onClick={() => {
-                            applyTemplate(template.id)
-                            setShowTemplates(false)
-                            toast.success(`${t(`dashboard.organization.landing.templates.${template.id}.name`, { defaultValue: template.id })} şablonu uygulandı!`)
-                          }}
+                          onClick={() => applyTemplate(template.id)}
                           className="text-start p-5 rounded-xl border border-gray-200 hover:border-indigo-500 hover:bg-indigo-50/30 transition-all nice-shadow group"
                         >
                           <div className="flex items-center justify-between">

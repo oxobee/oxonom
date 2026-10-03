@@ -2874,13 +2874,227 @@
             "description": "Kayıt bitişi veya dönem başlangıcı için sayaç"
           }
         },
-        "blocks": {
-          "page": {
-            "title": "Sayfa Genel Ayarları"
+        "visibility": {
+          "title": "Bölüm Görünürlüğü",
+          "description": "Bu bölümün açılış sayfasında kimlere gösterileceğini belirleyin",
+          "everyone": "Herkes (Ziyaretçiler ve Üyeler)",
+          "logged_in": "Yalnızca Giriş Yapmış Kullanıcılar",
+          "logged_out": "Yalnızca Giriş Yapmamış Ziyaretçiler"
+        },
+        "templates": {
+          "title": "Hazır Şablon ile Başlayın",
+          "description": "Okulunuza uygun bir başlangıç şablonu seçin veya bölümleri tek tek özelleştirin.",
+          "sections_count_one": "{{count}} bölüm",
+          "sections_count_other": "{{count}} bölüm",
+          "classic": {
+            "name": "Okul Portalı (Mevcut Ana Sayfa)",
+            "description": "İlkokul karşılama alanı, canlı istatistikler, akıllı tahta & modül odakları, öne çıkan dersler, veli görüşleri ve SSS."
           },
+          "academy": {
+            "name": "Akademi & Kurs Portalı",
+            "description": "Ziyaretçiler ve üyeler için ayrı karşılama alanları, rakamlarla başarılar, dersler, referanslar ve kayıt bandı."
+          },
+          "product": {
+            "name": "Eğitim & Tanıtım",
+            "description": "Karşılama başlığı, tanıtım videosu, eğitim başlıkları, güncel dersler ve iletişim duyurusu."
+          },
+          "minimal": {
+            "name": "Sade & Minimal",
+            "description": "Kısa bir tanıtım yazısı ve öne çıkan temel derslerin listesi."
+          },
+          "launch": {
+            "name": "Yeni Dönem / Kayıt Açılışı",
+            "description": "Duyuru şeridi, geri sayım sayacı, kayıt adımları, eğitim paketleri ve sıkça sorulan sorular."
+          }
+        },
+        "blocks": {
+          "title_label": "Bölüm Başlığı",
+          "subtitle_label": "Alt Başlık",
+          "description_label": "Açıklama",
+          "columns": "Sütun Sayısı",
+          "align": "Hizalama",
+          "align_start": "Sola Hizala",
+          "align_center": "Ortala",
+          "move_up": "Yukarı Taşı",
+          "move_down": "Aşağı Taşı",
+          "remove": "Kaldır",
+          "duplicate": "Bölümü Çoğalt",
+          "upload_image": "Görsel Yükle",
+          "hidden": "Bu Bölümü Gizle",
+          "hidden_help": "Bölüm editörde saklanır ancak açılış sayfasında ziyaretçilere gösterilmez.",
+          "style": "Arka Plan, Renk ve Boşluk Ayarları",
+          "background": "Arka Plan",
+          "background_none": "Yok (Varsayılan)",
+          "background_solid": "Düz Renk",
+          "background_gradient": "Gradyan (Renk Geçişli)",
+          "background_image": "Arka Plan Görseli",
+          "color": "Renk",
+          "gradient_from": "Başlangıç Rengi",
+          "gradient_to": "Bitiş Rengi",
+          "text_color": "Metin Rengi",
+          "spacing": "Dikey Boşluk",
+          "spacing_none": "Yok",
+          "spacing_small": "Küçük",
+          "spacing_medium": "Orta",
+          "spacing_large": "Büyük",
+          "anchor": "Sayfa İçi Bağlantı (Çapa / ID)",
+          "anchor_help": "Butonların tıklandığında doğrudan bu bölüme kaymasını sağlar (örn: #sss veya #dersler).",
+          "buttons": "Eylem Butonları",
+          "add_button": "Buton Ekle",
+          "button_text": "Buton Metni",
+          "button_text_default": "Dersleri Keşfet",
+          "button_background": "Buton Rengi",
+          "button_color": "Yazı Rengi",
+          "device": "Cihaz Görünürlüğü",
+          "device_all": "Tüm Cihazlar",
+          "device_desktop": "Sadece Masaüstü (Bilgisayar)",
+          "device_mobile": "Sadece Mobil (Telefon & Tablet)",
+          "show_from": "Yayın Başlangıç Tarihi",
+          "show_until": "Yayın Bitiş Tarihi",
+          "width": "İçerik Genişliği",
+          "width_normal": "Standart",
+          "width_narrow": "Dar",
+          "title_align": "Başlık Hizalaması",
+          "animation": "Giriş Animasyonu",
+          "animation_none": "Animasyonsuz",
+          "animation_fade": "Belirerek Açılma",
+          "animation_slide_up": "Aşağıdan Yukarı Kayma",
           "export": "Dışa Aktar",
           "import": "İçe Aktar",
-          "hidden": "Gizli Bölüm"
+          "import_invalid": "Geçerli bir açılış sayfası dosyası değil.",
+          "import_done": "Açılış sayfası başarıyla içe aktarıldı ({{count}} bölüm). Yayınlamak için kaydedin.",
+          "rich_text": {
+            "title": "Zengin Metin Bölümü",
+            "content": "İçerik Metni",
+            "markdown_help": "Markdown desteklenir: **kalın**, *italik*, [bağlantı](url), listeler ve ## başlıklar.",
+            "default_title": "Hakkımızda",
+            "default_content": "Okulunuz hakkında tanıtıcı bilgileri buraya yazabilirsiniz. **Markdown** biçimlendirmesi desteklenmektedir."
+          },
+          "features": {
+            "title": "Özellikler Bölümü",
+            "add": "Yeni Özellik Ekle",
+            "icon": "İkon (Emoji)",
+            "default_title": "Neden Bizimle Öğrenmelisiniz?",
+            "default_item_title": "Öne Çıkan Özellik",
+            "default_item_description": "Bu özelliğin öğrencilere sağladığı avantajı bir cümleyle açıklayın."
+          },
+          "stats": {
+            "title": "İstatistikler Bölümü",
+            "add": "Yeni İstatistik Ekle",
+            "value": "Sayısal Değer",
+            "label": "Etiket / Başlık",
+            "default_label": "Aktif Öğrenci"
+          },
+          "testimonials": {
+            "title": "Referanslar & Yorumlar Bölümü",
+            "add": "Yeni Yorum Ekle",
+            "quote": "Alıntı / Yorum Metni",
+            "author": "Ad Soyad",
+            "role": "Rol / Unvan (Veli, Öğretmen vb.)",
+            "photo_url": "Fotoğraf URL'si",
+            "default_title": "Öğrenci ve Velilerimiz Ne Diyor?"
+          },
+          "faq": {
+            "title": "Sıkça Sorulan Sorular",
+            "add": "Yeni Soru Ekle",
+            "question": "Soru Metni",
+            "answer": "Cevap Metni",
+            "default_title": "Sıkça Sorulan Sorular"
+          },
+          "cta": {
+            "title": "Eylem Çağrısı (CTA) Bölümü",
+            "heading": "Eylem Başlığı",
+            "default_heading": "Öğrenmeye Başlamaya Hazır mısınız?"
+          },
+          "gallery": {
+            "title": "Fotoğraf Galerisi",
+            "add": "Fotoğraf Ekle",
+            "alt": "Görsel Açıklaması (Alt Metin)"
+          },
+          "spacer": {
+            "title": "Boşluk / Ayırıcı Çizgi",
+            "size": "Boşluk Boyutu",
+            "divider": "Ayırıcı Çizgi Göster"
+          },
+          "courses": {
+            "mode": "Gösterilecek Dersler",
+            "mode_selected": "Seçtiğim Dersler",
+            "mode_latest": "En Son Eklenen Dersler",
+            "limit": "Gösterilecek Ders Sayısı"
+          },
+          "hero": {
+            "title": "Hero Boyut ve Katman Ayarları",
+            "height": "Bölüm Yüksekliği",
+            "height_screen": "Tam Ekran",
+            "overlay": "Karanlık Katman (Overlay)",
+            "overlay_help": "Arka plan görseli üzerine koyu katman ekleyerek metinlerin daha rahat okunmasını sağlar."
+          },
+          "pricing": {
+            "title": "Fiyatlandırma & Paketler Bölümü",
+            "add": "Yeni Plan Ekle",
+            "name": "Paket Adı",
+            "price": "Fiyat",
+            "period": "Dönem (örn: / ay, / dönem)",
+            "features": "Özellikler (her satıra bir tane)",
+            "highlighted": "Bu Paketi Öne Çıkar",
+            "button_default": "Hemen Başla",
+            "default_title": "Eğitim Paketleri",
+            "default_plan": "Ücretsiz Başlangıç",
+            "linked_offer": "Bağlı Mağaza Ürünü",
+            "linked_none": "Yok (Fiyatı kendiniz belirleyin)",
+            "linked_missing": "Ürün artık mevcut değil",
+            "linked_help": "Fiyat ve satın alma bağlantısı mağaza ürünüyle senkronize çalışır.",
+            "linked_missing_help": "Bu ürün mağazada aktif olmadığı için açılış sayfasında gizlenir.",
+            "store_hint": "Mağazanızdaki ürünleri doğrudan burada paket olarak listeleyebilirsiniz.",
+            "add_from_store": "Mağazadan Paket Ekle",
+            "store_empty": "Mağazada kayıtlı ürün bulunamadı.",
+            "buy_default": "Satın Al"
+          },
+          "steps": {
+            "title": "Adımlar (Nasıl Çalışır?) Bölümü",
+            "layout": "Yerleşim Düzeni",
+            "horizontal": "Yan Yana",
+            "vertical": "Alt Alta (Dikey)",
+            "add": "Yeni Adım Ekle",
+            "default_title": "Nasıl Başlanır?"
+          },
+          "columns_block": {
+            "title": "Çoklu Sütun Bölümü",
+            "add": "Yeni Sütun Ekle"
+          },
+          "image": {
+            "title": "Tekil Görsel Bölümü",
+            "caption": "Görsel Altı Yazısı",
+            "link": "Tıklama Bağlantısı",
+            "rounded": "Yuvarlatılmış Köşeler ve Gölge"
+          },
+          "embed": {
+            "title": "Gömülü İçerik (Embed)",
+            "url": "Gömme (Embed) URL Bağlantısı",
+            "help": "Desteklenen servisler: YouTube, Vimeo, Google Formlar, Haritalar, Loom, Canva, Figma vb.",
+            "not_allowed": "Bu servis adresi desteklenmiyor, bu nedenle gösterilmeyecektir.",
+            "height": "Yükseklik (px)"
+          },
+          "banner": {
+            "title": "Duyuru Şeridi",
+            "text": "Duyuru Metni",
+            "link_text": "Bağlantı Metni",
+            "schedule_tip": "İpucu: Bu duyurunun belirli tarihler arasında görünmesi için yukarıdaki Başlangıç ve Bitiş tarihlerini kullanabilirsiniz.",
+            "default_text": "Yeni eğitim dönemi kayıtlarımız devam ediyor!"
+          },
+          "countdown": {
+            "title": "Geri Sayım Sayacı",
+            "target": "Geri Sayım Bitiş Tarihi",
+            "done_text": "Sayaç Bittiğinde Gösterilecek Mesaj",
+            "default_heading": "Dönem Başlangıcına Kalan Süre"
+          },
+          "page": {
+            "title": "Sayfa Genel Ayarları",
+            "description": "Tüm açılış sayfası için genel arka plan, içerik genişliği ve bölüm boşlukları.",
+            "width": "İçerik Genişliği",
+            "width_wide": "Geniş",
+            "gap": "Bölümler Arası Boşluk"
+          }
         },
         "add_section": "Bölüm Ekle",
         "hero_editor": {
