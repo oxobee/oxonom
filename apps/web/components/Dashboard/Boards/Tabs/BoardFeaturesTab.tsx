@@ -50,37 +50,17 @@ export default function BoardFeaturesTab({ board, boardUuid }: BoardFeaturesTabP
         <h2 className="text-xl font-bold mb-6 text-gray-800">Özellikler (Features)</h2>
         
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-4">
-            <label className="flex items-center space-x-3 cursor-pointer">
-              <input 
-                type="checkbox" 
-                checked={effectsEnabled}
-                onChange={(e) => setEffectsEnabled(e.target.checked)}
-                className="w-5 h-5 text-black border-gray-300 rounded focus:ring-black"
-              />
-              <span className="text-sm font-medium text-gray-700">🎭 Canlı Efektler (Yangın, Kar, Matrix vb.)</span>
-            </label>
-            
-            <label className="flex items-center space-x-3 cursor-pointer">
-              <input 
-                type="checkbox" 
-                checked={chatEnabled}
-                onChange={(e) => setChatEnabled(e.target.checked)}
-                className="w-5 h-5 text-black border-gray-300 rounded focus:ring-black"
-              />
-              <span className="text-sm font-medium text-gray-700">💬 Anlık Mesajlaşma (Chat)</span>
-            </label>
-            
-            <label className="flex items-center space-x-3 cursor-pointer">
-              <input 
-                type="checkbox" 
-                checked={reactionsEnabled}
-                onChange={(e) => setReactionsEnabled(e.target.checked)}
-                className="w-5 h-5 text-black border-gray-300 rounded focus:ring-black"
-              />
-              <span className="text-sm font-medium text-gray-700">😊 Emoji Tepkileri (Reactions)</span>
-            </label>
-          </div>
+            <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100 flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0 font-bold text-sm">
+                ✓
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-emerald-950">Sadeleştirilmiş Akıllı Tahta</h4>
+                <p className="text-xs text-emerald-800/80 mt-1 leading-relaxed">
+                  Bu akıllı tahta sınıf ve ders odaklı çalışma için optimize edilmiştir. Dikkat dağıtıcı canlı efektler ve uçucu mesajlar devre dışı bırakılmıştır.
+                </p>
+              </div>
+            </div>
 
           <div className="flex justify-end pt-4 border-t border-gray-100">
             <button

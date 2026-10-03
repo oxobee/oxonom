@@ -54,6 +54,8 @@
     "all_assignments": "All Assignments",
     "feedback": "Feedback",
     "games": "Games",
+    "classrooms": "Classrooms",
+    "yansit": "Cast / Present",
     "recent": "Recent",
     "expand": "Expand",
     "help": "Help",
@@ -3523,6 +3525,14 @@
             "label": "Countdown",
             "description": "A live timer to a launch or deadline"
           }
+        },
+        "blocks": {
+          "page": {
+            "title": "Page Settings"
+          },
+          "export": "Export",
+          "import": "Import",
+          "hidden": "Hidden"
         },
         "add_section": "Add Section",
         "hero_editor": {

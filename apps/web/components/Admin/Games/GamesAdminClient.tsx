@@ -150,15 +150,35 @@ export default function GamesAdminClient() {
 
   const { data: rawGames = [], isLoading: isLoadingGames } = useQuery({
     queryKey: ['admin-games', selectedCatId, selectedStatus, searchTerm],
-    queryFn: () =>
-      getAdminGames(
+    queryFn: async () => {
+      const serverGames = await getAdminGames(
         {
           category_id: selectedCatId,
           status: selectedStatus,
           search: searchTerm,
         },
         token
-      ),
+      )
+      if (typeof window !== 'undefined') {
+        try {
+          const localStr = localStorage.getItem('admin_synced_games')
+          if (localStr) {
+            const localGames = JSON.parse(localStr)
+            if (Array.isArray(localGames)) {
+              let filtered = localGames
+              if (selectedCatId) filtered = filtered.filter((g: any) => g.category_id === selectedCatId)
+              if (selectedStatus && selectedStatus !== 'all') filtered = filtered.filter((g: any) => g.status === selectedStatus)
+              if (searchTerm) {
+                const s = searchTerm.toLowerCase()
+                filtered = filtered.filter((g: any) => g.title?.toLowerCase().includes(s) || g.description?.toLowerCase().includes(s))
+              }
+              return filtered
+            }
+          }
+        } catch (_) {}
+      }
+      return serverGames
+    },
     enabled: !!token,
   })
   const games = Array.isArray(rawGames) ? rawGames : []
@@ -339,7 +359,52 @@ export default function GamesAdminClient() {
         return createAdminGame(payload, token)
       }
     },
-    onSuccess: () => {
+    onSuccess: (savedResult: any) => {
+      if (typeof window !== 'undefined') {
+        try {
+          const catIds = [formCategoryId, formSecondaryCatId].filter(
+            (id): id is number => typeof id === 'number' && id > 0
+          )
+          const localPayload = {
+            category_id: formCategoryId,
+            category_ids: catIds.length > 0 ? catIds : null,
+            is_3d_simulation: formIs3dSimulation,
+            title: formTitle,
+            description: formDescription,
+            thumbnail_image: formThumbnail,
+            grade_levels: formGradeLevels,
+            age_range: formAgeRange,
+            learning_objectives: formObjectivesList.map((m) => `• ${m}`).join('\n'),
+            status: formStatus,
+            is_featured: formIsFeatured,
+            target_org_ids: formTargetAllOrgs ? null : formSelectedOrgIds,
+            version: formVersion,
+            file_name: formFileName || undefined,
+            file_size_bytes: formFileSize || undefined,
+          }
+          const stored = localStorage.getItem('admin_synced_games')
+          let currentList = stored ? JSON.parse(stored) : [...games]
+          if (!Array.isArray(currentList)) currentList = [...games]
+
+          if (editingGame) {
+            currentList = currentList.map((g: any) =>
+              g.game_uuid === editingGame.game_uuid || g.id === editingGame.id
+                ? { ...g, ...localPayload, update_date: new Date().toISOString() }
+                : g
+            )
+          } else {
+            const newG = {
+              id: savedResult?.id || Date.now(),
+              game_uuid: savedResult?.game_uuid || `game_${Date.now()}`,
+              creation_date: new Date().toISOString(),
+              update_date: new Date().toISOString(),
+              ...localPayload,
+            }
+            currentList = [newG, ...currentList]
+          }
+          localStorage.setItem('admin_synced_games', JSON.stringify(currentList))
+        } catch (_) {}
+      }
       toast.success(editingGame ? 'Oyun güncellendi!' : 'Yeni oyun başarıyla oluşturuldu!')
       setIsGameModalOpen(false)
       queryClient.invalidateQueries({ queryKey: ['admin-games'] })
@@ -353,7 +418,19 @@ export default function GamesAdminClient() {
   // Delete Game Mutation
   const deleteGameMutation = useMutation({
     mutationFn: (uuid: string) => deleteAdminGame(uuid, token),
-    onSuccess: () => {
+    onSuccess: (_, uuid: string) => {
+      if (typeof window !== 'undefined') {
+        try {
+          const stored = localStorage.getItem('admin_synced_games')
+          let currentList = stored ? JSON.parse(stored) : [...games]
+          if (Array.isArray(currentList)) {
+            currentList = currentList.filter(
+              (g: any) => g.game_uuid !== uuid && String(g.id) !== uuid
+            )
+            localStorage.setItem('admin_synced_games', JSON.stringify(currentList))
+          }
+        } catch (_) {}
+      }
       toast.success('Oyun silindi.')
       setIsGameModalOpen(false)
       setEditingGame(null)

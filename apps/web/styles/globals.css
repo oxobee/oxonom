@@ -1752,30 +1752,6 @@
     top: calc(var(--status-bar-inset, 0px) + 6px) !important;
   }
 
-  /* Social stack — just center it, keep the desktop design as-is */
-  /* rtl-ok: board canvas is dir="ltr"-locked, and this centering is symmetric. */
-  .board-social {
-    position: fixed !important;
-    right: auto !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    bottom: 20px !important;
-    align-items: center !important;
-    pointer-events: none !important;
-  }
-  .board-social > * {
-    pointer-events: auto;
-  }
-
-  /* Hide zoom controls (pinch replaces them) */
-  .board-social > :last-child {
-    display: none !important;
-  }
-
-  /* Prevent iOS auto-zoom on chat input */
-  .board-social input {
-    font-size: 16px !important;
-  }
 }
 
 /* Editor toolbar select */

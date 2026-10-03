@@ -27,108 +27,108 @@ import { parseLandingImport } from './landingImport'
 const getSectionTypes = (t: any) => ({
   hero: {
     icon: LayoutTemplate,
-    label: t('dashboard.organization.landing.section_types.hero.label'),
-    description: t('dashboard.organization.landing.section_types.hero.description')
+    label: t('dashboard.organization.landing.section_types.hero.label', { defaultValue: 'Hero (Karşılama)' }),
+    description: t('dashboard.organization.landing.section_types.hero.description', { defaultValue: 'Başlık ve eylem çağrısı içeren bir hero bölümü ekleyin' })
   },
   'text-and-image': {
     icon: ImageIcon,
-    label: t('dashboard.organization.landing.section_types.text_and_image.label'),
-    description: t('dashboard.organization.landing.section_types.text_and_image.description')
+    label: t('dashboard.organization.landing.section_types.text_and_image.label', { defaultValue: 'Metin ve Resim' }),
+    description: t('dashboard.organization.landing.section_types.text_and_image.description', { defaultValue: 'Metin ve yan yana resim içeren bir bölüm ekleyin' })
   },
   logos: {
     icon: Award,
-    label: t('dashboard.organization.landing.section_types.logos.label'),
-    description: t('dashboard.organization.landing.section_types.logos.description')
+    label: t('dashboard.organization.landing.section_types.logos.label', { defaultValue: 'Logolar' }),
+    description: t('dashboard.organization.landing.section_types.logos.description', { defaultValue: 'İş ortağı logolarını sergilemek için bir bölüm ekleyin' })
   },
   people: {
     icon: Users,
-    label: t('dashboard.organization.landing.section_types.people.label'),
-    description: t('dashboard.organization.landing.section_types.people.description')
+    label: t('dashboard.organization.landing.section_types.people.label', { defaultValue: 'Kişiler & Kadro' }),
+    description: t('dashboard.organization.landing.section_types.people.description', { defaultValue: 'Ekip üyelerini ve eğitmenleri tanıtmak için bir bölüm ekleyin' })
   },
   'featured-courses': {
     icon: BookOpen,
-    label: t('dashboard.organization.landing.section_types.featured_courses.label'),
-    description: t('dashboard.organization.landing.section_types.featured_courses.description')
+    label: t('dashboard.organization.landing.section_types.featured_courses.label', { defaultValue: 'Kurslar & Dersler' }),
+    description: t('dashboard.organization.landing.section_types.featured_courses.description', { defaultValue: 'Seçili kursları öne çıkarmak için bir bölüm ekleyin' })
   },
   video: {
     icon: Video,
-    label: t('dashboard.organization.landing.section_types.video.label'),
-    description: t('dashboard.organization.landing.section_types.video.description')
+    label: t('dashboard.organization.landing.section_types.video.label', { defaultValue: 'Tanıtım Videosu' }),
+    description: t('dashboard.organization.landing.section_types.video.description', { defaultValue: 'Okul tanıtım filmi veya örnek ders videosu ekleyin' })
   },
   'rich-text': {
     icon: Type,
-    label: t('dashboard.organization.landing.section_types.rich_text.label'),
-    description: t('dashboard.organization.landing.section_types.rich_text.description')
+    label: t('dashboard.organization.landing.section_types.rich_text.label', { defaultValue: 'Zengin Metin' }),
+    description: t('dashboard.organization.landing.section_types.rich_text.description', { defaultValue: 'Biçimlendirilmiş yazı ve kurumsal metin bloğu' })
   },
   features: {
     icon: LayoutGrid,
-    label: t('dashboard.organization.landing.section_types.features.label'),
-    description: t('dashboard.organization.landing.section_types.features.description')
+    label: t('dashboard.organization.landing.section_types.features.label', { defaultValue: 'Özellikler' }),
+    description: t('dashboard.organization.landing.section_types.features.description', { defaultValue: 'Platform ve okulun öne çıkan özelliklerini listeleyin' })
   },
   stats: {
     icon: TrendingUp,
-    label: t('dashboard.organization.landing.section_types.stats.label'),
-    description: t('dashboard.organization.landing.section_types.stats.description')
+    label: t('dashboard.organization.landing.section_types.stats.label', { defaultValue: 'İstatistikler' }),
+    description: t('dashboard.organization.landing.section_types.stats.description', { defaultValue: 'Rakamlarla başarılar, öğrenci ve ders sayıları' })
   },
   testimonials: {
     icon: Quote,
-    label: t('dashboard.organization.landing.section_types.testimonials.label'),
-    description: t('dashboard.organization.landing.section_types.testimonials.description')
+    label: t('dashboard.organization.landing.section_types.testimonials.label', { defaultValue: 'Görüşler & Yorumlar' }),
+    description: t('dashboard.organization.landing.section_types.testimonials.description', { defaultValue: 'Öğrenci, öğretmen ve veli referans yorumları' })
   },
   faq: {
     icon: HelpCircle,
-    label: t('dashboard.organization.landing.section_types.faq.label'),
-    description: t('dashboard.organization.landing.section_types.faq.description')
+    label: t('dashboard.organization.landing.section_types.faq.label', { defaultValue: 'Sıkça Sorulan Sorular' }),
+    description: t('dashboard.organization.landing.section_types.faq.description', { defaultValue: 'Kayıt ve eğitimle ilgili merak edilen sorular ve yanıtları' })
   },
   cta: {
     icon: Megaphone,
-    label: t('dashboard.organization.landing.section_types.cta.label'),
-    description: t('dashboard.organization.landing.section_types.cta.description')
+    label: t('dashboard.organization.landing.section_types.cta.label', { defaultValue: 'Harekete Geçirici Mesaj (CTA)' }),
+    description: t('dashboard.organization.landing.section_types.cta.description', { defaultValue: 'Kayıt olma veya iletişime geçme eylem çağrısı' })
   },
   gallery: {
     icon: Images,
-    label: t('dashboard.organization.landing.section_types.gallery.label'),
-    description: t('dashboard.organization.landing.section_types.gallery.description')
+    label: t('dashboard.organization.landing.section_types.gallery.label', { defaultValue: 'Fotoğraf Galerisi' }),
+    description: t('dashboard.organization.landing.section_types.gallery.description', { defaultValue: 'Okul etkinlikleri, sınıflar ve kampüs fotoğrafları' })
   },
   spacer: {
     icon: Minus,
-    label: t('dashboard.organization.landing.section_types.spacer.label'),
-    description: t('dashboard.organization.landing.section_types.spacer.description')
+    label: t('dashboard.organization.landing.section_types.spacer.label', { defaultValue: 'Boşluk / Ayırıcı' }),
+    description: t('dashboard.organization.landing.section_types.spacer.description', { defaultValue: 'Bölümler arasına ayırıcı boşluk ekleyin' })
   },
   pricing: {
     icon: BadgeDollarSign,
-    label: t('dashboard.organization.landing.section_types.pricing.label'),
-    description: t('dashboard.organization.landing.section_types.pricing.description')
+    label: t('dashboard.organization.landing.section_types.pricing.label', { defaultValue: 'Paketler & Fiyatlandırma' }),
+    description: t('dashboard.organization.landing.section_types.pricing.description', { defaultValue: 'Eğitim ve üyelik planlarını listeleyin' })
   },
   steps: {
     icon: ListOrdered,
-    label: t('dashboard.organization.landing.section_types.steps.label'),
-    description: t('dashboard.organization.landing.section_types.steps.description')
+    label: t('dashboard.organization.landing.section_types.steps.label', { defaultValue: 'Adımlar / Nasıl Başlanır?' }),
+    description: t('dashboard.organization.landing.section_types.steps.description', { defaultValue: 'Kayıt ve başlangıç süreci rehberi' })
   },
   columns: {
     icon: Columns3,
-    label: t('dashboard.organization.landing.section_types.columns.label'),
-    description: t('dashboard.organization.landing.section_types.columns.description')
+    label: t('dashboard.organization.landing.section_types.columns.label', { defaultValue: 'Sütunlar' }),
+    description: t('dashboard.organization.landing.section_types.columns.description', { defaultValue: 'Çok sütunlu esnek içerik düzeni' })
   },
   image: {
     icon: ImageIcon,
-    label: t('dashboard.organization.landing.section_types.image.label'),
-    description: t('dashboard.organization.landing.section_types.image.description')
+    label: t('dashboard.organization.landing.section_types.image.label', { defaultValue: 'Tekil Görsel' }),
+    description: t('dashboard.organization.landing.section_types.image.description', { defaultValue: 'Görsel veya afiş bloğu' })
   },
   embed: {
     icon: Globe,
-    label: t('dashboard.organization.landing.section_types.embed.label'),
-    description: t('dashboard.organization.landing.section_types.embed.description')
+    label: t('dashboard.organization.landing.section_types.embed.label', { defaultValue: 'Gömülü İçerik (Embed)' }),
+    description: t('dashboard.organization.landing.section_types.embed.description', { defaultValue: 'Harici form, harita veya kod gömün' })
   },
   banner: {
     icon: Flag,
-    label: t('dashboard.organization.landing.section_types.banner.label'),
-    description: t('dashboard.organization.landing.section_types.banner.description')
+    label: t('dashboard.organization.landing.section_types.banner.label', { defaultValue: 'Duyuru Bandı' }),
+    description: t('dashboard.organization.landing.section_types.banner.description', { defaultValue: 'Önemli duyuru veya bildirim şeridi' })
   },
   countdown: {
     icon: Timer,
-    label: t('dashboard.organization.landing.section_types.countdown.label'),
-    description: t('dashboard.organization.landing.section_types.countdown.description')
+    label: t('dashboard.organization.landing.section_types.countdown.label', { defaultValue: 'Geri Sayım Sayacı' }),
+    description: t('dashboard.organization.landing.section_types.countdown.description', { defaultValue: 'Kayıt bitişi veya dönem başlangıcı için sayaç' })
   }
 }) as const
 
@@ -217,7 +217,7 @@ const OrgEditLanding = () => {
   const SECTION_TYPES = getSectionTypes(t)
   
   const getSectionDisplayName = (section: LandingSection) => {
-    return SECTION_TYPES[section.type as keyof typeof SECTION_TYPES].label
+    return SECTION_TYPES[section.type as keyof typeof SECTION_TYPES]?.label || section.type
   }
   
   const [isLandingEnabled, setIsLandingEnabled] = React.useState(false)
@@ -558,7 +558,7 @@ const OrgEditLanding = () => {
                                         ? 'text-blue-600 bg-blue-100/50' 
                                         : 'text-gray-600 bg-gray-100/50'
                                     }`}>
-                                      {React.createElement(SECTION_TYPES[section.type as keyof typeof SECTION_TYPES].icon, {
+                                      {React.createElement(SECTION_TYPES[section.type as keyof typeof SECTION_TYPES]?.icon || LayoutTemplate, {
                                         size: 16
                                       })}
                                     </div>
@@ -676,16 +676,16 @@ const OrgEditLanding = () => {
                     onClick={() => { setShowPageSettings(true); setShowTemplates(false); setSelectedSection(null) }}
                   >
                     <SlidersHorizontal className="h-4 w-4 me-2" />
-                    {t(`${B}.page.title`)}
+                    {t(`${B}.page.title`, { defaultValue: 'Sayfa Genel Ayarları' })}
                   </Button>
                   <div className="grid grid-cols-2 gap-2">
                     <Button variant="outline" onClick={exportLanding} disabled={landingData.sections.length === 0}>
                       <Download className="h-4 w-4 me-2" />
-                      {t(`${B}.export`)}
+                      {t(`${B}.export`, { defaultValue: 'Dışa Aktar' })}
                     </Button>
                     <Button variant="outline" onClick={() => importInputRef.current?.click()}>
                       <FileUp className="h-4 w-4 me-2" />
-                      {t(`${B}.import`)}
+                      {t(`${B}.import`, { defaultValue: 'İçe Aktar' })}
                     </Button>
                   </div>
                   <input ref={importInputRef} id="landing-import" type="file" accept="application/json,.json" onChange={importLanding} className="hidden" />

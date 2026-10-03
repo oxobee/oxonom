@@ -18,22 +18,32 @@ import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea
 import {
   Books, FolderSimple, Headphones, ChatsCircle, Cube, ShoppingBag,
   DotsSixVertical, Lock, Trash, Plus, FloppyDisk, CaretDown,
+  GraduationCap, Airplay, ChalkboardSimple, GameController, Files
 } from '@phosphor-icons/react'
 import { MENU_ICONS, MENU_ICON_NAMES, menuIcon, DEFAULT_MENU_ICON } from '@components/Objects/Menus/menuIcons'
 
 type BuiltinMeta = { feature: string; link: string; labelKey: string; Icon: any }
 
 const BUILTIN_META: Record<string, BuiltinMeta> = {
-  courses: { feature: 'courses', link: '/courses', labelKey: 'courses.courses', Icon: Books },
+  classrooms: { feature: 'classrooms', link: '/dash/classrooms', labelKey: 'common.classrooms', Icon: GraduationCap },
+  yansit: { feature: 'boards', link: '/boards', labelKey: 'common.yansit', Icon: Airplay },
+  boards: { feature: 'boards', link: '/boards', labelKey: 'boards.boards', Icon: ChalkboardSimple },
+  games: { feature: 'games', link: '/games', labelKey: 'common.games', Icon: GameController },
   library: { feature: 'folders', link: '/library', labelKey: 'library.library', Icon: FolderSimple },
-  podcasts: { feature: 'podcasts', link: '/podcasts', labelKey: 'podcasts.podcasts', Icon: Headphones },
   communities: { feature: 'communities', link: '/communities', labelKey: 'communities.title', Icon: ChatsCircle },
   playgrounds: { feature: 'playgrounds', link: '/playgrounds', labelKey: 'common.playgrounds', Icon: Cube },
+  podcasts: { feature: 'podcasts', link: '/podcasts', labelKey: 'podcasts.podcasts', Icon: Headphones },
+  assignments: { feature: 'assignments', link: '/dash/assignments', labelKey: 'common.assignments', Icon: Files },
+  courses: { feature: 'courses', link: '/courses', labelKey: 'courses.courses', Icon: Books },
   store: { feature: 'payments', link: '/store', labelKey: 'common.store', Icon: ShoppingBag },
 }
-const BUILTIN_ORDER = ['courses', 'library', 'podcasts', 'communities', 'playgrounds', 'store']
+const BUILTIN_ORDER = ['classrooms', 'yansit', 'boards', 'games', 'library', 'communities', 'playgrounds', 'podcasts']
 
 function defaultLabel(type: string, t: any): string {
+  if (type === 'classrooms') return t('common.classrooms', { defaultValue: 'Sınıflar' })
+  if (type === 'yansit') return t('common.yansit', { defaultValue: 'Yansıt' })
+  if (type === 'boards') return t('boards.boards', { defaultValue: 'Panolar' })
+  if (type === 'games') return t('common.games', { defaultValue: 'Oyunlar' })
   return BUILTIN_META[type] ? t(BUILTIN_META[type].labelKey) : ''
 }
 
@@ -200,9 +210,12 @@ const OrgEditMenu: React.FC = () => {
   const featureState = (type: string) => {
     const meta = BUILTIN_META[type]
     if (!meta) return { requiredPlan: undefined as any, planAllowed: true, featureEnabled: true }
+    if (type === 'classrooms' || type === 'yansit') {
+      return { requiredPlan: undefined as any, planAllowed: true, featureEnabled: true }
+    }
     const requiredPlan = rf?.[meta.feature]?.required_plan
     const planAllowed = !requiredPlan || planMeetsRequirement(currentPlan, requiredPlan as PlanLevel)
-    const featureEnabled = rf?.[meta.feature]?.enabled === true
+    const featureEnabled = rf?.[meta.feature] !== undefined ? rf[meta.feature]?.enabled !== false : true
     return { requiredPlan, planAllowed, featureEnabled }
   }
 

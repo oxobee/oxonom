@@ -228,16 +228,18 @@ export default function OrgEditUsage() {
       )}
 
       {/* Active Packs */}
-      {packsData && packsData.active_packs.length > 0 && (
+      {packsData?.active_packs && packsData.active_packs.length > 0 && (
         <div className="bg-white rounded-xl nice-shadow">
           <div className="border-b px-6 py-4 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-800">Active Packs</h3>
+            <h3 className="text-lg font-semibold text-gray-800">
+              {t('dashboard.organization.usage.active_packs', { defaultValue: 'Aktif Paketler' })}
+            </h3>
             <Package size={20} weight="duotone" className="text-gray-400" />
           </div>
           <div className="p-6">
             <div className="space-y-3">
-              {packsData.active_packs.map((pack) => {
-                const catalogItem = packsData.available_packs.find(
+              {(packsData.active_packs || []).map((pack) => {
+                const catalogItem = (packsData.available_packs || []).find(
                   (p) => p.pack_id === pack.pack_id
                 )
                 return (

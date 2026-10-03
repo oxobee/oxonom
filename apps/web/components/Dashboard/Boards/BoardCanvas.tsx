@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { MessageCircle } from 'lucide-react'
+import { MessageCircle, Eye } from 'lucide-react'
 import { FeedbackModal } from '@components/Objects/Modals/FeedbackModal'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
@@ -14,8 +14,8 @@ import BoardToolbar from './BoardToolbar'
 import BoardTopBar from './BoardTopBar'
 import BoardTopRight from './BoardTopRight'
 import BoardZoomControls from './BoardZoomControls'
-import EphemeralChat from './EphemeralChat'
-import BoardEffects from './BoardEffects'
+import { useTranslation } from 'react-i18next'
+import { useSearchParams } from 'next/navigation'
 import { BoardCardExtension } from './Extensions/BoardCard'
 import { DrawingStrokeExtension } from './Extensions/DrawingStroke'
 import { YouTubeBlockExtension } from './Extensions/YouTubeBlock'
@@ -101,6 +101,9 @@ function BoardEditorInner({
   ydoc: Y.Doc
   provider: HocuspocusProvider
 }) {
+  const { t } = useTranslation()
+  const searchParams = useSearchParams()
+  const isReadOnly = searchParams?.get('readonly') === '1' || searchParams?.get('permission') === 'view'
   const { track } = useLHAnalytics('dashboard')
   const [toolMode, setToolMode] = useState<'select' | 'pan' | 'draw' | 'card' | 'youtube' | 'modules' | 'embed' | 'webpage' | 'sticker' | 'frame' | 'note' | 'todo' | 'podcast'>('select')
   const [zoom, setZoom] = useState(() =>
@@ -205,6 +208,7 @@ function BoardEditorInner({
       TodoBlockExtension,
       PodcastBlockExtension,
     ],
+    editable: !isReadOnly,
     immediatelyRender: false,
     autofocus: false,
     editorProps: {
@@ -387,7 +391,7 @@ function BoardEditorInner({
         editor.chain().insertContentAt(pos, {
           type: 'boardCard',
           attrs: { x, y, width: 300, height: 200 },
-          content: [{ type: 'paragraph', content: [{ type: 'text', text: 'New card' }] }],
+          content: [{ type: 'paragraph', content: [{ type: 'text', text: t('boards.new_card', 'Yeni Kart') }] }],
         }).run()
         track(AnalyticsEvent.BoardBlockAdded, { block_type: 'card' })
         break
@@ -416,7 +420,7 @@ function BoardEditorInner({
         editor.chain().insertContentAt(pos, {
           type: 'noteBlock',
           attrs: { x, y, width: 260, height: 200 },
-          content: [{ type: 'paragraph', content: [{ type: 'text', text: 'New note' }] }],
+          content: [{ type: 'paragraph', content: [{ type: 'text', text: t('boards.new_note', 'Yeni Not') }] }],
         }).run()
         track(AnalyticsEvent.BoardBlockAdded, { block_type: 'note' })
         break
@@ -1033,31 +1037,30 @@ function BoardEditorInner({
           accessToken={accessToken}
         />
       </div>
+ 
+      {/* Read-Only Mode Badge */}
+      {isReadOnly && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-amber-500/95 backdrop-blur-md text-white text-xs font-semibold shadow-lg pointer-events-auto animate-in fade-in duration-200">
+          <Eye size={14} className="shrink-0" />
+          <span>Sadece Görüntüleme Modu (Salt Okunur)</span>
+        </div>
+      )}
 
       {/* Bottom toolbar: logo, tools, undo/redo */}
-      <BoardToolbar
-        toolMode={toolMode}
-        onToolModeChange={setToolMode}
-        editor={editor}
-        drawColor={drawColor}
-        drawWidth={drawWidth}
-        onDrawColorChange={setDrawColor}
-        onDrawWidthChange={setDrawWidth}
-      />
+      {!isReadOnly && (
+        <BoardToolbar
+          toolMode={toolMode}
+          onToolModeChange={setToolMode}
+          editor={editor}
+          drawColor={drawColor}
+          drawWidth={drawWidth}
+          onDrawColorChange={setDrawColor}
+          onDrawWidthChange={setDrawWidth}
+        />
+      )}
 
-      {/* Bottom right stack: effects → chat → zoom */}
-      <div className="absolute bottom-5 end-5 z-20 flex flex-col items-end gap-1.5 pointer-events-none board-enter-delayed board-social">
-        {/* Ephemeral Chat */}
-        {(board.features?.chat_enabled !== false || board.features?.reactions_enabled !== false) && (
-          <EphemeralChat ydoc={ydoc} provider={provider} features={board.features} />
-        )}
-
-        {/* Live Effects */}
-        {board.features?.effects_enabled !== false && (
-          <BoardEffects ydoc={ydoc} provider={provider} />
-        )}
-
-        {/* Zoom controls */}
+      {/* Zoom & Odak Controls — Fixed bottom-right with clean, non-overlapping placement */}
+      <div className="fixed bottom-4 end-4 z-30 pointer-events-auto flex items-center board-enter-delayed">
         <BoardZoomControls
           zoom={zoom}
           onZoomIn={handleZoomIn}
@@ -1067,77 +1070,10 @@ function BoardEditorInner({
         />
       </div>
 
-      {/* Floating Touch Drawing Bar — Quick colors, widths, undo & focus */}
-      {toolMode === 'draw' && (
-        <div
-          className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3.5 py-2 rounded-2xl nice-shadow pointer-events-auto border border-neutral-200/80 animate-in fade-in slide-in-from-bottom-2 duration-150"
-          style={{
-            background: 'rgba(255, 255, 255, 0.96)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-          }}
-        >
-          {/* Colors */}
-          <div className="flex items-center gap-1.5 pe-2 border-e border-neutral-200">
-            {[
-              { color: '#000000', label: 'Siyah' },
-              { color: '#EF4444', label: 'Kırmızı' },
-              { color: '#3B82F6', label: 'Mavi' },
-              { color: '#22C55E', label: 'Yeşil' },
-              { color: '#F97316', label: 'Turuncu' },
-              { color: '#A855F7', label: 'Mor' },
-            ].map(({ color, label }) => (
-              <button
-                key={color}
-                type="button"
-                onClick={() => setDrawColor(color)}
-                title={label}
-                className={`w-6 h-6 rounded-full transition-transform cursor-pointer ${
-                  drawColor === color ? 'scale-125 ring-2 ring-offset-2 ring-neutral-800' : 'hover:scale-110'
-                }`}
-                style={{ backgroundColor: color }}
-              />
-            ))}
-          </div>
-
-          {/* Stroke Width */}
-          <div className="flex items-center gap-1 pe-2 border-e border-neutral-200">
-            {[
-              { width: 1, label: 'İnce' },
-              { width: 3, label: 'Orta' },
-              { width: 6, label: 'Kalın' },
-            ].map(({ width, label }) => (
-              <button
-                key={width}
-                type="button"
-                onClick={() => setDrawWidth(width)}
-                className={`px-2 py-1 text-[11px] font-bold rounded-lg transition-colors cursor-pointer ${
-                  drawWidth === width
-                    ? 'bg-neutral-900 text-white shadow-xs'
-                    : 'text-neutral-600 hover:bg-neutral-100'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          {/* Quick Focus Button */}
-          <button
-            type="button"
-            onClick={handleFocusContent}
-            className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-lg text-indigo-600 bg-indigo-50 hover:bg-indigo-100 transition-colors cursor-pointer"
-            title="Tüm Çizimleri Ekrana Ortala"
-          >
-            <span>Odak</span>
-          </button>
-        </div>
-      )}
-
-      {/* Feedback button — bottom left */}
+      {/* Feedback button — bottom left (desktop only, avoids collision in landscape & mobile) */}
       <button
         onClick={() => setFeedbackOpen(true)}
-        className="absolute bottom-5 start-5 z-20 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-neutral-500 hover:text-neutral-700 nice-shadow transition-colors board-enter-delayed board-feedback"
+        className="fixed bottom-4 start-4 z-20 hidden md:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-neutral-500 hover:text-neutral-700 nice-shadow transition-colors board-enter-delayed"
         style={{
           background: 'rgba(255, 255, 255, 0.95)',
           backdropFilter: 'blur(12px)',

@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Share2, Copy, Check, Timer, Play, Pause, RotateCcw, X, SkipForward, Globe, Lock, RefreshCw, Camera } from 'lucide-react'
+import { Share2, Copy, Check, Timer, Play, Pause, RotateCcw, X, SkipForward, Globe, Lock, RefreshCw, Camera, Eye, Pencil } from 'lucide-react'
 import type { HocuspocusProvider } from '@hocuspocus/provider'
 import * as Y from 'yjs'
 import PresenceAvatars from './PresenceAvatars'
@@ -195,6 +195,7 @@ export default function BoardTopRight({ provider, ydoc, board, accessToken }: Bo
   const [shareType, setShareType] = useState<'public' | 'code'>(
     board?.share_type || (board?.public === false ? 'code' : 'public')
   )
+  const [sharePermission, setSharePermission] = useState<'edit' | 'view'>('edit')
   const [shareCode, setShareCode] = useState<string>(board?.share_code || '')
   const [shortCode, setShortCode] = useState<string>(board?.short_code || '')
   const { isStudent, canManageOrg, isTeacher, isAdmin } = useAdminStatus()
@@ -323,11 +324,13 @@ export default function BoardTopRight({ provider, ydoc, board, accessToken }: Bo
   const getShareUrl = () => {
     if (typeof window === 'undefined') return ''
     const origin = window.location.origin
-    if (shortCode) {
-      return `${origin}/b/${shortCode}`
+    const base = shortCode
+      ? `${origin}/b/${shortCode}`
+      : `${origin}/board/${board?.board_uuid?.replace('board_', '') || ''}`
+    if (sharePermission === 'view') {
+      return `${base}?permission=view`
     }
-    const cleanUuid = board?.board_uuid?.replace('board_', '') || ''
-    return `${origin}/board/${cleanUuid}`
+    return base
   }
 
   const handleCopyLink = async () => {
@@ -695,6 +698,44 @@ export default function BoardTopRight({ provider, ydoc, board, accessToken }: Bo
                     </p>
                   </div>
                 )}
+
+                {/* Permission Selector (Edit vs View) */}
+                <div className="mb-3.5">
+                  <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-1.5">
+                    Katılımcı Yetkisi
+                  </label>
+                  <div className="grid grid-cols-2 gap-1.5 p-1 bg-neutral-100 rounded-xl">
+                    <button
+                      type="button"
+                      onClick={() => setSharePermission('edit')}
+                      className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                        sharePermission === 'edit'
+                          ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-indigo-500/20'
+                          : 'text-neutral-500 hover:text-neutral-800'
+                      }`}
+                    >
+                      <Pencil size={12} />
+                      <span>İşlem Yapılabilir</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSharePermission('view')}
+                      className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                        sharePermission === 'view'
+                          ? 'bg-white text-amber-600 shadow-sm ring-1 ring-amber-500/20'
+                          : 'text-neutral-500 hover:text-neutral-800'
+                      }`}
+                    >
+                      <Eye size={12} />
+                      <span>Sadece Görüntüle</span>
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-neutral-400 mt-1 px-1">
+                    {sharePermission === 'edit'
+                      ? '✓ Katılımcılar çizim yapabilir, kart ve not ekleyebilir (Varsayılan).'
+                      : '🔒 Katılımcılar tahtayı sadece izleyebilir, çizim yapamaz.'}
+                  </p>
+                </div>
 
                 {/* Ultra-Short Link + Copy */}
                 <div>

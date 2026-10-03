@@ -50,6 +50,8 @@
     "all_assignments": "Tüm ödevler",
     "feedback": "Geri Bildirimler",
     "games": "Oyunlar",
+    "classrooms": "Sınıflar",
+    "yansit": "Yansıt",
     "recent": "Son",
     "expand": "Genişlet",
     "help": "Yardım",
@@ -2788,7 +2790,7 @@
         "select_section": "Düzenlemek için bir bölüm seçin veya yeni bir tane ekleyin",
         "section_types": {
           "hero": {
-            "label": "Hero",
+            "label": "Hero (Karşılama)",
             "description": "Başlık ve eylem çağrısı içeren bir hero bölümü ekleyin"
           },
           "text_and_image": {
@@ -2800,13 +2802,85 @@
             "description": "İş ortağı logolarını sergilemek için bir bölüm ekleyin"
           },
           "people": {
-            "label": "Kişiler",
-            "description": "Ekip üyelerini tanıtmak için bir bölüm ekleyin"
+            "label": "Kişiler & Kadro",
+            "description": "Ekip üyelerini ve eğitmenleri tanıtmak için bir bölüm ekleyin"
           },
           "featured_courses": {
-            "label": "Kurslar",
+            "label": "Kurslar & Dersler",
             "description": "Seçili kursları öne çıkarmak için bir bölüm ekleyin"
+          },
+          "features": {
+            "label": "Özellikler",
+            "description": "Okul ve eğitim platformunun öne çıkan özelliklerini listeleyin"
+          },
+          "stats": {
+            "label": "İstatistikler",
+            "description": "Rakamlarla başarılar, öğrenci ve mezun sayıları"
+          },
+          "testimonials": {
+            "label": "Görüşler & Yorumlar",
+            "description": "Öğrenci, öğretmen ve veli referans yorumları"
+          },
+          "faq": {
+            "label": "Sıkça Sorulan Sorular",
+            "description": "Kayıt ve eğitimle ilgili merak edilen tüm sorular ve yanıtları"
+          },
+          "cta": {
+            "label": "Harekete Geçirici Mesaj (CTA)",
+            "description": "Kayıt olma veya iletişime geçme eylem çağrısı bölümü"
+          },
+          "video": {
+            "label": "Tanıtım Videosu",
+            "description": "Okul tanıtım filmi veya örnek ders videosu ekleyin"
+          },
+          "rich_text": {
+            "label": "Zengin Metin",
+            "description": "Biçimlendirilmiş yazı, duyuru ve kurumsal metin bloğu"
+          },
+          "gallery": {
+            "label": "Fotoğraf Galerisi",
+            "description": "Okul etkinlikleri, sınıflar ve kampüs fotoğrafları"
+          },
+          "spacer": {
+            "label": "Boşluk / Ayırıcı",
+            "description": "Bölümler arasına ayırıcı boşluk ekleyin"
+          },
+          "pricing": {
+            "label": "Paketler & Fiyatlandırma",
+            "description": "Eğitim ve üyelik planlarını listeleyin"
+          },
+          "steps": {
+            "label": "Adımlar / Nasıl Başlanır?",
+            "description": "Kayıt ve başlangıç süreci rehberi"
+          },
+          "columns": {
+            "label": "Sütunlar",
+            "description": "Çok sütunlu esnek içerik düzeni"
+          },
+          "image": {
+            "label": "Tekil Görsel",
+            "description": "Görsel veya afiş bloğu"
+          },
+          "embed": {
+            "label": "Gömülü İçerik (Embed)",
+            "description": "Harici form, harita veya kod gömün"
+          },
+          "banner": {
+            "label": "Duyuru Bandı",
+            "description": "Önemli duyuru veya bildirim şeridi"
+          },
+          "countdown": {
+            "label": "Geri Sayım Sayacı",
+            "description": "Kayıt bitişi veya dönem başlangıcı için sayaç"
           }
+        },
+        "blocks": {
+          "page": {
+            "title": "Sayfa Genel Ayarları"
+          },
+          "export": "Dışa Aktar",
+          "import": "İçe Aktar",
+          "hidden": "Gizli Bölüm"
         },
         "add_section": "Bölüm Ekle",
         "hero_editor": {
@@ -3171,18 +3245,18 @@
         }
       },
       "menu": {
-        "title": "Public navigation",
-        "subtitle": "Toggle, reorder, rename links and add your own. Links only appear if the related feature is on your plan and enabled.",
-        "save": "Save changes",
-        "saving": "Saving menu…",
-        "saved": "Menu updated",
-        "error": "Couldn't update the menu",
-        "add_custom": "Add a custom link",
-        "add": "Add",
-        "label_placeholder": "Label",
-        "custom_required": "A label and a URL are required",
-        "plan_locked": "Requires {{plan}} plan",
-        "feature_off": "Feature is off"
+        "title": "Genel Gezinme Menüsü",
+        "subtitle": "Genel gezinme çubuğunda görünen bağlantıları etkinleştirin, sıralayın, yeniden adlandırın ve yeni bağlantılar ekleyin. Yalnızca planınızda etkin olan özellikler sitede görünür.",
+        "save": "Değişiklikleri Kaydet",
+        "saving": "Menü kaydediliyor…",
+        "saved": "Menü başarıyla güncellendi",
+        "error": "Menü güncellenirken hata oluştu",
+        "add_custom": "ÖZEL BAĞLANTI EKLE",
+        "add": "Ekle",
+        "label_placeholder": "Menü Başlığı",
+        "custom_required": "Başlık ve URL girilmesi zorunludur",
+        "plan_locked": "{{plan}} planı gerektirir",
+        "feature_off": "Özellik devre dışı"
       },
       "danger_zone": {
         "title": "Tehlike Bölgesi",

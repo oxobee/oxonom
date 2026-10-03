@@ -28,6 +28,9 @@ import {
   getSyncedSuperadminVisits,
   getSyncedSuperadminUsers,
 } from '@services/demo/databaseSync'
+
+let ADMIN_GAMES_STORE: any[] = [...SYNCED_GAMES]
+let ORG_MENU_CONFIGS: Record<string, any> = {}
 import {
   SCHOOL_ORGS,
   DEFAULT_SCHOOL_ALIAS_MAP,
@@ -584,12 +587,12 @@ async function handleFallback(request: NextRequest, path: string): Promise<Respo
     return NextResponse.json(matched, { status: 200 })
   }
 
-  // Games Superadmin
+  // Games Superadmin CRUD
   if (path.startsWith('/api/v1/games/admin/all')) {
     const catId = request.nextUrl.searchParams.get('category_id')
     const status = request.nextUrl.searchParams.get('status')
     const search = request.nextUrl.searchParams.get('search')?.toLowerCase() || ''
-    let list = [...SYNCED_GAMES]
+    let list = [...ADMIN_GAMES_STORE]
     if (catId) list = list.filter((g: any) => g.category_id === Number(catId))
     if (status && status !== 'all') list = list.filter((g: any) => g.status === status)
     if (search) list = list.filter((g: any) => g.title?.toLowerCase().includes(search) || g.description?.toLowerCase().includes(search))
@@ -603,20 +606,119 @@ async function handleFallback(request: NextRequest, path: string): Promise<Respo
     return NextResponse.json([], { status: 200 })
   }
   if (path.startsWith('/api/v1/games/admin/create')) {
-    return NextResponse.json({
-      id: Date.now(),
-      game_uuid: `game_${Date.now()}`,
-      title: 'Yeni Eğitici Oyun',
-      status: 'published',
-      creation_date: new Date().toISOString(),
-      update_date: new Date().toISOString(),
-    }, { status: 200 })
+    try {
+      const body = await request.json()
+      const newGame = {
+        id: Date.now(),
+        game_uuid: `game_${Date.now()}`,
+        title: body.title || 'Yeni Eğitici Oyun',
+        description: body.description || '',
+        status: body.status || 'published',
+        category_id: body.category_id || 1,
+        thumbnail_image: body.thumbnail_image || null,
+        grade_levels: body.grade_levels || ['1. Sınıf', '2. Sınıf'],
+        age_range: body.age_range || '7-12 Yaş',
+        learning_objectives: body.learning_objectives || '',
+        creation_date: new Date().toISOString(),
+        update_date: new Date().toISOString(),
+        ...body,
+      }
+      ADMIN_GAMES_STORE.unshift(newGame)
+      return NextResponse.json(newGame, { status: 200 })
+    } catch {
+      const fallbackGame = {
+        id: Date.now(),
+        game_uuid: `game_${Date.now()}`,
+        title: 'Yeni Eğitici Oyun',
+        status: 'published',
+        creation_date: new Date().toISOString(),
+        update_date: new Date().toISOString(),
+      }
+      ADMIN_GAMES_STORE.unshift(fallbackGame)
+      return NextResponse.json(fallbackGame, { status: 200 })
+    }
   }
   if (path.startsWith('/api/v1/games/admin/')) {
+    const uuid = path.split('/api/v1/games/admin/')[1]?.split('/')[0]?.split('?')[0]
     if (request.method === 'DELETE') {
-      return NextResponse.json({ success: true }, { status: 200 })
+      ADMIN_GAMES_STORE = ADMIN_GAMES_STORE.filter(
+        (g: any) => g.game_uuid !== uuid && String(g.id) !== uuid
+      )
+      return NextResponse.json({ success: true, message: 'Oyun başarıyla silindi' }, { status: 200 })
     }
-    return NextResponse.json({ success: true, message: 'Oyun güncellendi' }, { status: 200 })
+    if (request.method === 'PUT') {
+      try {
+        const body = await request.json()
+        const idx = ADMIN_GAMES_STORE.findIndex(
+          (g: any) => g.game_uuid === uuid || String(g.id) === uuid
+        )
+        if (idx !== -1) {
+          ADMIN_GAMES_STORE[idx] = {
+            ...ADMIN_GAMES_STORE[idx],
+            ...body,
+            update_date: new Date().toISOString(),
+          }
+          return NextResponse.json(ADMIN_GAMES_STORE[idx], { status: 200 })
+        }
+        return NextResponse.json({ success: true, ...body }, { status: 200 })
+      } catch {
+        return NextResponse.json({ success: true, message: 'Oyun güncellendi' }, { status: 200 })
+      }
+    }
+    return NextResponse.json({ success: true }, { status: 200 })
+  }
+
+  // Organization Menu Config
+  if (path.includes('/config/menu')) {
+    const parts = path.split('/')
+    const orgId = parts[parts.indexOf('orgs') + 1] || 'default'
+    if (request.method === 'PUT') {
+      try {
+        const body = await request.json()
+        ORG_MENU_CONFIGS[orgId] = body
+        return NextResponse.json({ success: true, ...body }, { status: 200 })
+      } catch {
+        return NextResponse.json({ success: true }, { status: 200 })
+      }
+    }
+    return NextResponse.json(ORG_MENU_CONFIGS[orgId] || { items: [] }, { status: 200 })
+  }
+
+  // Organization Usage & Plan limits
+  if (path.includes('/usage')) {
+    return NextResponse.json({
+      mode: 'saas',
+      plan: 'pro',
+      features: {
+        courses: { usage: 14, limit: 50, remaining: 36 },
+        members: { usage: 48, limit: 500, remaining: 452, plan_limit: 500, purchased: 0 },
+        admin_seats: { usage: 4, limit: 15, remaining: 11 },
+      },
+    }, { status: 200 })
+  }
+
+  // Organization Packs
+  if (path.includes('/packs')) {
+    return NextResponse.json({
+      active_packs: [],
+      available_packs: [
+        { id: 1, pack_id: 'ai_credits_10k', label: '10.000 AI Kredisi', quantity: 10000, price: 199 },
+        { id: 2, pack_id: 'extra_members_100', label: '100 Ek Kullanıcı Kotası', quantity: 100, price: 299 },
+      ],
+    }, { status: 200 })
+  }
+
+  // Organization AI Credits
+  if (path.includes('/ai-credits')) {
+    return NextResponse.json({
+      plan: 'pro',
+      base_credits: 5000,
+      purchased_credits: 0,
+      total_credits: 5000,
+      used_credits: 420,
+      remaining_credits: 4580,
+      mode: 'enabled',
+    }, { status: 200 })
   }
 
   // Games Public
@@ -746,7 +848,11 @@ async function proxyToBackend(request: NextRequest): Promise<Response> {
   if (
     path.startsWith('/api/v1/ee/superadmin') ||
     path.startsWith('/api/v1/games/admin') ||
-    path.startsWith('/api/v1/monitoring/feedbacks')
+    path.startsWith('/api/v1/monitoring/feedbacks') ||
+    path.includes('/usage') ||
+    path.includes('/packs') ||
+    path.includes('/ai-credits') ||
+    path.includes('/config/menu')
   ) {
     return handleFallback(request, path)
   }
