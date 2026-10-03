@@ -46,6 +46,7 @@ export default function StickerBlockComponent({ node, updateAttributes, selected
       {/* Drag + click area */}
       <div
         onMouseDown={handleDragStart}
+        onTouchStart={handleDragStart}
         onClick={(e) => {
           e.stopPropagation()
           setPickerOpen((o) => !o)

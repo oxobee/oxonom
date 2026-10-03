@@ -58,6 +58,7 @@ export default function DrawingStrokeComponent({ node, updateAttributes, selecte
       {/* Hit area + drag handle */}
       <div
         onMouseDown={handleDragStart}
+        onTouchStart={handleDragStart}
         className={`w-full h-full rounded transition-colors cursor-grab active:cursor-grabbing ${
           showRing ? 'outline outline-2 outline-blue-400 outline-offset-2 bg-blue-50/20' : 'hover:bg-gray-100/30'
         }`}

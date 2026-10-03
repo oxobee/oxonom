@@ -282,7 +282,7 @@ export default function PlaygroundBlockComponent({
         className="rounded-2xl flex flex-col bg-white border border-neutral-200/90 shadow-lg overflow-hidden"
         style={{ minHeight: height || 460 }}
       >
-        <DragHandle onMouseDown={handleDragStart} />
+        <DragHandle onMouseDown={handleDragStart} onTouchStart={handleDragStart} />
 
         {/* Header */}
         <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-neutral-100 bg-neutral-50/70">
@@ -349,7 +349,7 @@ export default function PlaygroundBlockComponent({
           )}
         </div>
 
-        <ResizeHandle onMouseDown={handleResizeStart} selected={selected} />
+        <ResizeHandle onMouseDown={handleResizeStart} onTouchStart={handleResizeStart} selected={selected} />
       </BoardBlockWrapper>
     )
   }
@@ -372,6 +372,7 @@ export default function PlaygroundBlockComponent({
         <div
           className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/95 backdrop-blur-sm nice-shadow pointer-events-auto cursor-grab active:cursor-grabbing border border-neutral-200/80"
           onMouseDown={handleDragStart}
+          onTouchStart={handleDragStart}
         >
           <Cube size={13} weight="bold" className="text-emerald-600 shrink-0" />
           <span className="text-[10px] font-bold text-neutral-700">
@@ -411,7 +412,7 @@ export default function PlaygroundBlockComponent({
         )}
       </div>
 
-      <ResizeHandle onMouseDown={handleResizeStart} selected={selected} />
+      <ResizeHandle onMouseDown={handleResizeStart} onTouchStart={handleResizeStart} selected={selected} />
       {modal}
     </BoardBlockWrapper>
   )

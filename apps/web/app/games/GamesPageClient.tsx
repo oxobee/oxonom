@@ -8,7 +8,7 @@ import { useOrg } from '@components/Contexts/OrgContext'
 
 export default function GamesPageClient() {
   const org = useOrg() as any
-  const orgslug = org?.slug || 'demo'
+  const orgslug = org?.slug || 'neclagorer'
 
   return (
     <div className="flex flex-col min-h-screen bg-[#f8f8f8]">

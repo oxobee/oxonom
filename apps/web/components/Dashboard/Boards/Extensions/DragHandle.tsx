@@ -5,6 +5,7 @@ import { GripVertical } from 'lucide-react'
 
 interface DragHandleProps {
   onMouseDown: (e: React.MouseEvent) => void
+  onTouchStart?: (e: React.TouchEvent) => void
   height?: string
   className?: string
   autoHide?: boolean
@@ -15,6 +16,7 @@ interface DragHandleProps {
 
 export default function DragHandle({
   onMouseDown,
+  onTouchStart,
   height = 'h-6',
   className,
   autoHide = false,
@@ -33,6 +35,7 @@ export default function DragHandle({
         <div
           data-drag-handle
           onMouseDown={onMouseDown}
+          onTouchStart={onTouchStart}
           className={`flex items-center gap-2 ${height} cursor-grab active:cursor-grabbing ${barClass} px-2 ${visibilityClass}`}
           style={style}
         >
@@ -46,6 +49,7 @@ export default function DragHandle({
       <div
         data-drag-handle
         onMouseDown={onMouseDown}
+        onTouchStart={onTouchStart}
         className={`flex items-center justify-center ${height} cursor-grab active:cursor-grabbing ${barClass} ${visibilityClass}`}
         style={style}
       >
@@ -59,6 +63,7 @@ export default function DragHandle({
     <div
       data-drag-handle
       onMouseDown={onMouseDown}
+      onTouchStart={onTouchStart}
       className={`absolute top-1 left-1/2 -translate-x-1/2 z-10 cursor-grab active:cursor-grabbing transition-opacity ${
         autoHide ? 'opacity-0 group-hover:opacity-100' : 'opacity-0 group-hover:opacity-100'
       }`}

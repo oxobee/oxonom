@@ -112,6 +112,12 @@ function BoardEditorInner({
   const [isPanning, setIsPanning] = useState(false)
   const [panStart, setPanStart] = useState({ x: 0, y: 0 })
   const [isDrawing, setIsDrawing] = useState(false)
+  const isDrawingRef = useRef(false)
+  const panRef = useRef(pan)
+  panRef.current = pan
+  const zoomRef = useRef(zoom)
+  zoomRef.current = zoom
+  const tapCandidateRef = useRef<{ clientX: number; clientY: number; time: number } | null>(null)
   const drawPointsRef = useRef<{ x: number; y: number }[]>([])
   const [drawingPath, setDrawingPath] = useState('')
   const canvasRef = useRef<HTMLDivElement>(null)
@@ -369,10 +375,100 @@ function BoardEditorInner({
     }
   }, [])
 
+  const insertBlockAtWorldPos = useCallback((mode: string, worldX: number, worldY: number) => {
+    if (!editor) return
+    toolModeRef.current = 'select'
+    const pos = editor.state.doc.content.size
+    const x = Math.round(worldX)
+    const y = Math.round(worldY)
+
+    switch (mode) {
+      case 'card':
+        editor.chain().insertContentAt(pos, {
+          type: 'boardCard',
+          attrs: { x, y, width: 300, height: 200 },
+          content: [{ type: 'paragraph', content: [{ type: 'text', text: 'New card' }] }],
+        }).run()
+        track(AnalyticsEvent.BoardBlockAdded, { block_type: 'card' })
+        break
+      case 'youtube':
+        editor.chain().insertContentAt(pos, {
+          type: 'youtubeBlock',
+          attrs: { x, y, width: 480, height: 270 },
+        }).run()
+        track(AnalyticsEvent.BoardBlockAdded, { block_type: 'youtube' })
+        break
+      case 'embed':
+        editor.chain().insertContentAt(pos, {
+          type: 'embedBlock',
+          attrs: { x, y, width: 520, height: 360 },
+        }).run()
+        track(AnalyticsEvent.BoardBlockAdded, { block_type: 'embed' })
+        break
+      case 'webpage':
+        editor.chain().insertContentAt(pos, {
+          type: 'webpageBlock',
+          attrs: { x, y, width: 520, height: 400 },
+        }).run()
+        track(AnalyticsEvent.BoardBlockAdded, { block_type: 'webpage' })
+        break
+      case 'note':
+        editor.chain().insertContentAt(pos, {
+          type: 'noteBlock',
+          attrs: { x, y, width: 260, height: 200 },
+          content: [{ type: 'paragraph', content: [{ type: 'text', text: 'New note' }] }],
+        }).run()
+        track(AnalyticsEvent.BoardBlockAdded, { block_type: 'note' })
+        break
+      case 'sticker':
+        editor.chain().insertContentAt(pos, {
+          type: 'stickerBlock',
+          attrs: { x, y, emoji: '😀' },
+        }).run()
+        track(AnalyticsEvent.BoardBlockAdded, { block_type: 'sticker' })
+        break
+      case 'todo':
+        editor.chain().insertContentAt(pos, {
+          type: 'todoBlock',
+          attrs: { x, y, width: 260, height: 260 },
+        }).run()
+        track(AnalyticsEvent.BoardBlockAdded, { block_type: 'todo' })
+        break
+      case 'podcast':
+        editor.chain().insertContentAt(pos, {
+          type: 'podcastBlock',
+          attrs: { x, y, width: 400, height: 280 },
+        }).run()
+        track(AnalyticsEvent.BoardBlockAdded, { block_type: 'podcast' })
+        break
+      case 'frame':
+        editor.chain().insertContentAt(pos, {
+          type: 'frameBox',
+          attrs: { x, y, width: 400, height: 300, title: 'Frame' },
+        }).run()
+        track(AnalyticsEvent.BoardBlockAdded, { block_type: 'frame' })
+        break
+      case 'modules':
+        editor.chain().insertContentAt(pos, {
+          type: 'playgroundBlock',
+          attrs: {
+            blockUuid: `pg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+            x,
+            y,
+            width: 540,
+            height: 480,
+            htmlContent: null,
+          },
+        }).run()
+        track(AnalyticsEvent.BoardBlockAdded, { block_type: 'modules' })
+        break
+      default:
+        return
+    }
+    setToolMode('select')
+  }, [editor, track])
+
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    // Read from the ref, not state: lets us flip to 'select' synchronously
-    // after a placement so a second mousedown fired in the same tick can't
-    // insert a duplicate block before React commits setToolMode.
     const mode = toolModeRef.current
     if (mode === 'pan' || e.button === 1 || (e.button === 0 && e.shiftKey && mode !== 'select')) {
       editor?.commands.blur()
@@ -380,14 +476,10 @@ function BoardEditorInner({
       setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y })
       e.preventDefault()
     } else if (mode === 'select' && e.button === 0) {
-      // Check if click landed on a block (node-view-wrapper) — if so, let the block handle it
       const target = e.target as HTMLElement
       const isOnBlock = target.closest('[data-node-view-wrapper]')
       if (!isOnBlock) {
-        // Clicked empty canvas — blur editor so it stops capturing keystrokes
         editor?.commands.blur()
-
-        // Start marquee or just clear selection
         const rect = canvasRef.current?.getBoundingClientRect()
         if (rect) {
           const sx = e.clientX - rect.left
@@ -400,7 +492,7 @@ function BoardEditorInner({
           setSelectedPositions(new Set())
         }
       }
-    } else if (mode === 'draw') {
+    } else if (mode === 'draw' && e.button === 0) {
       editor?.commands.blur()
       const rect = canvasRef.current?.getBoundingClientRect()
       if (!rect) return
@@ -409,168 +501,16 @@ function BoardEditorInner({
       const y = (e.clientY - rect.top - pan.y) / zoom
       drawPointsRef.current = [{ x, y }]
       setDrawingPath(`M ${x} ${y}`)
+      isDrawingRef.current = true
       setIsDrawing(true)
-    } else if (mode === 'card' && editor) {
+    } else if (e.button === 0) {
       const rect = canvasRef.current?.getBoundingClientRect()
       if (!rect) return
-      toolModeRef.current = 'select'
       const x = (e.clientX - rect.left - pan.x) / zoom
       const y = (e.clientY - rect.top - pan.y) / zoom
-      const cardPos = editor.state.doc.content.size
-      editor.chain().insertContentAt(cardPos, {
-        type: 'boardCard',
-        attrs: { x: Math.round(x), y: Math.round(y), width: 300, height: 200 },
-        content: [{ type: 'paragraph', content: [{ type: 'text', text: 'New card' }] }],
-      }).run()
-      setToolMode('select')
-      track(AnalyticsEvent.BoardBlockAdded, { block_type: 'card' })
-    } else if (mode === 'youtube' && editor) {
-      const rect = canvasRef.current?.getBoundingClientRect()
-      if (!rect) return
-      toolModeRef.current = 'select'
-      const x = (e.clientX - rect.left - pan.x) / zoom
-      const y = (e.clientY - rect.top - pan.y) / zoom
-      const ytPos = editor.state.doc.content.size
-      editor.chain().insertContentAt(ytPos, {
-        type: 'youtubeBlock',
-        attrs: { x: Math.round(x), y: Math.round(y), width: 480, height: 270 },
-      }).run()
-      setToolMode('select')
-      track(AnalyticsEvent.BoardBlockAdded, { block_type: 'youtube' })
-    } else if (mode === 'embed' && editor) {
-      const rect = canvasRef.current?.getBoundingClientRect()
-      if (!rect) return
-      toolModeRef.current = 'select'
-      const x = (e.clientX - rect.left - pan.x) / zoom
-      const y = (e.clientY - rect.top - pan.y) / zoom
-      const pos = editor.state.doc.content.size
-      editor.chain().insertContentAt(pos, {
-        type: 'embedBlock',
-        attrs: {
-          x: Math.round(x),
-          y: Math.round(y),
-          width: 520,
-          height: 360,
-        },
-      }).run()
-      setToolMode('select')
-      track(AnalyticsEvent.BoardBlockAdded, { block_type: 'embed' })
-    } else if (mode === 'webpage' && editor) {
-      const rect = canvasRef.current?.getBoundingClientRect()
-      if (!rect) return
-      toolModeRef.current = 'select'
-      const x = (e.clientX - rect.left - pan.x) / zoom
-      const y = (e.clientY - rect.top - pan.y) / zoom
-      const pos = editor.state.doc.content.size
-      editor.chain().insertContentAt(pos, {
-        type: 'webpageBlock',
-        attrs: {
-          x: Math.round(x),
-          y: Math.round(y),
-          width: 520,
-          height: 400,
-        },
-      }).run()
-      setToolMode('select')
-      track(AnalyticsEvent.BoardBlockAdded, { block_type: 'webpage' })
-    } else if (mode === 'note' && editor) {
-      const rect = canvasRef.current?.getBoundingClientRect()
-      if (!rect) return
-      toolModeRef.current = 'select'
-      const x = (e.clientX - rect.left - pan.x) / zoom
-      const y = (e.clientY - rect.top - pan.y) / zoom
-      const pos = editor.state.doc.content.size
-      editor.chain().insertContentAt(pos, {
-        type: 'noteBlock',
-        attrs: { x: Math.round(x), y: Math.round(y), width: 260, height: 200 },
-        content: [{ type: 'paragraph', content: [{ type: 'text', text: 'New note' }] }],
-      }).run()
-      setToolMode('select')
-      track(AnalyticsEvent.BoardBlockAdded, { block_type: 'note' })
-    } else if (mode === 'sticker' && editor) {
-      const rect = canvasRef.current?.getBoundingClientRect()
-      if (!rect) return
-      toolModeRef.current = 'select'
-      const x = (e.clientX - rect.left - pan.x) / zoom
-      const y = (e.clientY - rect.top - pan.y) / zoom
-      const pos = editor.state.doc.content.size
-      editor.chain().insertContentAt(pos, {
-        type: 'stickerBlock',
-        attrs: {
-          x: Math.round(x),
-          y: Math.round(y),
-          emoji: '😀',
-        },
-      }).run()
-      setToolMode('select')
-      track(AnalyticsEvent.BoardBlockAdded, { block_type: 'sticker' })
-    } else if (mode === 'todo' && editor) {
-      const rect = canvasRef.current?.getBoundingClientRect()
-      if (!rect) return
-      toolModeRef.current = 'select'
-      const x = (e.clientX - rect.left - pan.x) / zoom
-      const y = (e.clientY - rect.top - pan.y) / zoom
-      const pos = editor.state.doc.content.size
-      editor.chain().insertContentAt(pos, {
-        type: 'todoBlock',
-        attrs: { x: Math.round(x), y: Math.round(y), width: 260, height: 260 },
-      }).run()
-      setToolMode('select')
-      track(AnalyticsEvent.BoardBlockAdded, { block_type: 'todo' })
-    } else if (mode === 'podcast' && editor) {
-      const rect = canvasRef.current?.getBoundingClientRect()
-      if (!rect) return
-      toolModeRef.current = 'select'
-      const x = (e.clientX - rect.left - pan.x) / zoom
-      const y = (e.clientY - rect.top - pan.y) / zoom
-      const pos = editor.state.doc.content.size
-      editor.chain().insertContentAt(pos, {
-        type: 'podcastBlock',
-        attrs: { x: Math.round(x), y: Math.round(y), width: 400, height: 280 },
-      }).run()
-      setToolMode('select')
-      track(AnalyticsEvent.BoardBlockAdded, { block_type: 'podcast' })
-    } else if (mode === 'frame' && editor) {
-      const rect = canvasRef.current?.getBoundingClientRect()
-      if (!rect) return
-      toolModeRef.current = 'select'
-      const x = (e.clientX - rect.left - pan.x) / zoom
-      const y = (e.clientY - rect.top - pan.y) / zoom
-      const pos = editor.state.doc.content.size
-      editor.chain().insertContentAt(pos, {
-        type: 'frameBox',
-        attrs: {
-          x: Math.round(x),
-          y: Math.round(y),
-          width: 400,
-          height: 300,
-          title: 'Frame',
-        },
-      }).run()
-      setToolMode('select')
-      track(AnalyticsEvent.BoardBlockAdded, { block_type: 'frame' })
-    } else if (mode === 'modules' && editor) {
-      const rect = canvasRef.current?.getBoundingClientRect()
-      if (!rect) return
-      toolModeRef.current = 'select'
-      const x = (e.clientX - rect.left - pan.x) / zoom
-      const y = (e.clientY - rect.top - pan.y) / zoom
-      const pos = editor.state.doc.content.size
-      editor.chain().insertContentAt(pos, {
-        type: 'playgroundBlock',
-        attrs: {
-          blockUuid: `pg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-          x: Math.round(x),
-          y: Math.round(y),
-          width: 540,
-          height: 480,
-          htmlContent: null,
-        },
-      }).run()
-      setToolMode('select')
-      track(AnalyticsEvent.BoardBlockAdded, { block_type: 'modules' })
+      insertBlockAtWorldPos(mode, x, y)
     }
-  }, [pan, zoom, editor, track])
+  }, [pan, zoom, editor, insertBlockAtWorldPos])
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     // Track mouse position for placement ghost preview
@@ -597,7 +537,7 @@ function BoardEditorInner({
       panRafRef.current = requestAnimationFrame(() => {
         setMarquee(m)
       })
-    } else if (isDrawing) {
+    } else if (isDrawingRef.current) {
       const rect = canvasRef.current?.getBoundingClientRect()
       if (!rect) return
       const x = (e.clientX - rect.left - pan.x) / zoom
@@ -608,15 +548,20 @@ function BoardEditorInner({
         setDrawingPath(pointsToSvgPath(drawPointsRef.current))
       })
     }
-  }, [isPanning, panStart, isDrawing, pan, zoom, activePlacement])
+  }, [isPanning, panStart, pan, zoom, activePlacement])
 
   const commitDrawingStroke = useCallback(() => {
+    isDrawingRef.current = false
     setIsDrawing(false)
     const points = drawPointsRef.current
-    if (points.length < 2 || !editor) {
+    if (points.length === 0 || !editor) {
       setDrawingPath('')
       drawPointsRef.current = []
       return
+    }
+
+    if (points.length === 1) {
+      points.push({ x: points[0].x + 0.5, y: points[0].y + 0.5 })
     }
 
     // Calculate bounding box
@@ -706,10 +651,10 @@ function BoardEditorInner({
       marqueeRef.current = null
       setMarquee(null)
     }
-    if (isDrawing && editor) {
+    if (isDrawingRef.current && editor) {
       commitDrawingStroke()
     }
-  }, [isPanning, isDrawing, editor, commitDrawingStroke, pan.x, pan.y, zoom, setSelectedPositions])
+  }, [isPanning, editor, commitDrawingStroke, pan.x, pan.y, zoom, setSelectedPositions])
 
   const handleZoomIn = () => setZoom((z) => Math.min(z + 0.1, 3))
   const handleZoomOut = () => setZoom((z) => Math.max(z - 0.1, 0.25))
@@ -725,75 +670,110 @@ function BoardEditorInner({
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const mode = toolModeRef.current
-    if (mode === 'draw') {
-      editor?.commands.blur()
-      const rect = canvasRef.current?.getBoundingClientRect()
-      if (!rect) return
-      const touches = Array.from(e.touches).map(t => ({ x: t.clientX, y: t.clientY }))
-      if (touches.length === 1) {
-        e.preventDefault()
-        const x = (touches[0].x - rect.left - pan.x) / zoom
-        const y = (touches[0].y - rect.top - pan.y) / zoom
-        drawPointsRef.current = [{ x, y }]
-        setDrawingPath(`M ${x} ${y}`)
-        setIsDrawing(true)
-        return
-      } else if (touches.length === 2) {
-        // 2 fingers allow pinch zoom even in draw mode
-        const dist = Math.hypot(touches[1].x - touches[0].x, touches[1].y - touches[0].y)
-        touchRef.current = { startTouches: touches, startPan: { ...pan }, startZoom: zoom, startDist: dist }
-        e.preventDefault()
-        return
-      }
-    }
-
-    // Ignore touches on blocks — let them handle their own
     const target = e.target as HTMLElement
-    if (target.closest('[data-node-view-wrapper]')) return
+    const isOnBlock = !!target.closest('[data-node-view-wrapper]')
+    const touches = Array.from(e.touches)
 
-    editor?.commands.blur()
-    const touches = Array.from(e.touches).map(t => ({ x: t.clientX, y: t.clientY }))
-
-    if (touches.length === 2) {
-      const dist = Math.hypot(touches[1].x - touches[0].x, touches[1].y - touches[0].y)
-      touchRef.current = { startTouches: touches, startPan: { ...pan }, startZoom: zoom, startDist: dist }
-      e.preventDefault()
-    } else if (touches.length === 1) {
-      touchRef.current = { startTouches: touches, startPan: { ...pan }, startZoom: zoom, startDist: 0 }
-    }
-  }, [pan, zoom, editor])
-
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    const mode = toolModeRef.current
-    if (mode === 'draw' && isDrawing) {
-      e.preventDefault()
-      const rect = canvasRef.current?.getBoundingClientRect()
-      if (!rect) return
-      const touches = Array.from(e.touches)
-      if (touches.length > 0) {
-        const x = (touches[0].clientX - rect.left - pan.x) / zoom
-        const y = (touches[0].clientY - rect.top - pan.y) / zoom
-        drawPointsRef.current.push({ x, y })
-        cancelAnimationFrame(panRafRef.current)
-        panRafRef.current = requestAnimationFrame(() => {
-          setDrawingPath(pointsToSvgPath(drawPointsRef.current))
-        })
+    // Two or more fingers: ALWAYS pinch-to-zoom / 2-finger pan regardless of active tool
+    if (touches.length >= 2) {
+      if (isDrawingRef.current) {
+        isDrawingRef.current = false
+        setIsDrawing(false)
+        setDrawingPath('')
+        drawPointsRef.current = []
+      }
+      tapCandidateRef.current = null
+      const dist = Math.hypot(touches[1].clientX - touches[0].clientX, touches[1].clientY - touches[0].clientY)
+      touchRef.current = {
+        startTouches: touches.map(t => ({ x: t.clientX, y: t.clientY })),
+        startPan: { ...panRef.current },
+        startZoom: zoomRef.current,
+        startDist: dist,
       }
       return
     }
 
-    if (!touchRef.current) return
-    const touches = Array.from(e.touches).map(t => ({ x: t.clientX, y: t.clientY }))
+    if (touches.length === 1) {
+      const t = touches[0]
 
-    if (touches.length === 2 && touchRef.current.startTouches.length === 2) {
-      // Pinch-to-zoom + pan
-      e.preventDefault()
-      const dist = Math.hypot(touches[1].x - touches[0].x, touches[1].y - touches[0].y)
-      const scale = dist / touchRef.current.startDist
+      // 1. Drawing mode: single touch starts stroke
+      if (mode === 'draw') {
+        editor?.commands.blur()
+        const rect = canvasRef.current?.getBoundingClientRect()
+        if (!rect) return
+        const x = (t.clientX - rect.left - panRef.current.x) / zoomRef.current
+        const y = (t.clientY - rect.top - panRef.current.y) / zoomRef.current
+        drawPointsRef.current = [{ x, y }]
+        setDrawingPath(`M ${x} ${y}`)
+        isDrawingRef.current = true
+        setIsDrawing(true)
+        return
+      }
+
+      // 2. Placement tool: record tap candidate (placed on release if not dragged)
+      if (mode !== 'select' && mode !== 'pan') {
+        tapCandidateRef.current = {
+          clientX: t.clientX,
+          clientY: t.clientY,
+          time: Date.now(),
+        }
+        return
+      }
+
+      // 3. Block interaction in select/pan mode: let block handles touch
+      if (isOnBlock) {
+        return
+      }
+
+      // 4. Empty canvas in select/pan mode: 1-finger pan
+      editor?.commands.blur()
+      touchRef.current = {
+        startTouches: [{ x: t.clientX, y: t.clientY }],
+        startPan: { ...panRef.current },
+        startZoom: zoomRef.current,
+        startDist: 0,
+      }
+    }
+  }, [editor])
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    const touches = Array.from(e.touches)
+
+    // 1. If currently drawing with 1 finger
+    if (isDrawingRef.current && touches.length === 1) {
+      const rect = canvasRef.current?.getBoundingClientRect()
+      if (!rect) return
+      const x = (touches[0].clientX - rect.left - panRef.current.x) / zoomRef.current
+      const y = (touches[0].clientY - rect.top - panRef.current.y) / zoomRef.current
+      drawPointsRef.current.push({ x, y })
+      cancelAnimationFrame(panRafRef.current)
+      panRafRef.current = requestAnimationFrame(() => {
+        setDrawingPath(pointsToSvgPath(drawPointsRef.current))
+      })
+      return
+    }
+
+    // 2. If we have a tap candidate for a placement tool, check if user dragged
+    if (tapCandidateRef.current && touches.length === 1) {
+      const dist = Math.hypot(
+        touches[0].clientX - tapCandidateRef.current.clientX,
+        touches[0].clientY - tapCandidateRef.current.clientY
+      )
+      if (dist > 12) {
+        tapCandidateRef.current = null
+      }
+    }
+
+    if (!touchRef.current) return
+
+    // 3. Two-finger pinch to zoom + pan
+    if (touches.length >= 2 && touchRef.current.startTouches.length >= 2) {
+      const dist = Math.hypot(touches[1].clientX - touches[0].clientX, touches[1].clientY - touches[0].clientY)
+      const scale = dist / (touchRef.current.startDist || 1)
       const newZoom = Math.min(Math.max(touchRef.current.startZoom * scale, 0.25), 3)
 
-      const midX = (touches[0].x + touches[1].x) / 2
-      const midY = (touches[0].y + touches[1].y) / 2
+      const midX = (touches[0].clientX + touches[1].clientX) / 2
+      const midY = (touches[0].clientY + touches[1].clientY) / 2
       const startMidX = (touchRef.current.startTouches[0].x + touchRef.current.startTouches[1].x) / 2
       const startMidY = (touchRef.current.startTouches[0].y + touchRef.current.startTouches[1].y) / 2
 
@@ -805,10 +785,10 @@ function BoardEditorInner({
           y: touchRef.current!.startPan.y + (midY - startMidY),
         })
       })
-    } else if (touches.length === 1 && touchRef.current.startTouches.length === 1 && mode !== 'draw') {
-      // Single finger pan (only if not drawing)
-      const dx = touches[0].x - touchRef.current.startTouches[0].x
-      const dy = touches[0].y - touchRef.current.startTouches[0].y
+    } else if (touches.length === 1 && touchRef.current.startTouches.length === 1 && !isDrawingRef.current) {
+      // 4. One-finger canvas pan
+      const dx = touches[0].clientX - touchRef.current.startTouches[0].x
+      const dy = touches[0].clientY - touchRef.current.startTouches[0].y
       cancelAnimationFrame(panRafRef.current)
       panRafRef.current = requestAnimationFrame(() => {
         setPan({
@@ -817,17 +797,60 @@ function BoardEditorInner({
         })
       })
     }
-  }, [isDrawing, pan.x, pan.y, zoom])
+  }, [])
 
-  const handleTouchEnd = useCallback((e?: React.TouchEvent) => {
-    const mode = toolModeRef.current
-    if (mode === 'draw' && isDrawing) {
-      e?.preventDefault()
+  const handleTouchEnd = useCallback((_e?: React.TouchEvent) => {
+    // 1. Commit drawing if drawing
+    if (isDrawingRef.current) {
       commitDrawingStroke()
-      return
     }
+
+    // 2. Commit placement if tap candidate exists
+    if (tapCandidateRef.current) {
+      const { clientX, clientY } = tapCandidateRef.current
+      tapCandidateRef.current = null
+      const rect = canvasRef.current?.getBoundingClientRect()
+      if (rect) {
+        const x = (clientX - rect.left - panRef.current.x) / zoomRef.current
+        const y = (clientY - rect.top - panRef.current.y) / zoomRef.current
+        insertBlockAtWorldPos(toolModeRef.current, x, y)
+      }
+    }
+
     touchRef.current = null
-  }, [isDrawing, commitDrawingStroke])
+  }, [commitDrawingStroke, insertBlockAtWorldPos])
+
+  // Non-passive native touch listener prevents mobile browser gestures (swipe back, pull down refresh)
+  useEffect(() => {
+    const el = canvasRef.current
+    if (!el) return
+
+    const onNativeTouchStart = (e: TouchEvent) => {
+      const target = e.target as HTMLElement
+      if (target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable) {
+        return
+      }
+      if (e.touches.length >= 2 || toolModeRef.current === 'draw' || toolModeRef.current !== 'select') {
+        e.preventDefault()
+      }
+    }
+
+    const onNativeTouchMove = (e: TouchEvent) => {
+      const target = e.target as HTMLElement
+      if (target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || target?.isContentEditable) {
+        return
+      }
+      e.preventDefault()
+    }
+
+    el.addEventListener('touchstart', onNativeTouchStart, { passive: false })
+    el.addEventListener('touchmove', onNativeTouchMove, { passive: false })
+
+    return () => {
+      el.removeEventListener('touchstart', onNativeTouchStart)
+      el.removeEventListener('touchmove', onNativeTouchMove)
+    }
+  }, [])
 
   if (!editor) return null
 
@@ -841,6 +864,9 @@ function BoardEditorInner({
         backgroundImage: 'radial-gradient(circle, #d1d1d1 1px, transparent 1px)',
         backgroundSize: `${24 * zoom}px ${24 * zoom}px`,
         backgroundPosition: `${pan.x}px ${pan.y}px`,
+        touchAction: 'none',
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
       }}
     >
       {/* Canvas viewport */}

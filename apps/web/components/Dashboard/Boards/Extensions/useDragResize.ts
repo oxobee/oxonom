@@ -111,7 +111,7 @@ export function useDragResize({
   })
 
   /** Find the NodeViewWrapper (outermost node-view element) from the event */
-  const getWrapper = (e: React.MouseEvent): HTMLElement | null => {
+  const getWrapper = (e: React.MouseEvent | React.TouchEvent): HTMLElement | null => {
     // Walk from both target and currentTarget to find the wrapper
     let el: HTMLElement | null = e.currentTarget as HTMLElement
     while (el && !el.hasAttribute('data-node-view-wrapper')) {
@@ -141,16 +141,18 @@ export function useDragResize({
     iframes.forEach((iframe) => { (iframe as HTMLElement).style.pointerEvents = '' })
   }
 
-  const handleDragStart = useCallback((e: React.MouseEvent) => {
+  const handleDragStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     // Block drag if inside a locked frame
     if (editor && isInsideLockedFrame(editor, x, y, width, height)) {
       return
     }
     e.stopPropagation()
-    e.preventDefault()
+    if (e.cancelable) e.preventDefault()
     const el = getWrapper(e)
     elRef.current = el
-    dragRef.current = { x: e.clientX, y: e.clientY, nodeX: x, nodeY: y }
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
+    dragRef.current = { x: clientX, y: clientY, nodeX: x, nodeY: y }
     livePos.current = { x, y }
     interactionRef.current = 'drag'
     lastBroadcast.current = 0
@@ -191,11 +193,13 @@ export function useDragResize({
       }
     }
 
-    const handleMove = (ev: MouseEvent) => {
+    const handleMove = (ev: MouseEvent | TouchEvent) => {
       cancelAnimationFrame(rafId.current)
       rafId.current = requestAnimationFrame(() => {
-        const dx = ev.clientX - dragRef.current.x
-        const dy = ev.clientY - dragRef.current.y
+        const curX = 'touches' in ev ? (ev.touches[0]?.clientX ?? dragRef.current.x) : ev.clientX
+        const curY = 'touches' in ev ? (ev.touches[0]?.clientY ?? dragRef.current.y) : ev.clientY
+        const dx = curX - dragRef.current.x
+        const dy = curY - dragRef.current.y
         const newX = dragRef.current.nodeX + dx
         const newY = dragRef.current.nodeY + dy
         livePos.current = { x: newX, y: newY }
@@ -235,11 +239,13 @@ export function useDragResize({
       })
     }
 
-    const handleUp = (ev: MouseEvent) => {
+    const handleUp = (ev: MouseEvent | TouchEvent) => {
       cancelAnimationFrame(rafId.current)
       enableIframePointerEvents()
-      const dx = ev.clientX - dragRef.current.x
-      const dy = ev.clientY - dragRef.current.y
+      const curX = 'touches' in ev ? (ev.changedTouches?.[0]?.clientX ?? dragRef.current.x) : (ev as MouseEvent).clientX
+      const curY = 'touches' in ev ? (ev.changedTouches?.[0]?.clientY ?? dragRef.current.y) : (ev as MouseEvent).clientY
+      const dx = curX - dragRef.current.x
+      const dy = curY - dragRef.current.y
       const finalX = Math.round(dragRef.current.nodeX + dx)
       const finalY = Math.round(dragRef.current.nodeY + dy)
       interactionRef.current = 'idle'
@@ -267,29 +273,39 @@ export function useDragResize({
 
       window.removeEventListener('mousemove', handleMove)
       window.removeEventListener('mouseup', handleUp)
+      window.removeEventListener('touchmove', handleMove)
+      window.removeEventListener('touchend', handleUp)
+      window.removeEventListener('touchcancel', handleUp)
     }
 
     window.addEventListener('mousemove', handleMove)
     window.addEventListener('mouseup', handleUp)
+    window.addEventListener('touchmove', handleMove, { passive: false })
+    window.addEventListener('touchend', handleUp)
+    window.addEventListener('touchcancel', handleUp)
   }, [x, y, width, height, updateAttributes, editor, selectedPositions, getPos])
 
-  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+  const handleResizeStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation()
-    e.preventDefault()
+    if (e.cancelable) e.preventDefault()
     const el = getWrapper(e)
     elRef.current = el
-    resizeRef.current = { x: e.clientX, y: e.clientY, w: width, h: height }
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
+    resizeRef.current = { x: clientX, y: clientY, w: width, h: height }
     liveSize.current = { w: width, h: height }
     interactionRef.current = 'resize'
     lastBroadcast.current = 0
     if (el) el.style.transition = 'none'
     disableIframePointerEvents()
 
-    const handleMove = (ev: MouseEvent) => {
+    const handleMove = (ev: MouseEvent | TouchEvent) => {
       cancelAnimationFrame(rafId.current)
       rafId.current = requestAnimationFrame(() => {
-        const newW = Math.max(minWidth, resizeRef.current.w + ev.clientX - resizeRef.current.x)
-        const newH = Math.max(minHeight, resizeRef.current.h + ev.clientY - resizeRef.current.y)
+        const curX = 'touches' in ev ? (ev.touches[0]?.clientX ?? resizeRef.current.x) : ev.clientX
+        const curY = 'touches' in ev ? (ev.touches[0]?.clientY ?? resizeRef.current.y) : ev.clientY
+        const newW = Math.max(minWidth, resizeRef.current.w + curX - resizeRef.current.x)
+        const newH = Math.max(minHeight, resizeRef.current.h + curY - resizeRef.current.y)
         liveSize.current = { w: newW, h: newH }
         if (elRef.current) {
           elRef.current.style.width = `${newW}px`
@@ -305,20 +321,28 @@ export function useDragResize({
       })
     }
 
-    const handleUp = (ev: MouseEvent) => {
+    const handleUp = (ev: MouseEvent | TouchEvent) => {
       cancelAnimationFrame(rafId.current)
       enableIframePointerEvents()
-      const finalW = Math.round(Math.max(minWidth, resizeRef.current.w + ev.clientX - resizeRef.current.x))
-      const finalH = Math.round(Math.max(minHeight, resizeRef.current.h + ev.clientY - resizeRef.current.y))
+      const curX = 'touches' in ev ? (ev.changedTouches?.[0]?.clientX ?? resizeRef.current.x) : (ev as MouseEvent).clientX
+      const curY = 'touches' in ev ? (ev.changedTouches?.[0]?.clientY ?? resizeRef.current.y) : (ev as MouseEvent).clientY
+      const finalW = Math.round(Math.max(minWidth, resizeRef.current.w + curX - resizeRef.current.x))
+      const finalH = Math.round(Math.max(minHeight, resizeRef.current.h + curY - resizeRef.current.y))
       interactionRef.current = 'idle'
       if (elRef.current) elRef.current.style.transition = ''
       updateAttributes({ width: finalW, height: finalH })
       window.removeEventListener('mousemove', handleMove)
       window.removeEventListener('mouseup', handleUp)
+      window.removeEventListener('touchmove', handleMove)
+      window.removeEventListener('touchend', handleUp)
+      window.removeEventListener('touchcancel', handleUp)
     }
 
     window.addEventListener('mousemove', handleMove)
     window.addEventListener('mouseup', handleUp)
+    window.addEventListener('touchmove', handleMove, { passive: false })
+    window.addEventListener('touchend', handleUp)
+    window.addEventListener('touchcancel', handleUp)
   }, [width, height, minWidth, minHeight, updateAttributes])
 
   return { handleDragStart, handleResizeStart }

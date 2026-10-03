@@ -4,6 +4,7 @@ import React from 'react'
 
 interface ResizeHandleProps {
   onMouseDown: (e: React.MouseEvent) => void
+  onTouchStart?: (e: React.TouchEvent) => void
   selected?: boolean
   dark?: boolean
   /** @deprecated kept for backwards compat — ignored */
@@ -14,6 +15,7 @@ interface ResizeHandleProps {
 
 export default function ResizeHandle({
   onMouseDown,
+  onTouchStart,
   selected = false,
   dark = false,
 }: ResizeHandleProps) {
@@ -21,6 +23,7 @@ export default function ResizeHandle({
     <div
       data-resize-handle
       onMouseDown={onMouseDown}
+      onTouchStart={onTouchStart}
       className={`absolute bottom-0 end-0 z-20 p-1 cursor-nwse-resize transition-opacity ${
         selected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
       }`}

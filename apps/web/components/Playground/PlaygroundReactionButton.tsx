@@ -44,15 +44,17 @@ export function PlaygroundReactionButton({ playgroundUuid }: PlaygroundReactionB
   const fetchReactions = async () => {
     try {
       const result = await getPlaygroundReactions(playgroundUuid, accessToken)
-      setReactions(result)
+      setReactions(Array.isArray(result) ? result : [])
     } catch {
-      // silent — public playground anonymous fetch may fail
+      setReactions([])
     }
   }
 
   useEffect(() => {
     fetchReactions()
   }, [playgroundUuid])
+
+  const safeReactions = Array.isArray(reactions) ? reactions : []
 
   const handleToggle = async (emoji: string) => {
     if (!isAuthenticated || !accessToken || isLoading) return
@@ -73,14 +75,14 @@ export function PlaygroundReactionButton({ playgroundUuid }: PlaygroundReactionB
   }
 
   const getUserNames = (users: PlaygroundReactionSummary['users']) => {
-    if (users.length === 0) return ''
+    if (!Array.isArray(users) || users.length === 0) return ''
     if (users.length <= 3) return users.map((u) => u.first_name || u.username).join(', ')
     const first3 = users.slice(0, 3).map((u) => u.first_name || u.username).join(', ')
     return `${first3} and ${users.length - 3} more`
   }
 
   // Existing reactions that are NOT in the quick row (show after the quick row)
-  const extraReactions = reactions.filter((r) => !QUICK_REACTIONS.includes(r.emoji))
+  const extraReactions = safeReactions.filter((r) => !QUICK_REACTIONS.includes(r.emoji))
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -88,7 +90,7 @@ export function PlaygroundReactionButton({ playgroundUuid }: PlaygroundReactionB
         {/* Quick reaction row — always visible */}
         <div className="flex items-center gap-1.5 flex-wrap">
           {QUICK_REACTIONS.map((emoji) => {
-            const existing = reactions.find((r) => r.emoji === emoji)
+            const existing = safeReactions.find((r) => r.emoji === emoji)
             return (
               <Tooltip key={emoji}>
                 <TooltipTrigger asChild>
@@ -135,7 +137,7 @@ export function PlaygroundReactionButton({ playgroundUuid }: PlaygroundReactionB
               >
                 <div className="grid grid-cols-6 gap-1">
                   {ALL_REACTION_EMOJIS.map((emoji) => {
-                    const existing = reactions.find((r) => r.emoji === emoji)
+                    const existing = safeReactions.find((r) => r.emoji === emoji)
                     return (
                       <button
                         key={emoji}

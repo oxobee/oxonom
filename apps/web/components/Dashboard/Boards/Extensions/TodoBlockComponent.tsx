@@ -127,7 +127,7 @@ export default function TodoBlockComponent({ node, updateAttributes, selected, d
         border: `1.5px solid ${colorSet.border}`,
       }}
     >
-      <DragHandle onMouseDown={handleDragStart} />
+      <DragHandle onMouseDown={handleDragStart} onTouchStart={handleDragStart} />
 
       {/* Header */}
       <div className="flex items-center px-4 pt-3 pb-0.5 select-none">
@@ -291,7 +291,7 @@ export default function TodoBlockComponent({ node, updateAttributes, selected, d
         </div>
       </div>
 
-      <ResizeHandle onMouseDown={handleResizeStart} selected={selected} />
+      <ResizeHandle onMouseDown={handleResizeStart} onTouchStart={handleResizeStart} selected={selected} />
     </BoardBlockWrapper>
   )
 }

@@ -50,7 +50,7 @@ export default function NoteBlockComponent({ node, updateAttributes, selected, d
         backgroundColor: colorSet.bg,
       }}
     >
-      <DragHandle onMouseDown={handleDragStart} />
+      <DragHandle onMouseDown={handleDragStart} onTouchStart={handleDragStart} />
 
       {/* Header — icon, label, color swatches */}
       <div className="flex items-center px-4 pt-3 pb-0.5 select-none">
@@ -90,7 +90,7 @@ export default function NoteBlockComponent({ node, updateAttributes, selected, d
         <NodeViewContent className="board-card-content text-[14px] leading-[1.6] outline-none" style={{ color: colorSet.text }} />
       </div>
 
-      <ResizeHandle onMouseDown={handleResizeStart} selected={selected} />
+      <ResizeHandle onMouseDown={handleResizeStart} onTouchStart={handleResizeStart} selected={selected} />
     </BoardBlockWrapper>
   )
 }

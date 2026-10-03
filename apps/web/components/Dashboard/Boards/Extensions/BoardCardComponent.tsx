@@ -33,7 +33,7 @@ export default function BoardCardComponent({ node, updateAttributes, selected, d
       className="rounded-2xl"
       style={{ minHeight: height }}
     >
-      <DragHandle onMouseDown={handleDragStart} />
+      <DragHandle onMouseDown={handleDragStart} onTouchStart={handleDragStart} />
 
       {/* Header with icon + label */}
       <div className="flex items-center px-4 pt-4 pb-0.5">
@@ -50,7 +50,7 @@ export default function BoardCardComponent({ node, updateAttributes, selected, d
         <NodeViewContent className="board-card-content text-[14px] leading-[1.6] outline-none text-neutral-700" />
       </div>
 
-      <ResizeHandle onMouseDown={handleResizeStart} selected={selected} />
+      <ResizeHandle onMouseDown={handleResizeStart} onTouchStart={handleResizeStart} selected={selected} />
     </BoardBlockWrapper>
   )
 }

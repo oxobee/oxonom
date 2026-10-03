@@ -33,7 +33,11 @@ function MenuLinks(props: { orgslug: string; primaryColor?: string }) {
   const colors = getMenuColorClasses(props.primaryColor || '')
 
   const rf = org?.config?.config?.resolved_features
-  const isEnabled = (feature: string) => rf?.[feature]?.enabled === true
+  const isEnabled = (feature: string) => {
+    if (!rf) return true
+    if (rf[feature] === undefined) return true
+    return rf[feature]?.enabled !== false
+  }
 
   const configItems: any[] | undefined =
     org?.config?.config?.customization?.menu?.items ?? org?.config?.config?.general?.menu?.items

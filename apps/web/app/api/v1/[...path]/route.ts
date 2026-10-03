@@ -377,6 +377,12 @@ async function handleFallback(request: NextRequest, path: string): Promise<Respo
 
   // Playgrounds
   if (path.startsWith('/api/v1/playgrounds/')) {
+    if (path.includes('/reactions')) {
+      if (request.method === 'POST') {
+        return NextResponse.json({ action: 'added', emoji: '❤️' }, { status: 200 })
+      }
+      return NextResponse.json([], { status: 200 })
+    }
     const parts = path.split('/')
     const pgId = parts[parts.indexOf('playgrounds') + 1] || ''
     if (pgId && pgId !== 'org' && !pgId.startsWith('org')) {
