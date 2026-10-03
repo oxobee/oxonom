@@ -50,6 +50,7 @@ import {
 import { handlePodcastApi } from './podcastHandler'
 import { handleCommunityApi } from './communityHandler'
 import { handleResourceApi } from './resourceHandler'
+import { handleFolderApi } from './folderHandler'
 
 export const maxDuration = 300
 export const dynamic = 'force-dynamic'
@@ -317,9 +318,9 @@ async function handleFallback(request: NextRequest, path: string): Promise<Respo
     return handleResourceApi(request, path)
   }
 
-  // Folders (Legacy fallback)
-  if (path.startsWith('/api/v1/folders')) {
-    return NextResponse.json(TURKISH_FOLDERS, { status: 200 })
+  // Folders & Media (Full CRUD)
+  if (path.startsWith('/api/v1/folders') || path.startsWith('/api/v1/media')) {
+    return handleFolderApi(request, path)
   }
 
   // Courses
@@ -451,9 +452,14 @@ async function proxyToBackend(request: NextRequest): Promise<Response> {
     return handleCommunityApi(request, path)
   }
 
-  // Fast-path for educational resources & folders (Full CRUD handled directly with 0ms latency)
+  // Fast-path for educational resources & folders (Full library CRUD handled directly with 0ms latency)
   if (path.startsWith('/api/v1/resources')) {
     return handleResourceApi(request, path)
+  }
+
+  // Fast-path for folders & media (Full library CRUD handled directly with 0ms latency)
+  if (path.startsWith('/api/v1/folders') || path.startsWith('/api/v1/media')) {
+    return handleFolderApi(request, path)
   }
 
   // On Vercel / serverless when no remote backend URL is provided (defaults to localhost),

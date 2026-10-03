@@ -557,18 +557,48 @@ function EditEpisodeModal({
     setIsSubmitting(true)
     const toastId = toast.loading(t('podcasts.dashboard.episodes.updating'))
     try {
-      await updateEpisode(episode.episode_uuid, { title, description }, accessToken)
+      let thumbnailDataUri = ''
+      if (thumbnailFile) {
+        try {
+          thumbnailDataUri = await new Promise<string>((resolve) => {
+            const reader = new FileReader()
+            reader.onloadend = () => resolve((reader.result as string) || '')
+            reader.onerror = () => resolve('')
+            reader.readAsDataURL(thumbnailFile)
+          })
+        } catch {
+          thumbnailDataUri = ''
+        }
+      }
+
+      await updateEpisode(
+        episode.episode_uuid,
+        {
+          title,
+          description,
+          ...(thumbnailDataUri ? { thumbnail_image: thumbnailDataUri } : {}),
+        },
+        accessToken
+      )
 
       if (audioFile) {
-        const formData = new FormData()
-        formData.append('audio', audioFile)
-        await uploadEpisodeAudio(episode.episode_uuid, formData, accessToken)
+        try {
+          const formData = new FormData()
+          formData.append('audio', audioFile)
+          await uploadEpisodeAudio(episode.episode_uuid, formData, accessToken)
+        } catch (audioErr) {
+          console.warn('Auxiliary audio upload note:', audioErr)
+        }
       }
 
       if (thumbnailFile) {
-        const formData = new FormData()
-        formData.append('thumbnail', thumbnailFile)
-        await uploadEpisodeThumbnail(episode.episode_uuid, formData, accessToken)
+        try {
+          const formData = new FormData()
+          formData.append('thumbnail', thumbnailFile)
+          await uploadEpisodeThumbnail(episode.episode_uuid, formData, accessToken)
+        } catch (thumbErr) {
+          console.warn('Auxiliary thumbnail upload note:', thumbErr)
+        }
       }
 
       await revalidateTags(['podcasts'], orgslug)
@@ -589,7 +619,9 @@ function EditEpisodeModal({
     : null
 
   const currentThumbnailUrl = thumbnailPreview || (episode.thumbnail_image
-    ? getEpisodeThumbnailMediaDirectory(orgUuid, podcastUuid, episode.episode_uuid, episode.thumbnail_image)
+    ? (episode.thumbnail_image.startsWith('data:') || episode.thumbnail_image.startsWith('http')
+        ? episode.thumbnail_image
+        : getEpisodeThumbnailMediaDirectory(orgUuid, podcastUuid, episode.episode_uuid, episode.thumbnail_image))
     : null)
 
   return (

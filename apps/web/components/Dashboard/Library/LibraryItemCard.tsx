@@ -111,7 +111,15 @@ export default function LibraryItemCard({ item, orgslug, onRemove }: Props) {
     // Podcasts, communities, boards, playgrounds → their dashboard page.
     internalHref = resourceHref(type, resource, orgslug, 'dashboard')
   }
-  const typeLabel = t(`library.tabs.${type}`)
+  const fallbackTypeLabel =
+    type === 'courses' ? 'Ders' :
+    type === 'media' ? 'Medya' :
+    type === 'podcasts' ? 'Podcast' :
+    type === 'communities' ? 'Topluluk' :
+    type === 'boards' ? 'Pano' :
+    type === 'playgrounds' ? 'Modül' :
+    'Ders Materyali'
+  const typeLabel = (type && t(`library.tabs.${type}`, { defaultValue: fallbackTypeLabel })) || fallbackTypeLabel
 
   const body = (
     <>
