@@ -660,6 +660,62 @@ function BoardEditorInner({
   const handleZoomOut = () => setZoom((z) => Math.max(z - 0.1, 0.25))
   const handleZoomReset = () => { setZoom(1); setPan({ x: 0, y: 0 }) }
 
+  const handleFocusContent = useCallback(() => {
+    if (!editor || !canvasRef.current) return
+    const rect = canvasRef.current.getBoundingClientRect()
+    const screenW = rect.width || (typeof window !== 'undefined' ? window.innerWidth : 1200)
+    const screenH = rect.height || (typeof window !== 'undefined' ? window.innerHeight : 800)
+
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+    let count = 0
+
+    editor.state.doc.forEach((node: any) => {
+      const x = node.attrs.x ?? 0
+      const y = node.attrs.y ?? 0
+      let w = node.attrs.width ?? 300
+      let h = node.attrs.height ?? 200
+
+      if (node.type.name === 'stickerBlock') {
+        w = 80; h = 80
+      } else if (node.type.name === 'drawingStroke') {
+        const vb = (node.attrs.viewBox || '0 0 100 100').split(' ').map(Number)
+        w = vb[2] || 100
+        h = vb[3] || 100
+      }
+
+      if (x < minX) minX = x
+      if (y < minY) minY = y
+      if (x + w > maxX) maxX = x + w
+      if (y + h > maxY) maxY = y + h
+      count++
+    })
+
+    if (count === 0 || minX === Infinity) {
+      setZoom(1)
+      setPan({ x: 0, y: 0 })
+      return
+    }
+
+    const padding = 80
+    minX -= padding
+    minY -= padding
+    maxX += padding
+    maxY += padding
+
+    const contentW = Math.max(maxX - minX, 100)
+    const contentH = Math.max(maxY - minY, 100)
+
+    const scaleX = screenW / contentW
+    const scaleY = screenH / contentH
+    const targetZoom = Math.min(Math.max(Math.min(scaleX, scaleY), 0.3), 1.25)
+
+    const targetPanX = (screenW - contentW * targetZoom) / 2 - minX * targetZoom
+    const targetPanY = (screenH - contentH * targetZoom) / 2 - minY * targetZoom
+
+    setZoom(Number(targetZoom.toFixed(2)))
+    setPan({ x: Math.round(targetPanX), y: Math.round(targetPanY) })
+  }, [editor])
+
   // Touch: drawing on 1 finger when draw tool is active, pan (1 finger) and pinch-to-zoom (2 fingers)
   const touchRef = useRef<{
     startTouches: { x: number; y: number }[]
@@ -1007,8 +1063,76 @@ function BoardEditorInner({
           onZoomIn={handleZoomIn}
           onZoomOut={handleZoomOut}
           onZoomReset={handleZoomReset}
+          onFocusContent={handleFocusContent}
         />
       </div>
+
+      {/* Floating Touch Drawing Bar — Quick colors, widths, undo & focus */}
+      {toolMode === 'draw' && (
+        <div
+          className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 px-3.5 py-2 rounded-2xl nice-shadow pointer-events-auto border border-neutral-200/80 animate-in fade-in slide-in-from-bottom-2 duration-150"
+          style={{
+            background: 'rgba(255, 255, 255, 0.96)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+          }}
+        >
+          {/* Colors */}
+          <div className="flex items-center gap-1.5 pe-2 border-e border-neutral-200">
+            {[
+              { color: '#000000', label: 'Siyah' },
+              { color: '#EF4444', label: 'Kırmızı' },
+              { color: '#3B82F6', label: 'Mavi' },
+              { color: '#22C55E', label: 'Yeşil' },
+              { color: '#F97316', label: 'Turuncu' },
+              { color: '#A855F7', label: 'Mor' },
+            ].map(({ color, label }) => (
+              <button
+                key={color}
+                type="button"
+                onClick={() => setDrawColor(color)}
+                title={label}
+                className={`w-6 h-6 rounded-full transition-transform cursor-pointer ${
+                  drawColor === color ? 'scale-125 ring-2 ring-offset-2 ring-neutral-800' : 'hover:scale-110'
+                }`}
+                style={{ backgroundColor: color }}
+              />
+            ))}
+          </div>
+
+          {/* Stroke Width */}
+          <div className="flex items-center gap-1 pe-2 border-e border-neutral-200">
+            {[
+              { width: 1, label: 'İnce' },
+              { width: 3, label: 'Orta' },
+              { width: 6, label: 'Kalın' },
+            ].map(({ width, label }) => (
+              <button
+                key={width}
+                type="button"
+                onClick={() => setDrawWidth(width)}
+                className={`px-2 py-1 text-[11px] font-bold rounded-lg transition-colors cursor-pointer ${
+                  drawWidth === width
+                    ? 'bg-neutral-900 text-white shadow-xs'
+                    : 'text-neutral-600 hover:bg-neutral-100'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Quick Focus Button */}
+          <button
+            type="button"
+            onClick={handleFocusContent}
+            className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-lg text-indigo-600 bg-indigo-50 hover:bg-indigo-100 transition-colors cursor-pointer"
+            title="Tüm Çizimleri Ekrana Ortala"
+          >
+            <span>Odak</span>
+          </button>
+        </div>
+      )}
 
       {/* Feedback button — bottom left */}
       <button

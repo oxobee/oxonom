@@ -38142,17 +38142,68 @@ export function getSyncedSuperadminOrgs(page = 1, limit = 20, search = '', plan 
     const s = search.toLowerCase()
     list = list.filter((o: any) => o.name?.toLowerCase().includes(s) || o.slug?.toLowerCase().includes(s))
   }
+  if (plan && plan !== 'all') {
+    list = list.filter((o: any) => (o.plan || 'pro').toLowerCase() === plan.toLowerCase())
+  }
+  const mapped = list.map((o: any) => ({
+    ...o,
+    description: o.description || 'MEB Temel Eğitim & Akıllı Okul Portalı',
+    email: o.email || 'idare@oxonom.com',
+    logo_image: o.logo_image || null,
+    thumbnail_image: o.thumbnail_image || null,
+    user_count: o.user_count ?? (o.slug === 'neclagorer' ? 48 : o.slug === 'fevzikalkanci' ? 36 : 24),
+    course_count: o.course_count ?? (o.slug === 'neclagorer' ? 14 : o.slug === 'fevzikalkanci' ? 18 : 8),
+    plan: o.plan || 'pro',
+    active: o.active ?? true,
+    custom_domains: o.custom_domains || [],
+    admin_users: o.admin_users || [
+      {
+        username: 'idare',
+        email: 'idare@oxonom.com',
+        avatar_image: null,
+        user_uuid: 'usr_admin_1',
+      },
+    ],
+  }))
+  const paged = mapped.slice((page - 1) * limit, page * limit)
   return {
-    organizations: list.slice((page - 1) * limit, page * limit),
-    total: list.length,
+    items: paged,
+    organizations: paged,
+    total: mapped.length,
     page,
     limit,
-    total_pages: Math.ceil(list.length / limit) || 1
+    total_pages: Math.ceil(mapped.length / limit) || 1,
   }
 }
 
 export function getSyncedSuperadminVisits() {
   return {
+    data: [
+      { org_id: 1, date: '2026-09-28', views: 80 },
+      { org_id: 1, date: '2026-09-29', views: 120 },
+      { org_id: 1, date: '2026-09-30', views: 160 },
+      { org_id: 1, date: '2026-10-01', views: 210 },
+      { org_id: 1, date: '2026-10-02', views: 195 },
+      { org_id: 1, date: '2026-10-03', views: 142 },
+      { org_id: 2, date: '2026-09-28', views: 40 },
+      { org_id: 2, date: '2026-09-29', views: 65 },
+      { org_id: 2, date: '2026-09-30', views: 90 },
+      { org_id: 2, date: '2026-10-01', views: 110 },
+      { org_id: 2, date: '2026-10-02', views: 85 },
+      { org_id: 2, date: '2026-10-03', views: 78 },
+      { org_id: 3, date: '2026-09-28', views: 20 },
+      { org_id: 3, date: '2026-09-29', views: 35 },
+      { org_id: 3, date: '2026-09-30', views: 50 },
+      { org_id: 3, date: '2026-10-01', views: 70 },
+      { org_id: 3, date: '2026-10-02', views: 62 },
+      { org_id: 3, date: '2026-10-03', views: 55 },
+      { org_id: 10, date: '2026-09-28', views: 150 },
+      { org_id: 10, date: '2026-09-29', views: 240 },
+      { org_id: 10, date: '2026-09-30', views: 320 },
+      { org_id: 10, date: '2026-10-01', views: 390 },
+      { org_id: 10, date: '2026-10-02', views: 410 },
+      { org_id: 10, date: '2026-10-03', views: 360 },
+    ],
     visits_today: 142,
     visits_week: 980,
     visits_month: 4210,
@@ -38173,17 +38224,39 @@ export function getSyncedSuperadminUsers(page = 1, limit = 20, search = '', supe
   let list = [...SYNCED_USERS]
   if (search) {
     const s = search.toLowerCase()
-    list = list.filter((u: any) => u.username?.toLowerCase().includes(s) || u.email?.toLowerCase().includes(s))
+    list = list.filter((u: any) => u.username?.toLowerCase().includes(s) || u.email?.toLowerCase().includes(s) || u.first_name?.toLowerCase().includes(s) || u.last_name?.toLowerCase().includes(s))
   }
-  if (superadmin === 'true') {
+  if (superadmin === 'yes' || superadmin === 'true') {
     list = list.filter((u: any) => u.is_superadmin)
+  } else if (superadmin === 'no' || superadmin === 'false') {
+    list = list.filter((u: any) => !u.is_superadmin)
   }
+  const mapped = list.map((u: any) => ({
+    ...u,
+    first_name: u.first_name || '',
+    last_name: u.last_name || '',
+    avatar_image: u.avatar_image || null,
+    is_superadmin: Boolean(u.is_superadmin),
+    org_count: u.org_count ?? (u.orgs?.length || 1),
+    orgs: u.orgs && u.orgs.length > 0 ? u.orgs : [
+      {
+        id: 10,
+        name: 'Necla Görer İlkokulu',
+        slug: 'neclagorer',
+        role_name: u.is_superadmin ? 'Süper Admin' : 'Öğretmen',
+      },
+    ],
+    creation_date: u.creation_date || '2026-09-30T10:00:00Z',
+    update_date: u.update_date || '2026-10-02T10:00:00Z',
+  }))
+  const paged = mapped.slice((page - 1) * limit, page * limit)
   return {
-    users: list.slice((page - 1) * limit, page * limit),
-    total: list.length,
+    items: paged,
+    users: paged,
+    total: mapped.length,
     page,
     limit,
-    total_pages: Math.ceil(list.length / limit) || 1
+    total_pages: Math.ceil(mapped.length / limit) || 1,
   }
 }
 

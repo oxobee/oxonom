@@ -135,18 +135,20 @@ export default function GamesAdminClient() {
   const [catSelectedOrgIds, setCatSelectedOrgIds] = useState<number[]>([])
 
   // Queries
-  const { data: schools = [] } = useQuery({
+  const { data: rawSchools = [] } = useQuery({
     queryKey: ['admin-schools'],
     queryFn: () => getAdminSchools(token),
     enabled: !!token,
   })
+  const schools = Array.isArray(rawSchools) ? rawSchools : []
 
-  const { data: categories = [] } = useQuery({
+  const { data: rawCategories = [] } = useQuery({
     queryKey: ['admin-game-categories'],
     queryFn: () => getGameCategories(),
   })
+  const categories = Array.isArray(rawCategories) ? rawCategories : []
 
-  const { data: games = [], isLoading: isLoadingGames } = useQuery({
+  const { data: rawGames = [], isLoading: isLoadingGames } = useQuery({
     queryKey: ['admin-games', selectedCatId, selectedStatus, searchTerm],
     queryFn: () =>
       getAdminGames(
@@ -159,12 +161,14 @@ export default function GamesAdminClient() {
       ),
     enabled: !!token,
   })
+  const games = Array.isArray(rawGames) ? rawGames : []
 
-  const { data: reviews = [], isLoading: isLoadingReviews } = useQuery({
+  const { data: rawReviews = [], isLoading: isLoadingReviews } = useQuery({
     queryKey: ['admin-reviews', reviewSearchTerm],
     queryFn: () => getAdminReviews({ search: reviewSearchTerm }, token),
     enabled: !!token && activeTab === 'reviews',
   })
+  const reviews = Array.isArray(rawReviews) ? rawReviews : []
 
   // Open Create Game Modal
   const handleOpenCreateGame = () => {

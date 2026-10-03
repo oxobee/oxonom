@@ -197,10 +197,10 @@ export default function UserList() {
 
   const isValidating = isFetching
 
-  const users = userData?.items
-  const totalCount = userData?.total ?? 0
+  const users: GlobalUser[] = userData?.items || (userData as any)?.users || []
+  const totalCount = userData?.total ?? users.length
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE))
-  const paged = users || []
+  const paged: GlobalUser[] = users || []
 
   const handleSortChange = (sort: string) => {
     setSortBy(sort)

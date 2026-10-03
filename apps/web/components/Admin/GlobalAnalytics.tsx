@@ -35,7 +35,7 @@ export default function GlobalAnalytics({ days = 30 }: { days?: number }) {
     )
   }
 
-  const queryNames = Object.keys(data)
+  const queryNames = data && typeof data === 'object' ? Object.keys(data).filter((k) => data[k] && typeof data[k] === 'object') : []
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

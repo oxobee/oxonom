@@ -60,12 +60,13 @@ export default function AdminPlansPage() {
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState('')
 
-  const plans = data?.plans || []
+  const rawPlans = Array.isArray(data?.plans) ? data.plans : []
+  const plans: PlanItem[] = rawPlans.filter((p: any) => p && typeof p === 'object' && p.id)
   const currentPlan = plans.find((p) => p.id === selectedPlanId) || plans[0]
 
   React.useEffect(() => {
     if (currentPlan) {
-      setEditingPlan({ ...currentPlan, features: { ...currentPlan.features } })
+      setEditingPlan({ ...currentPlan, features: { ...(currentPlan.features || {}) } })
     }
   }, [currentPlan?.id])
 
@@ -153,9 +154,9 @@ export default function AdminPlansPage() {
               <p className="text-xs text-white/50 line-clamp-2 mb-4">{p.description}</p>
               <div className="flex items-baseline gap-1">
                 <span className="text-xl font-bold text-white">
-                  {p.price_monthly === 0 ? 'Ücretsiz' : `₺${p.price_monthly.toLocaleString()}`}
+                  {Number(p.price_monthly || 0) === 0 ? 'Ücretsiz' : `₺${Number(p.price_monthly).toLocaleString()}`}
                 </span>
-                {p.price_monthly > 0 && <span className="text-xs text-white/40">/ ay</span>}
+                {Number(p.price_monthly || 0) > 0 && <span className="text-xs text-white/40">/ ay</span>}
               </div>
             </button>
           )

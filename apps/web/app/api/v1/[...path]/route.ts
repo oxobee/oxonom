@@ -23,6 +23,7 @@ import {
   SYNCED_PODCASTS,
   SYNCED_EPISODES,
   SYNCED_USERS,
+  SYNCED_GAMES,
   getSyncedSuperadminOrgs,
   getSyncedSuperadminVisits,
   getSyncedSuperadminUsers,
@@ -121,7 +122,98 @@ async function handleFallback(request: NextRequest, path: string): Promise<Respo
     return NextResponse.json(getSyncedSuperadminVisits(), { status: 200 })
   }
 
-  // Superadmin Organizations
+  // Superadmin Global Analytics
+  if (path.startsWith('/api/v1/ee/superadmin/analytics/global')) {
+    return NextResponse.json({
+      genel_aktivite_ozeti: {
+        data: [
+          {
+            toplam_ziyaretci: 12450,
+            aktif_ogrenci: 1820,
+            aktif_ogretmen: 142,
+            tamamlanan_dersler: 3640,
+          },
+        ],
+      },
+      akilli_tahta_ve_panolar: {
+        data: [
+          {
+            olusturulan_panolar: 89,
+            cizim_ve_notlar: 1450,
+            etkilesimli_modul_kullanimi: 620,
+          },
+        ],
+      },
+      egitici_oyunlar: {
+        data: [
+          {
+            oynanan_oyun_sayisi: 5420,
+            ortalama_oyun_puani: 4.8,
+            en_populer_oyun: 'Uzay Roketi Matematik Görevi',
+          },
+        ],
+      },
+      odev_ve_degerlendirme: {
+        data: [
+          {
+            verilen_odevler: 38,
+            ogrenci_teslimleri: 920,
+            teslim_orani: '%94',
+          },
+        ],
+      },
+      veli_ve_topluluk: {
+        data: [
+          {
+            topluluk_gruplari: 8,
+            veli_forum_mesajlari: 430,
+            podcast_dinleme_sayisi: 1150,
+          },
+        ],
+      },
+    }, { status: 200 })
+  }
+
+  // Superadmin Org Analytics
+  if (path.includes('/ee/superadmin/organizations') && path.includes('/analytics')) {
+    return NextResponse.json({
+      data: [
+        { date: '2026-09-28', views: 150 },
+        { date: '2026-09-29', views: 240 },
+        { date: '2026-09-30', views: 320 },
+        { date: '2026-10-01', views: 390 },
+        { date: '2026-10-02', views: 410 },
+        { date: '2026-10-03', views: 360 },
+      ],
+      views_today: 360,
+      total_views: 1870,
+    }, { status: 200 })
+  }
+
+  // Superadmin Organization Detail by ID
+  if (path.match(/\/api\/v1\/ee\/superadmin\/organizations\/\d+/)) {
+    const parts = path.split('/')
+    const orgId = Number(parts[parts.indexOf('organizations') + 1])
+    const found: any = SYNCED_ORGANIZATIONS.find((o: any) => o.id === orgId) || SYNCED_ORGANIZATIONS[0]
+    return NextResponse.json({
+      ...found,
+      user_count: found?.user_count ?? (found?.slug === 'neclagorer' ? 48 : 24),
+      course_count: found?.course_count ?? (found?.slug === 'neclagorer' ? 14 : 8),
+      plan: found?.plan || 'pro',
+      active: true,
+      custom_domains: [],
+      admin_users: [
+        {
+          username: 'idare',
+          email: 'idare@oxonom.com',
+          avatar_image: null,
+          user_uuid: 'usr_admin_1',
+        },
+      ],
+    }, { status: 200 })
+  }
+
+  // Superadmin Organizations List
   if (path.startsWith('/api/v1/ee/superadmin/organizations')) {
     const page = Number(request.nextUrl.searchParams.get('page')) || 1
     const limit = Number(request.nextUrl.searchParams.get('limit')) || 20
@@ -139,10 +231,144 @@ async function handleFallback(request: NextRequest, path: string): Promise<Respo
     return NextResponse.json(getSyncedSuperadminUsers(page, limit, searchParam, superadminParam), { status: 200 })
   }
 
-  // Superadmin Plans & Status
+  // Superadmin Plans
   if (path.startsWith('/api/v1/ee/superadmin/plans')) {
-    return NextResponse.json({ plans: ['free', 'standard', 'pro', 'enterprise'] }, { status: 200 })
+    if (request.method === 'PUT') {
+      return NextResponse.json({ success: true, message: 'Paket özellikleri başarıyla kaydedildi' }, { status: 200 })
+    }
+    const fullPlans = [
+      {
+        id: 'free',
+        name: 'Ücretsiz Deneme',
+        description: 'Temel özelliklerle platformu deneyimlemek isteyen okullar ve bireysel öğretmenler için.',
+        price_monthly: 0,
+        price_yearly: 0,
+        courses_limit: 5,
+        members_limit: 100,
+        admin_limit: 2,
+        ai_credits: 50,
+        features: {
+          ai: true,
+          analytics: false,
+          api: false,
+          boards: true,
+          collaboration: true,
+          folders: true,
+          communities: true,
+          payments: false,
+          podcasts: true,
+          playgrounds: true,
+        },
+      },
+      {
+        id: 'standard',
+        name: 'Standart Okul',
+        description: 'Küçük ve orta ölçekli okullar, etüt merkezleri ve kolejler için tam donanımlı eğitim paketi.',
+        price_monthly: 1490,
+        price_yearly: 14900,
+        courses_limit: 25,
+        members_limit: 500,
+        admin_limit: 5,
+        ai_credits: 250,
+        features: {
+          ai: true,
+          analytics: true,
+          api: false,
+          boards: true,
+          collaboration: true,
+          folders: true,
+          communities: true,
+          payments: true,
+          podcasts: true,
+          playgrounds: true,
+        },
+      },
+      {
+        id: 'pro',
+        name: 'Pro Kampüs',
+        description: 'Gelişmiş analitikler, sınırsız ders ve geniş öğrenci kotaları ile kapsamlı okul paketi.',
+        price_monthly: 2990,
+        price_yearly: 29900,
+        courses_limit: 100,
+        members_limit: 2500,
+        admin_limit: 15,
+        ai_credits: 1000,
+        features: {
+          ai: true,
+          analytics: true,
+          api: true,
+          boards: true,
+          collaboration: true,
+          folders: true,
+          communities: true,
+          payments: true,
+          podcasts: true,
+          playgrounds: true,
+        },
+      },
+      {
+        id: 'enterprise',
+        name: 'Kurumsal & MEB',
+        description: 'İl/ilçe milli eğitim müdürlükleri, çoklu kampüslü özel okullar ve kolej zincirleri için özel çözüm.',
+        price_monthly: 5990,
+        price_yearly: 59900,
+        courses_limit: 9999,
+        members_limit: 99999,
+        admin_limit: 999,
+        ai_credits: 5000,
+        features: {
+          ai: true,
+          analytics: true,
+          api: true,
+          boards: true,
+          collaboration: true,
+          folders: true,
+          communities: true,
+          payments: true,
+          podcasts: true,
+          playgrounds: true,
+        },
+      },
+    ]
+    return NextResponse.json({ plans: fullPlans }, { status: 200 })
   }
+
+  // Superadmin System AI Settings
+  if (path.startsWith('/api/v1/ee/superadmin/system/ai')) {
+    if (request.method === 'PUT' || request.method === 'POST') {
+      return NextResponse.json({ success: true, message: 'Yapay zeka ayarları kaydedildi' }, { status: 200 })
+    }
+    return NextResponse.json({
+      is_ai_enabled: true,
+      is_copilot_enabled: true,
+      provider: 'openrouter',
+      api_key_masked: 'sk-or-v1-••••••••••••••••••••••••••••••••••••••••••••••••',
+      base_url: 'https://openrouter.ai/api/v1',
+      model_fast: 'google/gemini-2.0-flash-001',
+      model_standard: 'google/gemini-2.0-flash-001',
+      model_pro: 'anthropic/claude-3.5-sonnet',
+    }, { status: 200 })
+  }
+
+  // Superadmin System Branding Settings
+  if (path.startsWith('/api/v1/ee/superadmin/system/branding')) {
+    if (request.method === 'PUT' || request.method === 'POST') {
+      return NextResponse.json({ success: true, message: 'Marka ayarları kaydedildi' }, { status: 200 })
+    }
+    return NextResponse.json({
+      site_name: 'Oxonom Edu',
+      site_logo: '/lrn-dash.svg',
+      footer_text: '© 2026 Oxonom Education Technologies. Tüm hakları saklıdır.',
+      footer_link_text: 'Oxonom',
+      footer_link_url: 'https://learnhouze.vercel.app',
+    }, { status: 200 })
+  }
+
+  // Superadmin Tokens
+  if (path.startsWith('/api/v1/ee/superadmin/tokens')) {
+    return NextResponse.json([], { status: 200 })
+  }
+
   if (path.startsWith('/api/v1/ee/superadmin/status')) {
     return NextResponse.json({ is_superadmin: true }, { status: 200 })
   }
@@ -358,7 +584,42 @@ async function handleFallback(request: NextRequest, path: string): Promise<Respo
     return NextResponse.json(matched, { status: 200 })
   }
 
-  // Games
+  // Games Superadmin
+  if (path.startsWith('/api/v1/games/admin/all')) {
+    const catId = request.nextUrl.searchParams.get('category_id')
+    const status = request.nextUrl.searchParams.get('status')
+    const search = request.nextUrl.searchParams.get('search')?.toLowerCase() || ''
+    let list = [...SYNCED_GAMES]
+    if (catId) list = list.filter((g: any) => g.category_id === Number(catId))
+    if (status && status !== 'all') list = list.filter((g: any) => g.status === status)
+    if (search) list = list.filter((g: any) => g.title?.toLowerCase().includes(search) || g.description?.toLowerCase().includes(search))
+    return NextResponse.json(list, { status: 200 })
+  }
+  if (path.startsWith('/api/v1/games/admin/schools')) {
+    const list = SCHOOL_LIST.map((s) => ({ id: s.id, name: s.name, slug: s.slug }))
+    return NextResponse.json(list, { status: 200 })
+  }
+  if (path.startsWith('/api/v1/games/admin/reviews')) {
+    return NextResponse.json([], { status: 200 })
+  }
+  if (path.startsWith('/api/v1/games/admin/create')) {
+    return NextResponse.json({
+      id: Date.now(),
+      game_uuid: `game_${Date.now()}`,
+      title: 'Yeni Eğitici Oyun',
+      status: 'published',
+      creation_date: new Date().toISOString(),
+      update_date: new Date().toISOString(),
+    }, { status: 200 })
+  }
+  if (path.startsWith('/api/v1/games/admin/')) {
+    if (request.method === 'DELETE') {
+      return NextResponse.json({ success: true }, { status: 200 })
+    }
+    return NextResponse.json({ success: true, message: 'Oyun güncellendi' }, { status: 200 })
+  }
+
+  // Games Public
   if (path.startsWith('/api/v1/games/org/')) {
     const parts = path.split('/')
     const orgSlug = parts[parts.indexOf('org') + 1] || 'default'
@@ -366,6 +627,12 @@ async function handleFallback(request: NextRequest, path: string): Promise<Respo
     return NextResponse.json(getFallbackGamesStore(orgSlug, catParam), { status: 200 })
   }
   if (path.startsWith('/api/v1/games/categories')) {
+    if (request.method === 'POST') {
+      return NextResponse.json({ id: Date.now(), name: 'Yeni Kategori', icon: '🎮' }, { status: 200 })
+    }
+    if (request.method === 'DELETE') {
+      return NextResponse.json({ success: true }, { status: 200 })
+    }
     return NextResponse.json(FALLBACK_GAME_CATEGORIES, { status: 200 })
   }
   if (path.endsWith('/play') || path.includes('/play/')) {
@@ -473,6 +740,15 @@ async function proxyToBackend(request: NextRequest): Promise<Response> {
   // Fast-path for folders & media (Full library CRUD handled directly with 0ms latency)
   if (path.startsWith('/api/v1/folders') || path.startsWith('/api/v1/media')) {
     return handleFolderApi(request, path)
+  }
+
+  // Fast-path for Superadmin & Games Admin (Full superadmin control with 0ms latency)
+  if (
+    path.startsWith('/api/v1/ee/superadmin') ||
+    path.startsWith('/api/v1/games/admin') ||
+    path.startsWith('/api/v1/monitoring/feedbacks')
+  ) {
+    return handleFallback(request, path)
   }
 
   // On Vercel / serverless when no remote backend URL is provided (defaults to localhost),

@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { ZoomIn, ZoomOut } from 'lucide-react'
+import { ZoomIn, ZoomOut, Crosshair } from 'lucide-react'
 import ToolTip from '@components/Objects/StyledElements/Tooltip/Tooltip'
 
 interface BoardZoomControlsProps {
@@ -10,6 +10,7 @@ interface BoardZoomControlsProps {
   onZoomIn: () => void
   onZoomOut: () => void
   onZoomReset: () => void
+  onFocusContent?: () => void
 }
 
 export default function BoardZoomControls({
@@ -17,6 +18,7 @@ export default function BoardZoomControls({
   onZoomIn,
   onZoomOut,
   onZoomReset,
+  onFocusContent,
 }: BoardZoomControlsProps) {
   const { t } = useTranslation()
 
@@ -46,6 +48,22 @@ export default function BoardZoomControls({
           <ZoomIn size={13} />
         </div>
       </ToolTip>
+      {onFocusContent && (
+        <>
+          <div className="w-px h-3.5 bg-neutral-200 mx-0.5" />
+          <ToolTip content="Odak Modu (Tüm Çizimleri ve İçeriği Ekrana Ortala)">
+            <button
+              type="button"
+              onClick={onFocusContent}
+              className="editor-tool-btn cursor-pointer text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 flex items-center gap-1 px-1.5 rounded-lg"
+              title="Odak Modu"
+            >
+              <Crosshair size={14} className="shrink-0" />
+              <span className="text-[10px] font-bold hidden sm:inline">Odak</span>
+            </button>
+          </ToolTip>
+        </>
+      )}
     </div>
   )
 }

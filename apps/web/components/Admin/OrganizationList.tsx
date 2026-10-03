@@ -258,8 +258,8 @@ export default function OrganizationList() {
 
   const isValidating = isFetching
 
-  const orgs = orgData?.items
-  const totalCount = orgData?.total ?? 0
+  const orgs: OrgWithCount[] = orgData?.items || (orgData as any)?.organizations || []
+  const totalCount = orgData?.total ?? orgs.length
 
   const { data: visitsData } = useQuery<{ data: VisitRow[] }>({
     queryKey: ['superadmin', 'orgs', 'visits'],
@@ -491,7 +491,7 @@ export default function OrganizationList() {
                       <Globe size={12} weight="bold" className="shrink-0" />
                       <span data-ltr-content className="truncate max-w-[180px]">{org.slug}.{domain}</span>
                     </a>
-                    {org.custom_domains.map((d) => (
+                    {(org.custom_domains || []).map((d: string) => (
                       <a key={d} href={safeHref(`${typeof window !== 'undefined' ? window.location.protocol : 'http:'}//${d}`)} rel="noopener" className="flex items-center gap-1.5 text-xs text-emerald-400/80 hover:text-emerald-400 transition-colors">
                         <Globe size={12} weight="fill" className="shrink-0" />
                         {d}
