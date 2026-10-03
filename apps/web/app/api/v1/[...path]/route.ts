@@ -274,7 +274,14 @@ async function handleFallback(request: NextRequest, path: string): Promise<Respo
       if (matched) return NextResponse.json(matched, { status: 200 })
     }
     const defaultBoards = generateClassroomBoards(activeClassItem)
-    return NextResponse.json((defaultBoards as any[]).concat(SYNCED_BOARDS.slice(0, 4) as any[]), { status: 200 })
+    const authHeader = request.headers.get('authorization') || ''
+    const cookieToken = request.cookies.get(ACCESS_TOKEN_COOKIE)?.value || ''
+    const token = authHeader.replace(/^Bearer\s+/i, '') || cookieToken
+    const demoUser = findDemoUser(token)
+    if (demoUser?.is_superadmin) {
+      return NextResponse.json((defaultBoards as any[]).concat(SYNCED_BOARDS.slice(0, 4) as any[]), { status: 200 })
+    }
+    return NextResponse.json(defaultBoards, { status: 200 })
   }
 
   // School Assignments & Homework

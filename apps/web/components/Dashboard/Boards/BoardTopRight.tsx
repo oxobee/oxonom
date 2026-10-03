@@ -9,6 +9,7 @@ import PresenceAvatars from './PresenceAvatars'
 import ToolTip from '@components/Objects/StyledElements/Tooltip/Tooltip'
 import { updateBoardShareSettings, getBoardPublicInfo } from '@services/boards/boards'
 import toast from 'react-hot-toast'
+import useAdminStatus from '@components/Hooks/useAdminStatus'
 
 interface BoardTopRightProps {
   provider: HocuspocusProvider
@@ -196,6 +197,9 @@ export default function BoardTopRight({ provider, ydoc, board, accessToken }: Bo
   )
   const [shareCode, setShareCode] = useState<string>(board?.share_code || '')
   const [shortCode, setShortCode] = useState<string>(board?.short_code || '')
+  const { isStudent, canManageOrg, isTeacher, isAdmin } = useAdminStatus()
+  const canManageBoard = !isStudent && (canManageOrg || isTeacher || isAdmin)
+
   const [savingShare, setSavingShare] = useState(false)
   const [snapshotting, setSnapshotting] = useState(false)
 
@@ -578,16 +582,18 @@ export default function BoardTopRight({ provider, ydoc, board, accessToken }: Bo
           </div>
 
           {/* Snapshot cover button */}
-          <ToolTip content="Pano Kapağını Tuvalden Güncelle">
-            <button
-              onClick={handleCaptureThumbnail}
-              disabled={snapshotting}
-              className="editor-tool-btn hover:text-indigo-600 cursor-pointer disabled:opacity-50"
-              title="Kapağı Tuvalden Güncelle"
-            >
-              <Camera size={15} className={snapshotting ? 'animate-pulse text-indigo-600' : ''} />
-            </button>
-          </ToolTip>
+          {canManageBoard && (
+            <ToolTip content="Pano Kapağını Tuvalden Güncelle">
+              <button
+                onClick={handleCaptureThumbnail}
+                disabled={snapshotting}
+                className="editor-tool-btn hover:text-indigo-600 cursor-pointer disabled:opacity-50"
+                title="Kapağı Tuvalden Güncelle"
+              >
+                <Camera size={15} className={snapshotting ? 'animate-pulse text-indigo-600' : ''} />
+              </button>
+            </ToolTip>
+          )}
 
           {/* Share button */}
           <div className="relative">
@@ -617,50 +623,61 @@ export default function BoardTopRight({ provider, ydoc, board, accessToken }: Bo
                   <span className="text-[10px] text-neutral-400 font-medium">Giriş / Kayıt Gerekmez</span>
                 </div>
 
-                {/* Mode Selector Tabs */}
-                <div className="grid grid-cols-2 gap-1 p-1 bg-neutral-100 rounded-xl mb-3.5">
-                  <button
-                    type="button"
-                    onClick={() => handleShareTypeChange('public')}
-                    className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
-                      shareType === 'public'
-                        ? 'bg-white text-neutral-900 shadow-sm'
-                        : 'text-neutral-500 hover:text-neutral-800'
-                    }`}
-                  >
-                    <Globe size={13} />
-                    <span>Herkese Açık</span>
-                  </button>
+                {/* Mode Selector Tabs (Teachers/Admins only) */}
+                {canManageBoard ? (
+                  <div className="grid grid-cols-2 gap-1 p-1 bg-neutral-100 rounded-xl mb-3.5">
+                    <button
+                      type="button"
+                      onClick={() => handleShareTypeChange('public')}
+                      className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
+                        shareType === 'public'
+                          ? 'bg-white text-neutral-900 shadow-sm'
+                          : 'text-neutral-500 hover:text-neutral-800'
+                      }`}
+                    >
+                      <Globe size={13} />
+                      <span>Herkese Açık</span>
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => handleShareTypeChange('code')}
-                    className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
-                      shareType === 'code'
-                        ? 'bg-white text-neutral-900 shadow-sm'
-                        : 'text-neutral-500 hover:text-neutral-800'
-                    }`}
-                  >
-                    <Lock size={13} />
-                    <span>4 Haneli PIN</span>
-                  </button>
-                </div>
+                    <button
+                      type="button"
+                      onClick={() => handleShareTypeChange('code')}
+                      className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
+                        shareType === 'code'
+                          ? 'bg-white text-neutral-900 shadow-sm'
+                          : 'text-neutral-500 hover:text-neutral-800'
+                      }`}
+                    >
+                      <Lock size={13} />
+                      <span>4 Haneli PIN</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="mb-3">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-neutral-100 text-neutral-700">
+                      {shareType === 'code' ? <Lock size={12} /> : <Globe size={12} />}
+                      <span>{shareType === 'code' ? 'PIN Korumalı Pano' : 'Herkese Açık Pano'}</span>
+                    </span>
+                  </div>
+                )}
 
                 {/* Mode Details */}
                 {shareType === 'code' ? (
                   <div className="bg-amber-50/70 border border-amber-200/60 rounded-xl p-3 mb-3.5 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-semibold text-amber-900">Katılım PIN Kodu:</span>
-                      <button
-                        type="button"
-                        onClick={handleRegenerateCode}
-                        disabled={savingShare}
-                        className="flex items-center gap-1 text-[11px] text-amber-700 hover:text-amber-900 font-medium transition-colors cursor-pointer"
-                        title="Yeni PIN Üret"
-                      >
-                        <RefreshCw size={11} className={savingShare ? 'animate-spin' : ''} />
-                        <span>Yeni Kod</span>
-                      </button>
+                      {canManageBoard && (
+                        <button
+                          type="button"
+                          onClick={handleRegenerateCode}
+                          disabled={savingShare}
+                          className="flex items-center gap-1 text-[11px] text-amber-700 hover:text-amber-900 font-medium transition-colors cursor-pointer"
+                          title="Yeni PIN Üret"
+                        >
+                          <RefreshCw size={11} className={savingShare ? 'animate-spin' : ''} />
+                          <span>Yeni Kod</span>
+                        </button>
+                      )}
                     </div>
                     <div className="flex justify-center items-center py-1">
                       <span className="font-mono text-2xl font-black tracking-[0.3em] text-amber-950 bg-white/80 px-4 py-1.5 rounded-lg border border-amber-300/80 shadow-xs">

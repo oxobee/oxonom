@@ -5190,6 +5190,26 @@
         "title": "Öğrencileri geri getirmeye devam edin",
         "description": "Bir topluluk alanı açın; böylece öğrencileriniz aktif kalsın — ve arkadaşlarını getirsin.",
         "action": "Topluluğu aç"
+      },
+      "student_profile": {
+        "title": "Öğrenci Profilinizi İnceleyin",
+        "description": "Ad, soyad, sınıf ve okul bilgilerinizi kontrol ederek profilinizi doğrulayın.",
+        "action": "Profili Gör"
+      },
+      "student_class_boards": {
+        "title": "Sınıf Ders Tahtalarınızı Keşfedin",
+        "description": "Derslerinizde işlenen canlı akıllı tahta içeriklerine ve ders notlarına göz atın.",
+        "action": "Panoları Aç"
+      },
+      "student_assignments": {
+        "title": "Ödev ve Etkinliklerinizi Kontrol Edin",
+        "description": "Öğretmenlerinizin tanımladığı haftalık ödev ve etkinlikleri teslim edin.",
+        "action": "Ödevlere Git"
+      },
+      "student_library": {
+        "title": "Dijital Kütüphaneye Erişin",
+        "description": "Ders kitapları, soru bankaları ve video kaynaklarıyla derslerinizi pekiştirin.",
+        "action": "Kütüphaneyi Aç"
       }
     },
     "welcome": {

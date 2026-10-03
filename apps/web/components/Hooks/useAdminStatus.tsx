@@ -87,6 +87,8 @@ interface UseAdminStatusReturn {
     loading: boolean;
     userRoles: Role[];
     rights: Rights | null;
+    isStudent: boolean;
+    isTeacher: boolean;
 }
 
 /**
@@ -249,10 +251,20 @@ function useAdminStatus(): UseAdminStatusReturn {
     // org.id is "still loading" and not "this surface has no org at all"
     // (the apex hub renders these hooks with no provider).
     const orgPending = !!orgslug && !orgId;
-
     const loading = (!isAuthenticated && session.status !== 'unauthenticated') || orgPending;
 
-    return { isAdmin, canManageOrg, loading, userRoles, rights };
+    const isStudent = useMemo(() => {
+        if (!isAuthenticated) return false;
+        if (email.includes('ogrenci') || session?.data?.user?.username?.includes('ogrenci') || session?.data?.user?.role === 'student') return true;
+        return !isSuperadmin && !isAdminUser && !isTeacherUser;
+    }, [isAuthenticated, email, session, isSuperadmin, isAdminUser, isTeacherUser]);
+
+    const isTeacher = useMemo(() => {
+        if (!isAuthenticated) return false;
+        return Boolean(isTeacherUser && !isStudent);
+    }, [isAuthenticated, isTeacherUser, isStudent]);
+
+    return { isAdmin, canManageOrg, loading, userRoles, rights, isStudent, isTeacher };
 }
 
 export default useAdminStatus;

@@ -4,7 +4,7 @@ import {
   errorHandling,
 } from '@services/utils/ts/requests'
 import { SYNCED_BOARDS } from '@services/demo/databaseSync'
-import { ALL_CLASSROOM_BOARDS } from '@services/demo/schoolDirectory'
+import { ALL_CLASSROOM_BOARDS, generateClassroomBoards, getActiveClassroom } from '@services/demo/schoolDirectory'
 
 export async function createBoard(
   orgId: number,
@@ -52,11 +52,14 @@ export async function getBoards(orgId: number, access_token: string) {
     }
   } catch (_err) {}
 
-  const schoolBoards = ALL_CLASSROOM_BOARDS.filter((b) => b.org_id === orgId)
-  if (schoolBoards.length > 0) {
-    return [...schoolBoards, ...SYNCED_BOARDS]
+  let activeCode = '1-A'
+  if (typeof window !== 'undefined') {
+    const cookieMatch = document.cookie.match(/oxonom_demo_student_active_class=([^;]+)/)
+    if (cookieMatch) activeCode = decodeURIComponent(cookieMatch[1])
+    else activeCode = localStorage.getItem('oxonom_demo_student_active_class') || '1-A'
   }
-  return [...ALL_CLASSROOM_BOARDS, ...SYNCED_BOARDS]
+  const cls = getActiveClassroom(activeCode)
+  return generateClassroomBoards(cls)
 }
 
 export async function getBoard(boardUuid: string, access_token: string) {

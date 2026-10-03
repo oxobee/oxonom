@@ -198,8 +198,7 @@ function DashLeftMenu() {
   const plan = usePlan()
   const mode = getDeploymentMode()
   // Only org managers (admins/superadmins) see billing surfaces — non-admins
-  // shouldn't manage the plan/subscription.
-  const { canManageOrg } = useAdminStatus()
+  const { canManageOrg, isStudent } = useAdminStatus()
 
   if (!org || !session) return null
   const planLabel =
@@ -516,14 +515,16 @@ function DashLeftMenu() {
                   active={isActivePath('/dash/communities')}
                 />
 
-                {/* Sınıflar */}
-                <MenuLink
-                  href="/dash/classrooms"
-                  icon={<GraduationCap size={20} weight="fill" />}
-                  label="Sınıflar"
-                  isCollapsed={isCollapsed}
-                  active={isActivePath('/dash/classrooms')}
-                />
+                {/* Sınıflar (Yalnızca Öğretmenler / Yönetim) */}
+                {!isStudent && (
+                  <MenuLink
+                    href="/dash/classrooms"
+                    icon={<GraduationCap size={20} weight="fill" />}
+                    label="Sınıflar"
+                    isCollapsed={isCollapsed}
+                    active={isActivePath('/dash/classrooms')}
+                  />
+                )}
 
                 {/* Podcastler */}
                 <MenuLink

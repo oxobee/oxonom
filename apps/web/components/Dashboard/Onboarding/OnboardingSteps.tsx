@@ -37,6 +37,10 @@ const STEP_ICON: Record<string, { icon: React.ElementType; color: string }> = {
   share_grow: { icon: ShareNetwork, color: 'text-emerald-500' },
   invite_learners: { icon: UserPlus, color: 'text-sky-500' },
   build_community: { icon: ChatsCircle, color: 'text-indigo-500' },
+  student_profile: { icon: Student, color: 'text-indigo-500' },
+  student_class_boards: { icon: Browsers, color: 'text-amber-500' },
+  student_assignments: { icon: BookOpen, color: 'text-violet-500' },
+  student_library: { icon: GraduationCap, color: 'text-emerald-500' },
 }
 
 /**

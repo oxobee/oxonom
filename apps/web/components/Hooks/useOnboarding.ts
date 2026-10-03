@@ -1,5 +1,6 @@
 'use client'
 import { useState, useCallback, useEffect } from 'react'
+import useAdminStatus from './useAdminStatus'
 
 export type OnboardingStep = {
   id: string
@@ -69,8 +70,43 @@ const DEFAULT_STEPS: Omit<OnboardingStep, 'completed'>[] = [
   },
 ]
 
+export const STUDENT_STEPS: Omit<OnboardingStep, 'completed'>[] = [
+  {
+    id: 'student_profile',
+    title: 'Öğrenci Profilinizi İnceleyin',
+    description: 'Ad, soyad, sınıf ve okul bilgilerinizi kontrol ederek profilinizi doğrulayın.',
+    action: 'Profili Gör',
+    href: '/dash/users/settings/profile',
+    completePath: '/dash/users/settings/profile',
+  },
+  {
+    id: 'student_class_boards',
+    title: 'Sınıf Ders Tahtalarınızı Keşfedin',
+    description: 'Derslerinizde işlenen canlı akıllı tahta içeriklerine ve ders notlarına göz atın.',
+    action: 'Panoları Aç',
+    href: '/dash/boards',
+    completePath: '/dash/boards',
+  },
+  {
+    id: 'student_assignments',
+    title: 'Ödev ve Etkinliklerinizi Kontrol Edin',
+    description: 'Öğretmenlerinizin tanımladığı haftalık ödev ve etkinlikleri teslim edin.',
+    action: 'Ödevlere Git',
+    href: '/dash/assignments',
+    completePath: '/dash/assignments',
+  },
+  {
+    id: 'student_library',
+    title: 'Dijital Kütüphaneye Erişin',
+    description: 'Ders kitapları, soru bankaları ve video kaynaklarıyla derslerinizi pekiştirin.',
+    action: 'Kütüphaneyi Aç',
+    href: '/dash/library',
+    completePath: '/dash/library',
+  },
+]
+
 // Raw step definitions (incl. completion-path regexes) for the headless tracker.
-export const ONBOARDING_STEP_DEFS = DEFAULT_STEPS
+export const ONBOARDING_STEP_DEFS = [...DEFAULT_STEPS, ...STUDENT_STEPS]
 
 function loadState(): OnboardingState {
   if (typeof window === 'undefined') {
@@ -134,7 +170,10 @@ export function useOnboarding() {
     return () => window.removeEventListener('lh_onboarding_change', handler)
   }, [])
 
-  const steps: OnboardingStep[] = DEFAULT_STEPS.map((s) => ({
+  const { isStudent } = useAdminStatus()
+  const activeStepDefs = isStudent ? STUDENT_STEPS : DEFAULT_STEPS
+
+  const steps: OnboardingStep[] = activeStepDefs.map((s) => ({
     ...s,
     completed: state.completedSteps.includes(s.id) || state.skippedSteps.includes(s.id),
     skipped: state.skippedSteps.includes(s.id),

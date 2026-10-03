@@ -19,6 +19,7 @@ import {
 import toast from 'react-hot-toast'
 import { useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/query/keys'
+import useAdminStatus from '@components/Hooks/useAdminStatus'
 
 interface BoardTopBarProps {
   boardName: string
@@ -35,6 +36,8 @@ export default function BoardTopBar({
 }: BoardTopBarProps) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
+  const { isStudent, canManageOrg, isTeacher, isAdmin } = useAdminStatus()
+  const canEditBoard = !isStudent && (canManageOrg || isTeacher || isAdmin)
 
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [effectsEnabled, setEffectsEnabled] = useState(
@@ -137,7 +140,7 @@ export default function BoardTopBar({
             </span>
           )}
 
-          {accessToken && (
+          {accessToken && canEditBoard && (
             <ToolTip content="Pano Ayarları (Efekt, Chat, Emoji)">
               <button
                 type="button"

@@ -83,19 +83,23 @@ function HomeClient() {
 
   // Roles calculation
   const email = (session?.data?.user?.email || '').toLowerCase()
+  const username = (session?.data?.user?.username || '').toLowerCase()
   const isSuperAdmin = session?.data?.user?.is_superadmin === true
   const roles: any[] = session?.data?.roles || []
   const isTeacher =
-    email.includes('ogretmen') ||
-    roles.some(
-      (r: any) =>
-        r?.role?.id === 3 ||
-        r?.role?.name?.toLowerCase() === 'instructor' ||
-        r?.role?.name?.toLowerCase() === 'teacher' ||
-        r?.role?.name?.toLowerCase() === 'öğretmen'
-    )
+    !email.includes('ogrenci') &&
+    !username.includes('ogrenci') &&
+    (email.includes('ogretmen') ||
+      roles.some(
+        (r: any) =>
+          r?.role?.id === 3 ||
+          r?.role?.name?.toLowerCase() === 'instructor' ||
+          r?.role?.name?.toLowerCase() === 'teacher' ||
+          r?.role?.name?.toLowerCase() === 'öğretmen'
+      ))
   const isAdmin =
     !email.includes('ogrenci') &&
+    !username.includes('ogrenci') &&
     (isSuperAdmin ||
       email.includes('idare') ||
       email.includes('admin') ||
@@ -108,7 +112,11 @@ function HomeClient() {
           r?.role?.name?.toLowerCase() === 'yönetici' ||
           r?.role?.rights?.organizations?.action_create === true
       ))
-  const isStudent = !isAdmin && !isTeacher
+  const isStudent =
+    email.includes('ogrenci') ||
+    username.includes('ogrenci') ||
+    session?.data?.user?.role === 'student' ||
+    (!isAdmin && !isTeacher)
 
   const { data: orgs, isLoading: orgsLoading } = useQuery({
     queryKey: ['orgs', 'user'],
@@ -230,16 +238,18 @@ function HomeClient() {
             {/* Right Controls */}
             {isAuthenticated && (
               <div className="flex items-center gap-2.5">
-                {/* T.C. Kimlik Doğrulama Button */}
-                <button
-                  type="button"
-                  onClick={() => setIsTcModalOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50/80 hover:bg-emerald-100 text-xs font-bold text-emerald-900 transition-colors shadow-2xs cursor-pointer"
-                >
-                  <Shield size={14} className="text-emerald-700" />
-                  <span className="hidden sm:inline">T.C. Doğrulama</span>
-                  <span className="sm:hidden">T.C.</span>
-                </button>
+                {/* T.C. Kimlik Doğrulama Button (Yalnızca Okul İdaresi / Süper Admin) */}
+                {!isStudent && (isSuperAdmin || isAdmin) && (
+                  <button
+                    type="button"
+                    onClick={() => setIsTcModalOpen(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50/80 hover:bg-emerald-100 text-xs font-bold text-emerald-900 transition-colors shadow-2xs cursor-pointer"
+                  >
+                    <Shield size={14} className="text-emerald-700" />
+                    <span className="hidden sm:inline">T.C. Doğrulama</span>
+                    <span className="sm:hidden">T.C.</span>
+                  </button>
+                )}
 
                 {/* Language Switcher */}
                 <DropdownMenu>
@@ -379,33 +389,25 @@ function HomeClient() {
                 {/* 58 Classrooms Switcher specifically for Demo Student */}
                 <DemoClassSwitcher />
 
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-emerald-50/90 via-emerald-50/50 to-teal-50/70 border border-emerald-200 shadow-2xs">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-indigo-50/90 via-purple-50/50 to-blue-50/70 border border-indigo-200 shadow-2xs">
                   <div className="flex items-center gap-3.5">
-                    <div className="w-11 h-11 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                    <div className="w-11 h-11 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-xs">
                       <KeyRound size={22} />
                     </div>
                     <div>
-                      <h2 className="text-sm sm:text-base font-bold text-emerald-950">
-                        Sınıf Katılım Kodu ile Katıl & Kimlik Doğrulama
+                      <h2 className="text-sm sm:text-base font-bold text-gray-900">
+                        Sınıf Katılım Kodu ile Katıl
                       </h2>
-                      <p className="text-xs sm:text-sm text-emerald-700/90 mt-0.5">
-                        Öğretmeninizin size ilettiği 6 haneli kod ile sınıfınıza hemen katılın veya T.C. Kimlik ile kütük kaydınızı sorgulayın.
+                      <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
+                        Öğretmeninizin size ilettiği 6 haneli sınıf katılım kodunu girerek sınıfınıza ve ders tahtalarınıza hemen bağlanın.
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2.5 shrink-0">
                     <button
                       type="button"
-                      onClick={() => setIsTcModalOpen(true)}
-                      className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white border border-emerald-300 hover:bg-emerald-50 text-emerald-900 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-2xs cursor-pointer shrink-0 whitespace-nowrap"
-                    >
-                      <Shield size={15} className="text-emerald-700" />
-                      <span>T.C. Kimlik Sorgula</span>
-                    </button>
-                    <button
-                      type="button"
                       onClick={() => setIsJoinClassOpen(true)}
-                      className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow-xs hover:shadow-sm cursor-pointer shrink-0 whitespace-nowrap"
+                      className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs sm:text-sm font-bold transition-all shadow-xs hover:shadow-sm cursor-pointer shrink-0 whitespace-nowrap"
                     >
                       <KeyRound size={15} />
                       <span>Sınıf Kodu Gir</span>
@@ -541,11 +543,13 @@ function HomeClient() {
             }}
           />
 
-          {/* TC Kimlik Verification Modal */}
-          <TcKimlikModal
-            isOpen={isTcModalOpen}
-            onClose={() => setIsTcModalOpen(false)}
-          />
+          {/* TC Kimlik Verification Modal (Yalnızca Yönetim) */}
+          {!isStudent && (
+            <TcKimlikModal
+              isOpen={isTcModalOpen}
+              onClose={() => setIsTcModalOpen(false)}
+            />
+          )}
 
           {/* Footer */}
           <div className="mt-12 text-center">

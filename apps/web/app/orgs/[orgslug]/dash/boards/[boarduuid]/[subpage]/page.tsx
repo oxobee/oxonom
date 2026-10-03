@@ -17,6 +17,9 @@ import BoardThumbnailTab from '@components/Dashboard/Boards/Tabs/BoardThumbnailT
 import BoardAccessTab from '@components/Dashboard/Boards/Tabs/BoardAccessTab'
 import BoardMembersTab from '@components/Dashboard/Boards/Tabs/BoardMembersTab'
 import BoardFeaturesTab from '@components/Dashboard/Boards/Tabs/BoardFeaturesTab'
+import { useRouter } from 'next/navigation'
+import useAdminStatus from '@components/Hooks/useAdminStatus'
+import toast from 'react-hot-toast'
 import { DashTabBar, DashTabItem } from '@components/Dashboard/Shared/DashTabBar/DashTabBar'
 
 export type BoardSettingsParams = {
@@ -31,6 +34,16 @@ function BoardSettingsPage(props: { params: Promise<BoardSettingsParams> }) {
   const session = useLHSession() as any
   const access_token = session?.data?.tokens?.access_token
 
+  const router = useRouter()
+  const { isStudent, loading: adminLoading } = useAdminStatus()
+
+  React.useEffect(() => {
+    if (!adminLoading && isStudent) {
+      toast.error('Öğrenci hesapları pano ayarlarını ve yetkilerini değiştiremez.')
+      router.replace(`/board/${params.boarduuid.replace('board_', '')}`)
+    }
+  }, [adminLoading, isStudent, router, params.boarduuid])
+
   const boardUuid = params.boarduuid.startsWith('board_')
     ? params.boarduuid
     : `board_${params.boarduuid}`
@@ -38,7 +51,7 @@ function BoardSettingsPage(props: { params: Promise<BoardSettingsParams> }) {
   const { data: board, isLoading } = useQuery({
     queryKey: queryKeys.boards.detail(boardUuid),
     queryFn: () => getBoard(boardUuid, access_token!),
-    enabled: !!access_token && !!boardUuid,
+    enabled: !!access_token && !!boardUuid && !isStudent,
     staleTime: 60_000,
   })
 

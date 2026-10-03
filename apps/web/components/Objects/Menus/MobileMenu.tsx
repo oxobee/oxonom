@@ -55,8 +55,7 @@ export default function MobileMenu({
   const pathname = usePathname()
   const session = useLHSession() as any
   const org = useOrg() as any
-  const { canManageOrg, isAdmin, userRoles } = useAdminStatus()
-  const isTeacher = isAdmin
+  const { canManageOrg, isAdmin, userRoles, isStudent, isTeacher } = useAdminStatus()
 
   const isAuthenticated = session?.status === 'authenticated'
   const user = session?.data?.user
@@ -425,7 +424,7 @@ export default function MobileMenu({
 
           <div className="grid grid-cols-1 gap-2.5">
             {/* 3.1 Öğretmen / Yönetici Paneli */}
-            {isTeacher && (
+            {!isStudent && (isTeacher || canManageOrg || isAdmin) && (
               <Link
                 href={getUriWithOrg(orgslug, '/dash')}
                 onClick={onClose}

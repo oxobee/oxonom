@@ -72,7 +72,7 @@ export const OrgMenu = (props: any) => {
   const [isFocusMode, setIsFocusMode] = useState(false)
   const pathname = usePathname()
   const { t } = useTranslation()
-  const { rights, canManageOrg } = useAdminStatus()
+  const { rights, canManageOrg, isStudent, isTeacher, isAdmin } = useAdminStatus()
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false)
   const { isVisible: isJoinBannerVisible } = useJoinBannerVisible()
   const { track } = useLHAnalytics()
@@ -309,8 +309,8 @@ export const OrgMenu = (props: any) => {
                 </div>
               </AuthenticatedClientElement>
             )}
-            {/* Dashboard Dropdown - Only visible to admins */}
-            {session?.status === 'authenticated' && rights?.dashboard?.action_access && (
+            {/* Dashboard Dropdown - Only visible to teachers / staff / admins (NEVER students) */}
+            {session?.status === 'authenticated' && !isStudent && (canManageOrg || isTeacher || isAdmin || rights?.dashboard?.action_access) && (
               <div className="hidden md:flex">
                 <DropdownMenu>
                   <TooltipProvider delayDuration={0}>

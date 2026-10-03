@@ -5,10 +5,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/query/keys'
 import { useOrg } from '@components/Contexts/OrgContext'
 import { useLHSession } from '@components/Contexts/LHSessionContext'
-import { getAPIUrl } from '@services/config/config'
+import { getAPIUrl, getUriWithOrg } from '@services/config/config'
 import { apiFetch, asArray } from '@services/utils/ts/requests'
 import { deleteUserGroup } from '@services/usergroups/usergroups'
 import toast from 'react-hot-toast'
+import { useRouter } from 'next/navigation'
 import {
   GraduationCap,
   Plus,
@@ -39,11 +40,21 @@ import { searchMatchesAny } from '@/lib/search/normalize'
 import useAdminStatus from '@components/Hooks/useAdminStatus'
 
 export default function ClassroomsClient({ orgslug }: { orgslug: string }) {
-  const { canManageOrg } = useAdminStatus()
+  const { canManageOrg, isStudent, loading: adminLoading } = useAdminStatus()
+  const router = useRouter()
   const org = useOrg() as any
   const session = useLHSession() as any
   const token = session?.data?.tokens?.access_token
   const queryClient = useQueryClient()
+
+  React.useEffect(() => {
+    if (!adminLoading && isStudent) {
+      toast.error('Öğrenci hesapları sınıflar paneline erişemez.')
+      router.replace(getUriWithOrg(orgslug, '/dash/boards'))
+    }
+  }, [adminLoading, isStudent, router, orgslug])
+
+  if (isStudent) return null
 
   // Modals state
   const [isJoinOpen, setIsJoinOpen] = useState(false)

@@ -610,6 +610,50 @@ function BoardEditorInner({
     }
   }, [isPanning, panStart, isDrawing, pan, zoom, activePlacement])
 
+  const commitDrawingStroke = useCallback(() => {
+    setIsDrawing(false)
+    const points = drawPointsRef.current
+    if (points.length < 2 || !editor) {
+      setDrawingPath('')
+      drawPointsRef.current = []
+      return
+    }
+
+    // Calculate bounding box
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+    for (const p of points) {
+      if (p.x < minX) minX = p.x
+      if (p.y < minY) minY = p.y
+      if (p.x > maxX) maxX = p.x
+      if (p.y > maxY) maxY = p.y
+    }
+    const padding = 10
+    minX -= padding; minY -= padding; maxX += padding; maxY += padding
+    const width = maxX - minX
+    const height = maxY - minY
+
+    // Normalize points relative to bounding box origin
+    const normalized = points.map(p => ({ x: p.x - minX, y: p.y - minY }))
+    const pathData = pointsToSvgPath(normalized)
+
+    // Insert without focus() to avoid scroll jumps that break pan/zoom
+    const endPos = editor.state.doc.content.size
+    editor.chain().insertContentAt(endPos, {
+      type: 'drawingStroke',
+      attrs: {
+        pathData,
+        strokeColor: drawColor,
+        strokeWidth: drawWidth,
+        x: Math.round(minX),
+        y: Math.round(minY),
+        viewBox: `0 0 ${Math.round(width)} ${Math.round(height)}`,
+      },
+    }).run()
+
+    setDrawingPath('')
+    drawPointsRef.current = []
+  }, [editor, drawColor, drawWidth])
+
   const handleMouseUp = useCallback(() => {
     if (isPanning) {
       setIsPanning(false)
@@ -663,54 +707,15 @@ function BoardEditorInner({
       setMarquee(null)
     }
     if (isDrawing && editor) {
-      setIsDrawing(false)
-      const points = drawPointsRef.current
-      if (points.length < 2) {
-        setDrawingPath('')
-        return
-      }
-
-      // Calculate bounding box
-      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
-      for (const p of points) {
-        if (p.x < minX) minX = p.x
-        if (p.y < minY) minY = p.y
-        if (p.x > maxX) maxX = p.x
-        if (p.y > maxY) maxY = p.y
-      }
-      const padding = 10
-      minX -= padding; minY -= padding; maxX += padding; maxY += padding
-      const width = maxX - minX
-      const height = maxY - minY
-
-      // Normalize points relative to bounding box origin
-      const normalized = points.map(p => ({ x: p.x - minX, y: p.y - minY }))
-      const pathData = pointsToSvgPath(normalized)
-
-      // Insert without focus() to avoid scroll jumps that break pan/zoom
-      const endPos = editor.state.doc.content.size
-      editor.chain().insertContentAt(endPos, {
-        type: 'drawingStroke',
-        attrs: {
-          pathData,
-          strokeColor: drawColor,
-          strokeWidth: drawWidth,
-          x: Math.round(minX),
-          y: Math.round(minY),
-          viewBox: `0 0 ${Math.round(width)} ${Math.round(height)}`,
-        },
-      }).run()
-
-      setDrawingPath('')
-      drawPointsRef.current = []
+      commitDrawingStroke()
     }
-  }, [isPanning, isDrawing, editor, drawColor, drawWidth, pan.x, pan.y, zoom])
+  }, [isPanning, isDrawing, editor, commitDrawingStroke, pan.x, pan.y, zoom, setSelectedPositions])
 
   const handleZoomIn = () => setZoom((z) => Math.min(z + 0.1, 3))
   const handleZoomOut = () => setZoom((z) => Math.max(z - 0.1, 0.25))
   const handleZoomReset = () => { setZoom(1); setPan({ x: 0, y: 0 }) }
 
-  // Touch: pan (1 finger) and pinch-to-zoom (2 fingers)
+  // Touch: drawing on 1 finger when draw tool is active, pan (1 finger) and pinch-to-zoom (2 fingers)
   const touchRef = useRef<{
     startTouches: { x: number; y: number }[]
     startPan: { x: number; y: number }
@@ -719,6 +724,29 @@ function BoardEditorInner({
   } | null>(null)
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const mode = toolModeRef.current
+    if (mode === 'draw') {
+      editor?.commands.blur()
+      const rect = canvasRef.current?.getBoundingClientRect()
+      if (!rect) return
+      const touches = Array.from(e.touches).map(t => ({ x: t.clientX, y: t.clientY }))
+      if (touches.length === 1) {
+        e.preventDefault()
+        const x = (touches[0].x - rect.left - pan.x) / zoom
+        const y = (touches[0].y - rect.top - pan.y) / zoom
+        drawPointsRef.current = [{ x, y }]
+        setDrawingPath(`M ${x} ${y}`)
+        setIsDrawing(true)
+        return
+      } else if (touches.length === 2) {
+        // 2 fingers allow pinch zoom even in draw mode
+        const dist = Math.hypot(touches[1].x - touches[0].x, touches[1].y - touches[0].y)
+        touchRef.current = { startTouches: touches, startPan: { ...pan }, startZoom: zoom, startDist: dist }
+        e.preventDefault()
+        return
+      }
+    }
+
     // Ignore touches on blocks — let them handle their own
     const target = e.target as HTMLElement
     if (target.closest('[data-node-view-wrapper]')) return
@@ -736,6 +764,24 @@ function BoardEditorInner({
   }, [pan, zoom, editor])
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    const mode = toolModeRef.current
+    if (mode === 'draw' && isDrawing) {
+      e.preventDefault()
+      const rect = canvasRef.current?.getBoundingClientRect()
+      if (!rect) return
+      const touches = Array.from(e.touches)
+      if (touches.length > 0) {
+        const x = (touches[0].clientX - rect.left - pan.x) / zoom
+        const y = (touches[0].clientY - rect.top - pan.y) / zoom
+        drawPointsRef.current.push({ x, y })
+        cancelAnimationFrame(panRafRef.current)
+        panRafRef.current = requestAnimationFrame(() => {
+          setDrawingPath(pointsToSvgPath(drawPointsRef.current))
+        })
+      }
+      return
+    }
+
     if (!touchRef.current) return
     const touches = Array.from(e.touches).map(t => ({ x: t.clientX, y: t.clientY }))
 
@@ -759,8 +805,8 @@ function BoardEditorInner({
           y: touchRef.current!.startPan.y + (midY - startMidY),
         })
       })
-    } else if (touches.length === 1 && touchRef.current.startTouches.length === 1) {
-      // Single finger pan
+    } else if (touches.length === 1 && touchRef.current.startTouches.length === 1 && mode !== 'draw') {
+      // Single finger pan (only if not drawing)
       const dx = touches[0].x - touchRef.current.startTouches[0].x
       const dy = touches[0].y - touchRef.current.startTouches[0].y
       cancelAnimationFrame(panRafRef.current)
@@ -771,11 +817,17 @@ function BoardEditorInner({
         })
       })
     }
-  }, [])
+  }, [isDrawing, pan.x, pan.y, zoom])
 
-  const handleTouchEnd = useCallback(() => {
+  const handleTouchEnd = useCallback((e?: React.TouchEvent) => {
+    const mode = toolModeRef.current
+    if (mode === 'draw' && isDrawing) {
+      e?.preventDefault()
+      commitDrawingStroke()
+      return
+    }
     touchRef.current = null
-  }, [])
+  }, [isDrawing, commitDrawingStroke])
 
   if (!editor) return null
 
@@ -805,6 +857,7 @@ function BoardEditorInner({
         onTouchCancel={handleTouchEnd}
         style={{
           cursor: toolMode === 'pan' || isPanning ? 'grab' : toolMode === 'draw' || activePlacement ? 'crosshair' : 'default',
+          touchAction: 'none',
         }}
       >
         <div

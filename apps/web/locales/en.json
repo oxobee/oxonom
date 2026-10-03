@@ -6304,6 +6304,26 @@
         "title": "Keep learners coming back",
         "description": "Open a community space so your learners stay active — and bring their friends.",
         "action": "Open community"
+      },
+      "student_profile": {
+        "title": "Review Your Student Profile",
+        "description": "Check your name, class, and school information to verify your profile.",
+        "action": "View Profile"
+      },
+      "student_class_boards": {
+        "title": "Explore Your Classroom Boards",
+        "description": "Browse live interactive smartboard notes and classroom materials.",
+        "action": "Open Boards"
+      },
+      "student_assignments": {
+        "title": "Check Your Assignments",
+        "description": "Review and submit weekly homework assignments given by your teachers.",
+        "action": "Go to Assignments"
+      },
+      "student_library": {
+        "title": "Access Digital Library",
+        "description": "Reinforce your learning with textbooks, question banks, and video materials.",
+        "action": "Open Library"
       }
     },
     "welcome": {
