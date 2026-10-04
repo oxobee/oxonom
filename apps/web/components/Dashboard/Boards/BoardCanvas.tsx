@@ -29,7 +29,6 @@ import { FrameBoxExtension } from './Extensions/FrameBox'
 import { NoteBlockExtension } from './Extensions/NoteBlock'
 import { TodoBlockExtension } from './Extensions/TodoBlock'
 import { PodcastBlockExtension } from './Extensions/PodcastBlock'
-import { yUndoPlugin } from 'y-prosemirror'
 import { getGeometricShapePath } from './WhiteboardCorrection'
 import BoardTabBar, { BoardTab } from './BoardTabBar'
 import toast from 'react-hot-toast'
@@ -211,12 +210,10 @@ function BoardEditorInner({
     }
   }, [provider, username, userColor])
 
-  const undoManager = useMemo(() => new Y.UndoManager(ydoc.getXmlFragment('default')), [ydoc])
-
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        undoRedo: false, // Yjs handles undo/redo
+        undoRedo: false, // Collaboration handles undo/redo
       }),
       Collaboration.configure({
         document: ydoc,
@@ -247,24 +244,6 @@ function BoardEditorInner({
       NoteBlockExtension,
       TodoBlockExtension,
       PodcastBlockExtension,
-      Extension.create({
-        name: 'yUndoManager',
-        addProseMirrorPlugins() {
-          return [yUndoPlugin({ undoManager })]
-        },
-        addCommands() {
-          return {
-            undo: () => () => {
-              try { undoManager.undo() } catch {}
-              return true
-            },
-            redo: () => () => {
-              try { undoManager.redo() } catch {}
-              return true
-            },
-          }
-        },
-      }),
     ],
     editable: !isReadOnly,
     immediatelyRender: false,
@@ -306,7 +285,7 @@ function BoardEditorInner({
       const isEmpty =
         doc.childCount === 0 ||
         (doc.childCount === 1 &&
-          doc.firstChild?.type.name === 'paragraph' &&
+          doc.firstChild?.type?.name === 'paragraph' &&
           doc.firstChild?.content.size === 0)
 
       if (isEmpty) {

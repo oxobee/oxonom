@@ -440,7 +440,7 @@ export default function BoardToolbar({
         {/* 14. GERİ AL (Undo) */}
         <ToolTip content="Geri Al (Ctrl+Z)">
           <div
-            onClick={() => editor.chain().undo().run()}
+            onClick={() => editor?.chain?.().undo?.().run?.()}
             className="editor-tool-btn hover:text-black cursor-pointer"
           >
             <ArrowCounterClockwise size={16} weight="bold" />
@@ -450,7 +450,7 @@ export default function BoardToolbar({
         {/* 15. İLERİ AL (Redo) */}
         <ToolTip content="İleri Al (Ctrl+Y)">
           <div
-            onClick={() => editor.chain().redo().run()}
+            onClick={() => editor?.chain?.().redo?.().run?.()}
             className="editor-tool-btn hover:text-black cursor-pointer"
           >
             <ArrowClockwise size={16} weight="bold" />
@@ -545,7 +545,7 @@ export default function BoardToolbar({
 
         <button
           type="button"
-          onClick={() => editor.chain().undo().run()}
+          onClick={() => editor?.chain?.().undo?.().run?.()}
           className="w-8 h-8 rounded-xl flex items-center justify-center text-neutral-600 shrink-0"
         >
           <ArrowCounterClockwise size={15} weight="bold" />
@@ -633,14 +633,14 @@ export default function BoardToolbar({
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => editor.chain().undo().run()}
+                  onClick={() => editor?.chain?.().undo?.().run?.()}
                   className="px-3 py-1.5 rounded-xl bg-neutral-100 text-neutral-700 text-xs font-semibold"
                 >
                   Geri Al
                 </button>
                 <button
                   type="button"
-                  onClick={() => editor.chain().redo().run()}
+                  onClick={() => editor?.chain?.().redo?.().run?.()}
                   className="px-3 py-1.5 rounded-xl bg-neutral-100 text-neutral-700 text-xs font-semibold"
                 >
                   İleri Al
