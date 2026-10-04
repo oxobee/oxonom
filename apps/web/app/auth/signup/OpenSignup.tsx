@@ -127,34 +127,24 @@ function OpenSignUpComponent({ org: propOrg }: OpenSignUpComponentProps = {}) {
     if (record.bloodType) setBloodType(record.bloodType)
     if (record.address) setAddress(record.address)
 
-    // Veli / Aile bilgileri: Kime aitse ona göre doldurulur
-    if (record.role === 'Öğrenci') {
-      if (record.parents && record.parents.length > 0) {
-        setParents(record.parents)
-      } else {
-        const pList = []
-        if (record.motherName) {
-          pList.push({ name: record.motherName, relation: 'Anne', phone: '+90 532 999 1100', occupation: 'Mimar', email: '' })
-        }
-        if (record.fatherName) {
-          pList.push({ name: record.fatherName, relation: 'Baba', phone: '+90 532 999 2200', occupation: 'Yazılım Mühendisi', email: '' })
-        }
-        if (pList.length > 0) setParents(pList)
-      }
+    // Veli / Aile bilgileri: Kayıt ekranındaki Veli Bilgileri alanına doldurulur
+    if (record.parents && record.parents.length > 0) {
+      setParents(record.parents)
     } else {
-      // Girilen TC bir veliye aitse (örn: baba Uğur UĞURLU)
-      if (record.parents && record.parents.length > 0) {
-        setParents(record.parents)
-      } else {
-        setParents([
-          { name: record.spouseName || 'Ebru UĞURLU', relation: 'Anne / Eş', phone: '+90 532 999 1100', occupation: 'Mimar', email: '' },
-          { name: record.name, relation: 'Baba (Kendisi)', phone: '+90 532 999 2200', occupation: 'Yazılım Mühendisi', email: '' },
-        ])
+      const pList: any[] = []
+      if (record.motherName) {
+        pList.push({ name: record.motherName, relation: 'Anne', phone: '', occupation: '', email: '' })
+      }
+      if (record.fatherName) {
+        pList.push({ name: record.fatherName, relation: 'Baba', phone: '', occupation: '', email: '' })
+      }
+      if (pList.length > 0) {
+        setParents(pList)
       }
     }
 
     if (notify) {
-      toast.success(`✨ T.C. Doğrulandı: ${record.name} (${record.role}${record.age ? ` - ${record.age} Yaşında` : ''})`)
+      toast.success(`✨ T.C. Doğrulandı: ${record.name} (${record.role})`)
     }
   }
 
@@ -629,26 +619,22 @@ function OpenSignUpComponent({ org: propOrg }: OpenSignUpComponentProps = {}) {
 
                 {/* MERNİS Bilgilendirme ve Güncelleme Butonu */}
                 {tcNo.length === 11 && (
-                  <div className="p-2.5 rounded-xl bg-gradient-to-r from-emerald-50 via-teal-50/40 to-emerald-50 border border-emerald-200/80 text-xs text-emerald-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 shadow-2xs animate-in fade-in-50 duration-200">
-                    <div className="flex items-start gap-2">
-                      <ShieldCheck className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
+                  <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200 text-xs text-emerald-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs animate-in fade-in-50 duration-200">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                        <ShieldCheck className="w-4 h-4" />
+                      </div>
                       <div>
-                        <div className="font-extrabold flex items-center gap-1.5 text-xs text-gray-900">
-                          <span>{verifiedRecord?.name || 'MERNİS Nüfus Kaydı'}</span>
+                        <div className="font-extrabold flex items-center gap-2 text-sm text-gray-900">
+                          <span>{verifiedRecord?.name || 'T.C. Kimlik No Doğrulandı'}</span>
                           {verifiedRecord?.role && (
-                            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
                               {verifiedRecord.role}
                             </span>
                           )}
-                          {verifiedRecord?.age && (
-                            <span className="text-[10px] text-gray-500 font-medium">({verifiedRecord.age} Yaşında)</span>
-                          )}
                         </div>
-                        <div className="text-[10px] text-emerald-700 font-medium mt-0.5">
-                          {verifiedRecord?.motherName ? `Anne: ${verifiedRecord.motherName}` : ''}
-                          {verifiedRecord?.motherName && verifiedRecord?.fatherName ? ' • ' : ''}
-                          {verifiedRecord?.fatherName ? `Baba: ${verifiedRecord.fatherName}` : ''}
-                          {verifiedRecord?.last_mernis_sync ? ` (Son Güncelleme: ${verifiedRecord.last_mernis_sync})` : ''}
+                        <div className="text-[11px] text-emerald-700 font-medium mt-0.5">
+                          T.C. Nüfus ve Vatandaşlık İşleri (MERNİS) Kaydı Doğrulandı
                         </div>
                       </div>
                     </div>
@@ -657,7 +643,7 @@ function OpenSignUpComponent({ org: propOrg }: OpenSignUpComponentProps = {}) {
                       type="button"
                       onClick={() => syncWithMernis()}
                       disabled={isSyncingMernis}
-                      className="inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-100 transition-colors shadow-2xs shrink-0 cursor-pointer disabled:opacity-50"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-100 font-bold text-xs transition-colors shadow-2xs shrink-0 cursor-pointer disabled:opacity-50"
                       title="Nüfus ve Vatandaşlık İşleri (MERNİS) üzerinden en güncel resmi nüfus kaydını çek"
                     >
                       <RefreshCw className={`w-3.5 h-3.5 ${isSyncingMernis ? 'animate-spin text-emerald-600' : 'text-emerald-700'}`} />

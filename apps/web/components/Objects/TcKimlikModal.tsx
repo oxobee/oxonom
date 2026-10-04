@@ -259,43 +259,47 @@ export default function TcKimlikModal({
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-gray-100 grid grid-cols-2 gap-3 text-xs">
-                  <div>
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
-                      Anne Adı
-                    </span>
-                    <span className="font-bold text-gray-800">
-                      {record.motherName || 'Belirtilmemiş'}
-                    </span>
+                {(record.motherName || record.fatherName) && (
+                  <div className="pt-2 border-t border-gray-100 grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                        Anne Adı
+                      </span>
+                      <span className="font-bold text-gray-800">
+                        {record.motherName || '—'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                        Baba Adı
+                      </span>
+                      <span className="font-bold text-gray-800">
+                        {record.fatherName || '—'}
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
-                      Baba Adı
-                    </span>
-                    <span className="font-bold text-gray-800">
-                      {record.fatherName || 'Belirtilmemiş'}
-                    </span>
-                  </div>
-                </div>
+                )}
 
-                <div className="pt-2 border-t border-gray-100 grid grid-cols-2 gap-3 text-xs">
-                  <div>
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
-                      Doğum Tarihi / Yaş
-                    </span>
-                    <span className="font-semibold text-gray-800">
-                      {record.birthDate ? `${record.birthDate} (${record.age || 2026 - (record.birthYear || 2010)} Yaşında)` : 'Belirtilmemiş'}
-                    </span>
+                {record.birthDate && (
+                  <div className="pt-2 border-t border-gray-100 grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                        Doğum Tarihi / Yaş
+                      </span>
+                      <span className="font-semibold text-gray-800">
+                        {record.birthDate} {record.age ? `(${record.age} Yaşında)` : ''}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                        Kan Grubu
+                      </span>
+                      <span className="font-bold text-emerald-800">
+                        {record.bloodType || 'A Rh+'}
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
-                      Kan Grubu
-                    </span>
-                    <span className="font-bold text-emerald-800">
-                      {record.bloodType || 'A Rh+'}
-                    </span>
-                  </div>
-                </div>
+                )}
 
                 <div className="pt-2 border-t border-gray-100 grid grid-cols-2 gap-3 text-xs">
                   <div>

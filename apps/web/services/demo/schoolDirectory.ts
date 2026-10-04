@@ -905,12 +905,6 @@ export const KNOWN_TC_REGISTRY: Record<string, TcRecord> = {
     last_name: 'UĞURLU',
     role: 'Veli',
     gender: 'Erkek',
-    birthDate: '1982-06-15',
-    birthYear: 1982,
-    age: 44,
-    motherName: 'Gülümser UĞURLU',
-    fatherName: 'Mehmet UĞURLU',
-    spouseName: 'Ebru UĞURLU',
     bloodType: 'A Rh+',
     address: 'Caddebostan Mah. Bağdat Cad. No: 142/5 Kadıköy / İstanbul',
     school: 'Necla Görer İlkokulu',
@@ -918,8 +912,8 @@ export const KNOWN_TC_REGISTRY: Record<string, TcRecord> = {
     is_verified: true,
     mernis_status: 'MERNİS Nüfus ve Vatandaşlık İşleri (NVİ) Aktif Kütük Kaydı',
     parents: [
-      { name: 'Ebru UĞURLU', relation: 'Anne / Eş', phone: '+90 532 999 1100', occupation: 'Mimar', email: 'ebru.ugurlu@oxonom.com' },
-      { name: 'Uğur UĞURLU', relation: 'Baba (Kendisi)', phone: '+90 532 999 2200', occupation: 'Yazılım Mühendisi', email: 'ugur@oxonom.com' },
+      { name: 'Ebru UĞURLU', relation: 'Anne', phone: '+90 532 999 1100', occupation: 'Mimar', email: 'ebru.ugurlu@oxonom.com' },
+      { name: 'Uğur UĞURLU', relation: 'Baba', phone: '+90 532 999 2200', occupation: 'Yazılım Mühendisi', email: 'ugur@oxonom.com' },
     ],
   },
   '10000000146': {
