@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Trash2, ArrowUp, ArrowDown, Copy, Sparkles } from 'lucide-react'
+import { Trash2, ArrowUp, ArrowDown, Copy } from 'lucide-react'
 import type { Editor } from '@tiptap/core'
 import { useTranslation } from 'react-i18next'
 
@@ -11,10 +11,9 @@ interface NodeActionsProps {
   editor?: Editor
   getPos?: () => number
   multiCount?: number
-  onAutoCorrect?: () => void
 }
 
-export default function NodeActions({ selected, deleteNode, editor, getPos, multiCount, onAutoCorrect }: NodeActionsProps) {
+export default function NodeActions({ selected, deleteNode, editor, getPos, multiCount }: NodeActionsProps) {
   const { t } = useTranslation()
   const canReorder = !!editor && !!getPos
 
@@ -119,26 +118,6 @@ export default function NodeActions({ selected, deleteNode, editor, getPos, mult
             <Copy size={12} />
           </button>
         </>
-      )}
-      {onAutoCorrect && (
-        <button
-          type="button"
-          onMouseDown={(e) => {
-            e.stopPropagation()
-            e.preventDefault()
-            onAutoCorrect()
-          }}
-          onClick={(e) => {
-            e.stopPropagation()
-            e.preventDefault()
-            onAutoCorrect()
-          }}
-          className="flex items-center gap-1 px-2.5 h-6 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-sm hover:opacity-90 transition-opacity text-[11px] font-bold cursor-pointer pointer-events-auto"
-          title="Şekli Düzelt / Metne Dönüştür"
-        >
-          <Sparkles size={11} />
-          <span>Düzelt</span>
-        </button>
       )}
       <button
         type="button"

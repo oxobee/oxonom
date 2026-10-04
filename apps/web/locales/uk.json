@@ -228,7 +228,8 @@
     "leave_organization_title": "Вийти з організації?",
     "leave_organization_desc": "Ви втратите доступ до {{org}} і будете виключені зі списку учасників. Ви зможете приєднатися знову пізніше, якщо отримаєте запрошення.",
     "leave_organization_error": "Не вдалося вийти з цієї організації. Спробуйте ще раз.",
-    "leaving": "Вихід…"
+    "leaving": "Вихід…",
+    "sign_out": "Вийти"
   },
   "banner": {
     "viewing_as_guest": "Ви переглядаєте {{name}} як гість.",
@@ -3260,19 +3261,97 @@
         "failed_load": "Не вдалося завантажити досьє студента.",
         "back_to_students": "Назад до студентів",
         "no_behavioral": "Немає поведінкових даних (аналітику може бути не налаштовано для цього періоду).",
-        "ranges": { "d30": "30 днів", "d90": "90 днів", "y1": "1 рік" },
-        "kpi": { "courses": "Курси", "completed": "{{count}} завершено", "avg_progress": "Середній прогрес", "time_spent": "Витрачений час", "assignments": "Завдання", "avg_grade": "середня {{grade}}", "certificates": "Сертифікати", "connections": "Підключення", "last": "останнє {{date}}" },
-        "tabs": { "connections": "Підключення", "courses": "Курси", "assignments": "Завдання", "code": "Код", "community": "Спільнота", "certificates": "Сертифікати", "behavior": "Поведінка" },
-        "identity": { "verified": "Підтверджено", "unverified": "Не підтверджено", "via": "через {{method}}" },
-        "connections": { "title": "Підключення", "empty": "Поки немає записаних підключень." },
-        "courses": { "title": "Прогрес за курсами", "empty": "Не зараховано на жоден курс.", "activities": "{{done}}/{{total}} активностей", "enrolled": "Зараховано {{date}}" },
-        "assignments": { "title": "Завдання", "empty": "Немає надісланих завдань.", "attempt": "спроба {{number}}", "feedback": "Відгук:" },
-        "code": { "title": "Завдання з коду", "empty": "Немає надісланого коду.", "activity": "Активність", "result": "Результат", "tests": "Тести", "time": "Час", "when": "Коли", "passed": "Пройдено", "failed": "Не пройдено" },
-        "community": { "title": "Участь у спільноті", "empty": "Немає активності у спільноті.", "discussions": "Обговорення", "comments": "Коментарі" },
-        "certificates": { "title": "Отримані сертифікати", "empty": "Немає отриманих сертифікатів." },
-        "behavior": { "title": "Поведінкова аналітика", "time_by_course": "Витрачений час за курсами", "searches": "Пошуки" },
-        "status": { "completed": "завершено", "in_progress": "у процесі", "paused": "призупинено", "cancelled": "скасовано", "graded": "оцінено", "submitted": "надіслано", "pending": "очікує", "late": "із запізненням", "not_submitted": "не надіслано" },
-        "comparison": { "student": "Студент", "enrolled": "Зараховано", "completed": "Завершено", "certificates": "Сертифікати", "last_connection": "Останнє підключення", "view": "Переглянути" }
+        "ranges": {
+          "d30": "30 днів",
+          "d90": "90 днів",
+          "y1": "1 рік"
+        },
+        "kpi": {
+          "courses": "Курси",
+          "completed": "{{count}} завершено",
+          "avg_progress": "Середній прогрес",
+          "time_spent": "Витрачений час",
+          "assignments": "Завдання",
+          "avg_grade": "середня {{grade}}",
+          "certificates": "Сертифікати",
+          "connections": "Підключення",
+          "last": "останнє {{date}}"
+        },
+        "tabs": {
+          "connections": "Підключення",
+          "courses": "Курси",
+          "assignments": "Завдання",
+          "code": "Код",
+          "community": "Спільнота",
+          "certificates": "Сертифікати",
+          "behavior": "Поведінка"
+        },
+        "identity": {
+          "verified": "Підтверджено",
+          "unverified": "Не підтверджено",
+          "via": "через {{method}}"
+        },
+        "connections": {
+          "title": "Підключення",
+          "empty": "Поки немає записаних підключень."
+        },
+        "courses": {
+          "title": "Прогрес за курсами",
+          "empty": "Не зараховано на жоден курс.",
+          "activities": "{{done}}/{{total}} активностей",
+          "enrolled": "Зараховано {{date}}"
+        },
+        "assignments": {
+          "title": "Завдання",
+          "empty": "Немає надісланих завдань.",
+          "attempt": "спроба {{number}}",
+          "feedback": "Відгук:"
+        },
+        "code": {
+          "title": "Завдання з коду",
+          "empty": "Немає надісланого коду.",
+          "activity": "Активність",
+          "result": "Результат",
+          "tests": "Тести",
+          "time": "Час",
+          "when": "Коли",
+          "passed": "Пройдено",
+          "failed": "Не пройдено"
+        },
+        "community": {
+          "title": "Участь у спільноті",
+          "empty": "Немає активності у спільноті.",
+          "discussions": "Обговорення",
+          "comments": "Коментарі"
+        },
+        "certificates": {
+          "title": "Отримані сертифікати",
+          "empty": "Немає отриманих сертифікатів."
+        },
+        "behavior": {
+          "title": "Поведінкова аналітика",
+          "time_by_course": "Витрачений час за курсами",
+          "searches": "Пошуки"
+        },
+        "status": {
+          "completed": "завершено",
+          "in_progress": "у процесі",
+          "paused": "призупинено",
+          "cancelled": "скасовано",
+          "graded": "оцінено",
+          "submitted": "надіслано",
+          "pending": "очікує",
+          "late": "із запізненням",
+          "not_submitted": "не надіслано"
+        },
+        "comparison": {
+          "student": "Студент",
+          "enrolled": "Зараховано",
+          "completed": "Завершено",
+          "certificates": "Сертифікати",
+          "last_connection": "Останнє підключення",
+          "view": "Переглянути"
+        }
       },
       "active_users": {
         "title": "Активні користувачі",

@@ -21,6 +21,7 @@ import {
   Clock,
   Filter,
   Plus,
+  RefreshCw,
 } from 'lucide-react'
 import { ChalkboardSimple } from '@phosphor-icons/react'
 import { useOrg } from '@components/Contexts/OrgContext'
@@ -66,27 +67,34 @@ function CreateBoardForm({ onCreated, orgId, accessToken }: {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
 
-  const [effectsEnabled, setEffectsEnabled] = useState(true)
-  const [chatEnabled, setChatEnabled] = useState(true)
-  const [reactionsEnabled, setReactionsEnabled] = useState(true)
+  const [requiresPin, setRequiresPin] = useState(false)
+  const [pin, setPin] = useState('')
+  const [shareType, setShareType] = useState<'public' | 'code' | 'view'>('public')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim()) return
     try {
+      const finalShareType = requiresPin ? 'code' : shareType
+      const shareCode = requiresPin && pin.trim() ? pin.trim() : null
       await createBoard(orgId, { 
         name, 
         description,
+        share_type: finalShareType,
+        share_code: shareCode,
         features: {
-          effects_enabled: effectsEnabled,
-          chat_enabled: chatEnabled,
-          reactions_enabled: reactionsEnabled
+          requires_pin: requiresPin,
+          pin: shareCode,
+          read_only: shareType === 'view'
         }
       }, accessToken)
       track(AnalyticsEvent.BoardCreated, { has_description: !!description.trim() })
       toast.success(t('boards.board_created', { defaultValue: 'Pano başarıyla oluşturuldu' }))
       setName('')
       setDescription('')
+      setRequiresPin(false)
+      setPin('')
+      setShareType('public')
       onCreated()
     } catch {
       toast.error(t('boards.board_created_error', { defaultValue: 'Pano oluşturulurken hata meydana geldi' }))
@@ -118,37 +126,100 @@ function CreateBoardForm({ onCreated, orgId, accessToken }: {
       </div>
 
       <div className="space-y-3 pt-2">
-        <label className="text-sm font-medium text-gray-700">Özellikler (Etkileşim Araçları)</label>
+        <label className="text-sm font-medium text-gray-700">Paylaşma & Erişim Ayarları</label>
         
-        <label className="flex items-center space-x-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={effectsEnabled}
-            onChange={(e) => setEffectsEnabled(e.target.checked)}
-            className="rounded border-gray-300 text-black focus:ring-black h-4 w-4"
-          />
-          <span className="text-sm text-gray-700">Canlı Görsel Efektler (Konfeti, lazer vb.)</span>
-        </label>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setShareType('public')
+              setRequiresPin(false)
+            }}
+            className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+              shareType === 'public' && !requiresPin
+                ? 'border-indigo-600 bg-indigo-50/50 text-indigo-950 font-semibold'
+                : 'border-neutral-200 hover:bg-neutral-50 text-neutral-700'
+            }`}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <Globe size={16} className="text-indigo-600" />
+              <span className="text-xs font-bold">Herkese Açık</span>
+            </div>
+            <p className="text-[11px] text-neutral-500 font-normal">Tüm kullanıcılar doğrudan katılabilir ve düzenleyebilir.</p>
+          </button>
 
-        <label className="flex items-center space-x-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={chatEnabled}
-            onChange={(e) => setChatEnabled(e.target.checked)}
-            className="rounded border-gray-300 text-black focus:ring-black h-4 w-4"
-          />
-          <span className="text-sm text-gray-700">Canlı Sınıf Sohbeti</span>
-        </label>
+          <button
+            type="button"
+            onClick={() => {
+              setShareType('view')
+              setRequiresPin(false)
+            }}
+            className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+              shareType === 'view' && !requiresPin
+                ? 'border-indigo-600 bg-indigo-50/50 text-indigo-950 font-semibold'
+                : 'border-neutral-200 hover:bg-neutral-50 text-neutral-700'
+            }`}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <Eye size={16} className="text-indigo-600" />
+              <span className="text-xs font-bold">Salt Okunur</span>
+            </div>
+            <p className="text-[11px] text-neutral-500 font-normal">Kullanıcılar panoyu sadece görüntüleyebilir, düzenleme yapamaz.</p>
+          </button>
+        </div>
 
-        <label className="flex items-center space-x-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={reactionsEnabled}
-            onChange={(e) => setReactionsEnabled(e.target.checked)}
-            className="rounded border-gray-300 text-black focus:ring-black h-4 w-4"
-          />
-          <span className="text-sm text-gray-700">Canlı Tepkiler ve Emojiler</span>
-        </label>
+        <div className="pt-1">
+          <label className="flex items-start gap-2.5 p-3 rounded-xl border border-amber-200 bg-amber-50/40 hover:bg-amber-50 transition-colors cursor-pointer">
+            <input
+              type="checkbox"
+              checked={requiresPin}
+              onChange={(e) => {
+                setRequiresPin(e.target.checked)
+                if (e.target.checked) {
+                  setShareType('code')
+                  if (!pin) setPin(Math.floor(1000 + Math.random() * 9000).toString())
+                } else {
+                  setShareType('public')
+                }
+              }}
+              className="mt-0.5 w-4 h-4 rounded text-black focus:ring-black border-neutral-300"
+            />
+            <div className="flex-1 text-xs">
+              <div className="font-semibold text-neutral-800 flex items-center gap-1.5">
+                <Lock size={13} className="text-amber-600" />
+                <span>Şifre / PIN Koruması</span>
+              </div>
+              <p className="text-[11px] text-neutral-500 mt-0.5">Katılımcılar panoya erişebilmek için bu şifreyi girmelidir.</p>
+            </div>
+          </label>
+
+          {requiresPin && (
+            <div className="mt-2.5 p-3 bg-amber-50 rounded-xl border border-amber-200 space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-amber-900">
+                  Katılım Şifresi (PIN) *
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setPin(Math.floor(1000 + Math.random() * 9000).toString())}
+                  className="text-xs font-semibold text-amber-700 hover:text-amber-900 flex items-center gap-1 cursor-pointer"
+                >
+                  <RefreshCw size={12} />
+                  <span>Yeni PIN Üret</span>
+                </button>
+              </div>
+              <input
+                type="text"
+                maxLength={12}
+                value={pin}
+                onChange={(e) => setPin(e.target.value)}
+                placeholder="Örn: 1234"
+                className="w-full px-3 py-2 text-sm font-mono font-bold tracking-widest bg-white rounded-lg border border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                required={requiresPin}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="flex justify-end pt-2">

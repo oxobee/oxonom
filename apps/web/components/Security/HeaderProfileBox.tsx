@@ -331,10 +331,10 @@ export const HeaderProfileBox = ({ primaryColor = '' }: { primaryColor?: string 
                     track(AnalyticsEvent.LogoutClicked, { source: 'header_profile' })
                     signOut({ callbackUrl: '/' })
                   }}
-                  className="flex items-center space-x-2 text-red-600 focus:text-red-600"
+                  className="flex items-center space-x-2 text-red-600 focus:text-red-600 cursor-pointer"
                 >
                   <SignOut size={16} weight="fill" data-dir-flip />
-                  <span>Sign Out</span>
+                  <span>{t('user.sign_out', { defaultValue: t('common.sign_out', { defaultValue: 'Çıkış Yap' }) })}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

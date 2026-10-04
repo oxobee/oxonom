@@ -240,7 +240,8 @@
     "leave_organization_title": "Okuldan ayrılmak istiyor musunuz?",
     "leave_organization_desc": "{{org}} erişiminizi kaybedecek ve üyelerinden çıkarılacaksınız. Davet edilmeniz hâlinde daha sonra tekrar katılabilirsiniz.",
     "leave_organization_error": "Bu okuldan ayrılamadık. Lütfen tekrar deneyin.",
-    "leaving": "Ayrılıyor…"
+    "leaving": "Ayrılıyor…",
+    "sign_out": "Çıkış Yap"
   },
   "banner": {
     "viewing_as_guest": "{{name}} sitesini misafir olarak görüntülüyorsunuz.",
@@ -2883,28 +2884,24 @@
         },
         "templates": {
           "title": "Hazır Şablon ile Başlayın",
-          "description": "Okulunuza uygun bir başlangıç şablonu seçin veya bölümleri tek tek özelleştirin.",
+          "description": "Bir başlangıç şablonu seçin ve bölümleri okulunuza göre kolayca özelleştirin.",
           "sections_count_one": "{{count}} bölüm",
           "sections_count_other": "{{count}} bölüm",
-          "classic": {
-            "name": "Okul Portalı (Mevcut Ana Sayfa)",
-            "description": "İlkokul karşılama alanı, canlı istatistikler, akıllı tahta & modül odakları, öne çıkan dersler, veli görüşleri ve SSS."
-          },
           "academy": {
-            "name": "Akademi & Kurs Portalı",
-            "description": "Ziyaretçiler ve üyeler için ayrı karşılama alanları, rakamlarla başarılar, dersler, referanslar ve kayıt bandı."
+            "name": "Akademi / Okul",
+            "description": "Ziyaretçiler ve öğrenciler için özel karşılama, okul istatistikleri, nasıl çalışır, öne çıkan dersler, veli görüşleri ve SSS."
           },
           "product": {
             "name": "Eğitim & Tanıtım",
-            "description": "Karşılama başlığı, tanıtım videosu, eğitim başlıkları, güncel dersler ve iletişim duyurusu."
+            "description": "Büyük karşılama başlığı, tanıtım videosu, branş başlıkları, güncel dersler ve iletişim duyurusu."
           },
           "minimal": {
             "name": "Sade & Minimal",
-            "description": "Kısa bir tanıtım yazısı ve öne çıkan temel derslerin listesi."
+            "description": "Kısa bir tanıtım yazısı ve öne çıkan okul dersleri."
           },
           "launch": {
-            "name": "Yeni Dönem / Kayıt Açılışı",
-            "description": "Duyuru şeridi, geri sayım sayacı, kayıt adımları, eğitim paketleri ve sıkça sorulan sorular."
+            "name": "Dönem Açılışı",
+            "description": "Duyuru bandı, geri sayım sayacı, adım adım kayıt rehberi, okul şubeleri ve sıkça sorulan sorular."
           }
         },
         "blocks": {
@@ -3214,29 +3211,7 @@
           "select": "Seç"
         },
         "org_id_not_found": "Okul kimliği bulunamadı",
-        "unknown_section_type": "Unknown section type",
-        "templates": {
-          "title": "Hazır Şablon ile Başlayın",
-          "description": "Bir başlangıç şablonu seçin ve bölümleri okulunuza göre kolayca özelleştirin.",
-          "sections_count_one": "{{count}} bölüm",
-          "sections_count_other": "{{count}} bölüm",
-          "academy": {
-            "name": "Akademi / Okul",
-            "description": "Ziyaretçiler ve öğrenciler için özel karşılama, okul istatistikleri, nasıl çalışır, öne çıkan dersler, veli görüşleri ve SSS."
-          },
-          "product": {
-            "name": "Eğitim & Tanıtım",
-            "description": "Büyük karşılama başlığı, tanıtım videosu, branş başlıkları, güncel dersler ve iletişim duyurusu."
-          },
-          "minimal": {
-            "name": "Sade & Minimal",
-            "description": "Kısa bir tanıtım yazısı ve öne çıkan okul dersleri."
-          },
-          "launch": {
-            "name": "Dönem Açılışı",
-            "description": "Duyuru bandı, geri sayım sayacı, adım adım kayıt rehberi, okul şubeleri ve sıkça sorulan sorular."
-          }
-        }
+        "unknown_section_type": "Unknown section type"
       },
       "theme": {
         "primary_color": "Ana Renk",

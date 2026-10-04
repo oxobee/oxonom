@@ -478,7 +478,7 @@ export async function getBoardByShortCode(shortCode: string) {
 
 export async function updateBoardShareSettings(
   boardUuid: string,
-  shareType: 'public' | 'code',
+  shareType: 'public' | 'code' | 'view' | string,
   shareCode: string | null,
   access_token: string
 ) {

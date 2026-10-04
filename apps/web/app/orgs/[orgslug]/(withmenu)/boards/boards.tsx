@@ -6,7 +6,8 @@ import TypeOfContentTitle from '@components/Objects/StyledElements/Titles/TypeOf
 import { useOrg } from '@components/Contexts/OrgContext'
 import { getBoardThumbnailMediaDirectory } from '@services/media/media'
 import Link from 'next/link'
-import { Search, X, Users, Star, Plus, Settings2, Save, Lock } from 'lucide-react'
+import { Search, X, Users, Star, Plus, Settings2, Save, Lock, Globe, Eye, Copy, Check, RefreshCw } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { ChalkboardSimple } from '@phosphor-icons/react'
 import { useTranslation } from 'react-i18next'
 import FeatureGate from '@components/Dashboard/Shared/FeatureGate/FeatureGate'
@@ -17,7 +18,7 @@ import { useFavoriteBoards } from '@/hooks/useFavoriteBoards'
 import { flyStarToAcademicTrail } from '@/lib/animations/flyToTrail'
 import useAdminStatus from '@components/Hooks/useAdminStatus'
 import { useLHSession } from '@components/Contexts/LHSessionContext'
-import { createBoard, updateBoard, updateBoardShareSettings, getStoredCustomBoards } from '@services/boards/boards'
+import { createBoard, updateBoard, updateBoardShareSettings, getStoredCustomBoards, saveStoredCustomBoard } from '@services/boards/boards'
 import BoardVisualCover from '@components/Boards/BoardVisualCover'
 import { useRouter } from 'next/navigation'
 import {
@@ -103,27 +104,21 @@ export default function BoardsPublicClient({
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [createName, setCreateName] = useState('')
   const [createDesc, setCreateDesc] = useState('')
-  const [createEffects, setCreateEffects] = useState(true)
-  const [createChat, setCreateChat] = useState(true)
-  const [createReactions, setCreateReactions] = useState(true)
+  const [createShareType, setCreateShareType] = useState<'public' | 'code' | 'view'>('public')
   const [createRequiresPin, setCreateRequiresPin] = useState(false)
   const [createPin, setCreatePin] = useState('')
   const [creating, setCreating] = useState(false)
 
   // Edit board features modal state
   const [editingBoard, setEditingBoard] = useState<any | null>(null)
-  const [editEffects, setEditEffects] = useState(true)
-  const [editChat, setEditChat] = useState(true)
-  const [editReactions, setEditReactions] = useState(true)
   const [editRequiresPin, setEditRequiresPin] = useState(false)
   const [editPin, setEditPin] = useState('')
+  const [editShareType, setEditShareType] = useState<'public' | 'code' | 'view'>('public')
+  const [copiedLink, setCopiedLink] = useState(false)
   const [savingEdit, setSavingEdit] = useState(false)
 
   const handleOpenEdit = (board: any) => {
     setEditingBoard(board)
-    setEditEffects(board?.features?.effects_enabled !== false)
-    setEditChat(board?.features?.chat_enabled !== false)
-    setEditReactions(board?.features?.reactions_enabled !== false)
     const hasPin = Boolean(
       board?.share_type === 'code' ||
       board?.has_code ||
@@ -132,25 +127,26 @@ export default function BoardsPublicClient({
     )
     setEditRequiresPin(hasPin)
     setEditPin(board?.share_code || board?.features?.pin || '')
+    const isReadOnly = Boolean(board?.share_type === 'view' || board?.features?.read_only)
+    setEditShareType(isReadOnly ? 'view' : (hasPin ? 'code' : 'public'))
+    setCopiedLink(false)
   }
 
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!editingBoard || !accessToken) return
+    if (!editingBoard) return
     setSavingEdit(true)
     try {
       const cleanUuid = editingBoard.board_uuid.startsWith('board_')
         ? editingBoard.board_uuid
         : `board_${editingBoard.board_uuid}`
-      const updatedFeatures = {
-        effects_enabled: editEffects,
-        chat_enabled: editChat,
-        reactions_enabled: editReactions,
-        requires_pin: editRequiresPin,
-        pin: editRequiresPin && editPin.trim() ? editPin.trim() : null,
-      }
-      const shareType = editRequiresPin ? 'code' : 'public'
+      const shareType = editRequiresPin ? 'code' : editShareType
       const shareCode = editRequiresPin && editPin.trim() ? editPin.trim() : null
+      const updatedFeatures = {
+        requires_pin: editRequiresPin,
+        pin: shareCode,
+        read_only: editShareType === 'view',
+      }
 
       await updateBoard(
         cleanUuid,
@@ -158,19 +154,27 @@ export default function BoardsPublicClient({
           features: updatedFeatures,
           share_type: shareType,
         },
-        accessToken
+        accessToken || ''
       )
-      await updateBoardShareSettings(cleanUuid, shareType, shareCode, accessToken).catch(() => {})
+      await updateBoardShareSettings(cleanUuid, shareType, shareCode, accessToken || '').catch(() => {})
+
+      saveStoredCustomBoard({
+        ...editingBoard,
+        share_type: shareType,
+        share_code: shareCode,
+        has_code: editRequiresPin,
+        features: updatedFeatures,
+      })
 
       setBoardsList((prev) =>
         prev.map((b) =>
           b.board_uuid === editingBoard.board_uuid
             ? {
                 ...b,
-                features: updatedFeatures,
                 share_type: shareType,
                 share_code: shareCode,
                 has_code: editRequiresPin,
+                features: updatedFeatures,
               }
             : b
         )
@@ -189,7 +193,7 @@ export default function BoardsPublicClient({
     if (!createName.trim()) return
     setCreating(true)
     try {
-      const shareType = createRequiresPin ? 'code' : 'public'
+      const shareType = createRequiresPin ? 'code' : createShareType
       const shareCode = createRequiresPin && createPin.trim() ? createPin.trim() : null
 
       const res = await createBoard(
@@ -200,11 +204,9 @@ export default function BoardsPublicClient({
           share_type: shareType,
           share_code: shareCode,
           features: {
-            effects_enabled: createEffects,
-            chat_enabled: createChat,
-            reactions_enabled: createReactions,
             requires_pin: createRequiresPin,
             pin: shareCode,
+            read_only: createShareType === 'view',
           },
         },
         accessToken || ''
@@ -216,6 +218,7 @@ export default function BoardsPublicClient({
       setCreateDesc('')
       setCreateRequiresPin(false)
       setCreatePin('')
+      setCreateShareType('public')
       const cleanUuid = (res?.board_uuid || '').replace('board_', '')
       if (cleanUuid) {
         router.push(`/board/${cleanUuid}`)
@@ -379,49 +382,67 @@ export default function BoardsPublicClient({
               />
             </div>
 
-            <div className="space-y-2 pt-1">
+            {/* Paylaşma & Şifre Ayarları */}
+            <div className="space-y-3 pt-1">
               <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block">
-                Öğrenci & Etkileşim İzinleri
+                Paylaşma & Erişim Ayarları
               </span>
 
-              <label className="flex items-start gap-2.5 p-2.5 rounded-xl border border-neutral-200/80 hover:bg-neutral-50 transition-colors cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={createEffects}
-                  onChange={(e) => setCreateEffects(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 rounded text-black focus:ring-black border-neutral-300"
-                />
-                <div className="flex-1 text-xs">
-                  <div className="font-semibold text-neutral-800">🎭 Canlı Görsel Efektler</div>
-                  <p className="text-[10px] text-neutral-500">Yangın, kar, matrix ve kutlama efektleri.</p>
-                </div>
-              </label>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCreateShareType('public')
+                    setCreateRequiresPin(false)
+                  }}
+                  className={cn(
+                    'flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all cursor-pointer',
+                    createShareType === 'public' && !createRequiresPin
+                      ? 'border-indigo-600 bg-indigo-50/60 text-indigo-950 font-semibold ring-1 ring-indigo-600'
+                      : 'border-neutral-200 hover:bg-neutral-50 text-neutral-600'
+                  )}
+                >
+                  <Globe size={18} className="mb-1 text-indigo-600" />
+                  <span className="text-xs font-bold">Herkese Açık</span>
+                  <span className="text-[10px] text-neutral-400 mt-0.5">Doğrudan erişim</span>
+                </button>
 
-              <label className="flex items-start gap-2.5 p-2.5 rounded-xl border border-neutral-200/80 hover:bg-neutral-50 transition-colors cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={createChat}
-                  onChange={(e) => setCreateChat(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 rounded text-black focus:ring-black border-neutral-300"
-                />
-                <div className="flex-1 text-xs">
-                  <div className="font-semibold text-neutral-800">💬 Anlık Mesajlaşma (Chat)</div>
-                  <p className="text-[10px] text-neutral-500">Öğrencilerin tahta içi anlık sohbet edebilmesi.</p>
-                </div>
-              </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCreateShareType('code')
+                    setCreateRequiresPin(true)
+                  }}
+                  className={cn(
+                    'flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all cursor-pointer',
+                    createRequiresPin
+                      ? 'border-amber-600 bg-amber-50/60 text-amber-950 font-semibold ring-1 ring-amber-600'
+                      : 'border-neutral-200 hover:bg-neutral-50 text-neutral-600'
+                  )}
+                >
+                  <Lock size={18} className="mb-1 text-amber-600" />
+                  <span className="text-xs font-bold">Şifreli (PIN)</span>
+                  <span className="text-[10px] text-neutral-400 mt-0.5">PIN kodu ile</span>
+                </button>
 
-              <label className="flex items-start gap-2.5 p-2.5 rounded-xl border border-neutral-200/80 hover:bg-neutral-50 transition-colors cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={createReactions}
-                  onChange={(e) => setCreateReactions(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 rounded text-black focus:ring-black border-neutral-300"
-                />
-                <div className="flex-1 text-xs">
-                  <div className="font-semibold text-neutral-800">😊 Emoji Tepkileri</div>
-                  <p className="text-[10px] text-neutral-500">Ekranda canlı emoji tepkisi gönderme.</p>
-                </div>
-              </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCreateShareType('view')
+                    setCreateRequiresPin(false)
+                  }}
+                  className={cn(
+                    'flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all cursor-pointer',
+                    createShareType === 'view' && !createRequiresPin
+                      ? 'border-sky-600 bg-sky-50/60 text-sky-950 font-semibold ring-1 ring-sky-600'
+                      : 'border-neutral-200 hover:bg-neutral-50 text-neutral-600'
+                  )}
+                >
+                  <Eye size={18} className="mb-1 text-sky-600" />
+                  <span className="text-xs font-bold">Salt Okunur</span>
+                  <span className="text-[10px] text-neutral-400 mt-0.5">Sadece izleme</span>
+                </button>
+              </div>
 
               {/* PIN / Password protection */}
               <div className="pt-2 border-t border-neutral-100">
@@ -429,7 +450,11 @@ export default function BoardsPublicClient({
                   <input
                     type="checkbox"
                     checked={createRequiresPin}
-                    onChange={(e) => setCreateRequiresPin(e.target.checked)}
+                    onChange={(e) => {
+                      setCreateRequiresPin(e.target.checked)
+                      if (e.target.checked) setCreateShareType('code')
+                      else setCreateShareType('public')
+                    }}
                     className="mt-0.5 w-4 h-4 rounded text-black focus:ring-black border-neutral-300"
                   />
                   <div className="flex-1 text-xs">
@@ -442,10 +467,20 @@ export default function BoardsPublicClient({
                 </label>
 
                 {createRequiresPin && (
-                  <div className="mt-2 px-3 py-2 bg-amber-50 rounded-xl border border-amber-200">
-                    <label className="text-[11px] font-bold text-amber-900 block mb-1">
-                      Pano Katılım Şifresi (PIN) *
-                    </label>
+                  <div className="mt-2 px-3 py-2.5 bg-amber-50 rounded-xl border border-amber-200 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-bold text-amber-900 block">
+                        Pano Katılım Şifresi (PIN) *
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setCreatePin(Math.floor(1000 + Math.random() * 9000).toString())}
+                        className="text-[10px] font-semibold text-amber-700 hover:text-amber-900 flex items-center gap-1 cursor-pointer"
+                      >
+                        <RefreshCw size={10} />
+                        <span>Rastgele Kod</span>
+                      </button>
+                    </div>
                     <input
                       type="text"
                       maxLength={12}
@@ -480,59 +515,114 @@ export default function BoardsPublicClient({
         </DialogContent>
       </Dialog>
 
-      {/* Edit Board Features Modal */}
+      {/* Edit Board Settings Modal */}
       <Dialog open={!!editingBoard} onOpenChange={(open) => !open && setEditingBoard(null)}>
-        <DialogContent className="sm:max-w-[440px] bg-white border-neutral-200 text-neutral-900 rounded-2xl p-6">
+        <DialogContent className="sm:max-w-[460px] bg-white border-neutral-200 text-neutral-900 rounded-2xl p-6">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold flex items-center gap-2">
               <Settings2 className="w-5 h-5 text-indigo-600" />
-              <span>Pano Özellikleri & Ayarları</span>
+              <span>Pano Paylaşım & Şifre Ayarları</span>
             </DialogTitle>
             <DialogDescription className="text-xs text-neutral-500">
-              <span className="font-semibold text-neutral-800">{editingBoard?.name}</span> için öğrenci etkileşim ve şifre ayarları.
+              <span className="font-semibold text-neutral-800">{editingBoard?.name}</span> için şifre ve paylaşım ayarlarını düzenleyin.
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleSaveEdit} className="space-y-4 py-2">
-            <div className="space-y-2.5">
-              <label className="flex items-start gap-2.5 p-2.5 rounded-xl border border-neutral-200/80 hover:bg-neutral-50 transition-colors cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={editEffects}
-                  onChange={(e) => setEditEffects(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 rounded text-black focus:ring-black border-neutral-300"
-                />
-                <div className="flex-1 text-xs">
-                  <div className="font-semibold text-neutral-800">🎭 Canlı Görsel Efektler</div>
-                  <p className="text-[10px] text-neutral-500">Yangın, kar, matrix ve kutlama efektleri.</p>
-                </div>
-              </label>
+            <div className="space-y-3">
+              {/* Paylaşım Türü */}
+              <span className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider block">
+                Paylaşım Türü & İzinler
+              </span>
 
-              <label className="flex items-start gap-2.5 p-2.5 rounded-xl border border-neutral-200/80 hover:bg-neutral-50 transition-colors cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={editChat}
-                  onChange={(e) => setEditChat(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 rounded text-black focus:ring-black border-neutral-300"
-                />
-                <div className="flex-1 text-xs">
-                  <div className="font-semibold text-neutral-800">💬 Anlık Mesajlaşma (Chat)</div>
-                  <p className="text-[10px] text-neutral-500">Öğrencilerin tahta içi anlık mesajlaşması.</p>
-                </div>
-              </label>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditShareType('public')
+                    setEditRequiresPin(false)
+                  }}
+                  className={cn(
+                    'flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all cursor-pointer',
+                    editShareType === 'public' && !editRequiresPin
+                      ? 'border-indigo-600 bg-indigo-50/60 text-indigo-950 font-semibold ring-1 ring-indigo-600'
+                      : 'border-neutral-200 hover:bg-neutral-50 text-neutral-600'
+                  )}
+                >
+                  <Globe size={18} className="mb-1 text-indigo-600" />
+                  <span className="text-xs font-bold">Herkese Açık</span>
+                  <span className="text-[10px] text-neutral-400 mt-0.5">Doğrudan erişim</span>
+                </button>
 
-              <label className="flex items-start gap-2.5 p-2.5 rounded-xl border border-neutral-200/80 hover:bg-neutral-50 transition-colors cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={editReactions}
-                  onChange={(e) => setEditReactions(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 rounded text-black focus:ring-black border-neutral-300"
-                />
-                <div className="flex-1 text-xs">
-                  <div className="font-semibold text-neutral-800">😊 Emoji Tepkileri</div>
-                  <p className="text-[10px] text-neutral-500">Ekranda canlı emoji tepkisi gönderme.</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditShareType('code')
+                    setEditRequiresPin(true)
+                  }}
+                  className={cn(
+                    'flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all cursor-pointer',
+                    editRequiresPin
+                      ? 'border-amber-600 bg-amber-50/60 text-amber-950 font-semibold ring-1 ring-amber-600'
+                      : 'border-neutral-200 hover:bg-neutral-50 text-neutral-600'
+                  )}
+                >
+                  <Lock size={18} className="mb-1 text-amber-600" />
+                  <span className="text-xs font-bold">Şifreli (PIN)</span>
+                  <span className="text-[10px] text-neutral-400 mt-0.5">PIN kodu ile</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditShareType('view')
+                    setEditRequiresPin(false)
+                  }}
+                  className={cn(
+                    'flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all cursor-pointer',
+                    editShareType === 'view' && !editRequiresPin
+                      ? 'border-sky-600 bg-sky-50/60 text-sky-950 font-semibold ring-1 ring-sky-600'
+                      : 'border-neutral-200 hover:bg-neutral-50 text-neutral-600'
+                  )}
+                >
+                  <Eye size={18} className="mb-1 text-sky-600" />
+                  <span className="text-xs font-bold">Salt Okunur</span>
+                  <span className="text-[10px] text-neutral-400 mt-0.5">Sadece izleme</span>
+                </button>
+              </div>
+
+              {/* Paylaşım Bağlantısı */}
+              <div className="pt-1">
+                <label className="text-[11px] font-bold text-neutral-700 block mb-1">
+                  Paylaşım Bağlantısı
+                </label>
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="text"
+                    readOnly
+                    value={
+                      typeof window !== 'undefined'
+                        ? `${window.location.origin}/board/${(editingBoard?.board_uuid || '').replace('board_', '')}`
+                        : `/board/${(editingBoard?.board_uuid || '').replace('board_', '')}`
+                    }
+                    className="flex-1 text-xs bg-neutral-100 rounded-xl px-3 py-2 text-neutral-700 font-mono outline-none truncate border border-neutral-200"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const url = `${window.location.origin}/board/${(editingBoard?.board_uuid || '').replace('board_', '')}`
+                      navigator.clipboard.writeText(url)
+                      setCopiedLink(true)
+                      toast.success('Bağlantı kopyalandı!')
+                      setTimeout(() => setCopiedLink(false), 2000)
+                    }}
+                    className="flex items-center gap-1 px-3 py-2 rounded-xl bg-neutral-900 text-white text-xs font-semibold hover:bg-neutral-800 transition-colors shrink-0 cursor-pointer"
+                  >
+                    {copiedLink ? <Check size={13} /> : <Copy size={13} />}
+                    <span>{copiedLink ? 'Kopyalandı' : 'Kopyala'}</span>
+                  </button>
                 </div>
-              </label>
+              </div>
 
               {/* Edit PIN Protection */}
               <div className="pt-2 border-t border-neutral-100">
@@ -540,7 +630,11 @@ export default function BoardsPublicClient({
                   <input
                     type="checkbox"
                     checked={editRequiresPin}
-                    onChange={(e) => setEditRequiresPin(e.target.checked)}
+                    onChange={(e) => {
+                      setEditRequiresPin(e.target.checked)
+                      if (e.target.checked) setEditShareType('code')
+                      else setEditShareType('public')
+                    }}
                     className="mt-0.5 w-4 h-4 rounded text-black focus:ring-black border-neutral-300"
                   />
                   <div className="flex-1 text-xs">
@@ -548,15 +642,25 @@ export default function BoardsPublicClient({
                       <Lock size={12} className="text-amber-600" />
                       <span>Şifre / PIN Koruması</span>
                     </div>
-                    <p className="text-[10px] text-neutral-500">Öğrenciler panoya katılmak için şifre girer.</p>
+                    <p className="text-[10px] text-neutral-500">Öğrenciler panoya katılmak için bu şifreyi girer.</p>
                   </div>
                 </label>
 
                 {editRequiresPin && (
-                  <div className="mt-2 px-3 py-2 bg-amber-50 rounded-xl border border-amber-200">
-                    <label className="text-[11px] font-bold text-amber-900 block mb-1">
-                      Pano Katılım Şifresi (PIN)
-                    </label>
+                  <div className="mt-2 px-3 py-2.5 bg-amber-50 rounded-xl border border-amber-200 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-bold text-amber-900 block">
+                        Pano Katılım Şifresi (PIN) *
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setEditPin(Math.floor(1000 + Math.random() * 9000).toString())}
+                        className="text-[10px] font-semibold text-amber-700 hover:text-amber-900 flex items-center gap-1 cursor-pointer"
+                      >
+                        <RefreshCw size={10} />
+                        <span>Yeni Kod Üret</span>
+                      </button>
+                    </div>
                     <input
                       type="text"
                       maxLength={12}
@@ -581,7 +685,7 @@ export default function BoardsPublicClient({
               </button>
               <button
                 type="submit"
-                disabled={savingEdit}
+                disabled={savingEdit || (editRequiresPin && !editPin.trim())}
                 className="px-5 py-2 text-xs font-semibold text-white bg-black hover:bg-neutral-800 rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
                 <Save size={13} />

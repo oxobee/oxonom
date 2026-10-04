@@ -228,7 +228,8 @@
     "leave_organization_title": "Rời khỏi tổ chức?",
     "leave_organization_desc": "Bạn sẽ mất quyền truy cập vào {{org}} và bị xóa khỏi danh sách thành viên. Bạn có thể tham gia lại sau nếu được mời.",
     "leave_organization_error": "Không thể rời khỏi tổ chức này. Vui lòng thử lại.",
-    "leaving": "Đang rời đi…"
+    "leaving": "Đang rời đi…",
+    "sign_out": "Đăng xuất"
   },
   "banner": {
     "viewing_as_guest": "Bạn đang xem {{name}} với tư cách khách.",
@@ -3026,19 +3027,97 @@
         "failed_load": "Không thể tải hồ sơ học viên.",
         "back_to_students": "Quay lại danh sách học viên",
         "no_behavioral": "Không có dữ liệu hành vi (phân tích có thể chưa được cấu hình cho khoảng thời gian này).",
-        "ranges": { "d30": "30 ngày", "d90": "90 ngày", "y1": "1 năm" },
-        "kpi": { "courses": "Khóa học", "completed": "{{count}} đã hoàn thành", "avg_progress": "Tiến độ trung bình", "time_spent": "Thời gian đã dùng", "assignments": "Bài tập", "avg_grade": "trung bình {{grade}}", "certificates": "Chứng chỉ", "connections": "Lượt kết nối", "last": "lần cuối {{date}}" },
-        "tabs": { "connections": "Lượt kết nối", "courses": "Khóa học", "assignments": "Bài tập", "code": "Mã", "community": "Cộng đồng", "certificates": "Chứng chỉ", "behavior": "Hành vi" },
-        "identity": { "verified": "Đã xác minh", "unverified": "Chưa xác minh", "via": "qua {{method}}" },
-        "connections": { "title": "Lượt kết nối", "empty": "Chưa có lượt kết nối nào được ghi lại." },
-        "courses": { "title": "Tiến độ khóa học", "empty": "Chưa đăng ký khóa học nào.", "activities": "{{done}}/{{total}} hoạt động", "enrolled": "Đã đăng ký {{date}}" },
-        "assignments": { "title": "Bài tập", "empty": "Không có bài nộp.", "attempt": "lần thử {{number}}", "feedback": "Phản hồi:" },
-        "code": { "title": "Bài tập mã", "empty": "Không có bài nộp mã.", "activity": "Hoạt động", "result": "Kết quả", "tests": "Kiểm thử", "time": "Thời gian", "when": "Khi nào", "passed": "Đạt", "failed": "Không đạt" },
-        "community": { "title": "Tham gia cộng đồng", "empty": "Không có hoạt động cộng đồng.", "discussions": "Thảo luận", "comments": "Bình luận" },
-        "certificates": { "title": "Chứng chỉ đã đạt", "empty": "Chưa đạt chứng chỉ nào." },
-        "behavior": { "title": "Phân tích hành vi", "time_by_course": "Thời gian dùng theo khóa học", "searches": "Lượt tìm kiếm" },
-        "status": { "completed": "đã hoàn thành", "in_progress": "đang thực hiện", "paused": "đã tạm dừng", "cancelled": "đã hủy", "graded": "đã chấm điểm", "submitted": "đã nộp", "pending": "đang chờ", "late": "trễ hạn", "not_submitted": "chưa nộp" },
-        "comparison": { "student": "Học viên", "enrolled": "Đã đăng ký", "completed": "Đã hoàn thành", "certificates": "Chứng chỉ", "last_connection": "Lần kết nối cuối", "view": "Xem" }
+        "ranges": {
+          "d30": "30 ngày",
+          "d90": "90 ngày",
+          "y1": "1 năm"
+        },
+        "kpi": {
+          "courses": "Khóa học",
+          "completed": "{{count}} đã hoàn thành",
+          "avg_progress": "Tiến độ trung bình",
+          "time_spent": "Thời gian đã dùng",
+          "assignments": "Bài tập",
+          "avg_grade": "trung bình {{grade}}",
+          "certificates": "Chứng chỉ",
+          "connections": "Lượt kết nối",
+          "last": "lần cuối {{date}}"
+        },
+        "tabs": {
+          "connections": "Lượt kết nối",
+          "courses": "Khóa học",
+          "assignments": "Bài tập",
+          "code": "Mã",
+          "community": "Cộng đồng",
+          "certificates": "Chứng chỉ",
+          "behavior": "Hành vi"
+        },
+        "identity": {
+          "verified": "Đã xác minh",
+          "unverified": "Chưa xác minh",
+          "via": "qua {{method}}"
+        },
+        "connections": {
+          "title": "Lượt kết nối",
+          "empty": "Chưa có lượt kết nối nào được ghi lại."
+        },
+        "courses": {
+          "title": "Tiến độ khóa học",
+          "empty": "Chưa đăng ký khóa học nào.",
+          "activities": "{{done}}/{{total}} hoạt động",
+          "enrolled": "Đã đăng ký {{date}}"
+        },
+        "assignments": {
+          "title": "Bài tập",
+          "empty": "Không có bài nộp.",
+          "attempt": "lần thử {{number}}",
+          "feedback": "Phản hồi:"
+        },
+        "code": {
+          "title": "Bài tập mã",
+          "empty": "Không có bài nộp mã.",
+          "activity": "Hoạt động",
+          "result": "Kết quả",
+          "tests": "Kiểm thử",
+          "time": "Thời gian",
+          "when": "Khi nào",
+          "passed": "Đạt",
+          "failed": "Không đạt"
+        },
+        "community": {
+          "title": "Tham gia cộng đồng",
+          "empty": "Không có hoạt động cộng đồng.",
+          "discussions": "Thảo luận",
+          "comments": "Bình luận"
+        },
+        "certificates": {
+          "title": "Chứng chỉ đã đạt",
+          "empty": "Chưa đạt chứng chỉ nào."
+        },
+        "behavior": {
+          "title": "Phân tích hành vi",
+          "time_by_course": "Thời gian dùng theo khóa học",
+          "searches": "Lượt tìm kiếm"
+        },
+        "status": {
+          "completed": "đã hoàn thành",
+          "in_progress": "đang thực hiện",
+          "paused": "đã tạm dừng",
+          "cancelled": "đã hủy",
+          "graded": "đã chấm điểm",
+          "submitted": "đã nộp",
+          "pending": "đang chờ",
+          "late": "trễ hạn",
+          "not_submitted": "chưa nộp"
+        },
+        "comparison": {
+          "student": "Học viên",
+          "enrolled": "Đã đăng ký",
+          "completed": "Đã hoàn thành",
+          "certificates": "Chứng chỉ",
+          "last_connection": "Lần kết nối cuối",
+          "view": "Xem"
+        }
       },
       "active_users": {
         "title": "Người dùng đang hoạt động",
