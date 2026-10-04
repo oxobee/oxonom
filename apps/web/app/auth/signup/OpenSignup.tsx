@@ -23,8 +23,7 @@ import CustomSignupFields, {
   validateCustomFields,
 } from '@components/Auth/CustomSignupFields'
 import { readSignupFields, type SignupFieldItem } from '@services/settings/org'
-import { validateTcKimlik, lookupTcRecord, fetchMernisData, type TcRecord } from '@services/demo/schoolDirectory'
-import TcKimlikModal from '@components/Objects/TcKimlikModal'
+import { validateTcKimlik } from '@services/demo/schoolDirectory'
 import toast from 'react-hot-toast'
 
 const validate = (values: any, t: any, customFields: SignupFieldItem[]) => {
@@ -106,96 +105,55 @@ function OpenSignUpComponent({ org: propOrg }: OpenSignUpComponentProps = {}) {
 
   // Student Extra & Multi-Parent Information
   const [tcNo, setTcNo] = React.useState('')
-  const [isTcModalOpen, setIsTcModalOpen] = React.useState(false)
   const [tcStatus, setTcStatus] = React.useState<'idle' | 'valid' | 'invalid'>('idle')
   const [tcError, setTcError] = React.useState('')
-  const [verifiedRecord, setVerifiedRecord] = React.useState<TcRecord | null>(null)
-  const [isSyncingMernis, setIsSyncingMernis] = React.useState(false)
-
-  const applyRecordToForm = (record: TcRecord, notify = true) => {
-    if (!record) return
-    setVerifiedRecord(record)
-    setTcStatus('valid')
-    setTcError('')
-    
-    // Formik isim-soyisim güncellemesi
-    if (record.first_name) formik.setFieldValue('first_name', record.first_name)
-    if (record.last_name) formik.setFieldValue('last_name', record.last_name)
-    
-    // Doğum tarihi, kan grubu, adres
-    if (record.birthDate) setBirthDate(record.birthDate)
-    if (record.bloodType) setBloodType(record.bloodType)
-    if (record.address) setAddress(record.address)
-
-    // Veli / Aile bilgileri: Kayıt ekranındaki Veli Bilgileri alanına doldurulur
-    if (record.parents && record.parents.length > 0) {
-      setParents(record.parents)
-    } else {
-      const pList: any[] = []
-      if (record.motherName) {
-        pList.push({ name: record.motherName, relation: 'Anne', phone: '', occupation: '', email: '' })
-      }
-      if (record.fatherName) {
-        pList.push({ name: record.fatherName, relation: 'Baba', phone: '', occupation: '', email: '' })
-      }
-      if (pList.length > 0) {
-        setParents(pList)
-      }
-    }
-
-    if (notify) {
-      toast.success(`✨ T.C. Doğrulandı: ${record.name} (${record.role})`)
-    }
-  }
-
-  const handleTcVerified = (record: any) => {
-    if (!record) return
-    applyRecordToForm(record, false)
-  }
+  const [isShaking, setIsShaking] = React.useState(false)
 
   const handleTcChange = (val: string) => {
     const clean = val.replace(/\D/g, '').slice(0, 11)
     setTcNo(clean)
     if (clean.length === 11) {
       const check = validateTcKimlik(clean)
-      if (!check.valid) {
-        setTcStatus('invalid')
-        setTcError(check.message || 'Geçersiz T.C. Kimlik No')
-        setVerifiedRecord(null)
-      } else {
+      if (check.valid) {
         setTcStatus('valid')
         setTcError('')
-        const found = lookupTcRecord(clean)
-        if (found) {
-          applyRecordToForm(found, true)
-        }
+        setIsShaking(false)
+      } else {
+        setTcStatus('invalid')
+        setTcError(check.message || 'Geçersiz T.C. Kimlik Numarası')
+        setIsShaking(true)
+        setTimeout(() => setIsShaking(false), 500)
       }
     } else {
       setTcStatus('idle')
       setTcError('')
-      setVerifiedRecord(null)
+      setIsShaking(false)
     }
   }
 
-  const syncWithMernis = async (targetTc?: string) => {
-    const code = targetTc || tcNo
-    if (!code || code.length !== 11) {
-      toast.error('Lütfen 11 haneli T.C. Kimlik numaranızı eksiksiz giriniz.')
+  const handleTcBlur = () => {
+    if (!tcNo || tcNo.length === 0) {
+      setTcStatus('idle')
+      setTcError('')
       return
     }
-    setIsSyncingMernis(true)
-    try {
-      const res = await fetchMernisData(code)
-      if (res.success && res.record) {
-        applyRecordToForm(res.record, false)
-        toast.success(`✨ MERNİS üzerinden güncellendi: ${res.record.name} (${res.record.role}) - Tüm resmi nüfus bilgileri güncellendi.`)
-      } else {
-        toast.error(res.message || 'MERNİS veritabanı sorgusu başarısız oldu.')
-      }
-    } catch {
-      toast.error('MERNİS bağlantısı sırasında bir hata oluştu.')
-    } finally {
-      setIsSyncingMernis(false)
+    if (tcNo.length < 11) {
+      setTcStatus('invalid')
+      setTcError('T.C. Kimlik Numarası tam 11 rakamdan oluşmalıdır.')
+      setIsShaking(true)
+      setTimeout(() => setIsShaking(false), 500)
+      return
+    }
+    const check = validateTcKimlik(tcNo)
+    if (check.valid) {
+      setTcStatus('valid')
+      setTcError('')
+      setIsShaking(false)
+    } else {
+      setTcStatus('invalid')
+      setTcError(check.message || 'Geçersiz T.C. Kimlik Numarası')
+      setIsShaking(true)
+      setTimeout(() => setIsShaking(false), 500)
     }
   }
 
@@ -283,7 +241,9 @@ function OpenSignUpComponent({ org: propOrg }: OpenSignUpComponentProps = {}) {
         if (!check.valid) {
           setTcStatus('invalid')
           setTcError(check.message || 'Geçersiz T.C. Kimlik Numarası.')
-          setIsTcModalOpen(true)
+          setIsShaking(true)
+          setTimeout(() => setIsShaking(false), 500)
+          setError('Lütfen geçerli bir T.C. Kimlik Numarası giriniz.')
           return
         }
       }
@@ -570,41 +530,80 @@ function OpenSignUpComponent({ org: propOrg }: OpenSignUpComponentProps = {}) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <label className="block text-[11px] font-semibold text-gray-600">T.C. Kimlik No</label>
-                      <button
-                        type="button"
-                        onClick={() => setIsTcModalOpen(true)}
-                        className="text-[10px] text-indigo-600 hover:text-indigo-800 font-bold hover:underline cursor-pointer"
-                      >
-                        T.C. Doğrula
-                      </button>
+                      <label className="block text-[11px] font-semibold text-gray-700">T.C. Kimlik No</label>
+                      {tcNo.length > 0 && tcNo.length < 11 && (
+                        <span className="text-[10px] text-gray-400 font-mono">
+                          {tcNo.length}/11 hane
+                        </span>
+                      )}
                     </div>
                     <div className="relative">
                       <input
                         type="text"
+                        inputMode="numeric"
                         maxLength={11}
                         placeholder="11 haneli T.C. No"
                         value={tcNo}
                         onChange={(e) => handleTcChange(e.target.value)}
-                        className={`w-full text-xs px-2.5 py-1.5 rounded-md border font-mono transition-colors focus:outline-none focus:ring-1 ${
+                        onBlur={handleTcBlur}
+                        className={`w-full text-xs px-2.5 py-1.5 rounded-md border font-mono transition-all duration-200 outline-none ${
                           tcStatus === 'valid'
-                            ? 'border-emerald-400 bg-emerald-50/30 text-emerald-950 focus:ring-emerald-500'
+                            ? 'border-emerald-500 bg-emerald-50/70 text-emerald-950 ring-2 ring-emerald-400/40 shadow-xs'
                             : tcStatus === 'invalid'
-                            ? 'border-rose-400 bg-rose-50/30 text-rose-950 focus:ring-rose-500'
-                            : 'border-gray-200 focus:ring-indigo-500'
+                            ? `border-rose-500 bg-rose-50/70 text-rose-950 ring-2 ring-rose-400/40 shadow-xs ${
+                                isShaking ? 'animate-pin-shake' : ''
+                              }`
+                            : 'border-gray-200 bg-white hover:border-gray-300 focus:ring-1 focus:ring-indigo-500'
                         }`}
                       />
                       {tcStatus === 'valid' && (
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-emerald-600 font-bold">
-                          ✓ Onaylı
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[10px] text-emerald-700 bg-emerald-100/90 px-2 py-0.5 rounded-full font-extrabold border border-emerald-300 shadow-2xs animate-in zoom-in-90 duration-200">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                          ✓ Geçerli
                         </span>
                       )}
                       {tcStatus === 'invalid' && (
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-rose-600 font-bold">
-                          Geçersiz
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[10px] text-rose-700 bg-rose-100/90 px-2 py-0.5 rounded-full font-extrabold border border-rose-300 shadow-2xs animate-in zoom-in-90 duration-200">
+                          ✕ Geçersiz
                         </span>
                       )}
                     </div>
+
+                    {/* Sevimli Yeşil Onay Animasyonu & Rozeti */}
+                    {tcStatus === 'valid' && (
+                      <div className="mt-1.5 p-2 px-2.5 rounded-xl bg-emerald-50/90 border border-emerald-200 text-xs text-emerald-900 flex items-center gap-2 shadow-2xs animate-in zoom-in-95 duration-200">
+                        <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center font-black text-xs shrink-0 animate-bounce shadow-xs">
+                          ✓
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-[11px] font-extrabold text-emerald-800 leading-tight">
+                            T.C. Kimlik Numarası Doğrulandı
+                          </div>
+                          <div className="text-[10px] text-emerald-600 font-medium">
+                            Resmi T.C. kimlik algoritma kurallarına uygundur.
+                          </div>
+                        </div>
+                        <span className="text-base select-none">✨</span>
+                      </div>
+                    )}
+
+                    {/* Sevimli Kırmızı Hata Animasyonu & Uyarısı */}
+                    {tcStatus === 'invalid' && (
+                      <div className="mt-1.5 p-2 px-2.5 rounded-xl bg-rose-50/90 border border-rose-200 text-xs text-rose-900 flex items-center gap-2 shadow-2xs animate-pin-shake duration-200">
+                        <div className="w-5 h-5 rounded-full bg-rose-500 text-white flex items-center justify-center font-black text-xs shrink-0 shadow-xs">
+                          !
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-[11px] font-extrabold text-rose-800 leading-tight">
+                            Geçersiz T.C. Kimlik Numarası
+                          </div>
+                          <div className="text-[10px] text-rose-600 font-medium">
+                            {tcError || 'Böyle bir T.C. Kimlik Numarası bulunamadı, lütfen kontrol ediniz.'}
+                          </div>
+                        </div>
+                        <span className="text-base select-none">⚠️</span>
+                      </div>
+                    )}
                   </div>
                   <div>
                     <label className="block text-[11px] font-semibold text-gray-600 mb-1">Doğum Tarihi</label>
@@ -616,41 +615,6 @@ function OpenSignUpComponent({ org: propOrg }: OpenSignUpComponentProps = {}) {
                     />
                   </div>
                 </div>
-
-                {/* MERNİS Bilgilendirme ve Güncelleme Butonu */}
-                {tcNo.length === 11 && (
-                  <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200 text-xs text-emerald-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs animate-in fade-in-50 duration-200">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0">
-                        <ShieldCheck className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <div className="font-extrabold flex items-center gap-2 text-sm text-gray-900">
-                          <span>{verifiedRecord?.name || 'T.C. Kimlik No Doğrulandı'}</span>
-                          {verifiedRecord?.role && (
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
-                              {verifiedRecord.role}
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-[11px] text-emerald-700 font-medium mt-0.5">
-                          T.C. Nüfus ve Vatandaşlık İşleri (MERNİS) Kaydı Doğrulandı
-                        </div>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => syncWithMernis()}
-                      disabled={isSyncingMernis}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-100 font-bold text-xs transition-colors shadow-2xs shrink-0 cursor-pointer disabled:opacity-50"
-                      title="Nüfus ve Vatandaşlık İşleri (MERNİS) üzerinden en güncel resmi nüfus kaydını çek"
-                    >
-                      <RefreshCw className={`w-3.5 h-3.5 ${isSyncingMernis ? 'animate-spin text-emerald-600' : 'text-emerald-700'}`} />
-                      <span>{isSyncingMernis ? 'MERNİS Sorgulanıyor...' : 'MERNİS Üzerinden Güncelle'}</span>
-                    </button>
-                  </div>
-                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div>
@@ -970,14 +934,6 @@ function OpenSignUpComponent({ org: propOrg }: OpenSignUpComponentProps = {}) {
             {t('auth.login')}
           </Link>
         </p>
-
-        {/* T.C. Kimlik Verification Modal */}
-        <TcKimlikModal
-          isOpen={isTcModalOpen}
-          onClose={() => setIsTcModalOpen(false)}
-          initialTc={tcNo}
-          onVerified={handleTcVerified}
-        />
       </div>
     </div>
   )
