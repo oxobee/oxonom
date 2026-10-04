@@ -21,9 +21,13 @@ export default function DrawingStrokeComponent({ node, updateAttributes, selecte
   const triggerCorrection = useCallback(() => {
     const analysis = analyzeStroke({ pathData, viewBox, width: svgWidth, height: svgHeight })
     if (analysis.kind === 'shape') {
+      const newX = Math.round(x + (svgWidth - analysis.width) / 2)
+      const newY = Math.round(y + (svgHeight - analysis.height) / 2)
       updateAttributes({
         pathData: analysis.pathData,
         viewBox: analysis.viewBox,
+        x: newX,
+        y: newY,
       })
       toast.success(`Şekil geometrik olarak düzeltildi: ${analysis.shapeName} ✨`, { id: 'stroke-correct' })
     } else if (analysis.kind === 'text') {

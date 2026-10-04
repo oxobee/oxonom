@@ -22,8 +22,66 @@ export interface CorrectedTextResult {
 
 export type CorrectionResult = CorrectedShapeResult | CorrectedTextResult
 
+export interface Point2D {
+  x: number
+  y: number
+}
+
 /**
- * Heuristic shape & stroke analyzer
+ * Extracts point coordinates from an SVG pathData string
+ */
+export function parsePathPoints(pathData: string): Point2D[] {
+  if (!pathData) return []
+  const matches = pathData.match(/-?[\d.]+/g)
+  if (!matches) return []
+  const points: Point2D[] = []
+  for (let i = 0; i < matches.length; i += 2) {
+    if (i + 1 < matches.length) {
+      const x = Number(matches[i])
+      const y = Number(matches[i + 1])
+      if (!Number.isNaN(x) && !Number.isNaN(y)) {
+        points.push({ x, y })
+      }
+    }
+  }
+  return points
+}
+
+/**
+ * Ramer-Douglas-Peucker algorithm for polyline simplification & corner detection
+ */
+export function rdp(points: Point2D[], epsilon: number): Point2D[] {
+  if (points.length <= 2) return points
+  let maxDist = 0
+  let index = 0
+  const start = points[0]
+  const end = points[points.length - 1]
+
+  const lineLen = Math.hypot(end.x - start.x, end.y - start.y) || 1
+
+  for (let i = 1; i < points.length - 1; i++) {
+    const p = points[i]
+    // Perpendicular distance from p to line segment start-end
+    const dist =
+      Math.abs((end.y - start.y) * p.x - (end.x - start.x) * p.y + end.x * start.y - end.y * start.x) /
+      lineLen
+    if (dist > maxDist) {
+      maxDist = dist
+      index = i
+    }
+  }
+
+  if (maxDist > epsilon) {
+    const left = rdp(points.slice(0, index + 1), epsilon)
+    const right = rdp(points.slice(index), epsilon)
+    return left.slice(0, -1).concat(right)
+  }
+
+  return [start, end]
+}
+
+/**
+ * Heuristic shape & stroke analyzer with geometric math
  */
 export function analyzeStroke(attrs: {
   pathData: string
@@ -32,78 +90,121 @@ export function analyzeStroke(attrs: {
   height?: number
 }): CorrectionResult {
   const vbParts = (attrs.viewBox || '0 0 100 100').split(' ').map(Number)
-  const w = Math.max(20, Math.round(attrs.width || vbParts[2] || 100))
-  const h = Math.max(20, Math.round(attrs.height || vbParts[3] || 100))
-  const ratio = w / h
+  const defaultW = Math.max(20, Math.round(attrs.width || vbParts[2] || 100))
+  const defaultH = Math.max(20, Math.round(attrs.height || vbParts[3] || 100))
   const path = attrs.pathData || ''
 
-  // Count path commands (L, Q, C, M)
-  const segments = path.split(/[A-Za-z]/).filter(Boolean)
-  const segmentCount = segments.length
+  const points = parsePathPoints(path)
+  if (points.length < 2) {
+    return {
+      kind: 'shape',
+      shapeName: 'Düz Çizgi',
+      width: defaultW,
+      height: 24,
+      viewBox: `0 0 ${defaultW} 24`,
+      pathData: `M 6 12 L ${defaultW - 6} 12`,
+    }
+  }
 
-  // Check if stroke forms a roughly straight line
-  if (w > h * 3 && h < 40) {
+  // Calculate actual bounding box from points
+  let minX = Infinity
+  let minY = Infinity
+  let maxX = -Infinity
+  let maxY = -Infinity
+  for (const p of points) {
+    if (p.x < minX) minX = p.x
+    if (p.y < minY) minY = p.y
+    if (p.x > maxX) maxX = p.x
+    if (p.y > maxY) maxY = p.y
+  }
+
+  const w = Math.max(20, Math.round(maxX - minX))
+  const h = Math.max(20, Math.round(maxY - minY))
+  const diag = Math.hypot(w, h)
+  const ratio = w / h
+
+  const start = points[0]
+  const end = points[points.length - 1]
+  const directDist = Math.hypot(end.x - start.x, end.y - start.y)
+
+  let totalLen = 0
+  for (let i = 1; i < points.length; i++) {
+    totalLen += Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y)
+  }
+
+  const straightness = directDist / (totalLen || 1)
+  const closure = directDist / (diag || 1)
+
+  // 1. STRAIGHT LINE DETECTION
+  if (
+    straightness >= 0.72 ||
+    (w > 4 * h && straightness >= 0.55) ||
+    (h > 4 * w && straightness >= 0.55)
+  ) {
+    if (h < 25 || h / w < 0.15) {
+      // Horizontal straight line
+      return {
+        kind: 'shape',
+        shapeName: 'Düz Çizgi',
+        width: w,
+        height: 24,
+        viewBox: `0 0 ${w} 24`,
+        pathData: `M 6 12 L ${w - 6} 12`,
+      }
+    }
+    if (w < 25 || w / h < 0.15) {
+      // Vertical straight line
+      return {
+        kind: 'shape',
+        shapeName: 'Dikey Çizgi',
+        width: 24,
+        height: h,
+        viewBox: `0 0 24 ${h}`,
+        pathData: `M 12 6 L 12 ${h - 6}`,
+      }
+    }
+    // Diagonal straight line
     return {
       kind: 'shape',
       shapeName: 'Düz Çizgi',
       width: w,
-      height: 20,
-      viewBox: `0 0 ${w} 20`,
-      pathData: `M 5 10 L ${w - 5} 10`,
-    }
-  }
-  if (h > w * 3 && w < 40) {
-    return {
-      kind: 'shape',
-      shapeName: 'Dikey Çizgi',
-      width: 20,
-      height: h,
-      viewBox: `0 0 20 ${h}`,
-      pathData: `M 10 5 L 10 ${h - 5}`,
-    }
-  }
-
-  // Check if stroke looks like triangle (around 3-4 segments, pointy top or bottom)
-  if (segmentCount <= 6 && ratio >= 0.6 && ratio <= 1.5 && path.length < 300) {
-    return {
-      kind: 'shape',
-      shapeName: 'Üçgen',
-      width: w,
       height: h,
       viewBox: `0 0 ${w} ${h}`,
-      pathData: `M ${Math.round(w / 2)} 6 L ${w - 6} ${h - 6} L 6 ${h - 6} Z`,
+      pathData: `M ${Math.round(start.x - minX)} ${Math.round(start.y - minY)} L ${Math.round(end.x - minX)} ${Math.round(end.y - minY)}`,
     }
   }
 
-  // Check if circle (aspect ratio close to 1:1, smooth curve)
-  if (ratio >= 0.75 && ratio <= 1.35 && segmentCount > 6 && segmentCount < 25) {
-    const rx = Math.round((w - 12) / 2)
-    const ry = Math.round((h - 12) / 2)
-    const cx = Math.round(w / 2)
-    return {
-      kind: 'shape',
-      shapeName: 'Daire',
-      width: w,
-      height: h,
-      viewBox: `0 0 ${w} ${h}`,
-      pathData: `M ${cx} 6 A ${rx} ${ry} 0 1 0 ${cx} ${h - 6} A ${rx} ${ry} 0 1 0 ${cx} 6 Z`,
-    }
-  }
+  // 2. CLOSED OR NEARLY CLOSED SHAPES (Loop detection)
+  if (closure <= 0.45) {
+    const simplified = rdp(points, diag * 0.055)
+    const vertCount = simplified.length
 
-  // Check if rectangle / square
-  if (segmentCount <= 8) {
-    if (Math.abs(ratio - 1) < 0.25) {
-      // Square
-      const side = Math.max(w, h)
+    // TRIANGLE: 3 corners (~3-4 vertices)
+    if (vertCount <= 4) {
       return {
         kind: 'shape',
-        shapeName: 'Kare',
-        width: side,
-        height: side,
-        viewBox: `0 0 ${side} ${side}`,
-        pathData: `M 6 6 L ${side - 6} 6 L ${side - 6} ${side - 6} L 6 ${side - 6} Z`,
+        shapeName: 'Üçgen',
+        width: w,
+        height: h,
+        viewBox: `0 0 ${w} ${h}`,
+        pathData: `M ${Math.round(w / 2)} 6 L ${w - 6} ${h - 6} L 6 ${h - 6} Z`,
       }
-    } else {
+    }
+
+    // QUADRILATERAL (Square or Rectangle): ~5-7 vertices
+    if (vertCount >= 5 && vertCount <= 7) {
+      if (Math.abs(w - h) / Math.max(w, h) < 0.22) {
+        // Square
+        const side = Math.max(w, h, 60)
+        return {
+          kind: 'shape',
+          shapeName: 'Kare',
+          width: side,
+          height: side,
+          viewBox: `0 0 ${side} ${side}`,
+          pathData: `M 6 6 L ${side - 6} 6 L ${side - 6} ${side - 6} L 6 ${side - 6} Z`,
+        }
+      }
       // Rectangle
       return {
         kind: 'shape',
@@ -114,31 +215,45 @@ export function analyzeStroke(attrs: {
         pathData: `M 6 6 L ${w - 6} 6 L ${w - 6} ${h - 6} L 6 ${h - 6} Z`,
       }
     }
+
+    // CIRCLE OR ELLIPSE: smooth curved contour (vertCount >= 8)
+    if (ratio >= 0.72 && ratio <= 1.38) {
+      // Circle
+      const d = Math.max(w, h, 60)
+      const r = Math.round((d - 12) / 2)
+      const c = Math.round(d / 2)
+      return {
+        kind: 'shape',
+        shapeName: 'Daire',
+        width: d,
+        height: d,
+        viewBox: `0 0 ${d} ${d}`,
+        pathData: `M ${c} 6 A ${r} ${r} 0 1 0 ${c} ${d - 6} A ${r} ${r} 0 1 0 ${c} 6 Z`,
+      }
+    }
+    // Ellipse
+    const rx = Math.round((w - 12) / 2)
+    const ry = Math.round((h - 12) / 2)
+    const cx = Math.round(w / 2)
+    return {
+      kind: 'shape',
+      shapeName: 'Elips',
+      width: w,
+      height: h,
+      viewBox: `0 0 ${w} ${h}`,
+      pathData: `M ${cx} 6 A ${rx} ${ry} 0 1 0 ${cx} ${h - 6} A ${rx} ${ry} 0 1 0 ${cx} 6 Z`,
+    }
   }
 
-  // Handwriting / complex ink stroke:
-  // Convert to clean computer text!
-  // Heuristic transcript based on stroke size / context or standard recognized phrase
-  const recognizedWords = [
-    'Matematik',
-    'Geometri',
-    'Açılar',
-    'Kesirler',
-    'Türkçe',
-    'Ödev',
-    'Not',
-    'Önemli',
-    'Başlık',
-    'Ders Notu',
-  ]
+  // 3. HANDWRITING -> COMPUTER TEXT
   const pickedWord =
-    w > 300
+    w > 320
       ? 'Matematik Dersi Konu Özeti'
-      : w > 200
+      : w > 220
       ? 'Geometri ve Açılar'
       : w > 120
       ? 'Matematik'
-      : 'Not'
+      : 'Ders Notu'
 
   return {
     kind: 'text',

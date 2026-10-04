@@ -1250,7 +1250,10 @@ function BoardEditorInner({
           board={board}
           accessToken={accessToken}
         />
-        {/* Whiteboard Multi-page Tab System */}
+      </div>
+
+      {/* Whiteboard Multi-page Tab System (Floating prominently above the bottom toolbar) */}
+      <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-30 pointer-events-auto max-w-[95vw] animate-in fade-in slide-in-from-bottom-2 duration-200">
         <BoardTabBar
           tabs={tabs}
           activeTabId={activeTabId}
@@ -1293,6 +1296,8 @@ function BoardEditorInner({
           selectedShape={selectedShape}
           onSelectShape={setSelectedShape}
           onClearAll={() => setConfirmClearOpen(true)}
+          onAddTab={() => handleAddTab()}
+          activeTabTitle={tabs.find((t) => t.id === activeTabId)?.title}
         />
       )}
 

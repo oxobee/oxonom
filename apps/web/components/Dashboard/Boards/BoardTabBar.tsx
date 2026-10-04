@@ -148,7 +148,9 @@ export default function BoardTabBar({
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation()
-                        onDeleteTab(tab.id)
+                        if (window.confirm(`"${tab.title}" sayfasını silmek istediğinize emin misiniz?`)) {
+                          onDeleteTab(tab.id)
+                        }
                       }}
                       className="p-0.5 hover:text-rose-400 rounded"
                       title="Sayfayı Sil"

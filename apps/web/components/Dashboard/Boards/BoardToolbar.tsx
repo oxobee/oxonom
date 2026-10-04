@@ -30,6 +30,7 @@ import {
   DotsThreeCircle,
   ArrowCounterClockwise,
   ArrowClockwise,
+  Plus,
 } from '@phosphor-icons/react'
 import { DividerVerticalIcon } from '@radix-ui/react-icons'
 import * as Popover from '@radix-ui/react-popover'
@@ -69,6 +70,8 @@ interface BoardToolbarProps {
   selectedShape?: ShapeType
   onSelectShape?: (shape: ShapeType) => void
   onClearAll?: () => void
+  onAddTab?: () => void
+  activeTabTitle?: string
 }
 
 const DRAW_COLORS = [
@@ -103,6 +106,8 @@ export default function BoardToolbar({
   selectedShape = 'square',
   onSelectShape,
   onClearAll,
+  onAddTab,
+  activeTabTitle,
 }: BoardToolbarProps) {
   const { t } = useTranslation()
   const [drawPopoverOpen, setDrawPopoverOpen] = useState(false)
@@ -150,6 +155,20 @@ export default function BoardToolbar({
             />
           </div>
         </Link>
+
+        {/* Plus (+) Button for New Board Tab / Page as requested */}
+        {onAddTab && (
+          <ToolTip content="Yeni Sayfa Ekle (+)">
+            <div
+              onClick={onAddTab}
+              className="editor-tool-btn text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 transition-colors cursor-pointer"
+              role="button"
+              tabIndex={0}
+            >
+              <Plus size={16} weight="bold" />
+            </div>
+          </ToolTip>
+        )}
 
         <DividerVerticalIcon style={{ color: 'grey', opacity: '0.4' }} />
 
@@ -497,6 +516,17 @@ export default function BoardToolbar({
 
       {/* ─── MOBILE TOOL DOCK ────────────────────────────────────────────── */}
       <div className="flex md:hidden fixed bottom-3 left-1/2 -translate-x-1/2 z-40 items-center gap-1.5 bg-white/95 backdrop-blur-md px-3 py-2 rounded-2xl shadow-xl border border-neutral-200/80 max-w-[95vw]">
+        {onAddTab && (
+          <button
+            type="button"
+            onClick={onAddTab}
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-indigo-600 bg-indigo-50 hover:bg-indigo-100 transition-colors shrink-0"
+            title="Yeni Sayfa Ekle"
+          >
+            <Plus size={16} weight="bold" />
+          </button>
+        )}
+
         <button
           type="button"
           onClick={() => onToolModeChange('select')}
