@@ -74,16 +74,50 @@ export default function VoiceRecordingStudio({
     }
   }
 
-  // Draw real-time audio visualizer
+  // Draw resting / flat baseline bars on canvas
+  const drawRestingSpectrum = () => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    const barCount = 36
+    const totalGap = (barCount - 1) * 3
+    const barWidth = Math.max(3, (canvas.width - 24 - totalGap) / barCount)
+    let x = 12
+    const cy = canvas.height / 2
+    for (let i = 0; i < barCount; i++) {
+      ctx.fillStyle = '#6b21a8' // purple-800
+      ctx.beginPath()
+      ctx.roundRect(x, cy - 2, barWidth, 4, [2, 2, 2, 2])
+      ctx.fill()
+      x += barWidth + 3
+    }
+  }
+
+  // Draw real-time audio visualizer spectrum
   const startVisualizer = (stream: MediaStream) => {
     try {
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current)
+        animFrameRef.current = null
+      }
+
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
       if (!AudioCtx) return
 
-      const ctx = new AudioCtx()
-      audioContextRef.current = ctx
+      let ctx = audioContextRef.current
+      if (!ctx || ctx.state === 'closed') {
+        ctx = new AudioCtx()
+        audioContextRef.current = ctx
+      }
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(() => {})
+      }
+
       const analyser = ctx.createAnalyser()
       analyser.fftSize = 64
+      analyser.smoothingTimeConstant = 0.8
       analyserRef.current = analyser
 
       const source = ctx.createMediaStreamSource(stream)
@@ -97,31 +131,42 @@ export default function VoiceRecordingStudio({
       const canvasCtx = canvas.getContext('2d')
       if (!canvasCtx) return
 
+      let phase = 0
+
       const draw = () => {
         if (!canvasRef.current) return
         animFrameRef.current = requestAnimationFrame(draw)
 
         analyser.getByteFrequencyData(dataArray)
-
         canvasCtx.clearRect(0, 0, canvas.width, canvas.height)
 
-        const barWidth = (canvas.width / bufferLength) * 1.5
-        let barHeight: number
-        let x = 0
+        phase += 0.08
+        const barCount = 36
+        const totalGap = (barCount - 1) * 3
+        const barWidth = Math.max(3, (canvas.width - 24 - totalGap) / barCount)
+        let x = 12
+        const centerY = canvas.height / 2
 
-        for (let i = 0; i < bufferLength; i++) {
-          barHeight = (dataArray[i] / 255) * canvas.height * 0.9
+        for (let i = 0; i < barCount; i++) {
+          const binIdx = Math.floor((i / barCount) * bufferLength)
+          const freqVal = (dataArray[binIdx] || 0) / 255
 
-          const gradient = canvasCtx.createLinearGradient(0, canvas.height, 0, 0)
-          gradient.addColorStop(0, '#9333ea') // purple-600
-          gradient.addColorStop(1, '#c084fc') // purple-400
+          const synthWave = Math.sin(phase + i * 0.35) * 0.35 + 0.35
+          const combinedHeight = Math.max(0.08, freqVal * 0.85 + synthWave * (freqVal > 0.05 ? 0.3 : 0.2))
+          const totalBarH = Math.max(6, combinedHeight * (canvas.height - 8))
+          const halfH = totalBarH / 2
+
+          const gradient = canvasCtx.createLinearGradient(0, centerY - halfH, 0, centerY + halfH)
+          gradient.addColorStop(0, '#c084fc') // purple-400
+          gradient.addColorStop(0.5, '#e879f9') // fuchsia-400
+          gradient.addColorStop(1, '#818cf8') // indigo-400
 
           canvasCtx.fillStyle = gradient
           canvasCtx.beginPath()
-          canvasCtx.roundRect(x, canvas.height - Math.max(barHeight, 4), barWidth - 2, Math.max(barHeight, 4), [4, 4, 0, 0])
+          canvasCtx.roundRect(x, centerY - halfH, barWidth, totalBarH, [3, 3, 3, 3])
           canvasCtx.fill()
 
-          x += barWidth + 1
+          x += barWidth + 3
         }
       }
 
@@ -185,7 +230,11 @@ export default function VoiceRecordingStudio({
         }
 
         stopTracks()
-        if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
+        if (animFrameRef.current) {
+          cancelAnimationFrame(animFrameRef.current)
+          animFrameRef.current = null
+        }
+        drawRestingSpectrum()
       }
 
       mediaRecorder.start(250) // slice every 250ms
@@ -208,6 +257,11 @@ export default function VoiceRecordingStudio({
       mediaRecorderRef.current.pause()
       setRecordingState('paused')
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current)
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current)
+        animFrameRef.current = null
+      }
+      drawRestingSpectrum()
     }
   }
 
@@ -218,6 +272,9 @@ export default function VoiceRecordingStudio({
       timerIntervalRef.current = setInterval(() => {
         setDuration((prev) => prev + 1)
       }, 1000)
+      if (streamRef.current) {
+        startVisualizer(streamRef.current)
+      }
     }
   }
 
@@ -226,13 +283,21 @@ export default function VoiceRecordingStudio({
       mediaRecorderRef.current.stop()
       setRecordingState('stopped')
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current)
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current)
+        animFrameRef.current = null
+      }
+      drawRestingSpectrum()
     }
   }
 
   const resetRecording = () => {
     stopTracks()
     if (timerIntervalRef.current) clearInterval(timerIntervalRef.current)
-    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
+    if (animFrameRef.current) {
+      cancelAnimationFrame(animFrameRef.current)
+      animFrameRef.current = null
+    }
     setRecordingState('idle')
     setDuration(0)
     setAudioUrl('')
@@ -384,14 +449,25 @@ export default function VoiceRecordingStudio({
                 </div>
               </div>
 
-              {/* Dynamic Waveform Visualizer Canvas */}
-              <div className="w-full h-12 bg-purple-50/50 rounded-lg overflow-hidden border border-purple-100 flex items-center justify-center">
-                <canvas
-                  ref={canvasRef}
-                  width={380}
-                  height={48}
-                  className="w-full h-full"
-                />
+              {/* Dynamic Equalizer Spectrum Visualizer Canvas */}
+              <div className="w-full bg-slate-950 rounded-2xl overflow-hidden border border-purple-300/40 p-2.5 shadow-inner flex flex-col gap-1.5">
+                <div className="flex items-center justify-between px-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`w-2 h-2 rounded-full ${recordingState === 'recording' ? 'bg-red-400 animate-ping' : 'bg-amber-400'}`} />
+                    <span className="text-[10px] font-bold tracking-wider text-purple-200 uppercase">
+                      {recordingState === 'recording' ? 'Canlı Ses Spektrumu' : 'Kayıt Duraklatıldı'}
+                    </span>
+                  </div>
+                  <span className="text-[9px] font-mono font-bold text-purple-300/70">36-Bant Ekolayzer</span>
+                </div>
+                <div className="w-full h-12 flex items-center justify-center">
+                  <canvas
+                    ref={canvasRef}
+                    width={420}
+                    height={48}
+                    className="w-full h-full"
+                  />
+                </div>
               </div>
 
               {/* Control Buttons */}

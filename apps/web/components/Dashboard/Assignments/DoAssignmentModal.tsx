@@ -210,9 +210,10 @@ export default function DoAssignmentModal({
                 <span>Öğretmen: {assignment.teacher_name || 'Ders Öğretmeni'}</span>
                 <span>•</span>
                 {assignment.due_date && (
-                  <span className="flex items-center gap-1 font-semibold text-gray-700">
-                    <Calendar size={12} className="text-indigo-600" />
-                    Son Teslim Tarihi: {formatDueDate(assignment.due_date)}
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-300 text-amber-950 font-bold text-[11px] shadow-2xs">
+                    <Clock size={12} className="text-amber-600 animate-pulse shrink-0" />
+                    <span>Son Teslim Tarihi:</span>
+                    <span className="font-extrabold font-mono">{formatDueDate(assignment.due_date)}</span>
                   </span>
                 )}
               </DialogDescription>

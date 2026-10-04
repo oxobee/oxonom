@@ -32,10 +32,9 @@ export default function AssignmentFileViewer({
   if (!fileUrl) return null
 
   const isPdf =
-    fileType.includes('pdf') ||
-    fileName.toLowerCase().endsWith('.pdf') ||
-    fileUrl.startsWith('data:application/pdf') ||
-    fileUrl.includes('.pdf')
+    Boolean(fileType && fileType.includes('pdf')) ||
+    Boolean(fileName && fileName.toLowerCase().endsWith('.pdf')) ||
+    Boolean(fileUrl && (fileUrl.startsWith('data:application/pdf') || fileUrl.includes('.pdf')))
 
   const formatFileSize = (bytes?: number) => {
     if (!bytes) return ''

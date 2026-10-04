@@ -492,12 +492,19 @@ export default function SchoolAssignmentsPage() {
                     </div>
 
                     <div className="space-y-3 pt-3 border-t border-gray-100 text-xs">
-                      <div className="flex items-center justify-between text-gray-500 text-[11px]">
-                        <span className="flex items-center gap-1 font-medium text-gray-600">
-                          <Calendar size={12} className="text-indigo-600" />
-                          {asg.due_date ? `Son Teslim: ${formatDueDate(asg.due_date)}` : 'Süresiz'}
-                        </span>
-                        <span className="font-bold text-gray-800">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        {asg.due_date ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 font-bold text-[11px] shadow-2xs">
+                            <Clock size={12} className="text-amber-600 animate-pulse shrink-0" />
+                            <span>Son Teslim:</span>
+                            <span className="font-extrabold text-amber-950 font-mono">{formatDueDate(asg.due_date)}</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-100 text-gray-500 text-[10px] font-semibold">
+                            Süresiz
+                          </span>
+                        )}
+                        <span className="font-bold text-gray-800 text-[11px]">
                           {asg.total_submissions || 0} Teslim • {asg.graded_submissions || 0} Notlandı
                         </span>
                       </div>
@@ -646,11 +653,16 @@ export default function SchoolAssignmentsPage() {
                         )}
                       </div>
 
-                      <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-xs">
-                        <span className="text-[11px] text-gray-500 font-medium flex items-center gap-1">
-                          <Calendar size={12} className="text-indigo-600" />
-                          {asg.due_date ? `Son Teslim: ${formatDueDate(asg.due_date)}` : 'Süresiz'}
-                        </span>
+                      <div className="pt-3 border-t border-gray-100 flex items-center justify-between gap-2 flex-wrap text-xs">
+                        {asg.due_date ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 font-bold text-[11px] shadow-2xs">
+                            <Clock size={12} className="text-amber-600 animate-pulse shrink-0" />
+                            <span>Son Teslim:</span>
+                            <span className="font-extrabold text-amber-950 font-mono">{formatDueDate(asg.due_date)}</span>
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-gray-500 font-medium">Süresiz</span>
+                        )}
 
                         <button
                           type="button"

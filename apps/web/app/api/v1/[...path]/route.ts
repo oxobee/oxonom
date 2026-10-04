@@ -688,7 +688,9 @@ async function handleFallback(request: NextRequest, path: string): Promise<Respo
       const matchedAsg = SERVER_CUSTOM_ASSIGNMENTS.find((a) => a.assignment_uuid === asgUuid || String(a.id) === asgUuid) ||
                          DEFAULT_SCHOOL_ASSIGNMENTS.find((a) => a.assignment_uuid === asgUuid || String(a.id) === asgUuid) ||
                          DEFAULT_SCHOOL_ASSIGNMENTS[0]
-      const subData = generateAssignmentSubmissionsData(asgUuid, activeClassItem, matchedAsg?.due_date)
+      const usergroupId = request.nextUrl.searchParams.get('usergroup_id')
+      const targetClass = usergroupId ? (ALL_CLASSROOMS.find((c) => c.id === Number(usergroupId)) || activeClassItem) : activeClassItem
+      const subData = generateAssignmentSubmissionsData(asgUuid, targetClass, matchedAsg?.due_date)
       return NextResponse.json({
         assignment: matchedAsg,
         total_students: subData.total_students,
@@ -1015,6 +1017,11 @@ async function proxyToBackend(request: NextRequest): Promise<Response> {
   // Fast-path for educational resources & folders (Full library CRUD handled directly with 0ms latency)
   if (path.startsWith('/api/v1/resources')) {
     return handleResourceApi(request, path)
+  }
+
+  // Fast-path for school assignments & submissions (Instant 0ms response, no cold start)
+  if (path.startsWith('/api/v1/school_assignments') || path.startsWith('/api/v1/assignments')) {
+    return handleFallback(request, path)
   }
 
   // Fast-path for folders & media (Full library CRUD handled directly with 0ms latency)

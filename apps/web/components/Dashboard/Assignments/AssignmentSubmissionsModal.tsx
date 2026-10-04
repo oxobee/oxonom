@@ -62,28 +62,29 @@ export default function AssignmentSubmissionsModal({
   const { data: submissionsData, isLoading, refetch } = useQuery({
     queryKey: ['school-assignment-submissions', assignment?.assignment_uuid, selectedUsergroupId],
     queryFn: () =>
-      getAssignmentSubmissions(assignment!.assignment_uuid, selectedUsergroupId, accessToken),
-    enabled: !!(isOpen && assignment?.assignment_uuid && accessToken),
+      getAssignmentSubmissions(assignment!.assignment_uuid, selectedUsergroupId, accessToken || ''),
+    enabled: !!(isOpen && assignment?.assignment_uuid),
   })
 
   if (!assignment) return null
 
-  const students = submissionsData?.students || []
+  const students: StudentSubmissionRow[] = Array.isArray(submissionsData?.students) ? submissionsData.students : []
 
   const onTimeStudents = useMemo(() => {
-    return students.filter((s) => (s.status === 'SUBMITTED' || s.status === 'GRADED') && !s.is_late)
+    return students.filter((s) => s && (s.status === 'SUBMITTED' || s.status === 'GRADED') && !s.is_late)
   }, [students])
 
   const lateStudents = useMemo(() => {
-    return students.filter((s) => s.is_late || s.status === 'LATE')
+    return students.filter((s) => s && (s.is_late || s.status === 'LATE'))
   }, [students])
 
   const pendingStudents = useMemo(() => {
-    return students.filter((s) => s.status === 'PENDING' || !s.submission_id)
+    return students.filter((s) => s && (s.status === 'PENDING' || !s.submission_id))
   }, [students])
 
   const filteredStudents = useMemo(() => {
     return students.filter((s) => {
+      if (!s) return false
       if (submissionFilter === 'ontime') {
         if (!((s.status === 'SUBMITTED' || s.status === 'GRADED') && !s.is_late)) return false
       } else if (submissionFilter === 'late') {
@@ -94,11 +95,14 @@ export default function AssignmentSubmissionsModal({
 
       if (!searchQuery.trim()) return true
       const q = searchQuery.toLowerCase()
-      return s.name.toLowerCase().includes(q) || s.username.toLowerCase().includes(q)
+      const sName = s.name || ''
+      const sUsername = s.username || ''
+      return sName.toLowerCase().includes(q) || sUsername.toLowerCase().includes(q)
     })
   }, [students, submissionFilter, searchQuery])
 
   const handleSelectStudent = (s: StudentSubmissionRow) => {
+    if (!s) return
     setSelectedStudent(s)
     setGradeScore(s.score ?? 100)
     setGradeFeedback(s.teacher_feedback || '')
@@ -155,9 +159,10 @@ export default function AssignmentSubmissionsModal({
                   {assignment.grade_level}
                 </span>
                 {assignment.due_date && (
-                  <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md flex items-center gap-1">
-                    <Clock size={11} />
-                    Son Teslim: {formatDueDate(assignment.due_date)}
+                  <span className="text-[11px] font-extrabold text-amber-950 bg-amber-100/90 border border-amber-300 px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-2xs">
+                    <Clock size={13} className="text-amber-700 animate-pulse shrink-0" />
+                    <span>Son Teslim:</span>
+                    <span className="font-mono">{formatDueDate(assignment.due_date)}</span>
                   </span>
                 )}
               </div>
@@ -283,10 +288,10 @@ export default function AssignmentSubmissionsModal({
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         <div className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center font-bold text-gray-600 shrink-0">
-                          {s.name.charAt(0)}
+                          {(s.name || 'Ö').charAt(0)}
                         </div>
                         <div className="min-w-0">
-                          <p className="font-bold text-gray-900 truncate">{s.name}</p>
+                          <p className="font-bold text-gray-900 truncate">{s.name || 'Öğrenci'}</p>
                           <p className="text-[10px] text-gray-400 truncate">
                             {s.submission_date ? `Teslim: ${formatDueDate(s.submission_date)}` : `Son Teslim: ${formatDueDate(assignment.due_date)}`}
                           </p>
