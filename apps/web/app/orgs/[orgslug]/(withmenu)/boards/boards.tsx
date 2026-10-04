@@ -17,7 +17,7 @@ import { useFavoriteBoards } from '@/hooks/useFavoriteBoards'
 import { flyStarToAcademicTrail } from '@/lib/animations/flyToTrail'
 import useAdminStatus from '@components/Hooks/useAdminStatus'
 import { useLHSession } from '@components/Contexts/LHSessionContext'
-import { createBoard, updateBoard, updateBoardShareSettings } from '@services/boards/boards'
+import { createBoard, updateBoard, updateBoardShareSettings, getStoredCustomBoards } from '@services/boards/boards'
 import BoardVisualCover from '@components/Boards/BoardVisualCover'
 import { useRouter } from 'next/navigation'
 import {
@@ -77,6 +77,27 @@ export default function BoardsPublicClient({
   React.useEffect(() => {
     resetPage()
   }, [searchQuery, resetPage])
+
+  React.useEffect(() => {
+    const custom = getStoredCustomBoards(org_id || org?.id)
+    if (custom.length > 0) {
+      setBoardsList((prev) => {
+        const uuids = new Set(prev.map((b) => b.board_uuid))
+        const uniqueCustom = custom.filter((b) => !uuids.has(b.board_uuid))
+        return [...uniqueCustom, ...prev]
+      })
+    }
+    const handleUpdate = () => {
+      const updated = getStoredCustomBoards(org_id || org?.id)
+      setBoardsList((prev) => {
+        const uuids = new Set(updated.map((b) => b.board_uuid))
+        const base = prev.filter((b) => !uuids.has(b.board_uuid))
+        return [...updated, ...base]
+      })
+    }
+    window.addEventListener('oxonom_boards_updated', handleUpdate)
+    return () => window.removeEventListener('oxonom_boards_updated', handleUpdate)
+  }, [org_id, org?.id])
 
   // Create board modal state
   const [createModalOpen, setCreateModalOpen] = useState(false)
@@ -165,14 +186,14 @@ export default function BoardsPublicClient({
 
   const handleCreateBoard = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!createName.trim() || !accessToken) return
+    if (!createName.trim()) return
     setCreating(true)
     try {
       const shareType = createRequiresPin ? 'code' : 'public'
       const shareCode = createRequiresPin && createPin.trim() ? createPin.trim() : null
 
       const res = await createBoard(
-        org_id || org?.id,
+        org_id || org?.id || 1,
         {
           name: createName.trim(),
           description: createDesc.trim() || undefined,
@@ -186,9 +207,10 @@ export default function BoardsPublicClient({
             pin: shareCode,
           },
         },
-        accessToken
+        accessToken || ''
       )
       toast.success('Akıllı tahta başarıyla oluşturuldu!')
+      setBoardsList((prev) => [res, ...prev.filter((b) => b.board_uuid !== res.board_uuid)])
       setCreateModalOpen(false)
       setCreateName('')
       setCreateDesc('')

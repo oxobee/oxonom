@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -26,6 +26,7 @@ import toast from 'react-hot-toast'
 import {
   getAssignmentSubmissions,
   gradeSubmission,
+  formatDueDate,
   SchoolAssignmentItem,
   StudentSubmissionRow,
 } from '@services/school_assignments/school_assignments'
@@ -50,6 +51,7 @@ export default function AssignmentSubmissionsModal({
   const queryClient = useQueryClient()
   const [selectedUsergroupId, setSelectedUsergroupId] = useState<number | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [submissionFilter, setSubmissionFilter] = useState<'all' | 'ontime' | 'late' | 'pending'>('all')
   const [selectedStudent, setSelectedStudent] = useState<StudentSubmissionRow | null>(null)
 
   // Grading form state
@@ -67,11 +69,34 @@ export default function AssignmentSubmissionsModal({
   if (!assignment) return null
 
   const students = submissionsData?.students || []
-  const filteredStudents = students.filter((s) => {
-    if (!searchQuery.trim()) return true
-    const q = searchQuery.toLowerCase()
-    return s.name.toLowerCase().includes(q) || s.username.toLowerCase().includes(q)
-  })
+
+  const onTimeStudents = useMemo(() => {
+    return students.filter((s) => (s.status === 'SUBMITTED' || s.status === 'GRADED') && !s.is_late)
+  }, [students])
+
+  const lateStudents = useMemo(() => {
+    return students.filter((s) => s.is_late || s.status === 'LATE')
+  }, [students])
+
+  const pendingStudents = useMemo(() => {
+    return students.filter((s) => s.status === 'PENDING' || !s.submission_id)
+  }, [students])
+
+  const filteredStudents = useMemo(() => {
+    return students.filter((s) => {
+      if (submissionFilter === 'ontime') {
+        if (!((s.status === 'SUBMITTED' || s.status === 'GRADED') && !s.is_late)) return false
+      } else if (submissionFilter === 'late') {
+        if (!(s.is_late || s.status === 'LATE')) return false
+      } else if (submissionFilter === 'pending') {
+        if (s.status !== 'PENDING' && s.submission_id) return false
+      }
+
+      if (!searchQuery.trim()) return true
+      const q = searchQuery.toLowerCase()
+      return s.name.toLowerCase().includes(q) || s.username.toLowerCase().includes(q)
+    })
+  }, [students, submissionFilter, searchQuery])
 
   const handleSelectStudent = (s: StudentSubmissionRow) => {
     setSelectedStudent(s)
@@ -129,6 +154,12 @@ export default function AssignmentSubmissionsModal({
                 <span className="text-[10px] font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md">
                   {assignment.grade_level}
                 </span>
+                {assignment.due_date && (
+                  <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md flex items-center gap-1">
+                    <Clock size={11} />
+                    Son Teslim: {formatDueDate(assignment.due_date)}
+                  </span>
+                )}
               </div>
               <DialogTitle className="text-xl font-bold text-gray-900">
                 {assignment.title} — Teslim ve Değerlendirme
@@ -139,26 +170,81 @@ export default function AssignmentSubmissionsModal({
             </div>
 
             {/* Quick stats pills */}
-            <div className="flex items-center gap-2">
-              <div className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-center">
-                <span className="block text-[10px] text-gray-400 font-bold uppercase">Toplam</span>
-                <span className="text-xs font-black text-gray-900">{submissionsData?.total_students || 0}</span>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <div className="px-2.5 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-center">
+                <span className="block text-[9px] text-gray-400 font-bold uppercase">Toplam</span>
+                <span className="text-xs font-black text-gray-900">{students.length}</span>
               </div>
-              <div className="px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-xl text-center">
-                <span className="block text-[10px] text-blue-600 font-bold uppercase">Teslim</span>
-                <span className="text-xs font-black text-blue-800">{submissionsData?.submitted_count || 0}</span>
+              <div className="px-2.5 py-1.5 bg-emerald-50 border border-emerald-200 rounded-xl text-center">
+                <span className="block text-[9px] text-emerald-600 font-bold uppercase">Zamanında</span>
+                <span className="text-xs font-black text-emerald-800">{onTimeStudents.length}</span>
               </div>
-              <div className="px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-xl text-center">
-                <span className="block text-[10px] text-emerald-600 font-bold uppercase">Notlandı</span>
-                <span className="text-xs font-black text-emerald-800">{submissionsData?.graded_count || 0}</span>
+              <div className="px-2.5 py-1.5 bg-amber-50 border border-amber-200 rounded-xl text-center">
+                <span className="block text-[9px] text-amber-600 font-bold uppercase">Geç Teslim</span>
+                <span className="text-xs font-black text-amber-800">{lateStudents.length}</span>
+              </div>
+              <div className="px-2.5 py-1.5 bg-rose-50 border border-rose-200 rounded-xl text-center">
+                <span className="block text-[9px] text-rose-600 font-bold uppercase">Teslim Etmeyen</span>
+                <span className="text-xs font-black text-rose-800">{pendingStudents.length}</span>
               </div>
             </div>
           </div>
         </DialogHeader>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-5 mt-4 text-xs">
-          {/* LEFT COLUMN: Student List */}
-          <div className="md:col-span-5 space-y-3 border-r border-gray-100 pr-0 md:pr-4">
+          {/* LEFT COLUMN: Student List & Categorical Tabs */}
+          <div className="md:col-span-5 space-y-2.5 border-r border-gray-100 pr-0 md:pr-4">
+            {/* Categorical Tabs */}
+            <div className="flex items-center gap-1 p-1 bg-gray-100/90 rounded-xl overflow-x-auto no-scrollbar">
+              <button
+                type="button"
+                onClick={() => setSubmissionFilter('all')}
+                className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap cursor-pointer ${
+                  submissionFilter === 'all'
+                    ? 'bg-white text-gray-900 shadow-2xs'
+                    : 'text-gray-500 hover:text-gray-900'
+                }`}
+              >
+                Tümü ({students.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setSubmissionFilter('ontime')}
+                className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap flex items-center gap-1 cursor-pointer ${
+                  submissionFilter === 'ontime'
+                    ? 'bg-emerald-600 text-white shadow-2xs'
+                    : 'text-emerald-700 hover:bg-emerald-50'
+                }`}
+              >
+                <CheckCircle2 size={10} />
+                Zamanında ({onTimeStudents.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setSubmissionFilter('late')}
+                className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap flex items-center gap-1 cursor-pointer ${
+                  submissionFilter === 'late'
+                    ? 'bg-amber-600 text-white shadow-2xs'
+                    : 'text-amber-700 hover:bg-amber-50'
+                }`}
+              >
+                <Clock size={10} />
+                Geç ({lateStudents.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setSubmissionFilter('pending')}
+                className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all whitespace-nowrap flex items-center gap-1 cursor-pointer ${
+                  submissionFilter === 'pending'
+                    ? 'bg-rose-600 text-white shadow-2xs'
+                    : 'text-rose-700 hover:bg-rose-50'
+                }`}
+              >
+                <XCircle size={10} />
+                Etmeyenler ({pendingStudents.length})
+              </button>
+            </div>
+
             <div className="relative">
               <Search size={14} className="absolute left-3 top-2.5 text-gray-400" />
               <input
@@ -176,13 +262,14 @@ export default function AssignmentSubmissionsModal({
                 <span>Öğrenci listesi yükleniyor...</span>
               </div>
             ) : filteredStudents.length === 0 ? (
-              <div className="py-8 text-center text-gray-400">Öğrenci bulunamadı.</div>
+              <div className="py-8 text-center text-gray-400">Bu kategoride öğrenci bulunamadı.</div>
             ) : (
               <div className="space-y-1.5 max-h-[50vh] overflow-y-auto pr-1">
                 {filteredStudents.map((s) => {
                   const isSelected = selectedStudent?.user_id === s.user_id
                   const isGraded = s.status === 'GRADED'
-                  const isSubmitted = s.status === 'SUBMITTED' || isGraded
+                  const isLate = s.is_late || s.status === 'LATE'
+                  const isPending = s.status === 'PENDING' || !s.submission_id
 
                   return (
                     <div
@@ -200,22 +287,45 @@ export default function AssignmentSubmissionsModal({
                         </div>
                         <div className="min-w-0">
                           <p className="font-bold text-gray-900 truncate">{s.name}</p>
-                          <p className="text-[10px] text-gray-400 truncate">{s.classroom_name}</p>
+                          <p className="text-[10px] text-gray-400 truncate">
+                            {s.submission_date ? `Teslim: ${formatDueDate(s.submission_date)}` : `Son Teslim: ${formatDueDate(assignment.due_date)}`}
+                          </p>
                         </div>
                       </div>
 
                       <div className="text-right shrink-0">
-                        {isGraded ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                            {s.score} Puan
-                          </span>
-                        ) : isSubmitted ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200">
-                            İncele
-                          </span>
+                        {isLate ? (
+                          <div className="text-right">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                              <Clock size={10} />
+                              Geç Teslim
+                            </span>
+                            {s.late_duration_text && (
+                              <span className="block text-[9px] text-amber-600 font-semibold mt-0.5">
+                                {s.late_duration_text}
+                              </span>
+                            )}
+                          </div>
+                        ) : isGraded ? (
+                          <div className="text-right">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                              <CheckCircle2 size={10} />
+                              {s.score} Puan
+                            </span>
+                            <span className="block text-[9px] text-emerald-600 font-semibold mt-0.5">
+                              Zamanında
+                            </span>
+                          </div>
+                        ) : !isPending ? (
+                          <div className="text-right">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                              <CheckCircle2 size={10} />
+                              Zamanında
+                            </span>
+                          </div>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-gray-400 bg-gray-100 px-2 py-0.5 rounded-md">
-                            Bekliyor
+                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
+                            Teslim Etmedi
                           </span>
                         )}
                       </div>
@@ -230,28 +340,65 @@ export default function AssignmentSubmissionsModal({
           <div className="md:col-span-7 space-y-4">
             {selectedStudent ? (
               <div className="space-y-4">
-                <div className="p-3.5 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between">
-                  <div>
-                    <h4 className="font-bold text-gray-900 text-sm">{selectedStudent.name}</h4>
-                    <p className="text-[11px] text-gray-500">
-                      Sınıf: {selectedStudent.classroom_name} •{' '}
-                      {selectedStudent.submission_date
-                        ? `Teslim: ${new Date(selectedStudent.submission_date).toLocaleString('tr-TR')}`
-                        : 'Henüz teslim edilmedi'}
-                    </p>
+                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-bold text-gray-900 text-base">{selectedStudent.name}</h4>
+                      <p className="text-[11px] text-gray-500">
+                        Sınıf: {selectedStudent.classroom_name} • Kullanıcı Adı: @{selectedStudent.username}
+                      </p>
+                    </div>
+                    {selectedStudent.status === 'GRADED' ? (
+                      <span className="px-3 py-1 bg-emerald-100 text-emerald-800 font-bold rounded-xl text-xs border border-emerald-200">
+                        Notlandı ({selectedStudent.score} / {assignment.max_score})
+                      </span>
+                    ) : selectedStudent.is_late || selectedStudent.status === 'LATE' ? (
+                      <span className="px-3 py-1 bg-amber-100 text-amber-800 font-bold rounded-xl text-xs border border-amber-200 flex items-center gap-1">
+                        <Clock size={12} /> Geç Teslim
+                      </span>
+                    ) : selectedStudent.status === 'SUBMITTED' ? (
+                      <span className="px-3 py-1 bg-blue-100 text-blue-800 font-bold rounded-xl text-xs border border-blue-200">
+                        Zamanında Teslim Edildi
+                      </span>
+                    ) : (
+                      <span className="px-3 py-1 bg-rose-100 text-rose-800 font-bold rounded-xl text-xs border border-rose-200">
+                        Teslim Edilmedi
+                      </span>
+                    )}
                   </div>
-                  {selectedStudent.status === 'GRADED' ? (
-                    <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 font-bold rounded-lg text-xs">
-                      Notlandı ({selectedStudent.score} / {assignment.max_score})
-                    </span>
-                  ) : selectedStudent.status === 'SUBMITTED' ? (
-                    <span className="px-2.5 py-1 bg-blue-100 text-blue-800 font-bold rounded-lg text-xs">
-                      Teslim Edildi
-                    </span>
+
+                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200/80 text-[11px]">
+                    <div>
+                      <span className="text-gray-400 block font-medium">Son Teslim Tarihi:</span>
+                      <span className="font-bold text-gray-800">{formatDueDate(assignment.due_date)}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 block font-medium">Teslim Zamanı:</span>
+                      <span className="font-bold text-gray-800">
+                        {selectedStudent.submission_date ? formatDueDate(selectedStudent.submission_date) : '—'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Status Banner */}
+                  {selectedStudent.is_late || selectedStudent.status === 'LATE' ? (
+                    <div className="flex items-center gap-2 p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs font-semibold">
+                      <Clock size={15} className="text-amber-600 shrink-0" />
+                      <span>
+                        Geç Teslim: Bu ödev son teslim saatinden sonra teslim edilmiştir
+                        {selectedStudent.late_duration_text ? ` (${selectedStudent.late_duration_text})` : ''}.
+                      </span>
+                    </div>
+                  ) : selectedStudent.submission_date ? (
+                    <div className="flex items-center gap-2 p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs font-semibold">
+                      <CheckCircle2 size={15} className="text-emerald-600 shrink-0" />
+                      <span>Zamanında Teslim: Ödev son teslim tarihinden önce eksiksiz iletilmiştir.</span>
+                    </div>
                   ) : (
-                    <span className="px-2.5 py-1 bg-gray-200 text-gray-700 font-bold rounded-lg text-xs">
-                      Teslim Edilmedi
-                    </span>
+                    <div className="flex items-center gap-2 p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs font-semibold">
+                      <XCircle size={15} className="text-rose-600 shrink-0" />
+                      <span>Ödev Henüz Teslim Edilmedi — Son teslim tarihi: {formatDueDate(assignment.due_date)}</span>
+                    </div>
                   )}
                 </div>
 

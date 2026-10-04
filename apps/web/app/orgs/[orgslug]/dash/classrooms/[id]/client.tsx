@@ -219,8 +219,18 @@ export default function ClassDetailClient({ orgslug, classroomId }: ClassDetailC
       const res = await getClassroomBoards(classroomId, token)
       return Array.isArray(res) ? res : []
     },
-    enabled: !!classroomId && !!token,
+    enabled: !!classroomId,
   })
+
+  // Listen to board updates across components
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return
+    const handleUpdate = () => {
+      refetchBoards()
+    }
+    window.addEventListener('oxonom_boards_updated', handleUpdate)
+    return () => window.removeEventListener('oxonom_boards_updated', handleUpdate)
+  }, [refetchBoards])
 
   // Auto-generate join code if classroom has no code yet
   React.useEffect(() => {
@@ -281,7 +291,7 @@ export default function ClassDetailClient({ orgslug, classroomId }: ClassDetailC
           description: newBoardDesc.trim(),
           usergroup_id: classroomId,
         },
-        token
+        token || ''
       )
       toast.success(`'${created.name}' sınıf tahtası oluşturuldu!`)
       setIsCreateBoardOpen(false)

@@ -36,6 +36,8 @@ export interface SchoolAssignmentItem {
     score?: number | null
     teacher_feedback?: string | null
     graded_at?: string | null
+    is_late?: boolean
+    late_duration_text?: string
   }
 }
 
@@ -53,6 +55,37 @@ export interface StudentSubmissionRow {
   score?: number | null
   teacher_feedback?: string | null
   graded_at?: string | null
+  is_late?: boolean
+  late_duration_text?: string
+}
+
+export function formatDueDate(dateStr?: string | null): string {
+  if (!dateStr) return 'Süresiz'
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return dateStr
+  const day = String(d.getDate()).padStart(2, '0')
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const year = d.getFullYear()
+  const hours = String(d.getHours()).padStart(2, '0')
+  const minutes = String(d.getMinutes()).padStart(2, '0')
+  return `${day}.${month}.${year} ${hours}:${minutes}`
+}
+
+export function formatLateDuration(diffMs: number): string {
+  if (diffMs <= 0) return 'Zamanında Teslim'
+  const diffMinutes = Math.floor(diffMs / (1000 * 60))
+  const diffHours = Math.floor(diffMinutes / 60)
+  const diffDays = Math.floor(diffHours / 24)
+
+  if (diffDays > 0) {
+    const remHours = diffHours % 24
+    return remHours > 0 ? `${diffDays} gün ${remHours} saat geç` : `${diffDays} gün geç`
+  }
+  if (diffHours > 0) {
+    const remMinutes = diffMinutes % 60
+    return remMinutes > 0 ? `${diffHours} saat ${remMinutes} dk geç` : `${diffHours} saat geç`
+  }
+  return `${Math.max(1, diffMinutes)} dakika geç`
 }
 
 export interface SubmissionsResponse {
@@ -292,6 +325,7 @@ export async function getStudentAssignments(
   orgId: number,
   accessToken: string
 ): Promise<SchoolAssignmentItem[]> {
+  let list = DEFAULT_SCHOOL_ASSIGNMENTS
   try {
     const result = await fetch(
       `${getAPIUrl()}school_assignments/student/my_assignments?org_id=${orgId}`,
@@ -299,11 +333,36 @@ export async function getStudentAssignments(
     )
     if (result.ok) {
       const data = await errorHandling(result)
-      if (Array.isArray(data) && data.length > 0) return data
+      if (Array.isArray(data) && data.length > 0) list = data
     }
   } catch (_e) {}
 
-  return DEFAULT_SCHOOL_ASSIGNMENTS
+  if (typeof window !== 'undefined') {
+    try {
+      list = list.map((asg) => {
+        const saved = localStorage.getItem(`oxonom_submission_${asg.assignment_uuid}`)
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          return {
+            ...asg,
+            submission: {
+              id: parsed.submission_id || 501,
+              status: parsed.status || (parsed.is_late ? 'LATE' : 'SUBMITTED'),
+              submission_date: parsed.submission_date,
+              is_late: Boolean(parsed.is_late),
+              late_duration_text: parsed.late_duration_text || '',
+              student_content: parsed.student_content,
+              score: asg.submission?.score ?? null,
+              teacher_feedback: asg.submission?.teacher_feedback ?? null,
+            },
+          }
+        }
+        return asg
+      })
+    } catch {}
+  }
+
+  return list
 }
 
 export async function submitSchoolAssignment(
@@ -314,11 +373,49 @@ export async function submitSchoolAssignment(
   },
   accessToken: string
 ) {
-  const result = await fetch(
-    `${getAPIUrl()}school_assignments/${assignmentUuid}/submit`,
-    RequestBodyWithAuthHeader('POST', payload, null, accessToken)
+  const now = new Date()
+  const match = DEFAULT_SCHOOL_ASSIGNMENTS.find(
+    (a) => a.assignment_uuid === assignmentUuid || String(a.id) === assignmentUuid
   )
-  return errorHandling(result)
+  let isLate = false
+  let lateDurationText = ''
+  if (match?.due_date) {
+    const dueTime = new Date(match.due_date).getTime()
+    if (now.getTime() > dueTime) {
+      isLate = true
+      lateDurationText = formatLateDuration(now.getTime() - dueTime)
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    try {
+      const record = {
+        submission_id: Date.now(),
+        status: isLate ? 'LATE' : 'SUBMITTED',
+        is_late: isLate,
+        late_duration_text: lateDurationText,
+        submission_date: now.toISOString(),
+        student_content: payload.student_content,
+      }
+      localStorage.setItem(`oxonom_submission_${assignmentUuid}`, JSON.stringify(record))
+      window.dispatchEvent(new CustomEvent('oxonom_assignments_updated', { detail: { assignmentUuid } }))
+    } catch {}
+  }
+
+  try {
+    const result = await fetch(
+      `${getAPIUrl()}school_assignments/${assignmentUuid}/submit`,
+      RequestBodyWithAuthHeader('POST', payload, null, accessToken)
+    )
+    return await errorHandling(result)
+  } catch (_e) {
+    return {
+      success: true,
+      message: isLate ? 'Ödev geç teslim edildi.' : 'Ödev zamanında teslim edildi.',
+      is_late: isLate,
+      status: isLate ? 'LATE' : 'SUBMITTED',
+    }
+  }
 }
 
 export async function getAssignmentSubmissions(
@@ -330,6 +427,11 @@ export async function getAssignmentSubmissions(
     (a) => a.assignment_uuid === assignmentUuid || String(a.id) === assignmentUuid
   ) || DEFAULT_SCHOOL_ASSIGNMENTS[0]
 
+  let studentsData: StudentSubmissionRow[] = []
+  let totalStudents = 30
+  let submittedCount = 25
+  let gradedCount = 16
+
   try {
     const param = usergroupId ? `?usergroup_id=${usergroupId}` : ''
     const result = await fetch(
@@ -339,18 +441,52 @@ export async function getAssignmentSubmissions(
     if (result.ok) {
       const data = await errorHandling(result)
       if (data && Array.isArray(data.students) && data.students.length > 0) {
-        return data
+        studentsData = data.students
+        totalStudents = data.total_students || 30
+        submittedCount = data.submitted_count || data.students.filter((s: any) => s.status !== 'PENDING').length
+        gradedCount = data.graded_count || data.students.filter((s: any) => s.status === 'GRADED').length
       }
     }
   } catch (_e) {}
 
-  const fallbackData = generateAssignmentSubmissionsData(assignmentUuid)
+  if (studentsData.length === 0) {
+    const fallbackData = generateAssignmentSubmissionsData(assignmentUuid, undefined, match?.due_date)
+    studentsData = fallbackData.students as any
+    totalStudents = fallbackData.total_students
+    submittedCount = fallbackData.submitted_count
+    gradedCount = fallbackData.graded_count
+  }
+
+  // Merge any browser submitted assignment
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = localStorage.getItem(`oxonom_submission_${assignmentUuid}`)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        studentsData = studentsData.map((s) => {
+          if (s.user_id === 1001 || s.username === 'demo_ogrenci' || s.name.includes('Erçil')) {
+            return {
+              ...s,
+              submission_id: parsed.submission_id || 501,
+              status: parsed.status || (parsed.is_late ? 'LATE' : 'SUBMITTED'),
+              is_late: Boolean(parsed.is_late),
+              late_duration_text: parsed.late_duration_text || '',
+              submission_date: parsed.submission_date,
+              student_content: parsed.student_content || s.student_content,
+            }
+          }
+          return s
+        })
+      }
+    } catch {}
+  }
+
   return {
     assignment: match,
-    total_students: fallbackData.total_students,
-    submitted_count: fallbackData.submitted_count,
-    graded_count: fallbackData.graded_count,
-    students: fallbackData.students,
+    total_students: totalStudents,
+    submitted_count: submittedCount,
+    graded_count: gradedCount,
+    students: studentsData,
   }
 }
 

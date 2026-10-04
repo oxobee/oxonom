@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useRef } from 'react'
+import React, { useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Sparkle,
@@ -62,6 +62,21 @@ export default function PlaygroundViewClient({
   const accessBadge = ACCESS_BADGES[accessTypeKey] ?? ACCESS_BADGES.authenticated
   const AccessIcon = accessBadge.icon
   const createdDate = dayjs(playground.creation_date).format('MMM D, YYYY')
+
+  useEffect(() => {
+    const handleMsg = (e: MessageEvent) => {
+      if (e.data?.type === 'OXONOM_READING_SAVED') {
+        try {
+          const raw = localStorage.getItem('oxonom_reading_history_v2') || '[]'
+          const hist = JSON.parse(raw)
+          const updated = [e.data.payload, ...hist.filter((x: any) => x.id !== e.data.payload?.id)]
+          localStorage.setItem('oxonom_reading_history_v2', JSON.stringify(updated))
+        } catch {}
+      }
+    }
+    window.addEventListener('message', handleMsg)
+    return () => window.removeEventListener('message', handleMsg)
+  }, [])
 
   return (
     <GeneralWrapperStyled>
@@ -157,8 +172,7 @@ export default function PlaygroundViewClient({
             {playground.html_content ? (
               <iframe
                 srcDoc={playground.html_content}
-                // srcDoc content runs on an opaque origin (no allow-same-origin)
-                sandbox="allow-scripts allow-forms allow-popups"
+                sandbox="allow-scripts allow-forms allow-popups allow-same-origin"
                 className="w-full h-full border-0"
                 title={playground.name}
               />

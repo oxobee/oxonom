@@ -1,5 +1,6 @@
 // Generated from PostgreSQL database — Single Source of Truth
 import { GameCategory, GameItem, GamesStoreResponse, GamePlayResponse } from '../games/games'
+import { READING_MODULE_HTML } from '../playgrounds/readingModuleHtml'
 
 export const SYNCED_CATEGORIES: GameCategory[] = [
   {
@@ -38338,4 +38339,20 @@ export function getSyncedGamePlay(identifier: string): any {
     play_url: `/games/${game?.slug}.html`,
     session_token: 'demo-session-token',
   }
+}
+
+// Ensure all reading modules (playground_1-dk-okuma) use the enhanced READING_MODULE_HTML
+if (typeof SYNCED_PLAYGROUNDS !== 'undefined') {
+  SYNCED_PLAYGROUNDS.forEach((p: any) => {
+    if (p.name?.includes('Okuma') || p.playground_uuid === 'playground_1-dk-okuma') {
+      p.html_content = READING_MODULE_HTML
+    }
+  })
+}
+if (typeof SYNCED_PLAYGROUNDS_MAP !== 'undefined') {
+  Object.keys(SYNCED_PLAYGROUNDS_MAP).forEach((k) => {
+    if (k.includes('okuma') || SYNCED_PLAYGROUNDS_MAP[k]?.name?.includes('Okuma')) {
+      SYNCED_PLAYGROUNDS_MAP[k].html_content = READING_MODULE_HTML
+    }
+  })
 }

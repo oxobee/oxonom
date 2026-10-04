@@ -31,6 +31,7 @@ import {
 
 let ADMIN_GAMES_STORE: any[] = [...SYNCED_GAMES]
 let ORG_MENU_CONFIGS: Record<string, any> = {}
+let SERVER_FALLBACK_BOARDS: any[] = []
 import {
   SCHOOL_ORGS,
   DEFAULT_SCHOOL_ALIAS_MAP,
@@ -491,21 +492,108 @@ async function handleFallback(request: NextRequest, path: string): Promise<Respo
 
   // Boards
   if (path.startsWith('/api/v1/boards')) {
+    if (request.method === 'POST') {
+      let body: any = {}
+      try {
+        body = await request.clone().json()
+      } catch {}
+      const uniqueId = Date.now()
+      const boardUuid = `board_${uniqueId}_${Math.random().toString(36).substring(2, 7)}`
+      const orgIdParam = Number(request.nextUrl.searchParams.get('org_id')) || 1
+      const newBoard = {
+        id: uniqueId,
+        board_uuid: boardUuid,
+        org_id: orgIdParam,
+        usergroup_id: body.usergroup_id || null,
+        name: body.name || 'Yeni Akıllı Tahta',
+        description: body.description || '',
+        thumbnail_image: body.thumbnail_image || null,
+        slug: (body.name || 'tahta').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        published: true,
+        creation_date: new Date().toISOString(),
+        update_date: new Date().toISOString(),
+        is_owner: true,
+        is_member: true,
+        member_count: 1,
+        share_type: body.share_type || 'public',
+        share_code: body.share_code || null,
+        features: body.features || {
+          effects_enabled: true,
+          chat_enabled: true,
+          reactions_enabled: true,
+        },
+        creator: {
+          username: 'Öğretmen',
+          avatar_image: null,
+        },
+      }
+      SERVER_FALLBACK_BOARDS.unshift(newBoard)
+      return NextResponse.json(newBoard, { status: 201 })
+    }
+
+    if (request.method === 'DELETE') {
+      const parts = path.split('/')
+      const bId = parts[parts.indexOf('boards') + 1] || ''
+      const clean = bId.replace('board_', '')
+      SERVER_FALLBACK_BOARDS = SERVER_FALLBACK_BOARDS.filter(
+        (b) => b.board_uuid !== bId && b.board_uuid !== `board_${clean}` && String(b.id) !== bId
+      )
+      return NextResponse.json({ success: true }, { status: 200 })
+    }
+
     if (path.includes('/classroom/')) {
       const parts = path.split('/')
       const classId = Number(parts[parts.indexOf('classroom') + 1])
       const cls = ALL_CLASSROOMS.find((c) => c.id === classId) || activeClassItem
-      return NextResponse.json(generateClassroomBoards(cls), { status: 200 })
+      const classCustom = SERVER_FALLBACK_BOARDS.filter(
+        (b) => !b.usergroup_id || Number(b.usergroup_id) === classId
+      )
+      const baseClassBoards = generateClassroomBoards(cls)
+      return NextResponse.json([...classCustom, ...baseClassBoards], { status: 200 })
     }
+
     const parts = path.split('/')
     const bId = parts[parts.indexOf('boards') + 1] || ''
     if (bId && bId !== 'org' && !bId.startsWith('org')) {
+      const clean = bId.replace('board_', '')
+      const foundInServer = SERVER_FALLBACK_BOARDS.find(
+        (b) => b.board_uuid === bId || b.board_uuid === `board_${clean}` || String(b.id) === bId
+      )
+      if (foundInServer) {
+        if (path.includes('/public-info')) {
+          return NextResponse.json({
+            board_uuid: foundInServer.board_uuid,
+            name: foundInServer.name,
+            description: foundInServer.description,
+            public: true,
+            share_type: foundInServer.share_type || 'public',
+            has_code: Boolean(foundInServer.share_code),
+            share_code: foundInServer.share_code || null,
+          }, { status: 200 })
+        }
+        return NextResponse.json(foundInServer, { status: 200 })
+      }
+
       const allGenBoards = generateClassroomBoards(activeClassItem)
-      const matched = allGenBoards.find((b) => b.board_uuid === bId || String(b.id) === bId) ||
-                      SYNCED_BOARDS.find((b: any) => b.board_uuid === bId || String(b.id) === bId)
-      if (matched) return NextResponse.json(matched, { status: 200 })
+      const matched = allGenBoards.find((b) => b.board_uuid === bId || b.board_uuid === `board_${clean}` || String(b.id) === bId) ||
+                      SYNCED_BOARDS.find((b: any) => b.board_uuid === bId || b.board_uuid === `board_${clean}` || String(b.id) === bId)
+      if (matched) {
+        if (path.includes('/public-info')) {
+          return NextResponse.json({
+            board_uuid: (matched as any).board_uuid,
+            name: (matched as any).name,
+            description: (matched as any).description,
+            public: true,
+            share_type: (matched as any).share_type || 'public',
+            has_code: false,
+            share_code: null,
+          }, { status: 200 })
+        }
+        return NextResponse.json(matched, { status: 200 })
+      }
     }
-    const defaultBoards = generateClassroomBoards(activeClassItem)
+
+    const defaultBoards = [...SERVER_FALLBACK_BOARDS, ...generateClassroomBoards(activeClassItem)]
     const authHeader = request.headers.get('authorization') || ''
     const cookieToken = request.cookies.get(ACCESS_TOKEN_COOKIE)?.value || ''
     const token = authHeader.replace(/^Bearer\s+/i, '') || cookieToken
@@ -522,7 +610,7 @@ async function handleFallback(request: NextRequest, path: string): Promise<Respo
       const parts = path.split('/')
       const asgUuid = parts[parts.indexOf('submissions') - 1] || 'asg_ritmik_sayma_01'
       const matchedAsg = DEFAULT_SCHOOL_ASSIGNMENTS.find((a) => a.assignment_uuid === asgUuid || String(a.id) === asgUuid) || DEFAULT_SCHOOL_ASSIGNMENTS[0]
-      const subData = generateAssignmentSubmissionsData(asgUuid, activeClassItem)
+      const subData = generateAssignmentSubmissionsData(asgUuid, activeClassItem, matchedAsg?.due_date)
       return NextResponse.json({
         assignment: matchedAsg,
         total_students: subData.total_students,
@@ -909,7 +997,7 @@ async function proxyToBackend(request: NextRequest): Promise<Response> {
       responseHeaders.append('set-cookie', cookie)
     }
 
-    if (backendResponse.status >= 400 && request.method === 'GET') {
+    if (backendResponse.status >= 400) {
       return handleFallback(request, path)
     }
 

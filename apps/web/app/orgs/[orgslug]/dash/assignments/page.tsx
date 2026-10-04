@@ -30,6 +30,7 @@ import { asArray } from '@services/utils/ts/requests'
 import {
   getSchoolAssignments,
   getStudentAssignments,
+  formatDueDate,
   SchoolAssignmentItem,
 } from '@services/school_assignments/school_assignments'
 import CreateSchoolAssignmentModal from '@components/Dashboard/Assignments/CreateSchoolAssignmentModal'
@@ -82,7 +83,7 @@ export default function SchoolAssignmentsPage() {
     queryFn: () => getBoards(org?.id, access_token),
     enabled: !!(org?.id && access_token),
   })
-  const boards = asArray<any>(rawBoards?.data || rawBoards)
+  const boards = asArray<any>((rawBoards as any)?.data || rawBoards)
 
   // 3. Fetch school assignments (Teacher view)
   const {
@@ -143,11 +144,21 @@ export default function SchoolAssignmentsPage() {
     return studentAssignments.filter((a) => {
       const status = a.submission?.status || 'PENDING'
       if (studentTab === 'pending') return status === 'PENDING'
-      if (studentTab === 'submitted') return status === 'SUBMITTED'
+      if (studentTab === 'submitted') return status === 'SUBMITTED' || status === 'LATE'
       if (studentTab === 'graded') return status === 'GRADED'
       return true
     })
   }, [studentAssignments, studentTab])
+
+  // Listen for assignment submission events to reload immediately
+  React.useEffect(() => {
+    const handleUpdate = () => {
+      refetchAssignments()
+      refetchStudentAssignments()
+    }
+    window.addEventListener('oxonom_assignments_updated', handleUpdate)
+    return () => window.removeEventListener('oxonom_assignments_updated', handleUpdate)
+  }, [refetchAssignments, refetchStudentAssignments])
 
   // Stats calculation
   const stats = useMemo(() => {
@@ -470,9 +481,9 @@ export default function SchoolAssignmentsPage() {
 
                     <div className="space-y-3 pt-3 border-t border-gray-100 text-xs">
                       <div className="flex items-center justify-between text-gray-500 text-[11px]">
-                        <span className="flex items-center gap-1">
-                          <Calendar size={12} />
-                          {asg.due_date ? new Date(asg.due_date).toLocaleDateString('tr-TR') : 'Süresiz'}
+                        <span className="flex items-center gap-1 font-medium text-gray-600">
+                          <Calendar size={12} className="text-indigo-600" />
+                          {asg.due_date ? `Son Teslim: ${formatDueDate(asg.due_date)}` : 'Süresiz'}
                         </span>
                         <span className="font-bold text-gray-800">
                           {asg.total_submissions || 0} Teslim • {asg.graded_submissions || 0} Notlandı
@@ -535,7 +546,7 @@ export default function SchoolAssignmentsPage() {
                   }`}
                 >
                   Teslim Ettiklerim / İnceleniyor (
-                  {studentAssignments.filter((a) => a.submission?.status === 'SUBMITTED').length}
+                  {studentAssignments.filter((a) => a.submission?.status === 'SUBMITTED' || a.submission?.status === 'LATE').length}
                   )
                 </button>
                 <button
@@ -580,7 +591,8 @@ export default function SchoolAssignmentsPage() {
                 {filteredStudentAssignments.map((asg) => {
                   const sub = asg.submission
                   const isGraded = sub?.status === 'GRADED'
-                  const isSubmitted = sub?.status === 'SUBMITTED'
+                  const isLate = sub?.is_late || sub?.status === 'LATE'
+                  const isSubmitted = sub?.status === 'SUBMITTED' || isLate
 
                   return (
                     <div
@@ -592,7 +604,14 @@ export default function SchoolAssignmentsPage() {
                           <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 rounded-md">
                             {asg.subject}
                           </span>
-                          {renderToolBadge(asg.tool_type)}
+                          <div className="flex items-center gap-1.5">
+                            {isLate && (
+                              <span className="text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded-md flex items-center gap-1">
+                                <Clock size={11} /> Geç Teslim
+                              </span>
+                            )}
+                            {renderToolBadge(asg.tool_type)}
+                          </div>
                         </div>
 
                         <h3 className="font-bold text-gray-900 text-sm leading-snug">{asg.title}</h3>
@@ -616,9 +635,9 @@ export default function SchoolAssignmentsPage() {
                       </div>
 
                       <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-xs">
-                        <span className="text-[11px] text-gray-400 flex items-center gap-1">
-                          <Calendar size={12} />
-                          {asg.due_date ? new Date(asg.due_date).toLocaleDateString('tr-TR') : 'Süresiz'}
+                        <span className="text-[11px] text-gray-500 font-medium flex items-center gap-1">
+                          <Calendar size={12} className="text-indigo-600" />
+                          {asg.due_date ? `Son Teslim: ${formatDueDate(asg.due_date)}` : 'Süresiz'}
                         </span>
 
                         <button

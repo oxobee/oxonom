@@ -17,6 +17,7 @@ import BoardZoomControls from './BoardZoomControls'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'next/navigation'
 import { BoardCardExtension } from './Extensions/BoardCard'
+import { TextBlockExtension } from './Extensions/TextBlock'
 import { DrawingStrokeExtension } from './Extensions/DrawingStroke'
 import { YouTubeBlockExtension } from './Extensions/YouTubeBlock'
 import { PlaygroundBlockExtension } from './Extensions/PlaygroundBlock'
@@ -28,6 +29,11 @@ import { FrameBoxExtension } from './Extensions/FrameBox'
 import { NoteBlockExtension } from './Extensions/NoteBlock'
 import { TodoBlockExtension } from './Extensions/TodoBlock'
 import { PodcastBlockExtension } from './Extensions/PodcastBlock'
+import { yUndoPlugin } from 'y-prosemirror'
+import { getGeometricShapePath } from './WhiteboardCorrection'
+import BoardTabBar, { BoardTab } from './BoardTabBar'
+import toast from 'react-hot-toast'
+import type { ShapeType, ToolMode } from './BoardToolbar'
 import RemoteCursors from './RemoteCursors'
 import {
   Square,
@@ -43,6 +49,11 @@ import {
   Headphones,
   PencilSimple,
   Cube,
+  Eraser,
+  TextT,
+  PenNib,
+  Shapes,
+  Trash,
 } from '@phosphor-icons/react'
 import { Extension } from '@tiptap/core'
 import { BoardYjsProvider } from './BoardYjsContext'
@@ -105,7 +116,9 @@ function BoardEditorInner({
   const searchParams = useSearchParams()
   const isReadOnly = searchParams?.get('readonly') === '1' || searchParams?.get('permission') === 'view'
   const { track } = useLHAnalytics('dashboard')
-  const [toolMode, setToolMode] = useState<'select' | 'pan' | 'draw' | 'card' | 'youtube' | 'modules' | 'embed' | 'webpage' | 'sticker' | 'frame' | 'note' | 'todo' | 'podcast'>('select')
+  const [toolMode, setToolMode] = useState<ToolMode>('select')
+  const [selectedShape, setSelectedShape] = useState<ShapeType>('square')
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false)
   const [zoom, setZoom] = useState(() =>
     typeof window !== 'undefined' && window.innerWidth <= 768 ? 0.6 : 1
   )
@@ -132,14 +145,38 @@ function BoardEditorInner({
   }, [toolMode])
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null)
 
+  // Multi-page Tabs state
+  const boardUuid = board?.board_uuid || 'default_board'
+  const tabsStorageKey = `oxonom_board_tabs_${boardUuid}`
+  const tabContentStoragePrefix = `oxonom_board_tab_content_${boardUuid}_`
+
+  const [tabs, setTabs] = useState<BoardTab[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem(tabsStorageKey)
+        if (raw) {
+          const parsed = JSON.parse(raw)
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed
+        }
+      } catch {}
+    }
+    return [{ id: 'page_1', title: 'Sayfa 1', createdAt: Date.now() }]
+  })
+
+  const [activeTabId, setActiveTabId] = useState<string>(() => tabs[0]?.id || 'page_1')
+
   // Multi-select state
   const [selectedPositions, setSelectedPositions] = useState<Set<number>>(new Set())
   const [marquee, setMarquee] = useState<{ startX: number; startY: number; currentX: number; currentY: number } | null>(null)
   const marqueeRef = useRef<typeof marquee>(null)
 
   // Placement tool indicator config
-  const placementTools: Partial<Record<typeof toolMode, { icon: React.ComponentType<any>; label: string }>> = {
+  const placementTools: Partial<Record<ToolMode, { icon: React.ComponentType<any>; label: string }>> = {
     draw: { icon: PencilSimple, label: 'Draw' },
+    handwriting: { icon: PenNib, label: 'Handwriting' },
+    text: { icon: TextT, label: 'Text' },
+    shape: { icon: Shapes, label: 'Shape' },
+    eraser: { icon: Eraser, label: 'Eraser' },
     card: { icon: Square, label: 'Card' },
     youtube: { icon: YoutubeLogo, label: 'YouTube' },
     embed: { icon: Code, label: 'Embed' },
@@ -196,6 +233,7 @@ function BoardEditorInner({
         },
       }),
       BoardCardExtension,
+      TextBlockExtension,
       DrawingStrokeExtension,
       YouTubeBlockExtension,
       PlaygroundBlockExtension,
@@ -207,6 +245,12 @@ function BoardEditorInner({
       NoteBlockExtension,
       TodoBlockExtension,
       PodcastBlockExtension,
+      Extension.create({
+        name: 'yUndoManager',
+        addProseMirrorPlugins() {
+          return [yUndoPlugin()]
+        },
+      }),
     ],
     editable: !isReadOnly,
     immediatelyRender: false,
@@ -222,13 +266,13 @@ function BoardEditorInner({
         dir: 'ltr',
       },
       // Block free-floating text at the canvas root — typing must happen inside
-      // a card or note. Without this, a click on empty canvas lets ProseMirror
+      // a card, note or textBlock. Without this, a click on empty canvas lets ProseMirror
       // insert text into the root paragraph, which renders "on the map".
       handleTextInput(view) {
         const { $from } = view.state.selection
         for (let d = $from.depth; d > 0; d--) {
           const name = $from.node(d).type.name
-          if (name === 'boardCard' || name === 'noteBlock') return false
+          if (name === 'boardCard' || name === 'noteBlock' || name === 'textBlock') return false
         }
         return true
       },
@@ -237,7 +281,7 @@ function BoardEditorInner({
         const { $from } = view.state.selection
         for (let d = $from.depth; d > 0; d--) {
           const name = $from.node(d).type.name
-          if (name === 'boardCard' || name === 'noteBlock') return false
+          if (name === 'boardCard' || name === 'noteBlock' || name === 'textBlock') return false
         }
         event.preventDefault()
         return true
@@ -387,6 +431,33 @@ function BoardEditorInner({
     const y = Math.round(worldY)
 
     switch (mode) {
+      case 'text':
+        editor.chain().insertContentAt(pos, {
+          type: 'textBlock',
+          attrs: { x, y, width: 280, height: 100, fontSize: 18, color: '#171717' },
+          content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Buraya yazın...' }] }],
+        }).run()
+        track(AnalyticsEvent.BoardBlockAdded, { block_type: 'text' })
+        break
+      case 'shape': {
+        const w = selectedShape === 'line' ? 240 : 200
+        const h = selectedShape === 'line' ? 40 : 160
+        const shapeInfo = getGeometricShapePath(selectedShape, w, h)
+        editor.chain().insertContentAt(pos, {
+          type: 'drawingStroke',
+          attrs: {
+            pathData: shapeInfo.pathData,
+            strokeColor: drawColor || '#2563eb',
+            strokeWidth: Math.max(drawWidth, 3),
+            x,
+            y,
+            viewBox: `0 0 ${w} ${h}`,
+            shapeType: selectedShape,
+          },
+        }).run()
+        track(AnalyticsEvent.BoardBlockAdded, { block_type: 'shape' })
+        break
+      }
       case 'card':
         editor.chain().insertContentAt(pos, {
           type: 'boardCard',
@@ -470,7 +541,44 @@ function BoardEditorInner({
         return
     }
     setToolMode('select')
-  }, [editor, track])
+  }, [editor, track, t, selectedShape, drawColor, drawWidth])
+
+  const eraseAt = useCallback((worldX: number, worldY: number, radius = 35) => {
+    if (!editor) return
+    const doc = editor.state.doc
+    const toDelete: { from: number; to: number }[] = []
+    doc.descendants((node, pos) => {
+      if (node.isBlock || node.type.name === 'drawingStroke' || node.type.name === 'textBlock') {
+        const nx = node.attrs.x ?? 0
+        const ny = node.attrs.y ?? 0
+        let nw = node.attrs.width ?? 100
+        let nh = node.attrs.height ?? 60
+        if (node.type.name === 'drawingStroke') {
+          const vb = (node.attrs.viewBox || '0 0 100 100').split(' ').map(Number)
+          nw = vb[2] || 100
+          nh = vb[3] || 100
+        }
+        const closestX = Math.max(nx, Math.min(worldX, nx + nw))
+        const closestY = Math.max(ny, Math.min(worldY, ny + nh))
+        const dist = Math.hypot(worldX - closestX, worldY - closestY)
+        if (dist <= radius) {
+          toDelete.push({ from: pos, to: pos + node.nodeSize })
+          return false
+        }
+      }
+      return true
+    })
+
+    if (toDelete.length > 0) {
+      toDelete.sort((a, b) => b.from - a.from)
+      editor.chain().command(({ tr }) => {
+        for (const item of toDelete) {
+          tr.delete(item.from, item.to)
+        }
+        return true
+      }).run()
+    }
+  }, [editor])
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     const mode = toolModeRef.current
@@ -496,7 +604,7 @@ function BoardEditorInner({
           setSelectedPositions(new Set())
         }
       }
-    } else if (mode === 'draw' && e.button === 0) {
+    } else if ((mode === 'draw' || mode === 'handwriting') && e.button === 0) {
       editor?.commands.blur()
       const rect = canvasRef.current?.getBoundingClientRect()
       if (!rect) return
@@ -507,6 +615,14 @@ function BoardEditorInner({
       setDrawingPath(`M ${x} ${y}`)
       isDrawingRef.current = true
       setIsDrawing(true)
+    } else if (mode === 'eraser' && e.button === 0) {
+      editor?.commands.blur()
+      const rect = canvasRef.current?.getBoundingClientRect()
+      if (!rect) return
+      e.preventDefault()
+      const x = (e.clientX - rect.left - pan.x) / zoom
+      const y = (e.clientY - rect.top - pan.y) / zoom
+      eraseAt(x, y)
     } else if (e.button === 0) {
       const rect = canvasRef.current?.getBoundingClientRect()
       if (!rect) return
@@ -514,7 +630,7 @@ function BoardEditorInner({
       const y = (e.clientY - rect.top - pan.y) / zoom
       insertBlockAtWorldPos(mode, x, y)
     }
-  }, [pan, zoom, editor, insertBlockAtWorldPos])
+  }, [pan, zoom, editor, insertBlockAtWorldPos, eraseAt])
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     // Track mouse position for placement ghost preview
@@ -522,6 +638,15 @@ function BoardEditorInner({
       const rect = canvasRef.current?.getBoundingClientRect()
       if (rect) {
         setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top })
+      }
+    }
+
+    if (toolModeRef.current === 'eraser' && e.buttons === 1) {
+      const rect = canvasRef.current?.getBoundingClientRect()
+      if (rect) {
+        const x = (e.clientX - rect.left - pan.x) / zoom
+        const y = (e.clientY - rect.top - pan.y) / zoom
+        eraseAt(x, y)
       }
     }
 
@@ -552,7 +677,7 @@ function BoardEditorInner({
         setDrawingPath(pointsToSvgPath(drawPointsRef.current))
       })
     }
-  }, [isPanning, panStart, pan, zoom, activePlacement])
+  }, [isPanning, panStart, pan, zoom, activePlacement, eraseAt])
 
   const commitDrawingStroke = useCallback(() => {
     isDrawingRef.current = false
@@ -585,6 +710,9 @@ function BoardEditorInner({
     const normalized = points.map(p => ({ x: p.x - minX, y: p.y - minY }))
     const pathData = pointsToSvgPath(normalized)
 
+    // Handwriting uses slightly finer stroke
+    const effectiveWidth = toolModeRef.current === 'handwriting' ? Math.min(drawWidth, 2.5) : drawWidth
+
     // Insert without focus() to avoid scroll jumps that break pan/zoom
     const endPos = editor.state.doc.content.size
     editor.chain().insertContentAt(endPos, {
@@ -592,7 +720,7 @@ function BoardEditorInner({
       attrs: {
         pathData,
         strokeColor: drawColor,
-        strokeWidth: drawWidth,
+        strokeWidth: effectiveWidth,
         x: Math.round(minX),
         y: Math.round(minY),
         viewBox: `0 0 ${Math.round(width)} ${Math.round(height)}`,
@@ -757,7 +885,7 @@ function BoardEditorInner({
       const t = touches[0]
 
       // 1. Drawing mode: single touch starts stroke
-      if (mode === 'draw') {
+      if (mode === 'draw' || mode === 'handwriting') {
         editor?.commands.blur()
         const rect = canvasRef.current?.getBoundingClientRect()
         if (!rect) return
@@ -767,6 +895,17 @@ function BoardEditorInner({
         setDrawingPath(`M ${x} ${y}`)
         isDrawingRef.current = true
         setIsDrawing(true)
+        return
+      }
+
+      // Eraser mode on touch
+      if (mode === 'eraser') {
+        editor?.commands.blur()
+        const rect = canvasRef.current?.getBoundingClientRect()
+        if (!rect) return
+        const x = (t.clientX - rect.left - panRef.current.x) / zoomRef.current
+        const y = (t.clientY - rect.top - panRef.current.y) / zoomRef.current
+        eraseAt(x, y)
         return
       }
 
@@ -794,10 +933,21 @@ function BoardEditorInner({
         startDist: 0,
       }
     }
-  }, [editor])
+  }, [editor, eraseAt])
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     const touches = Array.from(e.touches)
+
+    // Eraser on touch move
+    if (toolModeRef.current === 'eraser' && touches.length === 1) {
+      const rect = canvasRef.current?.getBoundingClientRect()
+      if (rect) {
+        const x = (touches[0].clientX - rect.left - panRef.current.x) / zoomRef.current
+        const y = (touches[0].clientY - rect.top - panRef.current.y) / zoomRef.current
+        eraseAt(x, y)
+      }
+      return
+    }
 
     // 1. If currently drawing with 1 finger
     if (isDrawingRef.current && touches.length === 1) {
@@ -912,6 +1062,90 @@ function BoardEditorInner({
     }
   }, [])
 
+  // Tab management handlers
+  const handleSelectTab = useCallback((tabId: string) => {
+    if (!editor || tabId === activeTabId) return
+    try {
+      const currentJson = editor.getJSON()
+      localStorage.setItem(`${tabContentStoragePrefix}${activeTabId}`, JSON.stringify(currentJson))
+    } catch {}
+
+    setActiveTabId(tabId)
+
+    try {
+      const saved = localStorage.getItem(`${tabContentStoragePrefix}${tabId}`)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        editor.commands.setContent(parsed)
+      } else {
+        editor.commands.setContent({ type: 'doc', content: [] })
+      }
+    } catch {
+      editor.commands.setContent({ type: 'doc', content: [] })
+    }
+  }, [editor, activeTabId, tabContentStoragePrefix])
+
+  const handleAddTab = useCallback((customTitle?: string) => {
+    if (!editor) return
+    try {
+      const currentJson = editor.getJSON()
+      localStorage.setItem(`${tabContentStoragePrefix}${activeTabId}`, JSON.stringify(currentJson))
+    } catch {}
+
+    const newTabId = `page_${Date.now()}`
+    const newTitle = customTitle?.trim() || `Sayfa ${tabs.length + 1}`
+    const newTab: BoardTab = { id: newTabId, title: newTitle, createdAt: Date.now() }
+    const updatedTabs = [...tabs, newTab]
+
+    setTabs(updatedTabs)
+    try {
+      localStorage.setItem(tabsStorageKey, JSON.stringify(updatedTabs))
+    } catch {}
+
+    setActiveTabId(newTabId)
+    editor.commands.setContent({ type: 'doc', content: [] })
+    toast.success(`"${newTitle}" sayfası oluşturuldu`)
+  }, [editor, tabs, activeTabId, tabContentStoragePrefix, tabsStorageKey])
+
+  const handleRenameTab = useCallback((tabId: string, newTitle: string) => {
+    const updated = tabs.map(t => t.id === tabId ? { ...t, title: newTitle.trim() || t.title } : t)
+    setTabs(updated)
+    try {
+      localStorage.setItem(tabsStorageKey, JSON.stringify(updated))
+    } catch {}
+  }, [tabs, tabsStorageKey])
+
+  const handleDeleteTab = useCallback((tabId: string) => {
+    if (tabs.length <= 1) {
+      toast.error('En az bir sayfa bulunmalıdır.')
+      return
+    }
+    const filtered = tabs.filter(t => t.id !== tabId)
+    setTabs(filtered)
+    try {
+      localStorage.setItem(tabsStorageKey, JSON.stringify(filtered))
+      localStorage.removeItem(`${tabContentStoragePrefix}${tabId}`)
+    } catch {}
+
+    if (activeTabId === tabId) {
+      const nextTab = filtered[0]
+      setActiveTabId(nextTab.id)
+      if (editor) {
+        try {
+          const saved = localStorage.getItem(`${tabContentStoragePrefix}${nextTab.id}`)
+          if (saved) {
+            editor.commands.setContent(JSON.parse(saved))
+          } else {
+            editor.commands.setContent({ type: 'doc', content: [] })
+          }
+        } catch {
+          editor.commands.setContent({ type: 'doc', content: [] })
+        }
+      }
+    }
+    toast.success('Sayfa silindi')
+  }, [tabs, activeTabId, editor, tabContentStoragePrefix, tabsStorageKey])
+
   if (!editor) return null
 
   return (
@@ -942,7 +1176,7 @@ function BoardEditorInner({
         onTouchEnd={handleTouchEnd}
         onTouchCancel={handleTouchEnd}
         style={{
-          cursor: toolMode === 'pan' || isPanning ? 'grab' : toolMode === 'draw' || activePlacement ? 'crosshair' : 'default',
+          cursor: toolMode === 'pan' || isPanning ? 'grab' : toolMode === 'eraser' ? 'cell' : toolMode === 'draw' || toolMode === 'handwriting' || activePlacement ? 'crosshair' : 'default',
           touchAction: 'none',
         }}
       >
@@ -1026,6 +1260,16 @@ function BoardEditorInner({
           board={board}
           accessToken={accessToken}
         />
+        {/* Whiteboard Multi-page Tab System */}
+        <BoardTabBar
+          tabs={tabs}
+          activeTabId={activeTabId}
+          onSelectTab={handleSelectTab}
+          onAddTab={handleAddTab}
+          onRenameTab={handleRenameTab}
+          onDeleteTab={handleDeleteTab}
+          readOnly={isReadOnly}
+        />
       </div>
 
       {/* Top right: avatars + clock + timer + share */}
@@ -1056,7 +1300,50 @@ function BoardEditorInner({
           drawWidth={drawWidth}
           onDrawColorChange={setDrawColor}
           onDrawWidthChange={setDrawWidth}
+          selectedShape={selectedShape}
+          onSelectShape={setSelectedShape}
+          onClearAll={() => setConfirmClearOpen(true)}
         />
+      )}
+
+      {/* Clear All Confirmation Modal */}
+      {confirmClearOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-neutral-100 flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                <Trash size={22} weight="bold" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-neutral-900">Tümünü Temizle</h3>
+                <p className="text-xs text-neutral-500">Bu sayfadaki tüm çizim ve nesneler silinecek.</p>
+              </div>
+            </div>
+            <p className="text-sm text-neutral-600">
+              Bu işlem geri alınamaz. Tahtadaki tüm içerik kalıcı olarak temizlenecektir. Devam etmek istiyor musunuz?
+            </p>
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmClearOpen(false)}
+                className="px-4 py-2 rounded-xl text-xs font-medium text-neutral-700 bg-neutral-100 hover:bg-neutral-200 transition-colors"
+              >
+                Vazgeç
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  editor?.commands.setContent({ type: 'doc', content: [] })
+                  setConfirmClearOpen(false)
+                  toast.success('Tahta temizlendi')
+                }}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors shadow-sm"
+              >
+                Evet, Tümünü Temizle
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Zoom & Odak Controls — Fixed bottom-right with clean, non-overlapping placement */}

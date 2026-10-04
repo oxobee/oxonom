@@ -399,15 +399,65 @@ export function generateClassStudents(classItem: ClassroomItem) {
   return students
 }
 
-export function generateAssignmentSubmissionsData(assignmentUuid: string, classItem?: ClassroomItem) {
+export function generateAssignmentSubmissionsData(
+  assignmentUuid: string,
+  classItem?: ClassroomItem,
+  dueDateStr?: string
+) {
   const targetClass = classItem || ALL_CLASSROOMS[0]
   const students = generateClassStudents(targetClass)
 
+  const dueDate = dueDateStr
+    ? new Date(dueDateStr).getTime()
+    : new Date('2026-10-15T23:59:00').getTime()
+
   const studentRows = students.map((std, idx) => {
     const isErcil = std.username === 'demo_ogrenci' || std.name.includes('Erçil')
-    const isGraded = idx < 26
+
+    // Students 25..29 (5 students): NOT SUBMITTED (Teslim Etmeyenler)
+    if (idx >= 25) {
+      return {
+        user_id: std.id,
+        name: std.name,
+        username: std.username,
+        avatar_image: (std as any).avatar_image || null,
+        classroom_name: targetClass.name,
+        classroom_id: targetClass.id,
+        submission_id: null,
+        status: 'PENDING' as const,
+        submission_date: null,
+        score: null,
+        teacher_feedback: null,
+        student_content: null,
+        is_late: false,
+        late_duration_text: '',
+      }
+    }
+
+    // Students 20..24 (5 students): LATE SUBMISSION (Geç Teslim)
+    const isLateStudent = idx >= 20 && idx < 25
+    let submissionDate: string
+    let isLate = false
+    let lateText = ''
+
+    if (isLateStudent) {
+      isLate = true
+      const lateHours = [2, 14, 28, 49, 73][idx - 20] || (idx - 19) * 12
+      const lateMs = lateHours * 3600 * 1000 + 15 * 60 * 1000
+      submissionDate = new Date(dueDate + lateMs).toISOString()
+      const diffDays = Math.floor(lateHours / 24)
+      const remHours = lateHours % 24
+      lateText = diffDays > 0
+        ? (remHours > 0 ? `${diffDays} gün ${remHours} saat geç` : `${diffDays} gün geç`)
+        : `${lateHours} saat geç`
+    } else {
+      // Delivered before due date (Zamanında Teslim)
+      const earlyHours = (idx + 1) * 7 + 3
+      submissionDate = new Date(dueDate - earlyHours * 3600 * 1000).toISOString()
+    }
+
+    const isGraded = idx < 16
     const score = isErcil ? 95 : (84 + (idx % 16))
-    const submissionDate = `2026-10-0${Math.min(9, Math.max(1, (idx % 5) + 1))}T${14 + (idx % 6)}:${10 + (idx * 2) % 50}:00`
 
     return {
       user_id: std.id,
@@ -417,9 +467,11 @@ export function generateAssignmentSubmissionsData(assignmentUuid: string, classI
       classroom_name: targetClass.name,
       classroom_id: targetClass.id,
       submission_id: 500 + idx,
-      status: (isGraded ? 'GRADED' : 'SUBMITTED') as 'GRADED' | 'SUBMITTED',
+      status: (isGraded ? 'GRADED' : isLate ? 'LATE' : 'SUBMITTED') as 'GRADED' | 'LATE' | 'SUBMITTED',
       submission_date: submissionDate,
       score: isGraded ? score : null,
+      is_late: isLate,
+      late_duration_text: lateText,
       teacher_feedback: isErcil
         ? 'Harika bir çalışma Erçil Evren, tebrikler!'
         : isGraded
@@ -432,10 +484,13 @@ export function generateAssignmentSubmissionsData(assignmentUuid: string, classI
     }
   })
 
+  const submittedCount = studentRows.filter((s) => s.status !== 'PENDING').length
+  const gradedCount = studentRows.filter((s) => s.status === 'GRADED').length
+
   return {
     total_students: 30,
-    submitted_count: 30,
-    graded_count: 26,
+    submitted_count: submittedCount,
+    graded_count: gradedCount,
     students: studentRows,
   }
 }

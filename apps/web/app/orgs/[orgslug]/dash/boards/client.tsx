@@ -27,7 +27,7 @@ import { useLHSession } from '@components/Contexts/LHSessionContext'
 import { getUriWithOrg } from '@services/config/config'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/query/keys'
-import { createBoard, deleteBoard, duplicateBoard, getBoards } from '@services/boards/boards'
+import { createBoard, deleteBoard, duplicateBoard, getBoards, getStoredCustomBoards } from '@services/boards/boards'
 import { getBoardThumbnailMediaDirectory } from '@services/media/media'
 import { getActiveClassroom, generateClassroomBoards } from '@services/demo/schoolDirectory'
 import useAdminStatus from '@components/Hooks/useAdminStatus'
@@ -187,6 +187,16 @@ export default function BoardListClient({ org_id, orgslug }: BoardListClientProp
     if (saved) setActiveClassCode(saved)
   }, [])
 
+  // Listen to board updates across components
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const handleUpdate = () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.boards.list(orgslug) })
+    }
+    window.addEventListener('oxonom_boards_updated', handleUpdate)
+    return () => window.removeEventListener('oxonom_boards_updated', handleUpdate)
+  }, [queryClient, orgslug])
+
   const activeClass = useMemo(() => {
     return getActiveClassroom(activeClassCode)
   }, [activeClassCode])
@@ -194,16 +204,21 @@ export default function BoardListClient({ org_id, orgslug }: BoardListClientProp
   const { data: boardsData, isLoading } = useQuery({
     queryKey: queryKeys.boards.list(orgslug),
     queryFn: () => getBoards(org_id, access_token),
-    enabled: isBoardsEnabled && !!access_token && !!org_id,
+    enabled: isBoardsEnabled && !!org_id,
     staleTime: 60_000,
   })
 
   // Students ONLY see their classroom's boards (never high school or foreign class boards)
   const allBoards = useMemo(() => {
     if (isStudent) {
-      // Use generated classroom boards for active class if API returns mixed data
+      const localCustom = getStoredCustomBoards()
+      const classCustom = localCustom.filter(
+        (b) => !b.usergroup_id || Number(b.usergroup_id) === Number(activeClass?.id)
+      )
       const classBoards = generateClassroomBoards(activeClass)
-      return classBoards
+      const uuids = new Set(classBoards.map((b) => b.board_uuid))
+      const uniqueLocal = classCustom.filter((b) => !uuids.has(b.board_uuid))
+      return [...uniqueLocal, ...classBoards]
     }
     return boardsData || []
   }, [isStudent, activeClass, boardsData])

@@ -30,6 +30,7 @@ import toast from 'react-hot-toast'
 import {
   SchoolAssignmentItem,
   submitSchoolAssignment,
+  formatDueDate,
 } from '@services/school_assignments/school_assignments'
 import AssignmentFileViewer from './AssignmentFileViewer'
 import VoiceRecordingStudio from './VoiceRecordingStudio'
@@ -149,7 +150,15 @@ export default function DoAssignmentModal({
         accessToken
       )
 
-      toast.success('Ödeviniz başarıyla teslim edildi!')
+      const now = new Date()
+      const dueTime = assignment.due_date ? new Date(assignment.due_date).getTime() : null
+      const isLate = dueTime ? now.getTime() > dueTime : false
+
+      if (isLate) {
+        toast.success('Ödeviniz başarıyla teslim edildi (Geç Teslim olarak kaydedildi).')
+      } else {
+        toast.success('Ödeviniz zamanında başarıyla teslim edildi!')
+      }
       onSuccess()
       onClose()
     } catch (err) {
@@ -179,9 +188,13 @@ export default function DoAssignmentModal({
                   <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
                     <CheckCircle2 size={11} /> Notlandırıldı ({submission?.score} / {assignment.max_score})
                   </span>
+                ) : submission?.is_late || submission?.status === 'LATE' ? (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                    <Clock size={11} /> Geç Teslim Edildi {submission?.late_duration_text ? `(${submission.late_duration_text})` : ''}
+                  </span>
                 ) : isSubmitted ? (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200">
-                    <Clock size={11} /> Teslim Edildi (İnceleniyor)
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                    <CheckCircle2 size={11} /> Zamanında Teslim Edildi
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
@@ -197,8 +210,9 @@ export default function DoAssignmentModal({
                 <span>Öğretmen: {assignment.teacher_name || 'Ders Öğretmeni'}</span>
                 <span>•</span>
                 {assignment.due_date && (
-                  <span className="flex items-center gap-1">
-                    <Calendar size={12} /> Teslim: {new Date(assignment.due_date).toLocaleDateString('tr-TR')}
+                  <span className="flex items-center gap-1 font-semibold text-gray-700">
+                    <Calendar size={12} className="text-indigo-600" />
+                    Son Teslim Tarihi: {formatDueDate(assignment.due_date)}
                   </span>
                 )}
               </DialogDescription>

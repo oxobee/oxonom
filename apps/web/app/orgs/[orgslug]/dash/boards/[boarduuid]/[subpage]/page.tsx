@@ -50,8 +50,8 @@ function BoardSettingsPage(props: { params: Promise<BoardSettingsParams> }) {
 
   const { data: board, isLoading } = useQuery({
     queryKey: queryKeys.boards.detail(boardUuid),
-    queryFn: () => getBoard(boardUuid, access_token!),
-    enabled: !!access_token && !!boardUuid && !isStudent,
+    queryFn: () => getBoard(boardUuid, access_token || ''),
+    enabled: !!boardUuid && !isStudent,
     staleTime: 60_000,
   })
 
