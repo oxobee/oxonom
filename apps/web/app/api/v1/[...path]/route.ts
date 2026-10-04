@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import * as fs from 'fs'
 import { getBackendUrl } from '@services/config/config'
 import { DEFAULT_FALLBACK_ORG } from '@services/organizations/orgs'
-import { getFallbackGamesStore, FALLBACK_GAME_CATEGORIES, getFallbackGamePlay } from '@services/games/fallbackData'
+import { getFallbackGamesStore, FALLBACK_GAME_CATEGORIES, getFallbackGamePlay, PERMANENTLY_REMOVED_GAMES } from '@services/games/fallbackData'
 import { ACCESS_TOKEN_COOKIE } from '@services/auth/cookies'
 import {
   findDemoUser,
@@ -38,7 +38,10 @@ const GAMES_DELETED_FILE = '/tmp/oxonom_deleted_games.json'
 let SERVER_DELETED_GAMES = new Set<string>()
 
 function loadDeletedGameUuids(req?: NextRequest): Set<string> {
-  const set = new Set<string>(SERVER_DELETED_GAMES)
+  const set = new Set<string>([
+    ...SERVER_DELETED_GAMES,
+    ...Array.from(PERMANENTLY_REMOVED_GAMES),
+  ])
   try {
     if (fs.existsSync(GAMES_DELETED_FILE)) {
       const data = JSON.parse(fs.readFileSync(GAMES_DELETED_FILE, 'utf8'))
@@ -1236,10 +1239,36 @@ async function handleFallback(request: NextRequest, path: string): Promise<Respo
     if (game) {
       game.play_count = (game.play_count || 0) + 1
       saveLiveGames(currentGames)
-      const fallbackData = getFallbackGamePlay(uuid)
-      const html = (game.html_content && game.html_content.trim().length > 0)
+
+      let html = (game.html_content && game.html_content.trim().length > 0)
         ? game.html_content
-        : fallbackData.html_content
+        : ''
+
+      // Attempt to read the actual static game file (e.g. public/games/orbit.html, 2048-..., etc.)
+      if (!html && game.slug) {
+        try {
+          const pathModule = require('path')
+          const possiblePaths = [
+            pathModule.join(process.cwd(), 'public', 'games', `${game.slug}.html`),
+            pathModule.join(process.cwd(), 'apps', 'web', 'public', 'games', `${game.slug}.html`),
+          ]
+          for (const p of possiblePaths) {
+            if (fs.existsSync(p)) {
+              const fileContent = fs.readFileSync(p, 'utf8')
+              if (fileContent && fileContent.length > 200) {
+                html = fileContent
+                break
+              }
+            }
+          }
+        } catch (_) {}
+      }
+
+      if (!html) {
+        const fallbackData = getFallbackGamePlay(uuid)
+        html = fallbackData.html_content
+      }
+
       return NextResponse.json({
         game,
         html_content: html,

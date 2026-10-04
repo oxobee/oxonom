@@ -157,12 +157,31 @@ export default function GamesStoreClient() {
     setPlayingGame(game)
     setIsLoadingGame(true)
     try {
-      if ((game as any).html_content && String((game as any).html_content).trim().length > 0) {
-        setGameHtmlContent((game as any).html_content)
-      } else {
-        const res = await getGamePlay(game.game_uuid || String(game.id))
-        setGameHtmlContent(res.html_content)
+      let content = (game as any)?.html_content || ''
+
+      // 1. If not directly in game object, try static public game file (e.g. /games/orbit.html)
+      if (!content || !content.trim()) {
+        const slug = game.slug || (game.title ? game.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') : '')
+        if (slug) {
+          try {
+            const staticRes = await fetch(`/games/${slug}.html`)
+            if (staticRes.ok) {
+              const text = await staticRes.text()
+              if (text && text.includes('<html') && text.length > 200) {
+                content = text
+              }
+            }
+          } catch (_) {}
+        }
       }
+
+      // 2. If still empty, call API endpoint
+      if (!content || !content.trim()) {
+        const res = await getGamePlay(game.game_uuid || String(game.id))
+        content = res?.html_content || ''
+      }
+
+      setGameHtmlContent(content)
     } catch (e) {
       console.error('Failed to load game play data:', e)
       toast.error('Oyun yüklenirken bir hata oluştu.')
@@ -1096,7 +1115,8 @@ export default function GamesStoreClient() {
                 <iframe
                   ref={playerIframeRef}
                   srcDoc={gameHtmlContent}
-                  sandbox="allow-scripts allow-forms allow-pointer-lock allow-downloads"
+                  sandbox="allow-scripts allow-forms allow-pointer-lock allow-downloads allow-same-origin allow-modals"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   className="w-full h-full border-0 block"
                   title={playingGame.title}
                 />

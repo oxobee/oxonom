@@ -144,7 +144,7 @@ export default function GamesAdminClient() {
   const { data: rawSchools = [] } = useQuery({
     queryKey: ['admin-schools'],
     queryFn: () => getAdminSchools(token),
-    enabled: !!token,
+    enabled: true,
   })
   const schools = Array.isArray(rawSchools) ? rawSchools : []
 
@@ -208,7 +208,7 @@ export default function GamesAdminClient() {
       }
       return filtered
     },
-    enabled: !!token,
+    enabled: true,
     staleTime: 0,
     refetchOnWindowFocus: true,
   })
@@ -217,7 +217,7 @@ export default function GamesAdminClient() {
   const { data: rawReviews = [], isLoading: isLoadingReviews } = useQuery({
     queryKey: ['admin-reviews', reviewSearchTerm],
     queryFn: () => getAdminReviews({ search: reviewSearchTerm }, token),
-    enabled: !!token && activeTab === 'reviews',
+    enabled: activeTab === 'reviews',
   })
   const reviews = Array.isArray(rawReviews) ? rawReviews : []
 

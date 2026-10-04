@@ -13,15 +13,23 @@ const LS_GAMES_KEY = 'admin_synced_games'
 const LS_DELETED_KEY = 'admin_deleted_game_uuids'
 const COOKIE_DELETED_KEY = 'oxonom_deleted_games'
 
+export const PERMANENTLY_REMOVED_GAMES = new Set<string>([
+  '5f811696-f14b-43c6-8d44-2734841f38d2',
+  'uzay-roketi-matematik-gorevi',
+  'uzay-roket-matematik-gorevi',
+  '3',
+  '7',
+])
+
 // ─── Tombstone (Silme Listesi) Yönetimi ───────────────────────────────────────
 
 /**
  * Silinen oyunların UUID/ID/slug listesini döndürür.
- * Hem localStorage hem cookie'den okur.
+ * Hem localStorage hem cookie'den okur ve kalıcı silinenleri içerir.
  */
 export function getDeletedGameUuids(): string[] {
-  const set = new Set<string>()
-  if (typeof window === 'undefined') return []
+  const set = new Set<string>(PERMANENTLY_REMOVED_GAMES)
+  if (typeof window === 'undefined') return Array.from(set)
 
   try {
     const local = localStorage.getItem(LS_DELETED_KEY)
@@ -165,6 +173,9 @@ export function mergeWithLocalGames(serverGames: GameItem[]): GameItem[] {
       const parsed = JSON.parse(localStr)
       if (Array.isArray(parsed)) {
         localGames = filterOutDeleted(parsed)
+        if (localGames.length !== parsed.length) {
+          localStorage.setItem(LS_GAMES_KEY, JSON.stringify(localGames))
+        }
       }
     }
   } catch (_) {}
