@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Search,
@@ -22,6 +22,12 @@ import FeatureGate from '@components/Dashboard/Shared/FeatureGate/FeatureGate'
 import useAdminStatus from '@components/Hooks/useAdminStatus'
 import { searchMatchesAny } from '@/lib/search/normalize'
 import CatalogPagination, { useCatalogPagination } from '@components/Objects/Catalog/CatalogPagination'
+import {
+  getAllModuleAssignments,
+  isModuleVisibleToStudent,
+  ModuleAssignment,
+} from '@services/playgrounds/moduleAssignments'
+import { useLHSession } from '@components/Contexts/LHSessionContext'
 
 interface PlaygroundsClientProps {
   orgslug: string
@@ -43,7 +49,8 @@ export default function PlaygroundsClient({
   org_id,
   initialPlaygrounds,
 }: PlaygroundsClientProps) {
-  const { isAdmin: isUserAdmin, rights, canManageOrg } = useAdminStatus()
+  const { isAdmin: isUserAdmin, rights, canManageOrg, isStudent } = useAdminStatus()
+  const session = useLHSession() as any
   const { track } = useLHAnalytics('learner')
   const { t, i18n } = useTranslation()
   const isTr = i18n.language?.startsWith('tr') !== false
@@ -59,33 +66,74 @@ export default function PlaygroundsClient({
   const [searchQuery, setSearchQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState('all')
 
+  // Live module visibility assignments
+  const [assignmentsMap, setAssignmentsMap] = useState<Record<string, ModuleAssignment>>({})
+  const [activeStudentClass, setActiveStudentClass] = useState<string>('1-A')
+  const [activeStudentName, setActiveStudentName] = useState<string>('Erçil Evren UĞURLU')
+
+  const effectiveOrgId = org_id || 10
+
+  const refreshAssignments = () => {
+    setAssignmentsMap(getAllModuleAssignments(effectiveOrgId))
+  }
+
+  useEffect(() => {
+    refreshAssignments()
+    const handleUpdate = () => refreshAssignments()
+    window.addEventListener('oxonom_module_assignments_changed', handleUpdate)
+    return () => window.removeEventListener('oxonom_module_assignments_changed', handleUpdate)
+  }, [effectiveOrgId])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const cookieMatch = document.cookie.match(/oxonom_demo_student_active_class=([^;]+)/)
+    const saved = cookieMatch ? decodeURIComponent(cookieMatch[1]) : localStorage.getItem('oxonom_demo_student_active_class')
+    if (saved) setActiveStudentClass(saved)
+
+    if (session?.data?.user?.first_name) {
+      setActiveStudentName(`${session.data.user.first_name} ${session.data.user.last_name || ''}`.trim())
+    }
+  }, [session])
+
   const safePlaygrounds = Array.isArray(playgrounds) ? playgrounds : []
 
-  // Count items per category
+  // Count items per category (visible to the current viewer)
   const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: safePlaygrounds.length }
+    const counts: Record<string, number> = { all: 0 }
     safePlaygrounds.forEach((pg) => {
+      // If student, check visibility
+      if (isStudent && !isModuleVisibleToStudent(pg, activeStudentClass, activeStudentName, assignmentsMap)) {
+        return
+      }
+      counts.all = (counts.all || 0) + 1
       const cat = detectCategory(pg).key
       counts[cat] = (counts[cat] || 0) + 1
     })
     return counts
-  }, [safePlaygrounds])
+  }, [safePlaygrounds, isStudent, activeStudentClass, activeStudentName, assignmentsMap])
 
-  // Filter playgrounds by search and category
+  // Filter playgrounds by search, category, and student visibility
   const filtered = useMemo(() => {
     return safePlaygrounds.filter((pg) => {
+      // 1. Student Visibility Check (teachers/admins see all)
+      if (isStudent && !isModuleVisibleToStudent(pg, activeStudentClass, activeStudentName, assignmentsMap)) {
+        return false
+      }
+
+      // 2. Category filter
       if (activeCategory !== 'all') {
         const cat = detectCategory(pg).key
         if (cat !== activeCategory) return false
       }
 
+      // 3. Search query
       if (searchQuery.trim()) {
         return searchMatchesAny([pg.name, pg.description], searchQuery)
       }
 
       return true
     })
-  }, [safePlaygrounds, searchQuery, activeCategory])
+  }, [safePlaygrounds, searchQuery, activeCategory, isStudent, activeStudentClass, activeStudentName, assignmentsMap])
 
   const {
     paginatedItems: paginated,
@@ -111,7 +159,9 @@ export default function PlaygroundsClient({
                   />
                   <p className="text-xs sm:text-sm text-gray-500 mt-1">
                     {isTr
-                      ? '1. sınıftan 12. sınıfa kadar tüm kademeler için interaktif ders ve beceri modülleri'
+                      ? isStudent
+                        ? `${activeStudentClass} şubesi için öğretmenleriniz tarafından paylaşılan ders ve beceri modülleri`
+                        : '1. sınıftan 12. sınıfa kadar tüm kademeler için interaktif ders ve beceri modülleri'
                       : 'Interactive learning and skill modules for all grade levels'}
                   </p>
                 </div>

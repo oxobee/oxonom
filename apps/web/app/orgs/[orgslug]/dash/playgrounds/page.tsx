@@ -16,8 +16,8 @@ export async function generateMetadata(props: MetadataProps): Promise<Metadata> 
   })
 
   return {
-    title: 'Playgrounds — ' + org.name,
-    description: `Interactive AI-generated playgrounds for ${org.name}`,
+    title: `Modüller — ${org.name}`,
+    description: `Etkileşimli eğitim ve ders modülleri — ${org.name}`,
     robots: {
       index: false,
       follow: false,

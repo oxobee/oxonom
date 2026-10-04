@@ -2,11 +2,18 @@
 
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Globe, Lock, Users, Pencil, Sparkles, BookOpen, Eye, EyeOff, Settings, X, CheckSquare, Square } from 'lucide-react'
-import { Cube } from '@phosphor-icons/react'
+import {
+  Globe,
+  Lock,
+  Users,
+  BookOpen,
+  Eye,
+  EyeOff,
+  Settings,
+  School,
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { Playground, updatePlayground, addUserGroupToPlayground, removeUserGroupFromPlayground, getPlaygroundUserGroups } from '@services/playgrounds/playgrounds'
-import { getUserGroups, getMyUserGroups } from '@services/usergroups/usergroups'
+import { Playground, updatePlayground } from '@services/playgrounds/playgrounds'
 import { getPlaygroundThumbnailMediaDirectory } from '@services/media/media'
 import { getUriWithOrg } from '@services/config/config'
 import { useLHAnalytics, AnalyticsEvent } from '@services/analytics'
@@ -16,6 +23,12 @@ import toast from 'react-hot-toast'
 import { useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/query/keys'
 import ModuleVisualCover from './ModuleVisualCover'
+import ModuleVisibilityModal from './ModuleVisibilityModal'
+import {
+  getModuleAssignment,
+  saveModuleAssignment,
+  ModuleAssignment,
+} from '@services/playgrounds/moduleAssignments'
 
 interface PlaygroundCardProps {
   playground: Playground
@@ -44,107 +57,100 @@ export function detectCategory(playground: Playground): { key: string; label: st
   return { key: 'general', label: 'Genel Modül', color: 'bg-gray-100 text-gray-700 border-gray-200' }
 }
 
-const accessConfig = {
-  public: { icon: Globe, labelTr: 'Herkese Açık', labelEn: 'Public', className: 'bg-emerald-100 text-emerald-800' },
-  authenticated: { icon: Lock, labelTr: 'Tüm Sınıflar', labelEn: 'All Classes', className: 'bg-indigo-100 text-indigo-800' },
-  restricted: { icon: Users, labelTr: 'Seçili Sınıflar', labelEn: 'Assigned Classes', className: 'bg-amber-100 text-amber-800' },
-}
-
 export default function PlaygroundCard({ playground, orgslug, canEdit, canManage }: PlaygroundCardProps) {
   const { t, i18n } = useTranslation()
   const isTr = i18n.language?.startsWith('tr') !== false
   const { track } = useLHAnalytics('learner')
-  const access = accessConfig[playground.access_type as keyof typeof accessConfig] || accessConfig.authenticated
-  const AccessIcon = access.icon
   const category = detectCategory(playground)
 
+  const org = useOrg() as any
+  const effectiveOrgId = playground.org_id || org?.id || 10
   const session = useLHSession() as any
   const access_token = session?.data?.tokens?.access_token
   const queryClient = useQueryClient()
   const [isUpdating, setIsUpdating] = useState(false)
   const [showManageModal, setShowManageModal] = useState(false)
-  const [availableClasses, setAvailableClasses] = useState<any[]>([])
-  const [assignedClasses, setAssignedClasses] = useState<string[]>([])
-  const [loadingClasses, setLoadingClasses] = useState(false)
+
+  // Live assignment state
+  const [assignment, setAssignment] = useState<ModuleAssignment>(() =>
+    getModuleAssignment(effectiveOrgId, playground.playground_uuid, playground.published !== false)
+  )
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      setAssignment(getModuleAssignment(effectiveOrgId, playground.playground_uuid, playground.published !== false))
+    }
+    window.addEventListener('oxonom_module_assignments_changed', handleUpdate)
+    return () => window.removeEventListener('oxonom_module_assignments_changed', handleUpdate)
+  }, [effectiveOrgId, playground.playground_uuid, playground.published])
+
+  const isPublished = assignment.published && assignment.scope !== 'hidden'
+
+  // Access badge
+  let accessBadge = {
+    icon: Globe,
+    labelTr: 'Tüm Sınıflar',
+    labelEn: 'All Classes',
+    className: 'bg-emerald-100 text-emerald-800',
+  }
+  if (!isPublished) {
+    accessBadge = {
+      icon: Lock,
+      labelTr: 'Gizli (Pasif)',
+      labelEn: 'Hidden',
+      className: 'bg-rose-100 text-rose-800',
+    }
+  } else if (assignment.scope === 'classes') {
+    const count = assignment.assignedClasses?.length || 0
+    accessBadge = {
+      icon: School,
+      labelTr: count > 0 ? `${count} Sınıf` : 'Seçili Sınıflar',
+      labelEn: count > 0 ? `${count} Classes` : 'Assigned Classes',
+      className: 'bg-blue-100 text-blue-800',
+    }
+  } else if (assignment.scope === 'students') {
+    const count = assignment.assignedStudents?.length || 0
+    accessBadge = {
+      icon: Users,
+      labelTr: count > 0 ? `${count} Öğrenci` : 'Özel Öğrenciler',
+      labelEn: count > 0 ? `${count} Students` : 'Assigned Students',
+      className: 'bg-purple-100 text-purple-800',
+    }
+  }
+
+  const AccessIcon = accessBadge.icon
 
   const handleTogglePublish = async () => {
-    if (!access_token || isUpdating) return
+    if (isUpdating) return
     setIsUpdating(true)
-    try {
-      await updatePlayground(playground.playground_uuid, { published: !playground.published }, access_token)
-      toast.success(isTr ? 'Durum güncellendi' : 'Status updated')
-      queryClient.invalidateQueries({ queryKey: queryKeys.playgrounds.list(orgslug) })
-    } catch {
-      toast.error(isTr ? 'Güncelleme başarısız' : 'Update failed')
-    } finally {
-      setIsUpdating(false)
-    }
-  }
+    const nextPublished = !isPublished
+    const nextScope = nextPublished ? (assignment.scope === 'hidden' ? 'all' : assignment.scope) : 'hidden'
 
-  const org = useOrg() as any
-  const effectiveOrgId = playground.org_id || org?.id || 1
+    saveModuleAssignment(effectiveOrgId, playground.playground_uuid, {
+      published: nextPublished,
+      scope: nextScope,
+    })
 
-  const openManageModal = async (e: React.MouseEvent) => {
-    e.preventDefault()
-    if (!access_token) return
-    setShowManageModal(true)
-    setLoadingClasses(true)
-    try {
-      const [allRes, myRes, assignedRes] = await Promise.allSettled([
-        getUserGroups(effectiveOrgId, access_token),
-        getMyUserGroups(effectiveOrgId, access_token),
-        getPlaygroundUserGroups(playground.playground_uuid, access_token)
-      ])
-      
-      const extractArray = (res: PromiseSettledResult<any>) => {
-        if (res.status !== 'fulfilled' || !res.value) return []
-        const val = res.value
-        if (Array.isArray(val)) return val
-        if (val.data && Array.isArray(val.data)) return val.data
-        return []
+    if (access_token) {
+      try {
+        await updatePlayground(playground.playground_uuid, { published: nextPublished }, access_token)
+      } catch {
+        // Fallback
       }
-
-      const allList = extractArray(allRes)
-      const myList = extractArray(myRes)
-
-      const combinedMap = new Map<string, any>()
-      for (const item of [...allList, ...myList]) {
-        const key = item.usergroup_uuid || String(item.id)
-        if (key && !combinedMap.has(key)) {
-          combinedMap.set(key, item)
-        }
-      }
-      setAvailableClasses(Array.from(combinedMap.values()))
-      
-      const assignedList = extractArray(assignedRes)
-      setAssignedClasses(assignedList.map((a: any) => a.usergroup_uuid))
-    } catch {
-      toast.error(isTr ? 'Sınıflar yüklenemedi' : 'Failed to load classes')
-    } finally {
-      setLoadingClasses(false)
     }
-  }
 
-  const toggleClass = async (ugUuid: string) => {
-    if (!access_token) return
-    const isAssigned = assignedClasses.includes(ugUuid)
-    
-    // Optimistic UI update
-    setAssignedClasses(prev => isAssigned ? prev.filter(id => id !== ugUuid) : [...prev, ugUuid])
-    
-    try {
-      if (isAssigned) {
-        await removeUserGroupFromPlayground(playground.playground_uuid, ugUuid, access_token)
-      } else {
-        await addUserGroupToPlayground(playground.playground_uuid, ugUuid, access_token)
-      }
-    } catch {
-      toast.error(isTr ? 'İşlem başarısız' : 'Action failed')
-      // Revert on failure
-      setAssignedClasses(prev => isAssigned ? [...prev, ugUuid] : prev.filter(id => id !== ugUuid))
-    }
+    toast.success(
+      nextPublished
+        ? isTr
+          ? 'Modül aktif edildi (yayında)'
+          : 'Module published'
+        : isTr
+        ? 'Modül öğrencilerden gizlendi (pasif)'
+        : 'Module hidden'
+    )
+    queryClient.invalidateQueries({ queryKey: queryKeys.playgrounds.list(orgslug) })
+    setIsUpdating(false)
   }
-
 
   const handleOpen = () => {
     track(AnalyticsEvent.PlaygroundOpened, {
@@ -164,7 +170,6 @@ export default function PlaygroundCard({ playground, orgslug, canEdit, canManage
       : null
 
   const playgroundLink = getUriWithOrg(orgslug, `/playground/${playground.playground_uuid}`)
-  const editLink = `/editor/playground/${playground.playground_uuid}/edit`
 
   // Strip category tag like [1. Sınıf Temel Beceriler] from display description for cleaner text
   const cleanDescription = (playground.description || '').replace(/\[.*?\]/g, '').trim()
@@ -173,21 +178,29 @@ export default function PlaygroundCard({ playground, orgslug, canEdit, canManage
     <div className="group relative flex flex-col bg-white rounded-2xl nice-shadow overflow-hidden w-full transition-all duration-300 hover:scale-[1.015] hover:shadow-lg border border-gray-100">
       {/* Manage buttons for teachers/principals (Assign class & Toggle visibility) */}
       {canManage && (
-        <div className="absolute top-2.5 end-2.5 z-20 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+        <div className="absolute top-2.5 end-2.5 z-20 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1.5">
           <button
-            onClick={openManageModal}
-            className="p-2 bg-white/95 backdrop-blur-md rounded-full hover:bg-white text-gray-700 hover:text-black transition-all shadow-md flex items-center justify-center border border-gray-200 cursor-pointer"
-            title={isTr ? 'Sınıf Ata' : 'Assign Class'}
+            type="button"
+            onClick={(e) => {
+              e.preventDefault()
+              setShowManageModal(true)
+            }}
+            className="p-2 bg-white/95 backdrop-blur-md rounded-full hover:bg-white text-gray-700 hover:text-indigo-600 transition-all shadow-md flex items-center justify-center border border-gray-200 cursor-pointer"
+            title={isTr ? 'Görünürlük & Sınıf/Öğrenci Ata' : 'Assign Class / Student'}
           >
             <Settings className="w-3.5 h-3.5" />
           </button>
           <button
-            onClick={(e) => { e.preventDefault(); handleTogglePublish(); }}
+            type="button"
+            onClick={(e) => {
+              e.preventDefault()
+              handleTogglePublish()
+            }}
             disabled={isUpdating}
             className="p-2 bg-white/95 backdrop-blur-md rounded-full hover:bg-white text-gray-700 hover:text-black transition-all shadow-md flex items-center justify-center border border-gray-200 cursor-pointer"
-            title={isTr ? (playground.published ? 'Modülü Pasif Yap (Gizle)' : 'Modülü Aktif Yap (Yayınla)') : 'Toggle Visibility'}
+            title={isTr ? (isPublished ? 'Modülü Pasif Yap (Gizle)' : 'Modülü Aktif Yap (Yayınla)') : 'Toggle Visibility'}
           >
-            {playground.published ? <Eye className="w-3.5 h-3.5 text-emerald-600" /> : <EyeOff className="w-3.5 h-3.5 text-amber-600" />}
+            {isPublished ? <Eye className="w-3.5 h-3.5 text-emerald-600" /> : <EyeOff className="w-3.5 h-3.5 text-rose-600" />}
           </button>
         </div>
       )}
@@ -210,13 +223,13 @@ export default function PlaygroundCard({ playground, orgslug, canEdit, canManage
 
         {/* Badges — bottom left */}
         <div className="absolute bottom-2.5 start-2.5 flex items-center gap-1.5 flex-wrap">
-          <span className={`flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-bold tracking-wide rounded-full shadow-xs ${access.className}`}>
+          <span className={`flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-bold tracking-wide rounded-full shadow-xs ${accessBadge.className}`}>
             <AccessIcon className="w-2.5 h-2.5" />
-            {isTr ? access.labelTr : access.labelEn}
+            {isTr ? accessBadge.labelTr : accessBadge.labelEn}
           </span>
-          {!playground.published && (
-            <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide bg-yellow-100 text-yellow-700 rounded-full shadow-xs">
-              {isTr ? 'Taslak' : 'Draft'}
+          {!isPublished && (
+            <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide bg-rose-100 text-rose-700 rounded-full shadow-xs">
+              {isTr ? 'Gizli' : 'Draft'}
             </span>
           )}
         </div>
@@ -262,31 +275,19 @@ export default function PlaygroundCard({ playground, orgslug, canEdit, canManage
           </Link>
         </div>
       </div>
-{/* Manage Modal */}
+
+      {/* Manage Visibility Modal */}
       {showManageModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowManageModal(false); }}>
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-gray-900">{isTr ? 'Sınıf Ata' : 'Assign Class'}</h3>
-              <button onClick={() => setShowManageModal(false)}><X className="w-5 h-5 text-gray-500" /></button>
-            </div>
-            
-            {loadingClasses ? (
-              <div className="text-center text-sm text-gray-500 py-4">{isTr ? 'Yükleniyor...' : 'Loading...'}</div>
-            ) : availableClasses.length === 0 ? (
-              <div className="text-center text-sm text-gray-500 py-4">{isTr ? 'Sınıf bulunamadı.' : 'No classes found.'}</div>
-            ) : (
-              <div className="space-y-2 max-h-60 overflow-y-auto">
-                {availableClasses.map(cls => (
-                  <div key={cls.usergroup_uuid} onClick={() => toggleClass(cls.usergroup_uuid)} className="flex items-center gap-2 p-2 hover:bg-gray-50 rounded-lg cursor-pointer border border-gray-100">
-                    {assignedClasses.includes(cls.usergroup_uuid) ? <CheckSquare className="w-4 h-4 text-indigo-600" /> : <Square className="w-4 h-4 text-gray-400" />}
-                    <span className="text-sm font-medium">{cls.name}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+        <ModuleVisibilityModal
+          isOpen={showManageModal}
+          onClose={() => setShowManageModal(false)}
+          module={playground}
+          orgId={effectiveOrgId}
+          onSaved={(updated) => {
+            setAssignment(updated)
+            queryClient.invalidateQueries({ queryKey: queryKeys.playgrounds.list(orgslug) })
+          }}
+        />
       )}
     </div>
   )
