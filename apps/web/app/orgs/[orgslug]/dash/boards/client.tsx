@@ -20,6 +20,7 @@ import {
   Sparkles,
   Clock,
   Filter,
+  Plus,
 } from 'lucide-react'
 import { ChalkboardSimple } from '@phosphor-icons/react'
 import { useOrg } from '@components/Contexts/OrgContext'
@@ -34,6 +35,7 @@ import useAdminStatus from '@components/Hooks/useAdminStatus'
 import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { Breadcrumbs } from '@components/Objects/Breadcrumbs/Breadcrumbs'
 import AuthenticatedClientElement from '@components/Security/AuthenticatedClientElement'
 import FeatureGate from '@components/Dashboard/Shared/FeatureGate/FeatureGate'
@@ -172,7 +174,14 @@ export default function BoardListClient({ org_id, orgslug }: BoardListClientProp
 
   const isBoardsEnabled = org?.config?.config?.resolved_features?.boards?.enabled ?? org?.config?.config?.features?.boards?.enabled !== false
 
+  const searchParams = useSearchParams()
   const [createModalOpen, setCreateModalOpen] = useState(false)
+
+  useEffect(() => {
+    if (searchParams?.get('new') === 'true') {
+      setCreateModalOpen(true)
+    }
+  }, [searchParams])
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedSubject, setSelectedSubject] = useState<string>('all')
   const [selectedDate, setSelectedDate] = useState<string>('all')
@@ -408,29 +417,46 @@ export default function BoardListClient({ org_id, orgslug }: BoardListClientProp
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-2.5 shrink-0">
                 <span className="px-3 py-1.5 rounded-xl bg-white/10 text-white text-xs font-bold border border-white/10 flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                   <span>{allBoards.length} Aktif Tahta</span>
                 </span>
+
+                {!isStudent && (
+                  <Modal
+                    isDialogOpen={createModalOpen}
+                    onOpenChange={setCreateModalOpen}
+                    dialogTitle="Yeni Akıllı Tahta Oluştur"
+                    dialogDescription="Sınıfınız ve dersiniz için yeni bir interaktif tahta başlatın."
+                    dialogContent={
+                      <CreateBoardForm
+                        onCreated={handleCreated}
+                        orgId={org_id}
+                        accessToken={access_token}
+                      />
+                    }
+                    dialogTrigger={
+                      <button className="rounded-xl bg-indigo-500 hover:bg-indigo-400 transition-all duration-150 p-2 px-3.5 my-auto text-xs font-bold text-white shadow-md flex space-x-1.5 items-center cursor-pointer">
+                        <Plus size={14} className="stroke-[3]" />
+                        <span>Yeni Tahta Oluştur</span>
+                      </button>
+                    }
+                  />
+                )}
               </div>
             </div>
           ) : (
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-4">
               <div className="flex items-center space-x-4">
-                <h1 className="text-3xl font-bold mb-4 sm:mb-0">{t('boards.boards', { defaultValue: 'Panolar' })}</h1>
+                <h1 className="text-3xl font-bold mb-4 sm:mb-0">Akıllı Tahtalar & Panolar</h1>
               </div>
-              <AuthenticatedClientElement
-                checkMethod="roles"
-                action="create"
-                ressourceType="boards"
-                orgId={org_id}
-              >
+              {!isStudent && (
                 <Modal
                   isDialogOpen={createModalOpen}
                   onOpenChange={setCreateModalOpen}
-                  dialogTitle={t('boards.create_new_board', { defaultValue: 'Yeni Pano Oluştur' })}
-                  dialogDescription={t('boards.create_new_board_description', { defaultValue: 'Dersiniz veya sınıfınız için yeni bir etkileşimli akıllı tahta panosu başlatın.' })}
+                  dialogTitle="Yeni Akıllı Tahta Oluştur"
+                  dialogDescription="Dersiniz veya sınıfınız için yeni bir etkileşimli akıllı tahta panosu başlatın."
                   dialogContent={
                     <CreateBoardForm
                       onCreated={handleCreated}
@@ -439,13 +465,13 @@ export default function BoardListClient({ org_id, orgslug }: BoardListClientProp
                     />
                   }
                   dialogTrigger={
-                    <button className="rounded-xl bg-gray-900 transition-all duration-150 p-2.5 px-5 my-auto text-xs font-bold text-white shadow-md flex space-x-2 items-center hover:bg-black cursor-pointer">
-                      <span>{t('boards.new_board', { defaultValue: 'Yeni Pano' })}</span>
-                      <span className="bg-neutral-700 px-1.5 py-0.5 rounded-md text-[10px]">+</span>
+                    <button className="rounded-xl bg-indigo-600 hover:bg-indigo-700 transition-all duration-150 p-2.5 px-5 my-auto text-xs font-bold text-white shadow-md flex space-x-2 items-center cursor-pointer">
+                      <Plus size={15} className="stroke-[3]" />
+                      <span>+ Yeni Tahta Oluştur</span>
                     </button>
                   }
                 />
-              </AuthenticatedClientElement>
+              )}
             </div>
           )}
         </div>
@@ -759,8 +785,8 @@ function BoardCard({
 
       {/* Visual Cover Banner */}
       <Link
-        href={targetLink}
-        className="block relative aspect-video overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 p-4 flex flex-col justify-between"
+        href={boardOpenLink}
+        className="block relative aspect-video overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 p-4 flex flex-col justify-between cursor-pointer"
       >
         {thumbnailImage ? (
           <div
@@ -809,8 +835,8 @@ function BoardCard({
       <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
         <div>
           <Link
-            href={targetLink}
-            className="text-sm sm:text-base font-black text-gray-900 leading-snug hover:text-indigo-600 transition-colors line-clamp-2 block"
+            href={boardOpenLink}
+            className="text-sm sm:text-base font-black text-gray-900 leading-snug hover:text-indigo-600 transition-colors line-clamp-2 block cursor-pointer"
           >
             {board.name}
           </Link>
@@ -829,24 +855,27 @@ function BoardCard({
             <span>{board.member_count || 24} Öğrenci</span>
           </div>
 
-          {/* Student action: Tahtaya Katıl | Teacher action: Ayarlar */}
-          {isStudent ? (
+          {/* Action buttons: BOTH students and teachers can open the board directly! */}
+          <div className="flex items-center gap-2">
             <Link
               href={boardOpenLink}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-xs group-hover:scale-105 active:scale-95"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-xs hover:scale-105 active:scale-95 cursor-pointer"
             >
-              <span>Tahtaya Katıl</span>
+              <span>{isStudent ? 'Tahtaya Katıl' : 'Tahtayı Aç'}</span>
               <ArrowRight size={13} />
             </Link>
-          ) : (
-            <Link
-              href={targetLink}
-              className="text-xs font-bold text-gray-500 hover:text-gray-900 transition-colors flex items-center gap-1"
-            >
-              <span>Ayarlar</span>
-              <Settings2 size={12} />
-            </Link>
-          )}
+
+            {!isStudent && (
+              <Link
+                href={targetLink}
+                className="text-xs font-bold text-gray-500 hover:text-gray-900 transition-colors flex items-center gap-1 px-2 py-1.5 rounded-xl hover:bg-gray-100"
+                title="Pano Ayarları"
+              >
+                <span>Ayarlar</span>
+                <Settings2 size={12} />
+              </Link>
+            )}
+          </div>
         </div>
       </div>
     </div>

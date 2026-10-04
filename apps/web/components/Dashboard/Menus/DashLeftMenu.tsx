@@ -377,6 +377,33 @@ function DashLeftMenu() {
                   active={isActivePath('/dash/finance')}
                 />
 
+                {/* Ödevler (Okul Yönetimi) */}
+                <MenuLink
+                  href="/dash/assignments"
+                  icon={<Files size={20} weight="fill" />}
+                  label="Ödevler"
+                  isCollapsed={isCollapsed}
+                  active={isActivePath('/dash/assignments')}
+                />
+
+                {/* Akıllı Tahtalar & Panolar */}
+                <MenuLink
+                  href="/dash/boards"
+                  icon={<ChalkboardSimple size={20} weight="fill" />}
+                  label="Akıllı Tahtalar"
+                  isCollapsed={isCollapsed}
+                  active={isActivePath('/dash/boards')}
+                />
+
+                {/* Eğitim Modülleri */}
+                <MenuLink
+                  href="/dash/playgrounds"
+                  icon={<Cube size={20} weight="fill" />}
+                  label="Modüller"
+                  isCollapsed={isCollapsed}
+                  active={isActivePath('/dash/playgrounds')}
+                />
+
                 {/* Superadmin Geri Bildirimler */}
                 {session?.data?.user?.is_superadmin === true && (
                   <MenuLink

@@ -44,7 +44,7 @@ export default function BoardsPublicClient({
   const { t } = useTranslation()
   const org = useOrg() as any
   const router = useRouter()
-  const { isAdmin } = useAdminStatus()
+  const { isAdmin, isStudent } = useAdminStatus()
   const session = useLHSession() as any
   const accessToken = session?.data?.tokens?.access_token
 
@@ -235,14 +235,14 @@ export default function BoardsPublicClient({
             <div className="flex items-center justify-between">
               <TypeOfContentTitle title={t('common.boards')} type="board" />
 
-              {isAdmin && (
+              {(!isStudent || isAdmin) && (
                 <button
                   type="button"
                   onClick={() => setCreateModalOpen(true)}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-black text-white text-xs font-semibold rounded-xl hover:bg-neutral-800 transition-colors shadow-sm cursor-pointer"
+                  className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl transition-colors shadow-sm cursor-pointer"
                 >
                   <Plus size={15} />
-                  <span>Yeni Akıllı Tahta</span>
+                  <span>+ Yeni Akıllı Tahta</span>
                 </button>
               )}
             </div>
