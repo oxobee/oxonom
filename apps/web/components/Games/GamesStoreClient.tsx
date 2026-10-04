@@ -89,7 +89,24 @@ export default function GamesStoreClient() {
         search: searchTerm,
       }),
     enabled: !!orgId,
+    refetchOnWindowFocus: true,
   })
+
+  // Auto-refresh when admin modifies games or categories
+  useEffect(() => {
+    const handleUpdate = () => {
+      queryClient.invalidateQueries({ queryKey: ['games-store'] })
+    }
+    window.addEventListener('oxonom-games-updated', handleUpdate)
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'admin_synced_games') handleUpdate()
+    }
+    window.addEventListener('storage', handleStorage)
+    return () => {
+      window.removeEventListener('oxonom-games-updated', handleUpdate)
+      window.removeEventListener('storage', handleStorage)
+    }
+  }, [queryClient])
 
   // Query for active game rating
   const { data: currentRatingData } = useQuery({
@@ -140,8 +157,12 @@ export default function GamesStoreClient() {
     setPlayingGame(game)
     setIsLoadingGame(true)
     try {
-      const res = await getGamePlay(game.game_uuid)
-      setGameHtmlContent(res.html_content)
+      if ((game as any).html_content && String((game as any).html_content).trim().length > 0) {
+        setGameHtmlContent((game as any).html_content)
+      } else {
+        const res = await getGamePlay(game.game_uuid)
+        setGameHtmlContent(res.html_content)
+      }
     } catch (e) {
       console.error('Failed to load game play data:', e)
       toast.error('Oyun yüklenirken bir hata oluştu.')

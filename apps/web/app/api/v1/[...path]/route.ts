@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import * as fs from 'fs'
 import { getBackendUrl } from '@services/config/config'
 import { DEFAULT_FALLBACK_ORG } from '@services/organizations/orgs'
 import { getFallbackGamesStore, FALLBACK_GAME_CATEGORIES, getFallbackGamePlay } from '@services/games/fallbackData'
@@ -24,12 +25,48 @@ import {
   SYNCED_EPISODES,
   SYNCED_USERS,
   SYNCED_GAMES,
+  SYNCED_CATEGORIES,
   getSyncedSuperadminOrgs,
   getSyncedSuperadminVisits,
   getSyncedSuperadminUsers,
 } from '@services/demo/databaseSync'
 
-let ADMIN_GAMES_STORE: any[] = [...SYNCED_GAMES]
+const GAMES_CACHE_FILE = '/tmp/oxonom_admin_games.json'
+const CATEGORIES_CACHE_FILE = '/tmp/oxonom_admin_categories.json'
+
+function loadLiveGames(): any[] {
+  try {
+    if (fs.existsSync(GAMES_CACHE_FILE)) {
+      const data = JSON.parse(fs.readFileSync(GAMES_CACHE_FILE, 'utf8'))
+      if (Array.isArray(data) && data.length > 0) return data
+    }
+  } catch (_) {}
+  return [...SYNCED_GAMES]
+}
+
+function saveLiveGames(games: any[]) {
+  try {
+    fs.writeFileSync(GAMES_CACHE_FILE, JSON.stringify(games), 'utf8')
+  } catch (_) {}
+}
+
+function loadLiveCategories(): any[] {
+  try {
+    if (fs.existsSync(CATEGORIES_CACHE_FILE)) {
+      const data = JSON.parse(fs.readFileSync(CATEGORIES_CACHE_FILE, 'utf8'))
+      if (Array.isArray(data) && data.length > 0) return data
+    }
+  } catch (_) {}
+  return [...SYNCED_CATEGORIES]
+}
+
+function saveLiveCategories(categories: any[]) {
+  try {
+    fs.writeFileSync(CATEGORIES_CACHE_FILE, JSON.stringify(categories), 'utf8')
+  } catch (_) {}
+}
+
+let ADMIN_GAMES_STORE: any[] = loadLiveGames()
 let ORG_MENU_CONFIGS: Record<string, any> = {}
 let SERVER_FALLBACK_BOARDS: any[] = []
 let SERVER_CUSTOM_ASSIGNMENTS: any[] = []
@@ -767,85 +804,346 @@ async function handleFallback(request: NextRequest, path: string): Promise<Respo
     return NextResponse.json(matched, { status: 200 })
   }
 
-  // Games Superadmin CRUD
+  // ── GAMES API: CATEGORIES, ADMIN CRUD, PUBLIC STORE & PLAY ──
+
+  // 1. Games Admin Categories (CRUD)
+  if (path.startsWith('/api/v1/games/admin/categories')) {
+    const currentCategories = loadLiveCategories()
+    const subPath = path.split('/api/v1/games/admin/categories')[1] || ''
+    const catIdStr = subPath.replace(/^\//, '').split('?')[0]
+    const catId = catIdStr ? Number(catIdStr) : null
+
+    if (request.method === 'POST') {
+      try {
+        const body = await request.json()
+        const newId = currentCategories.length > 0 ? Math.max(...currentCategories.map((c: any) => c.id || 0)) + 1 : 1
+        const newCat = {
+          id: newId,
+          category_uuid: `cat_${Date.now()}`,
+          name: body.name || 'Yeni Kategori',
+          slug: (body.name || 'kategori').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `cat-${Date.now()}`,
+          icon: body.icon || '🎮',
+          description: body.description || '',
+          display_order: body.display_order || currentCategories.length + 1,
+          is_active: body.is_active ?? true,
+          target_org_ids: body.target_org_ids || null,
+        }
+        currentCategories.push(newCat)
+        saveLiveCategories(currentCategories)
+        return NextResponse.json(newCat, { status: 201 })
+      } catch {
+        return NextResponse.json({ error: 'Kategori oluşturulamadı' }, { status: 400 })
+      }
+    }
+
+    if (request.method === 'PUT' && catId) {
+      try {
+        const body = await request.json()
+        const idx = currentCategories.findIndex((c: any) => c.id === catId)
+        if (idx !== -1) {
+          currentCategories[idx] = {
+            ...currentCategories[idx],
+            ...body,
+            id: catId,
+          }
+          saveLiveCategories(currentCategories)
+
+          // Also update category name and icon in any games referencing this category
+          const currentGames = loadLiveGames()
+          let gamesUpdated = false
+          currentGames.forEach((g: any) => {
+            if (g.category_id === catId) {
+              if (body.name) g.category_name = body.name
+              if (body.icon) g.category_icon = body.icon
+              gamesUpdated = true
+            }
+          })
+          if (gamesUpdated) saveLiveGames(currentGames)
+
+          return NextResponse.json(currentCategories[idx], { status: 200 })
+        }
+        return NextResponse.json({ error: 'Kategori bulunamadı' }, { status: 404 })
+      } catch {
+        return NextResponse.json({ error: 'Kategori güncellenemedi' }, { status: 400 })
+      }
+    }
+
+    if (request.method === 'DELETE' && catId) {
+      const filtered = currentCategories.filter((c: any) => c.id !== catId)
+      saveLiveCategories(filtered)
+      return NextResponse.json({ success: true, message: 'Kategori silindi' }, { status: 200 })
+    }
+
+    return NextResponse.json(currentCategories, { status: 200 })
+  }
+
+  // 2. Games Public Categories
+  if (path.startsWith('/api/v1/games/categories')) {
+    const currentCategories = loadLiveCategories()
+    return NextResponse.json(currentCategories, { status: 200 })
+  }
+
+  // 3. Games Superadmin List All
   if (path.startsWith('/api/v1/games/admin/all')) {
     const catId = request.nextUrl.searchParams.get('category_id')
     const status = request.nextUrl.searchParams.get('status')
     const search = request.nextUrl.searchParams.get('search')?.toLowerCase() || ''
-    let list = [...ADMIN_GAMES_STORE]
-    if (catId) list = list.filter((g: any) => g.category_id === Number(catId))
+    const currentGames = loadLiveGames()
+    const currentCategories = loadLiveCategories()
+
+    let list = currentGames.map((g: any) => {
+      const cat = currentCategories.find((c: any) => c.id === g.category_id)
+      return {
+        ...g,
+        category_name: cat ? cat.name : (g.category_name || 'Genel'),
+        category_icon: cat ? cat.icon : (g.category_icon || '🎮'),
+      }
+    })
+
+    if (catId) list = list.filter((g: any) => g.category_id === Number(catId) || g.category_ids?.includes(Number(catId)))
     if (status && status !== 'all') list = list.filter((g: any) => g.status === status)
     if (search) list = list.filter((g: any) => g.title?.toLowerCase().includes(search) || g.description?.toLowerCase().includes(search))
     return NextResponse.json(list, { status: 200 })
   }
+
+  // 4. Games Admin Schools
   if (path.startsWith('/api/v1/games/admin/schools')) {
     const list = SCHOOL_LIST.map((s) => ({ id: s.id, name: s.name, slug: s.slug }))
     return NextResponse.json(list, { status: 200 })
   }
+
+  // 5. Games Admin Reviews
   if (path.startsWith('/api/v1/games/admin/reviews')) {
+    if (request.method === 'DELETE') {
+      return NextResponse.json({ success: true, message: 'Yorum silindi' }, { status: 200 })
+    }
     return NextResponse.json([], { status: 200 })
   }
+
+  // 6. Games Admin Create Game
   if (path.startsWith('/api/v1/games/admin/create')) {
     try {
       const body = await request.json()
+      const currentGames = loadLiveGames()
+      const currentCategories = loadLiveCategories()
+      const cat = currentCategories.find((c: any) => c.id === body.category_id) || currentCategories[0]
+
+      const newId = currentGames.length > 0 ? Math.max(...currentGames.map((g: any) => g.id || 0)) + 1 : Date.now()
+      const newUuid = `game_${Date.now()}`
       const newGame = {
-        id: Date.now(),
-        game_uuid: `game_${Date.now()}`,
+        id: newId,
+        game_uuid: newUuid,
         title: body.title || 'Yeni Eğitici Oyun',
+        slug: (body.title || 'yeni-oyun').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `game-${Date.now()}`,
         description: body.description || '',
-        status: body.status || 'published',
-        category_id: body.category_id || 1,
+        category_id: body.category_id || cat?.id || 1,
+        category_ids: body.category_ids || (body.category_id ? [body.category_id] : [cat?.id || 1]),
+        category_name: cat?.name || 'Genel',
+        category_icon: cat?.icon || '🎮',
+        is_3d_simulation: !!body.is_3d_simulation,
         thumbnail_image: body.thumbnail_image || null,
+        banner_image: body.banner_image || null,
+        html_content: body.html_content || '',
+        has_html_content: !!(body.html_content && body.html_content.trim().length > 0),
         grade_levels: body.grade_levels || ['1. Sınıf', '2. Sınıf'],
         age_range: body.age_range || '7-12 Yaş',
         learning_objectives: body.learning_objectives || '',
+        status: body.status || 'published',
+        is_featured: !!body.is_featured,
+        featured_order: body.featured_order || 0,
+        target_org_ids: body.target_org_ids || null,
+        play_count: 0,
+        version: body.version || '1.0.0',
+        file_name: body.file_name || null,
+        file_size_bytes: body.file_size_bytes || null,
+        average_rating: 5.0,
+        ratings_count: 0,
         creation_date: new Date().toISOString(),
         update_date: new Date().toISOString(),
-        ...body,
       }
-      ADMIN_GAMES_STORE.unshift(newGame)
-      return NextResponse.json(newGame, { status: 200 })
+      currentGames.unshift(newGame)
+      saveLiveGames(currentGames)
+      return NextResponse.json(newGame, { status: 201 })
     } catch {
-      const fallbackGame = {
-        id: Date.now(),
-        game_uuid: `game_${Date.now()}`,
-        title: 'Yeni Eğitici Oyun',
-        status: 'published',
-        creation_date: new Date().toISOString(),
-        update_date: new Date().toISOString(),
-      }
-      ADMIN_GAMES_STORE.unshift(fallbackGame)
-      return NextResponse.json(fallbackGame, { status: 200 })
+      return NextResponse.json({ error: 'Oyun oluşturulamadı' }, { status: 400 })
     }
   }
+
+  // 7. Games Admin Single Game CRUD (PUT / DELETE by UUID or ID)
   if (path.startsWith('/api/v1/games/admin/')) {
     const uuid = path.split('/api/v1/games/admin/')[1]?.split('/')[0]?.split('?')[0]
+    const currentGames = loadLiveGames()
+    const currentCategories = loadLiveCategories()
+
     if (request.method === 'DELETE') {
-      ADMIN_GAMES_STORE = ADMIN_GAMES_STORE.filter(
-        (g: any) => g.game_uuid !== uuid && String(g.id) !== uuid
+      const filtered = currentGames.filter(
+        (g: any) => g.game_uuid !== uuid && String(g.id) !== uuid && g.slug !== uuid
       )
+      saveLiveGames(filtered)
       return NextResponse.json({ success: true, message: 'Oyun başarıyla silindi' }, { status: 200 })
     }
+
     if (request.method === 'PUT') {
       try {
         const body = await request.json()
-        const idx = ADMIN_GAMES_STORE.findIndex(
-          (g: any) => g.game_uuid === uuid || String(g.id) === uuid
+        const idx = currentGames.findIndex(
+          (g: any) => g.game_uuid === uuid || String(g.id) === uuid || g.slug === uuid
         )
+        const catId = body.category_id !== undefined ? body.category_id : (idx !== -1 ? currentGames[idx].category_id : null)
+        const cat = currentCategories.find((c: any) => c.id === catId)
+
         if (idx !== -1) {
-          ADMIN_GAMES_STORE[idx] = {
-            ...ADMIN_GAMES_STORE[idx],
+          const updated = {
+            ...currentGames[idx],
             ...body,
+            category_name: cat ? cat.name : currentGames[idx].category_name,
+            category_icon: cat ? cat.icon : currentGames[idx].category_icon,
             update_date: new Date().toISOString(),
           }
-          return NextResponse.json(ADMIN_GAMES_STORE[idx], { status: 200 })
+          if (body.html_content && body.html_content.trim().length > 0) {
+            updated.html_content = body.html_content
+            updated.has_html_content = true
+          }
+          currentGames[idx] = updated
+          saveLiveGames(currentGames)
+          return NextResponse.json(updated, { status: 200 })
+        } else {
+          // If not in current array, insert it
+          const newId = currentGames.length > 0 ? Math.max(...currentGames.map((g: any) => g.id || 0)) + 1 : Date.now()
+          const newGame = {
+            id: newId,
+            game_uuid: uuid || `game_${Date.now()}`,
+            title: body.title || 'Güncellenen Oyun',
+            slug: (body.title || 'oyun').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `game-${Date.now()}`,
+            description: body.description || '',
+            category_id: body.category_id || cat?.id || 1,
+            category_ids: body.category_ids || (body.category_id ? [body.category_id] : [cat?.id || 1]),
+            category_name: cat?.name || 'Genel',
+            category_icon: cat?.icon || '🎮',
+            is_3d_simulation: !!body.is_3d_simulation,
+            thumbnail_image: body.thumbnail_image || null,
+            html_content: body.html_content || '',
+            has_html_content: !!(body.html_content && body.html_content.trim().length > 0),
+            grade_levels: body.grade_levels || ['1. Sınıf', '2. Sınıf'],
+            age_range: body.age_range || '7-12 Yaş',
+            learning_objectives: body.learning_objectives || '',
+            status: body.status || 'published',
+            is_featured: !!body.is_featured,
+            play_count: 0,
+            version: body.version || '1.0.0',
+            creation_date: new Date().toISOString(),
+            update_date: new Date().toISOString(),
+            ...body,
+          }
+          currentGames.unshift(newGame)
+          saveLiveGames(currentGames)
+          return NextResponse.json(newGame, { status: 200 })
         }
-        return NextResponse.json({ success: true, ...body }, { status: 200 })
       } catch {
-        return NextResponse.json({ success: true, message: 'Oyun güncellendi' }, { status: 200 })
+        return NextResponse.json({ error: 'Oyun güncellenemedi' }, { status: 400 })
       }
     }
+
     return NextResponse.json({ success: true }, { status: 200 })
+  }
+
+  // 8. Public Games Store Endpoint (/api/v1/games/org/:orgId)
+  if (path.startsWith('/api/v1/games/org/')) {
+    const parts = path.split('/')
+    const catParam = request.nextUrl.searchParams.get('category_slug') || undefined
+    const gradeParam = request.nextUrl.searchParams.get('grade_level') || undefined
+    const searchParam = request.nextUrl.searchParams.get('search')?.toLowerCase() || ''
+
+    const currentGames = loadLiveGames()
+    const currentCategories = loadLiveCategories()
+
+    // Filter published games
+    let filtered = currentGames.filter((g: any) => g.status === 'published')
+
+    // Filter by category
+    if (catParam && catParam !== 'all') {
+      const cat = currentCategories.find((c: any) => c.slug === catParam)
+      if (cat) {
+        filtered = filtered.filter((g: any) => g.category_id === cat.id || g.category_ids?.includes(cat.id))
+      }
+    }
+
+    // Filter by grade level
+    if (gradeParam && gradeParam !== 'all') {
+      const gl = gradeParam.trim().toLowerCase()
+      filtered = filtered.filter((g: any) => {
+        if (!g.grade_levels || !Array.isArray(g.grade_levels)) return true
+        return g.grade_levels.some((lvl: string) => String(lvl).toLowerCase().includes(gl))
+      })
+    }
+
+    // Filter by search
+    if (searchParam) {
+      filtered = filtered.filter((g: any) =>
+        g.title?.toLowerCase().includes(searchParam) ||
+        g.description?.toLowerCase().includes(searchParam) ||
+        g.learning_objectives?.toLowerCase().includes(searchParam)
+      )
+    }
+
+    const featured = filtered.filter((g: any) => g.is_featured)
+
+    const sliders = currentCategories.map((cat: any) => {
+      const catGames = filtered.filter((g: any) => g.category_id === cat.id || g.category_ids?.includes(cat.id))
+      return {
+        category: cat,
+        games: catGames,
+      }
+    }).filter((s) => s.games.length > 0)
+
+    return NextResponse.json({
+      categories: currentCategories,
+      featured: featured.length > 0 ? featured : filtered.slice(0, 5),
+      sliders,
+      all_games: filtered,
+      total_count: filtered.length,
+    }, { status: 200 })
+  }
+
+  // 9. Game Play Endpoint (/api/v1/games/:uuid/play)
+  if (path.includes('/games/') && (path.endsWith('/play') || path.includes('/play/'))) {
+    const parts = path.split('/')
+    const uuidIndex = parts.indexOf('games') + 1
+    const uuid = parts[uuidIndex]?.split('?')[0] || ''
+    const currentGames = loadLiveGames()
+    const game = currentGames.find((g: any) => g.game_uuid === uuid || g.slug === uuid || String(g.id) === uuid)
+
+    if (game) {
+      game.play_count = (game.play_count || 0) + 1
+      saveLiveGames(currentGames)
+      const fallbackData = getFallbackGamePlay(uuid)
+      const html = (game.html_content && game.html_content.trim().length > 0)
+        ? game.html_content
+        : fallbackData.html_content
+      return NextResponse.json({
+        game,
+        html_content: html,
+        play_url: `/games/${game.slug || uuid}.html`,
+        session_token: 'live-session-token',
+      }, { status: 200 })
+    }
+    return NextResponse.json(getFallbackGamePlay(uuid), { status: 200 })
+  }
+
+  // 10. Game Rating & Feedback
+  if (path.includes('/games/') && path.endsWith('/rating')) {
+    return NextResponse.json({
+      average_rating: 4.9,
+      ratings_count: 18,
+      my_review: null,
+    }, { status: 200 })
+  }
+
+  if (path.includes('/games/') && (path.endsWith('/review') || path.includes('/review/'))) {
+    return NextResponse.json({
+      success: true,
+      message: 'Değerlendirmeniz başarıyla kaydedildi. Teşekkür ederiz!',
+    }, { status: 200 })
   }
 
   // Organization Menu Config
@@ -901,28 +1199,6 @@ async function handleFallback(request: NextRequest, path: string): Promise<Respo
     }, { status: 200 })
   }
 
-  // Games Public
-  if (path.startsWith('/api/v1/games/org/')) {
-    const parts = path.split('/')
-    const orgSlug = parts[parts.indexOf('org') + 1] || 'default'
-    const catParam = request.nextUrl.searchParams.get('category_slug') || undefined
-    return NextResponse.json(getFallbackGamesStore(orgSlug, catParam), { status: 200 })
-  }
-  if (path.startsWith('/api/v1/games/categories')) {
-    if (request.method === 'POST') {
-      return NextResponse.json({ id: Date.now(), name: 'Yeni Kategori', icon: '🎮' }, { status: 200 })
-    }
-    if (request.method === 'DELETE') {
-      return NextResponse.json({ success: true }, { status: 200 })
-    }
-    return NextResponse.json(FALLBACK_GAME_CATEGORIES, { status: 200 })
-  }
-  if (path.endsWith('/play') || path.includes('/play/')) {
-    const parts = path.split('/')
-    const uuidIndex = parts.indexOf('games') + 1
-    const uuid = parts[uuidIndex] || ''
-    return NextResponse.json(getFallbackGamePlay(uuid), { status: 200 })
-  }
 
   // Playgrounds
   if (path.startsWith('/api/v1/playgrounds/')) {
@@ -1029,10 +1305,10 @@ async function proxyToBackend(request: NextRequest): Promise<Response> {
     return handleFolderApi(request, path)
   }
 
-  // Fast-path for Superadmin & Games Admin (Full superadmin control with 0ms latency)
+  // Fast-path for Superadmin & Games (Full superadmin & games control with 0ms latency)
   if (
     path.startsWith('/api/v1/ee/superadmin') ||
-    path.startsWith('/api/v1/games/admin') ||
+    path.startsWith('/api/v1/games') ||
     path.startsWith('/api/v1/monitoring/feedbacks') ||
     path.includes('/usage') ||
     path.includes('/packs') ||

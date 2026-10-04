@@ -151,14 +151,25 @@ export default function GamesAdminClient() {
   const { data: rawGames = [], isLoading: isLoadingGames } = useQuery({
     queryKey: ['admin-games', selectedCatId, selectedStatus, searchTerm],
     queryFn: async () => {
-      const serverGames = await getAdminGames(
-        {
-          category_id: selectedCatId,
-          status: selectedStatus,
-          search: searchTerm,
-        },
-        token
-      )
+      try {
+        const serverGames = await getAdminGames(
+          {
+            category_id: selectedCatId,
+            status: selectedStatus,
+            search: searchTerm,
+          },
+          token
+        )
+        if (Array.isArray(serverGames) && serverGames.length > 0) {
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('admin_synced_games', JSON.stringify(serverGames))
+            } catch (_) {}
+          }
+          return serverGames
+        }
+      } catch (_) {}
+
       if (typeof window !== 'undefined') {
         try {
           const localStr = localStorage.getItem('admin_synced_games')
@@ -177,7 +188,7 @@ export default function GamesAdminClient() {
           }
         } catch (_) {}
       }
-      return serverGames
+      return []
     },
     enabled: !!token,
   })
@@ -331,10 +342,13 @@ export default function GamesAdminClient() {
       const catIds = [formCategoryId, formSecondaryCatId].filter(
         (id): id is number => typeof id === 'number' && id > 0
       )
+      const selectedCat = categories.find((c) => c.id === formCategoryId)
 
       const payload: any = {
         category_id: formCategoryId,
         category_ids: catIds.length > 0 ? catIds : null,
+        category_name: selectedCat?.name || 'Genel',
+        category_icon: selectedCat?.icon || '🎮',
         is_3d_simulation: formIs3dSimulation,
         title: formTitle,
         description: formDescription,
@@ -365,9 +379,12 @@ export default function GamesAdminClient() {
           const catIds = [formCategoryId, formSecondaryCatId].filter(
             (id): id is number => typeof id === 'number' && id > 0
           )
+          const selectedCat = categories.find((c) => c.id === formCategoryId)
           const localPayload = {
             category_id: formCategoryId,
             category_ids: catIds.length > 0 ? catIds : null,
+            category_name: selectedCat?.name || 'Genel',
+            category_icon: selectedCat?.icon || '🎮',
             is_3d_simulation: formIs3dSimulation,
             title: formTitle,
             description: formDescription,
@@ -381,6 +398,7 @@ export default function GamesAdminClient() {
             version: formVersion,
             file_name: formFileName || undefined,
             file_size_bytes: formFileSize || undefined,
+            html_content: formHtmlContent.trim() ? formHtmlContent : (editingGame as any)?.html_content || undefined,
           }
           const stored = localStorage.getItem('admin_synced_games')
           let currentList = stored ? JSON.parse(stored) : [...games]
@@ -403,12 +421,14 @@ export default function GamesAdminClient() {
             currentList = [newG, ...currentList]
           }
           localStorage.setItem('admin_synced_games', JSON.stringify(currentList))
+          window.dispatchEvent(new CustomEvent('oxonom-games-updated'))
         } catch (_) {}
       }
       toast.success(editingGame ? 'Oyun güncellendi!' : 'Yeni oyun başarıyla oluşturuldu!')
       setIsGameModalOpen(false)
       queryClient.invalidateQueries({ queryKey: ['admin-games'] })
       queryClient.invalidateQueries({ queryKey: ['games-store'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-game-categories'] })
     },
     onError: (err: any) => {
       toast.error(err.message || 'Oyun kaydedilirken hata oluştu.')
@@ -429,6 +449,7 @@ export default function GamesAdminClient() {
             )
             localStorage.setItem('admin_synced_games', JSON.stringify(currentList))
           }
+          window.dispatchEvent(new CustomEvent('oxonom-games-updated'))
         } catch (_) {}
       }
       toast.success('Oyun silindi.')
@@ -459,10 +480,14 @@ export default function GamesAdminClient() {
       }
     },
     onSuccess: () => {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('oxonom-games-updated'))
+      }
       toast.success(editingCategory ? 'Kategori güncellendi!' : 'Kategori oluşturuldu!')
       setIsCategoryModalOpen(false)
       queryClient.invalidateQueries({ queryKey: ['admin-game-categories'] })
       queryClient.invalidateQueries({ queryKey: ['games-store'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-games'] })
     },
     onError: (err: any) => {
       toast.error(err.message || 'Kategori kaydedilemedi.')
@@ -473,9 +498,13 @@ export default function GamesAdminClient() {
   const deleteCategoryMutation = useMutation({
     mutationFn: (catId: number) => deleteAdminCategory(catId, token),
     onSuccess: () => {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('oxonom-games-updated'))
+      }
       toast.success('Kategori silindi.')
       queryClient.invalidateQueries({ queryKey: ['admin-game-categories'] })
       queryClient.invalidateQueries({ queryKey: ['games-store'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-games'] })
       setIsCategoryModalOpen(false)
     },
     onError: (err: any) => {
