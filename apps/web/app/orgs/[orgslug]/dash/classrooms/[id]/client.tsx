@@ -24,7 +24,6 @@ import {
   RotateCw,
   Copy,
   Check,
-  Monitor,
   Trash2,
   Sparkles,
   Plus,
@@ -51,7 +50,6 @@ import {
 } from '@services/school_assignments/school_assignments'
 import CreateSchoolAssignmentModal from '@components/Dashboard/Assignments/CreateSchoolAssignmentModal'
 import AssignmentSubmissionsModal from '@components/Dashboard/Assignments/AssignmentSubmissionsModal'
-import ClassPresenterModal from '@components/Dashboard/Classrooms/ClassPresenterModal'
 import ManageUsers from '@components/Objects/Modals/Dash/OrgUserGroups/ManageUsers'
 import Modal from '@components/Objects/StyledElements/Modal/Modal'
 import {
@@ -150,7 +148,6 @@ export default function ClassDetailClient({ orgslug, classroomId }: ClassDetailC
   const [activeTab, setActiveTab] = useState<TabType>('boards')
 
   // Modals
-  const [isPresenterOpen, setIsPresenterOpen] = useState(false)
   const [isManageUsersOpen, setIsManageUsersOpen] = useState(false)
   const [isCreateBoardOpen, setIsCreateBoardOpen] = useState(false)
   const [newBoardName, setNewBoardName] = useState('')
@@ -380,15 +377,7 @@ export default function ClassDetailClient({ orgslug, classroomId }: ClassDetailC
           <span className="text-xs font-bold text-gray-800">{classroom?.name}</span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsPresenterOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-lg border border-indigo-200 transition-colors shadow-xs"
-          >
-            <Monitor className="w-3.5 h-3.5" />
-            <span>Tahtaya Yansıt</span>
-          </button>
-        </div>
+
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-8 pt-6">
@@ -1197,12 +1186,6 @@ export default function ClassDetailClient({ orgslug, classroomId }: ClassDetailC
         dialogContent={<ManageUsers usergroup_id={classroomId} />}
       />
 
-      {/* 4. Projector / Whiteboard Presenter Modal */}
-      <ClassPresenterModal
-        isOpen={isPresenterOpen}
-        classroom={classroom}
-        onClose={() => setIsPresenterOpen(false)}
-      />
 
       {/* 5. Edit Class Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>

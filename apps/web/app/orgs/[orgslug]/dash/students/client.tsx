@@ -44,6 +44,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@components/ui/dialog'
+import ToolTip from '@components/Objects/StyledElements/Tooltip/Tooltip'
 import { searchMatchesAny } from '@/lib/search/normalize'
 import {
   generateClassStudents,
@@ -959,7 +960,7 @@ export default function StudentsClient({ orgslug }: { orgslug: string }) {
                   <th className="px-5 py-3.5">No / T.C.</th>
                   <th className="px-5 py-3.5">Sınıf & Rehber</th>
                   <th className="px-5 py-3.5">Durum</th>
-                  <th className="px-5 py-3.5">Akademik / Devam</th>
+                  <th className="px-5 py-3.5" title="Öğrencinin Genel Not Ortalaması (GNO) ve Ders Devam Durumu">Akademik / Devam</th>
                   <th className="px-5 py-3.5">Veli İletişim</th>
                   <th className="px-5 py-3.5 text-end">İşlemler</th>
                 </tr>
@@ -1027,10 +1028,30 @@ export default function StudentsClient({ orgslug }: { orgslug: string }) {
 
                       {/* Akademik / Devam */}
                       <td className="px-5 py-3.5">
-                        <div className="font-bold text-gray-900 flex items-center gap-1">
-                          <Trophy size={13} className="text-amber-500" />
-                          <span>GNO: {student.gpa}</span>
-                        </div>
+                        <ToolTip
+                          side="top"
+                          content={
+                            <div className="py-1 px-1.5 max-w-[240px] text-left">
+                              <div className="font-bold text-gray-900 text-xs flex items-center gap-1.5">
+                                <Trophy size={14} className="text-amber-500" />
+                                <span>Genel Not Ortalaması (GNO)</span>
+                              </div>
+                              <p className="text-[11px] text-gray-600 mt-1 leading-snug">
+                                Öğrencinin tüm derslerdeki 100 üzerinden ağırlıklı başarı puanı ortalamasıdır.
+                              </p>
+                            </div>
+                          }
+                        >
+                          <div
+                            className="font-bold text-gray-900 inline-flex items-center gap-1 cursor-help group/gno"
+                            title="Genel Not Ortalaması (GNO): Öğrencinin tüm derslerdeki 100 üzerinden ağırlıklı başarı notu ortalaması"
+                          >
+                            <Trophy size={13} className="text-amber-500 group-hover/gno:scale-110 transition-transform" />
+                            <span className="border-b border-dotted border-gray-400 group-hover/gno:border-indigo-600 group-hover/gno:text-indigo-600 transition-colors">
+                              GNO: {student.gpa}
+                            </span>
+                          </div>
+                        </ToolTip>
                         <div className="text-[11px] text-emerald-600 font-medium mt-0.5">
                           Devam: %{student.attendanceRate}
                         </div>
@@ -1888,10 +1909,13 @@ export default function StudentsClient({ orgslug }: { orgslug: string }) {
 
               {/* 4 KPI Metric Tiles */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="bg-white rounded-xl p-3.5 border border-gray-100 nice-shadow">
+                <div 
+                  className="bg-white rounded-xl p-3.5 border border-gray-100 nice-shadow"
+                  title="Genel Not Ortalaması (GNO): Öğrencinin tüm derslerdeki 100 üzerinden ağırlıklı başarı puanı ortalaması"
+                >
                   <div className="flex items-center gap-1.5 text-xs text-gray-400 font-semibold">
                     <Trophy size={14} className="text-amber-500" />
-                    <span>Not Ortalaması</span>
+                    <span>Genel Not Ortalaması (GNO)</span>
                   </div>
                   <div className="text-xl font-bold text-gray-900 mt-1">{selectedStudentForDetail.gpa} / 100</div>
                   <div className="text-[10px] text-emerald-600 font-semibold mt-0.5">Takdir Belgesi Adayı</div>

@@ -18,14 +18,12 @@ import {
   Search,
   Copy,
   Check,
-  Monitor,
   Trash2,
   Sparkles,
   BookOpen,
 } from 'lucide-react'
 import JoinClassModal from '@components/Dashboard/Classrooms/JoinClassModal'
 import CreateClassModal from '@components/Dashboard/Classrooms/CreateClassModal'
-import ClassPresenterModal from '@components/Dashboard/Classrooms/ClassPresenterModal'
 import ManageUsers from '@components/Objects/Modals/Dash/OrgUserGroups/ManageUsers'
 import Modal from '@components/Objects/StyledElements/Modal/Modal'
 import {
@@ -59,7 +57,6 @@ export default function ClassroomsClient({ orgslug }: { orgslug: string }) {
   // Modals state
   const [isJoinOpen, setIsJoinOpen] = useState(false)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
-  const [presenterClass, setPresenterClass] = useState<any>(null)
   const [managingClassId, setManagingClassId] = useState<number | null>(null)
   const [deletingClassId, setDeletingClassId] = useState<number | null>(null)
 
@@ -296,18 +293,20 @@ export default function ClassroomsClient({ orgslug }: { orgslug: string }) {
                     <div className="flex items-center gap-1.5">
                       <button
                         onClick={() => copyCode(cls)}
-                        title="Kodu Kopyala"
-                        className="p-2 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 transition-colors"
+                        title="Katılım Kodunu Kopyala"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 text-xs font-semibold transition-colors shadow-2xs"
                       >
-                        {copiedId === cls.id ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
-                      </button>
-                      <button
-                        onClick={() => setPresenterClass(cls)}
-                        title="Akıllı Tahtaya Yansıt"
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-semibold transition-colors shadow-2xs"
-                      >
-                        <Monitor size={12} />
-                        <span>Yansıt</span>
+                        {copiedId === cls.id ? (
+                          <>
+                            <Check size={14} className="text-emerald-600" />
+                            <span className="text-emerald-600 text-xs font-bold">Kopyalandı</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy size={14} />
+                            <span className="text-xs">Kodu Kopyala</span>
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>
@@ -346,12 +345,6 @@ export default function ClassroomsClient({ orgslug }: { orgslug: string }) {
         onClose={() => setIsCreateOpen(false)}
       />
 
-      {/* Projector / Whiteboard Presenter Modal */}
-      <ClassPresenterModal
-        isOpen={!!presenterClass}
-        classroom={presenterClass}
-        onClose={() => setPresenterClass(null)}
-      />
 
       {/* Manage Students Modal */}
       <Modal
