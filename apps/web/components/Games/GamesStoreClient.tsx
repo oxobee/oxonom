@@ -41,6 +41,7 @@ import {
   submitGameReview,
   GameRatingSummary,
 } from '@services/games/games'
+import { getCustomGameHtml } from '@services/games/gameStorage'
 import GeneralWrapperStyled from '@components/Objects/StyledElements/Wrappers/GeneralWrapper'
 import { Breadcrumbs } from '@components/Objects/Breadcrumbs/Breadcrumbs'
 import toast from 'react-hot-toast'
@@ -159,7 +160,47 @@ export default function GamesStoreClient() {
     try {
       let content = (game as any)?.html_content || ''
 
-      // 1. If not directly in game object, try static public game file (e.g. /games/orbit.html)
+      // 1. Check client-side IndexedDB / custom HTML storage for any uploaded/edited HTML
+      if (!content || !content.trim()) {
+        const identifiers = [game.game_uuid, game.slug, String(game.id)].filter(Boolean) as string[]
+        try {
+          const customHtml = await getCustomGameHtml(identifiers)
+          if (customHtml && customHtml.trim().length > 0) {
+            content = customHtml
+          }
+        } catch (_) {}
+      }
+
+      // 2. Check localStorage 'admin_synced_games'
+      if (!content || !content.trim()) {
+        try {
+          const localStr = localStorage.getItem('admin_synced_games')
+          if (localStr) {
+            const list = JSON.parse(localStr)
+            const matched = list.find(
+              (g: any) =>
+                (game.game_uuid && g.game_uuid === game.game_uuid) ||
+                (game.id && String(g.id) === String(game.id)) ||
+                (game.slug && g.slug === game.slug)
+            )
+            if (matched?.html_content && matched.html_content.trim().length > 0) {
+              content = matched.html_content
+            }
+          }
+        } catch (_) {}
+      }
+
+      // 3. Call API endpoint (/api/v1/games/:uuid/play)
+      if (!content || !content.trim()) {
+        try {
+          const res = await getGamePlay(game.game_uuid || String(game.id))
+          if (res?.html_content && res.html_content.trim().length > 0) {
+            content = res.html_content
+          }
+        } catch (_) {}
+      }
+
+      // 4. Last resort: only if no custom uploaded content exists, try bundled static file
       if (!content || !content.trim()) {
         const slug = game.slug || (game.title ? game.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') : '')
         if (slug) {
@@ -173,12 +214,6 @@ export default function GamesStoreClient() {
             }
           } catch (_) {}
         }
-      }
-
-      // 2. If still empty, call API endpoint
-      if (!content || !content.trim()) {
-        const res = await getGamePlay(game.game_uuid || String(game.id))
-        content = res?.html_content || ''
       }
 
       setGameHtmlContent(content)

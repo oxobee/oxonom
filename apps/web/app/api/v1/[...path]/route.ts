@@ -1125,6 +1125,11 @@ async function handleFallback(request: NextRequest, path: string): Promise<Respo
           if (body.html_content && body.html_content.trim().length > 0) {
             updated.html_content = body.html_content
             updated.has_html_content = true
+            updated.has_custom_html = true
+            try {
+              if (updated.game_uuid) fs.writeFileSync(`/tmp/game_${updated.game_uuid}.html`, body.html_content, 'utf8')
+              if (updated.slug) fs.writeFileSync(`/tmp/game_${updated.slug}.html`, body.html_content, 'utf8')
+            } catch (_) {}
           }
           currentGames[idx] = updated
           saveLiveGames(currentGames)
@@ -1243,6 +1248,19 @@ async function handleFallback(request: NextRequest, path: string): Promise<Respo
       let html = (game.html_content && game.html_content.trim().length > 0)
         ? game.html_content
         : ''
+
+      // Check if custom uploaded html was written to disk
+      if (!html) {
+        try {
+          const customTmp1 = `/tmp/game_${game.game_uuid}.html`
+          const customTmp2 = game.slug ? `/tmp/game_${game.slug}.html` : ''
+          if (fs.existsSync(customTmp1)) {
+            html = fs.readFileSync(customTmp1, 'utf8')
+          } else if (customTmp2 && fs.existsSync(customTmp2)) {
+            html = fs.readFileSync(customTmp2, 'utf8')
+          }
+        } catch (_) {}
+      }
 
       // Attempt to read the actual static game file (e.g. public/games/orbit.html, 2048-..., etc.)
       if (!html && game.slug) {

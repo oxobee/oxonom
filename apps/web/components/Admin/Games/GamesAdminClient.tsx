@@ -48,6 +48,11 @@ import {
   markGameAsDeleted,
   mergeWithLocalGames,
 } from '@services/games/fallbackData'
+import {
+  saveCustomGameHtml,
+  getCustomGameHtml,
+  removeCustomGameHtml,
+} from '@services/games/gameStorage'
 import { useLHSession } from '@components/Contexts/LHSessionContext'
 import toast from 'react-hot-toast'
 
@@ -265,6 +270,14 @@ export default function GamesAdminClient() {
     }
 
     setEditingGame({ ...game, html_content: existingHtml } as any)
+
+    if (!existingHtml) {
+      getCustomGameHtml([game.game_uuid, game.slug, String(game.id)]).then((customHtml) => {
+        if (customHtml && customHtml.trim().length > 0) {
+          setEditingGame((prev: any) => (prev ? { ...prev, html_content: customHtml } : prev))
+        }
+      }).catch(() => {})
+    }
     setFormTitle(game.title)
     setFormDescription(game.description || '')
     setFormCategoryId(game.category_id || null)
@@ -403,10 +416,11 @@ export default function GamesAdminClient() {
         file_name: formFileName || undefined,
         file_size_bytes: formFileSize || undefined,
       }
-      if (formHtmlContent.trim()) {
-        payload.html_content = formHtmlContent
-      } else if (editingGame && (editingGame as any).html_content) {
-        payload.html_content = (editingGame as any).html_content
+      const finalHtml = formHtmlContent.trim() ? formHtmlContent : ((editingGame as any)?.html_content || '')
+      if (finalHtml) {
+        payload.html_content = finalHtml
+        const preKeys = [targetUuid, editingGame?.slug, editingGame?.id ? String(editingGame.id) : null].filter(Boolean) as string[]
+        await saveCustomGameHtml(preKeys, finalHtml).catch(() => {})
       }
 
       if (editingGame) {
@@ -415,33 +429,50 @@ export default function GamesAdminClient() {
         return createAdminGame(payload, token)
       }
     },
-    onSuccess: (savedResult: any) => {
+    onSuccess: async (savedResult: any) => {
       if (typeof window !== 'undefined') {
+        const catIds = [formCategoryId, formSecondaryCatId].filter(
+          (id): id is number => typeof id === 'number' && id > 0
+        )
+        const selectedCat = categories.find((c) => c.id === formCategoryId)
+        const effectiveHtml = formHtmlContent.trim() ? formHtmlContent : ((editingGame as any)?.html_content || undefined)
+
+        // Save custom HTML to IndexedDB & local storage
+        if (effectiveHtml) {
+          const keysToSave = [
+            savedResult?.game_uuid,
+            editingGame?.game_uuid,
+            savedResult?.slug,
+            editingGame?.slug,
+            savedResult?.id ? String(savedResult.id) : null,
+            editingGame?.id ? String(editingGame.id) : null,
+          ].filter(Boolean) as string[]
+          await saveCustomGameHtml(keysToSave, effectiveHtml).catch(() => {})
+        }
+
+        const localPayload = {
+          category_id: formCategoryId,
+          category_ids: catIds.length > 0 ? catIds : null,
+          category_name: selectedCat?.name || 'Genel',
+          category_icon: selectedCat?.icon || '🎮',
+          is_3d_simulation: formIs3dSimulation,
+          title: formTitle,
+          description: formDescription,
+          thumbnail_image: formThumbnail,
+          grade_levels: formGradeLevels,
+          age_range: formAgeRange,
+          learning_objectives: formObjectivesList.map((m) => `• ${m}`).join('\n'),
+          status: formStatus,
+          is_featured: formIsFeatured,
+          target_org_ids: formTargetAllOrgs ? null : formSelectedOrgIds,
+          version: formVersion,
+          file_name: formFileName || undefined,
+          file_size_bytes: formFileSize || undefined,
+          html_content: effectiveHtml,
+          has_html_content: true,
+        }
+
         try {
-          const catIds = [formCategoryId, formSecondaryCatId].filter(
-            (id): id is number => typeof id === 'number' && id > 0
-          )
-          const selectedCat = categories.find((c) => c.id === formCategoryId)
-          const localPayload = {
-            category_id: formCategoryId,
-            category_ids: catIds.length > 0 ? catIds : null,
-            category_name: selectedCat?.name || 'Genel',
-            category_icon: selectedCat?.icon || '🎮',
-            is_3d_simulation: formIs3dSimulation,
-            title: formTitle,
-            description: formDescription,
-            thumbnail_image: formThumbnail,
-            grade_levels: formGradeLevels,
-            age_range: formAgeRange,
-            learning_objectives: formObjectivesList.map((m) => `• ${m}`).join('\n'),
-            status: formStatus,
-            is_featured: formIsFeatured,
-            target_org_ids: formTargetAllOrgs ? null : formSelectedOrgIds,
-            version: formVersion,
-            file_name: formFileName || undefined,
-            file_size_bytes: formFileSize || undefined,
-            html_content: formHtmlContent.trim() ? formHtmlContent : (editingGame as any)?.html_content || undefined,
-          }
           const stored = localStorage.getItem('admin_synced_games')
           let currentList = stored ? JSON.parse(stored) : [...games]
           if (!Array.isArray(currentList)) currentList = [...games]
@@ -486,10 +517,26 @@ export default function GamesAdminClient() {
             }
             currentList = [newG, ...currentList]
           }
-          localStorage.setItem('admin_synced_games', JSON.stringify(currentList))
-          window.dispatchEvent(new CustomEvent('oxonom-games-updated'))
-          syncAdminGames({ games: currentList, deleted_uuids: getDeletedGameUuids() }, token).catch(() => {})
+
+          // Try saving to localStorage; if quota exceeded due to large html strings, trim inline html
+          try {
+            localStorage.setItem('admin_synced_games', JSON.stringify(currentList))
+          } catch (quotaErr) {
+            try {
+              const trimmed = currentList.map((g: any) => {
+                if (g.html_content && g.html_content.length > 5000) {
+                  const { html_content, ...rest } = g
+                  return { ...rest, has_html_content: true }
+                }
+                return g
+              })
+              localStorage.setItem('admin_synced_games', JSON.stringify(trimmed))
+            } catch (_) {}
+          }
         } catch (_) {}
+
+        window.dispatchEvent(new CustomEvent('oxonom-games-updated'))
+        syncAdminGames({ games: [savedResult || localPayload], deleted_uuids: getDeletedGameUuids() }, token).catch(() => {})
       }
       toast.success(editingGame ? 'Oyun güncellendi!' : 'Yeni oyun başarıyla oluşturuldu!')
       setIsGameModalOpen(false)
@@ -507,6 +554,7 @@ export default function GamesAdminClient() {
     mutationFn: async (uuid: string) => {
       // localStorage ve cookie'ye hemen tombstone ekle (API'den bağımsız)
       markGameAsDeleted(uuid)
+      removeCustomGameHtml([uuid]).catch(() => {})
       if (typeof window !== 'undefined') {
         try {
           const stored = localStorage.getItem('admin_synced_games')
@@ -517,8 +565,8 @@ export default function GamesAdminClient() {
             )
             localStorage.setItem('admin_synced_games', JSON.stringify(currentList))
           }
-          window.dispatchEvent(new CustomEvent('oxonom-games-updated'))
         } catch (_) {}
+        window.dispatchEvent(new CustomEvent('oxonom-games-updated'))
       }
       // API'ye de gönder (başarısız olsa bile tombstone korunur)
       try {
