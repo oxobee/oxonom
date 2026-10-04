@@ -41,7 +41,13 @@ import {
   getAdminSchools,
   getAdminReviews,
   deleteAdminReview,
+  syncAdminGames,
 } from '@services/games/games'
+import {
+  getDeletedGameUuids,
+  markGameAsDeleted,
+  mergeWithLocalGames,
+} from '@services/games/fallbackData'
 import { useLHSession } from '@components/Contexts/LHSessionContext'
 import toast from 'react-hot-toast'
 
@@ -151,44 +157,50 @@ export default function GamesAdminClient() {
   const { data: rawGames = [], isLoading: isLoadingGames } = useQuery({
     queryKey: ['admin-games', selectedCatId, selectedStatus, searchTerm],
     queryFn: async () => {
+      let serverGames: GameItem[] = []
       try {
-        const serverGames = await getAdminGames(
+        serverGames = await getAdminGames(
           {
-            category_id: selectedCatId,
-            status: selectedStatus,
-            search: searchTerm,
+            category_id: null, // Always fetch full list to prevent partial overrides
+            status: 'all',
+            search: '',
           },
           token
         )
-        if (Array.isArray(serverGames) && serverGames.length > 0) {
-          if (typeof window !== 'undefined') {
-            try {
-              localStorage.setItem('admin_synced_games', JSON.stringify(serverGames))
-            } catch (_) {}
-          }
-          return serverGames
-        }
       } catch (_) {}
 
-      if (typeof window !== 'undefined') {
+      // Merge server games with local games and purge tombstones
+      const mergedList = mergeWithLocalGames(Array.isArray(serverGames) ? serverGames : [])
+      const deletedUuids = getDeletedGameUuids()
+
+      if (typeof window !== 'undefined' && mergedList.length > 0) {
         try {
-          const localStr = localStorage.getItem('admin_synced_games')
-          if (localStr) {
-            const localGames = JSON.parse(localStr)
-            if (Array.isArray(localGames)) {
-              let filtered = localGames
-              if (selectedCatId) filtered = filtered.filter((g: any) => g.category_id === selectedCatId)
-              if (selectedStatus && selectedStatus !== 'all') filtered = filtered.filter((g: any) => g.status === selectedStatus)
-              if (searchTerm) {
-                const s = searchTerm.toLowerCase()
-                filtered = filtered.filter((g: any) => g.title?.toLowerCase().includes(s) || g.description?.toLowerCase().includes(s))
-              }
-              return filtered
-            }
-          }
+          localStorage.setItem('admin_synced_games', JSON.stringify(mergedList))
         } catch (_) {}
+        // Sync server in background so next lambda container has it
+        syncAdminGames({ games: mergedList, deleted_uuids: deletedUuids }, token).catch(() => {})
       }
-      return []
+
+      // Filter for active view in UI
+      let filtered = mergedList
+      if (selectedCatId) {
+        filtered = filtered.filter(
+          (g: any) => g.category_id === selectedCatId || g.category_ids?.includes(selectedCatId)
+        )
+      }
+      if (selectedStatus && selectedStatus !== 'all') {
+        filtered = filtered.filter((g: any) => g.status === selectedStatus)
+      }
+      if (searchTerm) {
+        const s = searchTerm.toLowerCase()
+        filtered = filtered.filter(
+          (g: any) =>
+            g.title?.toLowerCase().includes(s) ||
+            g.description?.toLowerCase().includes(s) ||
+            g.learning_objectives?.toLowerCase().includes(s)
+        )
+      }
+      return filtered
     },
     enabled: !!token,
   })
@@ -227,7 +239,24 @@ export default function GamesAdminClient() {
 
   // Open Edit Game Modal
   const handleOpenEditGame = (game: GameItem) => {
-    setEditingGame(game)
+    let existingHtml = (game as any)?.html_content || ''
+    if (!existingHtml && typeof window !== 'undefined') {
+      try {
+        const localStr = localStorage.getItem('admin_synced_games')
+        if (localStr) {
+          const list = JSON.parse(localStr)
+          const matched = list.find(
+            (g: any) =>
+              (game.game_uuid && g.game_uuid === game.game_uuid) ||
+              (game.id && String(g.id) === String(game.id)) ||
+              (game.slug && g.slug === game.slug)
+          )
+          if (matched?.html_content) existingHtml = matched.html_content
+        }
+      } catch (_) {}
+    }
+
+    setEditingGame({ ...game, html_content: existingHtml } as any)
     setFormTitle(game.title)
     setFormDescription(game.description || '')
     setFormCategoryId(game.category_id || null)
@@ -344,7 +373,10 @@ export default function GamesAdminClient() {
       )
       const selectedCat = categories.find((c) => c.id === formCategoryId)
 
+      const targetUuid = editingGame?.game_uuid || (editingGame?.id ? String(editingGame.id) : '')
       const payload: any = {
+        id: editingGame?.id,
+        game_uuid: editingGame?.game_uuid,
         category_id: formCategoryId,
         category_ids: catIds.length > 0 ? catIds : null,
         category_name: selectedCat?.name || 'Genel',
@@ -365,10 +397,12 @@ export default function GamesAdminClient() {
       }
       if (formHtmlContent.trim()) {
         payload.html_content = formHtmlContent
+      } else if (editingGame && (editingGame as any).html_content) {
+        payload.html_content = (editingGame as any).html_content
       }
 
       if (editingGame) {
-        return updateAdminGame(editingGame.game_uuid, payload, token)
+        return updateAdminGame(targetUuid, payload, token)
       } else {
         return createAdminGame(payload, token)
       }
@@ -405,11 +439,35 @@ export default function GamesAdminClient() {
           if (!Array.isArray(currentList)) currentList = [...games]
 
           if (editingGame) {
-            currentList = currentList.map((g: any) =>
-              g.game_uuid === editingGame.game_uuid || g.id === editingGame.id
-                ? { ...g, ...localPayload, update_date: new Date().toISOString() }
-                : g
-            )
+            let matched = false
+            currentList = currentList.map((g: any) => {
+              const isMatch =
+                (editingGame.game_uuid && g.game_uuid === editingGame.game_uuid) ||
+                (editingGame.id && String(g.id) === String(editingGame.id)) ||
+                (savedResult?.game_uuid && g.game_uuid === savedResult.game_uuid) ||
+                (savedResult?.id && String(g.id) === String(savedResult.id))
+              if (isMatch) {
+                matched = true
+                return {
+                  ...g,
+                  ...savedResult,
+                  ...localPayload,
+                  id: g.id || savedResult?.id || editingGame.id,
+                  game_uuid: g.game_uuid || savedResult?.game_uuid || editingGame.game_uuid,
+                  update_date: new Date().toISOString(),
+                }
+              }
+              return g
+            })
+            if (!matched) {
+              currentList.unshift({
+                id: savedResult?.id || editingGame.id || Date.now(),
+                game_uuid: savedResult?.game_uuid || editingGame.game_uuid || `game_${Date.now()}`,
+                creation_date: (editingGame as any)?.creation_date || new Date().toISOString(),
+                update_date: new Date().toISOString(),
+                ...localPayload,
+              })
+            }
           } else {
             const newG = {
               id: savedResult?.id || Date.now(),
@@ -422,6 +480,7 @@ export default function GamesAdminClient() {
           }
           localStorage.setItem('admin_synced_games', JSON.stringify(currentList))
           window.dispatchEvent(new CustomEvent('oxonom-games-updated'))
+          syncAdminGames({ games: currentList, deleted_uuids: getDeletedGameUuids() }, token).catch(() => {})
         } catch (_) {}
       }
       toast.success(editingGame ? 'Oyun güncellendi!' : 'Yeni oyun başarıyla oluşturuldu!')
@@ -439,17 +498,19 @@ export default function GamesAdminClient() {
   const deleteGameMutation = useMutation({
     mutationFn: (uuid: string) => deleteAdminGame(uuid, token),
     onSuccess: (_, uuid: string) => {
+      markGameAsDeleted(uuid)
       if (typeof window !== 'undefined') {
         try {
           const stored = localStorage.getItem('admin_synced_games')
           let currentList = stored ? JSON.parse(stored) : [...games]
           if (Array.isArray(currentList)) {
             currentList = currentList.filter(
-              (g: any) => g.game_uuid !== uuid && String(g.id) !== uuid
+              (g: any) => g.game_uuid !== uuid && String(g.id) !== String(uuid) && g.slug !== uuid
             )
             localStorage.setItem('admin_synced_games', JSON.stringify(currentList))
           }
           window.dispatchEvent(new CustomEvent('oxonom-games-updated'))
+          syncAdminGames({ games: currentList, deleted_uuids: getDeletedGameUuids() }, token).catch(() => {})
         } catch (_) {}
       }
       toast.success('Oyun silindi.')
@@ -817,7 +878,7 @@ export default function GamesAdminClient() {
                     <button
                       onClick={() => {
                         if (confirm(`'${game.title}' oyununu silmek istediğinize emin misiniz?`)) {
-                          deleteGameMutation.mutate(game.game_uuid)
+                          deleteGameMutation.mutate(game.game_uuid || String(game.id))
                         }
                       }}
                       className="p-1.5 hover:bg-rose-500/20 text-rose-400 rounded-lg transition cursor-pointer"
@@ -1401,7 +1462,7 @@ export default function GamesAdminClient() {
                     disabled={deleteGameMutation.isPending}
                     onClick={() => {
                       if (confirm(`'${editingGame.title}' oyununu kalıcı olarak silmek istediğinize emin misiniz?`)) {
-                        deleteGameMutation.mutate(editingGame.game_uuid)
+                        deleteGameMutation.mutate(editingGame.game_uuid || String(editingGame.id))
                       }
                     }}
                     className="px-3.5 py-2 bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-400 font-bold rounded-xl text-xs transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"

@@ -100,6 +100,9 @@ import {
   FALLBACK_GAME_CATEGORIES,
   getFallbackGamesStore,
   getFallbackGamePlay,
+  getDeletedGameUuids,
+  markGameAsDeleted,
+  mergeWithLocalGames,
 } from './fallbackData'
 
 // ── Public Store Endpoints ──
@@ -129,8 +132,67 @@ export async function getGamesStore(
     if (!res.ok) {
       return getFallbackGamesStore(params)
     }
-    const data = await errorHandling(res)
-    return data || getFallbackGamesStore(params)
+    const data: GamesStoreResponse = await errorHandling(res)
+    if (!data) return getFallbackGamesStore(params)
+
+    // Merge authoritative local games (and filter out deleted tombstones)
+    if (typeof window !== 'undefined') {
+      const mergedAll = mergeWithLocalGames(data.all_games || [])
+      const deleted = getDeletedGameUuids()
+      let filtered = mergedAll.filter((g) => {
+        if (g.status !== 'published') return false
+        if (deleted.includes(g.game_uuid) || deleted.includes(String(g.id)) || (g.slug && deleted.includes(g.slug))) {
+          return false
+        }
+        return true
+      })
+
+      if (params?.category_slug && params.category_slug !== 'all') {
+        const cat = data.categories?.find((c) => c.slug === params.category_slug)
+        if (cat) {
+          filtered = filtered.filter(
+            (g) => g.category_id === cat.id || g.category_ids?.includes(cat.id)
+          )
+        }
+      }
+
+      if (params?.grade_level && params.grade_level !== 'all') {
+        const gl = String(params.grade_level).trim().toLowerCase()
+        filtered = filtered.filter((g) => {
+          if (!g.grade_levels || !Array.isArray(g.grade_levels)) return true
+          return g.grade_levels.some((lvl) => String(lvl).toLowerCase().includes(gl))
+        })
+      }
+
+      if (params?.search) {
+        const s = params.search.trim().toLowerCase()
+        filtered = filtered.filter(
+          (g) =>
+            g.title?.toLowerCase().includes(s) ||
+            g.description?.toLowerCase().includes(s) ||
+            g.learning_objectives?.toLowerCase().includes(s)
+        )
+      }
+
+      const featured = filtered.filter((g) => g.is_featured)
+      const categories = data.categories || FALLBACK_GAME_CATEGORIES
+      const sliders = categories
+        .map((cat) => ({
+          category: cat,
+          games: filtered.filter((g) => g.category_id === cat.id || g.category_ids?.includes(cat.id)),
+        }))
+        .filter((s) => s.games.length > 0)
+
+      return {
+        categories,
+        featured: featured.length > 0 ? featured : filtered.slice(0, 5),
+        sliders,
+        all_games: filtered,
+        total_count: filtered.length,
+      }
+    }
+
+    return data
   } catch (_err) {
     return getFallbackGamesStore(params)
   }
@@ -138,13 +200,16 @@ export async function getGamesStore(
 
 export async function getGamePlay(gameUuid: string): Promise<GamePlayResponse> {
   try {
-    const url = `${getAPIUrl()}games/${gameUuid}/play`
+    const url = `${getAPIUrl()}games/${encodeURIComponent(gameUuid)}/play`
     const res = await fetch(url)
     if (!res.ok) {
       return getFallbackGamePlay(gameUuid)
     }
     const data = await errorHandling(res)
-    return data || getFallbackGamePlay(gameUuid)
+    if (data?.html_content) {
+      return data
+    }
+    return getFallbackGamePlay(gameUuid)
   } catch (_err) {
     return getFallbackGamePlay(gameUuid)
   }
@@ -244,6 +309,8 @@ export async function createAdminGame(
 export async function updateAdminGame(
   gameUuid: string,
   payload: Partial<{
+    id?: number
+    game_uuid?: string
     category_id?: number | null
     category_ids?: number[] | null
     is_3d_simulation?: boolean
@@ -265,7 +332,7 @@ export async function updateAdminGame(
   }>,
   accessToken: string
 ): Promise<GameItem> {
-  const url = `${getAPIUrl()}games/admin/${gameUuid}`
+  const url = `${getAPIUrl()}games/admin/${encodeURIComponent(gameUuid)}`
   const res = await fetch(url, RequestBodyWithAuthHeader('PUT', payload, null, accessToken))
   return errorHandling(res)
 }
@@ -274,9 +341,29 @@ export async function deleteAdminGame(
   gameUuid: string,
   accessToken: string
 ): Promise<{ success: boolean; message: string }> {
-  const url = `${getAPIUrl()}games/admin/${gameUuid}`
+  markGameAsDeleted(gameUuid)
+  const url = `${getAPIUrl()}games/admin/${encodeURIComponent(gameUuid)}`
   const res = await fetch(url, RequestBodyWithAuthHeader('DELETE', null, null, accessToken))
   return errorHandling(res)
+}
+
+export async function syncAdminGames(
+  payload: {
+    games?: GameItem[]
+    deleted_uuids?: string[]
+  },
+  accessToken?: string
+): Promise<{ success: boolean }> {
+  try {
+    const url = `${getAPIUrl()}games/sync`
+    const res = await fetch(
+      url,
+      RequestBodyWithAuthHeader('POST', payload, null, accessToken || '')
+    )
+    return errorHandling(res)
+  } catch (_) {
+    return { success: false }
+  }
 }
 
 export async function createAdminCategory(

@@ -99,7 +99,7 @@ export default function GamesStoreClient() {
     }
     window.addEventListener('oxonom-games-updated', handleUpdate)
     const handleStorage = (e: StorageEvent) => {
-      if (e.key === 'admin_synced_games') handleUpdate()
+      if (e.key === 'admin_synced_games' || e.key === 'admin_deleted_game_uuids') handleUpdate()
     }
     window.addEventListener('storage', handleStorage)
     return () => {
@@ -160,7 +160,7 @@ export default function GamesStoreClient() {
       if ((game as any).html_content && String((game as any).html_content).trim().length > 0) {
         setGameHtmlContent((game as any).html_content)
       } else {
-        const res = await getGamePlay(game.game_uuid)
+        const res = await getGamePlay(game.game_uuid || String(game.id))
         setGameHtmlContent(res.html_content)
       }
     } catch (e) {

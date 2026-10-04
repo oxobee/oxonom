@@ -197,36 +197,6 @@ export const SYNCED_GAMES: GameItem[] = [
     "update_date": "2026-10-02T00:00:00Z"
   },
   {
-    "id": 7,
-    "game_uuid": "75d06861-c3e5-4777-adbe-be68e3539177",
-    "category_id": 2,
-    "category_ids": [
-      8
-    ],
-    "is_3d_simulation": true,
-    "title": "Uzay Roketi Matematik Görevi",
-    "slug": "uzay-roket-matematik-gorevi",
-    "description": "Uzayda hızla ilerleyen roketin önüne çıkan engelleri doğru toplama, çıkarma ve çarpma yaparak aş!",
-    "grade_levels": [
-      "2. Sınıf",
-      "3. Sınıf",
-      "4. Sınıf"
-    ],
-    "age_range": "7-12 Yaş",
-    "learning_objectives": "Zihinden hızlı işlem yapma, matematiksel özgüven ve refleks.",
-    "status": "published",
-    "is_featured": true,
-    "featured_order": 3,
-    "play_count": 15,
-    "thumbnail_image": "/games/uzay-roket-matematik-gorevi.png",
-    "banner_image": "/games/uzay-roket-matematik-gorevi.png",
-    "has_html_content": true,
-    "average_rating": 5.0,
-    "ratings_count": 142,
-    "creation_date": "2026-10-01T00:00:00Z",
-    "update_date": "2026-10-02T00:00:00Z"
-  },
-  {
     "id": 4,
     "game_uuid": "881d96ef-d54b-4c7c-a484-7c7936595dc9",
     "category_id": 4,
