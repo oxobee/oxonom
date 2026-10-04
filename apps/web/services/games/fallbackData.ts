@@ -9,102 +9,100 @@ import {
 export const FALLBACK_GAME_CATEGORIES: GameCategory[] = SYNCED_CATEGORIES
 export const FALLBACK_GAMES: GameItem[] = SYNCED_GAMES
 
+const LS_GAMES_KEY = 'admin_synced_games'
+const LS_DELETED_KEY = 'admin_deleted_game_uuids'
+const COOKIE_DELETED_KEY = 'oxonom_deleted_games'
+
+// ─── Tombstone (Silme Listesi) Yönetimi ───────────────────────────────────────
+
 /**
- * Retrieves the full list of deleted game IDs / UUIDs / slugs
- * from both localStorage and document.cookie.
+ * Silinen oyunların UUID/ID/slug listesini döndürür.
+ * Hem localStorage hem cookie'den okur.
  */
 export function getDeletedGameUuids(): string[] {
   const set = new Set<string>()
+  if (typeof window === 'undefined') return []
 
-  if (typeof window !== 'undefined') {
-    try {
-      const local = localStorage.getItem('admin_deleted_game_uuids')
-      if (local) {
-        const parsed = JSON.parse(local)
-        if (Array.isArray(parsed)) {
-          parsed.forEach((id) => id && set.add(String(id)))
-        }
+  try {
+    const local = localStorage.getItem(LS_DELETED_KEY)
+    if (local) {
+      const parsed = JSON.parse(local)
+      if (Array.isArray(parsed)) {
+        parsed.forEach((id) => id && set.add(String(id)))
       }
-    } catch (_) {}
+    }
+  } catch (_) {}
 
-    try {
-      const cookies = document.cookie.split(';')
-      for (const c of cookies) {
-        const [name, val] = c.trim().split('=')
-        if (name === 'oxonom_deleted_games' && val) {
+  try {
+    document.cookie.split(';').forEach((c) => {
+      const [name, val] = c.trim().split('=')
+      if (name === COOKIE_DELETED_KEY && val) {
+        try {
           const parsed = JSON.parse(decodeURIComponent(val))
           if (Array.isArray(parsed)) {
             parsed.forEach((id) => id && set.add(String(id)))
           }
-        }
+        } catch (_) {}
       }
-    } catch (_) {}
-  }
+    })
+  } catch (_) {}
 
   return Array.from(set)
 }
 
 /**
- * Marks a game ID/UUID/slug as permanently deleted across localStorage and cookies.
+ * Bir oyunu kalıcı olarak sil.
+ * localStorage + cookie'ye kayıt eder.
  */
 export function markGameAsDeleted(uuidOrId: string): void {
   if (!uuidOrId || typeof window === 'undefined') return
   const idStr = String(uuidOrId)
   const existing = getDeletedGameUuids()
-  if (!existing.includes(idStr)) {
-    existing.push(idStr)
-  }
+  if (!existing.includes(idStr)) existing.push(idStr)
 
+  // localStorage tombstone
   try {
-    localStorage.setItem('admin_deleted_game_uuids', JSON.stringify(existing))
+    localStorage.setItem(LS_DELETED_KEY, JSON.stringify(existing))
   } catch (_) {}
 
+  // Cookie tombstone
   try {
     const encoded = encodeURIComponent(JSON.stringify(existing))
-    document.cookie = `oxonom_deleted_games=${encoded}; path=/; max-age=31536000; SameSite=Lax`
+    document.cookie = `${COOKIE_DELETED_KEY}=${encoded}; path=/; max-age=31536000; SameSite=Lax`
   } catch (_) {}
 
-  // Also purge it from admin_synced_games in localStorage
-  try {
-    const localStr = localStorage.getItem('admin_synced_games')
-    if (localStr) {
-      const list: GameItem[] = JSON.parse(localStr)
-      if (Array.isArray(list)) {
-        const filtered = list.filter(
-          (g) =>
-            g.game_uuid !== idStr &&
-            String(g.id) !== idStr &&
-            g.slug !== idStr
-        )
-        localStorage.setItem('admin_synced_games', JSON.stringify(filtered))
-      }
-    }
-  } catch (_) {}
+  // admin_synced_games'ten de temizle
+  _purgeFromSyncedGames(idStr)
 
   window.dispatchEvent(new CustomEvent('oxonom-games-updated'))
 }
 
 /**
- * Returns clean live games merging SYNCED_GAMES with localStorage admin_synced_games
- * and strictly excluding any game in getDeletedGameUuids().
+ * admin_synced_games localStorage listesinden verilen id'yi temizler.
  */
-export function getEffectiveLiveGames(): GameItem[] {
+function _purgeFromSyncedGames(idStr: string) {
+  try {
+    const localStr = localStorage.getItem(LS_GAMES_KEY)
+    if (!localStr) return
+    const list: GameItem[] = JSON.parse(localStr)
+    if (!Array.isArray(list)) return
+    const filtered = list.filter(
+      (g) =>
+        g.game_uuid !== idStr &&
+        String(g.id) !== idStr &&
+        g.slug !== idStr
+    )
+    localStorage.setItem(LS_GAMES_KEY, JSON.stringify(filtered))
+  } catch (_) {}
+}
+
+/**
+ * Bir oyun listesini tombstone'lara göre filtreler.
+ */
+export function filterOutDeleted(games: GameItem[]): GameItem[] {
   const deleted = getDeletedGameUuids()
-
-  let baseGames: GameItem[] = [...SYNCED_GAMES]
-  if (typeof window !== 'undefined') {
-    try {
-      const localStr = localStorage.getItem('admin_synced_games')
-      if (localStr) {
-        const localGames: GameItem[] = JSON.parse(localStr)
-        if (Array.isArray(localGames) && localGames.length > 0) {
-          baseGames = localGames
-        }
-      }
-    } catch (_) {}
-  }
-
-  return baseGames.filter(
+  if (deleted.length === 0) return games
+  return games.filter(
     (g) =>
       !deleted.includes(g.game_uuid) &&
       !deleted.includes(String(g.id)) &&
@@ -112,66 +110,95 @@ export function getEffectiveLiveGames(): GameItem[] {
   )
 }
 
+// ─── Tek Kaynak: getEffectiveLiveGames ────────────────────────────────────────
+
 /**
- * Merges server-provided games with authoritative client games from localStorage,
- * permanently purging any deleted game tombstones.
+ * TÜM oyun okumalarında kullanılan tek kaynak.
+ *
+ * Öncelik sırası:
+ *   1. localStorage admin_synced_games  (en yetkili, admin tarafından yazılır)
+ *   2. SYNCED_GAMES seed verisi          (fallback)
+ *
+ * Her durumda tombstone ile filtrelenir.
  */
-export function mergeWithLocalGames(serverGames: GameItem[]): GameItem[] {
-  const deleted = getDeletedGameUuids()
+export function getEffectiveLiveGames(): GameItem[] {
+  let games: GameItem[] = []
 
-  // 1. Purge deleted games from serverGames
-  let cleanServer = Array.isArray(serverGames)
-    ? serverGames.filter(
-        (g) =>
-          !deleted.includes(g.game_uuid) &&
-          !deleted.includes(String(g.id)) &&
-          (!g.slug || !deleted.includes(g.slug))
-      )
-    : []
-
-  if (typeof window === 'undefined') {
-    return cleanServer
+  if (typeof window !== 'undefined') {
+    try {
+      const localStr = localStorage.getItem(LS_GAMES_KEY)
+      if (localStr) {
+        const parsed = JSON.parse(localStr)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          games = parsed
+        }
+      }
+    } catch (_) {}
   }
 
-  // 2. Fetch local games
+  // Eğer localStorage boşsa seed'e dön
+  if (games.length === 0) {
+    games = [...SYNCED_GAMES]
+  }
+
+  return filterOutDeleted(games)
+}
+
+// ─── Superadmin & Store için Merge ────────────────────────────────────────────
+
+/**
+ * Server'dan gelen oyunları localStorage kayıtlı oyunlarla birleştirir.
+ * localStorage her zaman kazanır (admin eklemeleri/düzenlemeleri korunur).
+ * Tombstone listesindeki oyunlar kesinlikle çıkarılır.
+ */
+export function mergeWithLocalGames(serverGames: GameItem[]): GameItem[] {
+  // Server oyunlarını filtrele
+  const cleanServer = filterOutDeleted(Array.isArray(serverGames) ? serverGames : [])
+
+  if (typeof window === 'undefined') return cleanServer
+
+  // LocalStorage oyunlarını al ve filtrele
   let localGames: GameItem[] = []
   try {
-    const localStr = localStorage.getItem('admin_synced_games')
+    const localStr = localStorage.getItem(LS_GAMES_KEY)
     if (localStr) {
       const parsed = JSON.parse(localStr)
       if (Array.isArray(parsed)) {
-        localGames = parsed.filter(
-          (g) =>
-            !deleted.includes(g.game_uuid) &&
-            !deleted.includes(String(g.id)) &&
-            (!g.slug || !deleted.includes(g.slug))
-        )
+        localGames = filterOutDeleted(parsed)
       }
     }
   } catch (_) {}
 
+  // LocalStorage boşsa: server oyunlarını localStorage'a yaz ve döndür
   if (localGames.length === 0) {
+    if (cleanServer.length > 0) {
+      try {
+        localStorage.setItem(LS_GAMES_KEY, JSON.stringify(cleanServer))
+      } catch (_) {}
+    }
     return cleanServer
   }
 
-  // 3. Merge: local games take priority for modified/added games
+  // Local var: önce local oyunları al, server'dan ekler olanlara izin ver
   const result: GameItem[] = [...localGames]
-  const localKeys = new Set(
-    localGames.flatMap((g) => [g.game_uuid, String(g.id), g.slug].filter(Boolean))
+  const localKeys = new Set<string>(
+    localGames.flatMap((g) => [g.game_uuid, String(g.id), g.slug].filter(Boolean) as string[])
   )
 
   for (const sg of cleanServer) {
-    if (
-      !localKeys.has(sg.game_uuid) &&
-      !localKeys.has(String(sg.id)) &&
-      (!sg.slug || !localKeys.has(sg.slug))
-    ) {
+    const alreadyInLocal =
+      localKeys.has(sg.game_uuid) ||
+      localKeys.has(String(sg.id)) ||
+      (sg.slug && localKeys.has(sg.slug))
+    if (!alreadyInLocal) {
       result.push(sg)
     }
   }
 
   return result
 }
+
+// ─── Fallback Store (API başarısız olduğunda kullanılır) ──────────────────────
 
 export function getFallbackGamesStore(
   orgSlugOrIdOrParams?: string | number | { category_slug?: string; grade_level?: string; search?: string },
@@ -190,8 +217,10 @@ export function getFallbackGamesStore(
   const liveGames = getEffectiveLiveGames()
   let filtered = liveGames.filter((g) => g.status === 'published')
 
+  const currentCategories = _getEffectiveCategories()
+
   if (params.category_slug && params.category_slug !== 'all') {
-    const cat = SYNCED_CATEGORIES.find((c: any) => c.slug === params.category_slug)
+    const cat = currentCategories.find((c: any) => c.slug === params.category_slug)
     if (cat) {
       filtered = filtered.filter(
         (g) => g.category_id === cat.id || g.category_ids?.includes(cat.id)
@@ -218,23 +247,36 @@ export function getFallbackGamesStore(
   }
 
   const featured = filtered.filter((g) => g.is_featured)
-  const sliders = SYNCED_CATEGORIES.map((cat: any) => {
+  const sliders = currentCategories.map((cat: any) => {
     const catGames = filtered.filter(
       (g) => g.category_id === cat.id || g.category_ids?.includes(cat.id)
     )
-    return {
-      category: cat,
-      games: catGames,
-    }
-  }).filter((s) => s.games.length > 0)
+    return { category: cat, games: catGames }
+  }).filter((s: any) => s.games.length > 0)
 
   return {
-    categories: SYNCED_CATEGORIES,
+    categories: currentCategories,
     featured: featured.length > 0 ? featured : filtered.slice(0, 5),
     sliders,
     all_games: filtered,
     total_count: filtered.length,
   }
+}
+
+/**
+ * Kategorileri önce localStorage'dan, yoksa SYNCED_CATEGORIES'den döndürür.
+ */
+function _getEffectiveCategories(): GameCategory[] {
+  if (typeof window !== 'undefined') {
+    try {
+      const localStr = localStorage.getItem('admin_synced_categories')
+      if (localStr) {
+        const parsed = JSON.parse(localStr)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      }
+    } catch (_) {}
+  }
+  return SYNCED_CATEGORIES
 }
 
 export function getFallbackGamePlay(identifier: string): GamePlayResponse {

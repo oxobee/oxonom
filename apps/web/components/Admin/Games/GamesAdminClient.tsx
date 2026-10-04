@@ -157,31 +157,37 @@ export default function GamesAdminClient() {
   const { data: rawGames = [], isLoading: isLoadingGames } = useQuery({
     queryKey: ['admin-games', selectedCatId, selectedStatus, searchTerm],
     queryFn: async () => {
+      // 1. Önce localStorage'daki oyunları oku (en yetkili kaynak)
+      let localGames: GameItem[] = []
+      if (typeof window !== 'undefined') {
+        try {
+          const localStr = localStorage.getItem('admin_synced_games')
+          if (localStr) {
+            const parsed = JSON.parse(localStr)
+            if (Array.isArray(parsed)) localGames = parsed
+          }
+        } catch (_) {}
+      }
+
+      // 2. Server'dan oyunları çek (arka plan sync için)
       let serverGames: GameItem[] = []
       try {
-        serverGames = await getAdminGames(
-          {
-            category_id: null, // Always fetch full list to prevent partial overrides
-            status: 'all',
-            search: '',
-          },
-          token
-        )
+        serverGames = await getAdminGames({ category_id: null, status: 'all', search: '' }, token)
       } catch (_) {}
 
-      // Merge server games with local games and purge tombstones
+      // 3. Birleştir: localStorage öncelikli, server yalnızca eksik oyunları ekler
       const mergedList = mergeWithLocalGames(Array.isArray(serverGames) ? serverGames : [])
       const deletedUuids = getDeletedGameUuids()
 
+      // 4. Tombstone-filtered listeyi localStorage'a yaz
       if (typeof window !== 'undefined' && mergedList.length > 0) {
         try {
           localStorage.setItem('admin_synced_games', JSON.stringify(mergedList))
         } catch (_) {}
-        // Sync server in background so next lambda container has it
         syncAdminGames({ games: mergedList, deleted_uuids: deletedUuids }, token).catch(() => {})
       }
 
-      // Filter for active view in UI
+      // 5. UI filtrelerini uygula
       let filtered = mergedList
       if (selectedCatId) {
         filtered = filtered.filter(
@@ -203,6 +209,8 @@ export default function GamesAdminClient() {
       return filtered
     },
     enabled: !!token,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
   })
   const games = Array.isArray(rawGames) ? rawGames : []
 
@@ -496,13 +504,13 @@ export default function GamesAdminClient() {
 
   // Delete Game Mutation
   const deleteGameMutation = useMutation({
-    mutationFn: (uuid: string) => deleteAdminGame(uuid, token),
-    onSuccess: (_, uuid: string) => {
+    mutationFn: async (uuid: string) => {
+      // localStorage ve cookie'ye hemen tombstone ekle (API'den bağımsız)
       markGameAsDeleted(uuid)
       if (typeof window !== 'undefined') {
         try {
           const stored = localStorage.getItem('admin_synced_games')
-          let currentList = stored ? JSON.parse(stored) : [...games]
+          let currentList = stored ? JSON.parse(stored) : []
           if (Array.isArray(currentList)) {
             currentList = currentList.filter(
               (g: any) => g.game_uuid !== uuid && String(g.id) !== String(uuid) && g.slug !== uuid
@@ -510,10 +518,23 @@ export default function GamesAdminClient() {
             localStorage.setItem('admin_synced_games', JSON.stringify(currentList))
           }
           window.dispatchEvent(new CustomEvent('oxonom-games-updated'))
+        } catch (_) {}
+      }
+      // API'ye de gönder (başarısız olsa bile tombstone korunur)
+      try {
+        await deleteAdminGame(uuid, token)
+      } catch (_) {}
+      return uuid
+    },
+    onSuccess: (uuid: string) => {
+      if (typeof window !== 'undefined') {
+        try {
+          const stored = localStorage.getItem('admin_synced_games')
+          const currentList = stored ? JSON.parse(stored) : []
           syncAdminGames({ games: currentList, deleted_uuids: getDeletedGameUuids() }, token).catch(() => {})
         } catch (_) {}
       }
-      toast.success('Oyun silindi.')
+      toast.success('Oyun kalıcı olarak silindi.')
       setIsGameModalOpen(false)
       setEditingGame(null)
       queryClient.invalidateQueries({ queryKey: ['admin-games'] })

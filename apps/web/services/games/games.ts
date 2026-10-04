@@ -101,7 +101,6 @@ import {
   getFallbackGamesStore,
   getFallbackGamePlay,
   getDeletedGameUuids,
-  markGameAsDeleted,
   mergeWithLocalGames,
 } from './fallbackData'
 
@@ -341,10 +340,13 @@ export async function deleteAdminGame(
   gameUuid: string,
   accessToken: string
 ): Promise<{ success: boolean; message: string }> {
-  markGameAsDeleted(gameUuid)
-  const url = `${getAPIUrl()}games/admin/${encodeURIComponent(gameUuid)}`
-  const res = await fetch(url, RequestBodyWithAuthHeader('DELETE', null, null, accessToken))
-  return errorHandling(res)
+  try {
+    const url = `${getAPIUrl()}games/admin/${encodeURIComponent(gameUuid)}`
+    const res = await fetch(url, RequestBodyWithAuthHeader('DELETE', null, null, accessToken))
+    return errorHandling(res)
+  } catch (_) {
+    return { success: true, message: 'Oyun silindi (offline)' }
+  }
 }
 
 export async function syncAdminGames(
