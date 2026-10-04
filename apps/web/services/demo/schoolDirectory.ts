@@ -868,80 +868,242 @@ export function validateTcKimlik(tc: string): { valid: boolean; message?: string
 }
 
 // Known TC Registry for Automatic Name-Surname Lookup
-export const KNOWN_TC_REGISTRY: Record<string, {
+export interface TcRecord {
+  tcNo: string
   name: string
   first_name: string
   last_name: string
-  role: string
+  role: 'Öğrenci' | 'Veli' | 'Öğretmen' | 'Okul Müdürü'
+  gender?: 'Erkek' | 'Kadın'
+  birthDate?: string
+  birthYear?: number
+  age?: number
   motherName?: string
   fatherName?: string
+  spouseName?: string
+  bloodType?: string
+  address?: string
   school?: string
   classroom?: string
-}> = {
+  is_verified?: boolean
+  mernis_status?: string
+  last_mernis_sync?: string
+  parents?: Array<{
+    name: string
+    relation: string
+    phone: string
+    occupation?: string
+    email?: string
+  }>
+}
+
+export const KNOWN_TC_REGISTRY: Record<string, TcRecord> = {
+  '64690186628': {
+    tcNo: '64690186628',
+    name: 'Uğur UĞURLU',
+    first_name: 'Uğur',
+    last_name: 'UĞURLU',
+    role: 'Veli',
+    gender: 'Erkek',
+    birthDate: '1982-06-15',
+    birthYear: 1982,
+    age: 44,
+    motherName: 'Gülümser UĞURLU',
+    fatherName: 'Mehmet UĞURLU',
+    spouseName: 'Ebru UĞURLU',
+    bloodType: 'A Rh+',
+    address: 'Caddebostan Mah. Bağdat Cad. No: 142/5 Kadıköy / İstanbul',
+    school: 'Necla Görer İlkokulu',
+    classroom: '1-A Velisi',
+    is_verified: true,
+    mernis_status: 'MERNİS Nüfus ve Vatandaşlık İşleri (NVİ) Aktif Kütük Kaydı',
+    parents: [
+      { name: 'Ebru UĞURLU', relation: 'Anne / Eş', phone: '+90 532 999 1100', occupation: 'Mimar', email: 'ebru.ugurlu@oxonom.com' },
+      { name: 'Uğur UĞURLU', relation: 'Baba (Kendisi)', phone: '+90 532 999 2200', occupation: 'Yazılım Mühendisi', email: 'ugur@oxonom.com' },
+    ],
+  },
   '10000000146': {
+    tcNo: '10000000146',
     name: 'Erçil Evren UĞURLU',
     first_name: 'Erçil Evren',
     last_name: 'UĞURLU',
     role: 'Öğrenci',
+    gender: 'Kadın',
+    birthDate: '2018-04-12',
+    birthYear: 2018,
+    age: 8,
     motherName: 'Ebru UĞURLU',
     fatherName: 'Uğur UĞURLU',
+    bloodType: 'A Rh+',
+    address: 'Caddebostan Mah. Bağdat Cad. No: 142/5 Kadıköy / İstanbul',
     school: 'Necla Görer İlkokulu',
     classroom: '1-A',
+    is_verified: true,
+    mernis_status: 'MERNİS Nüfus ve Vatandaşlık İşleri (NVİ) Aktif Öğrenci Kütük Kaydı',
+    parents: [
+      { name: 'Ebru UĞURLU', relation: 'Anne', phone: '+90 532 999 1100', occupation: 'Mimar', email: 'ebru.ugurlu@oxonom.com' },
+      { name: 'Uğur UĞURLU', relation: 'Baba', phone: '+90 532 999 2200', occupation: 'Yazılım Mühendisi', email: 'ugur@oxonom.com' },
+    ],
   },
   '10928374652': {
+    tcNo: '10928374652',
     name: 'Ali Demir',
     first_name: 'Ali',
     last_name: 'Demir',
     role: 'Öğrenci',
+    gender: 'Erkek',
+    birthDate: '2018-09-20',
+    birthYear: 2018,
+    age: 8,
     motherName: 'Zeynep Demir',
     fatherName: 'Mehmet Demir',
+    bloodType: '0 Rh+',
+    address: 'Fenerbahçe Mah. Dr. Faruk Ayanoğlu Cad. No: 12 Kadıköy / İstanbul',
     school: 'Necla Görer İlkokulu',
     classroom: '1-A',
+    is_verified: true,
+    mernis_status: 'MERNİS Aktif Kütük Kaydı',
+    parents: [
+      { name: 'Zeynep Demir', relation: 'Anne', phone: '+90 533 111 2233', occupation: 'Doktor', email: '' },
+      { name: 'Mehmet Demir', relation: 'Baba', phone: '+90 533 444 5566', occupation: 'Avukat', email: '' },
+    ],
   },
   '29182736450': {
+    tcNo: '29182736450',
     name: 'Özlem ZOR',
     first_name: 'Özlem',
     last_name: 'ZOR',
-    role: 'Sınıf Öğretmeni',
+    role: 'Öğretmen',
+    gender: 'Kadın',
+    birthDate: '1985-03-10',
+    birthYear: 1985,
+    age: 41,
+    motherName: 'Fatma ZOR',
+    fatherName: 'Ali ZOR',
+    bloodType: 'A Rh-',
     school: 'Necla Görer İlkokulu',
     classroom: '1-A',
+    is_verified: true,
   },
   '38291049582': {
+    tcNo: '38291049582',
     name: 'Gülümser ERMEZ',
     first_name: 'Gülümser',
     last_name: 'ERMEZ',
     role: 'Öğretmen',
+    gender: 'Kadın',
+    birthDate: '1980-11-25',
+    birthYear: 1980,
+    age: 46,
+    motherName: 'Ayşe ERMEZ',
+    fatherName: 'Hüseyin ERMEZ',
+    bloodType: 'B Rh+',
     school: 'Şair Fevzi Kutlu Kalkancı Ortaokulu',
     classroom: '8-A',
+    is_verified: true,
   },
   '49201948572': {
+    tcNo: '49201948572',
     name: 'Mehmet Özkan',
     first_name: 'Mehmet',
     last_name: 'Özkan',
     role: 'Okul Müdürü',
+    gender: 'Erkek',
+    birthDate: '1976-08-14',
+    birthYear: 1976,
+    age: 50,
+    motherName: 'Hatice Özkan',
+    fatherName: 'Mustafa Özkan',
+    bloodType: '0 Rh+',
     school: 'Necla Görer İlkokulu',
+    is_verified: true,
   },
 }
 
-export function lookupTcRecord(tc: string) {
+const MERNIS_POOL_MALE = ['Kemal', 'Emre', 'Barış', 'Deniz', 'Can', 'Burak', 'Alp', 'Mert', 'Kaan', 'Murat', 'Oğuz', 'Serkan']
+const MERNIS_POOL_FEMALE = ['Zeynep', 'Elif', 'Selin', 'Derya', 'Merve', 'Gamze', 'Büşra', 'Seda', 'İrem', 'Ece', 'Bahar', 'Deniz']
+const MERNIS_POOL_SURNAMES = ['Yılmaz', 'Kaya', 'Demir', 'Çelik', 'Yıldız', 'Yıldırım', 'Öztürk', 'Aydın', 'Özdemir', 'Arslan', 'Doğan', 'Kılıç', 'Aslan', 'Çetin', 'Kara', 'Koç']
+const MERNIS_POOL_BLOOD = ['A Rh+', 'A Rh-', 'B Rh+', 'B Rh-', 'AB Rh+', 'AB Rh-', '0 Rh+', '0 Rh-']
+
+function generateMernisCitizen(tc: string): TcRecord {
+  const digits = tc.split('').map(Number)
+  const seed = digits.reduce((acc, d, idx) => acc + d * (idx + 1), 0)
+  const isMale = digits[9] % 2 === 0
+  const firstName = isMale 
+    ? MERNIS_POOL_MALE[seed % MERNIS_POOL_MALE.length] 
+    : MERNIS_POOL_FEMALE[seed % MERNIS_POOL_FEMALE.length]
+  const lastName = MERNIS_POOL_SURNAMES[(seed * 3) % MERNIS_POOL_SURNAMES.length]
+  const motherName = MERNIS_POOL_FEMALE[(seed * 7) % MERNIS_POOL_FEMALE.length]
+  const fatherName = MERNIS_POOL_MALE[(seed * 11) % MERNIS_POOL_MALE.length]
+  const bloodType = MERNIS_POOL_BLOOD[seed % MERNIS_POOL_BLOOD.length]
+  
+  // Deterministic birth year (between 1978 and 2018)
+  const isStudent = (digits[8] % 2 === 0)
+  const birthYear = isStudent ? (2014 + (seed % 6)) : (1975 + (seed % 25))
+  const birthMonth = String((seed % 12) + 1).padStart(2, '0')
+  const birthDay = String((seed % 28) + 1).padStart(2, '0')
+  const birthDate = `${birthYear}-${birthMonth}-${birthDay}`
+  const currentYear = 2026
+  const age = currentYear - birthYear
+
+  const role: 'Öğrenci' | 'Veli' = isStudent ? 'Öğrenci' : 'Veli'
+
+  return {
+    tcNo: tc,
+    name: `${firstName} ${lastName}`,
+    first_name: firstName,
+    last_name: lastName,
+    role,
+    gender: isMale ? 'Erkek' : 'Kadın',
+    birthDate,
+    birthYear,
+    age,
+    motherName: `${motherName} ${lastName}`,
+    fatherName: `${fatherName} ${lastName}`,
+    bloodType,
+    address: 'Merkez Mah. Atatürk Cad. No: 18 Kadıköy / İstanbul',
+    school: 'Necla Görer İlkokulu',
+    classroom: isStudent ? '1-A Şubesi' : '1-A Velisi',
+    is_verified: true,
+    mernis_status: 'MERNİS Nüfus ve Vatandaşlık İşleri (NVİ) Doğrulanmış Kayıt',
+    parents: [
+      { name: `${motherName} ${lastName}`, relation: 'Anne', phone: '+90 532 ' + String(100 + (seed % 899)) + ' 1122', occupation: 'Serbest Meslek', email: '' },
+      { name: `${fatherName} ${lastName}`, relation: 'Baba', phone: '+90 532 ' + String(200 + (seed % 799)) + ' 3344', occupation: 'Özel Sektör', email: '' },
+    ],
+  }
+}
+
+export function lookupTcRecord(tc: string): TcRecord | null {
   const clean = tc.trim()
   if (KNOWN_TC_REGISTRY[clean]) {
     return KNOWN_TC_REGISTRY[clean]
   }
-  // If valid checksum TC, auto-synthesize verified student record
   const check = validateTcKimlik(clean)
   if (check.valid) {
-    return {
-      name: 'Erçil Evren UĞURLU',
-      first_name: 'Erçil Evren',
-      last_name: 'UĞURLU',
-      role: 'Öğrenci',
-      motherName: 'Ebru UĞURLU',
-      fatherName: 'Uğur UĞURLU',
-      school: 'Necla Görer İlkokulu',
-      classroom: '1-A',
-      is_verified: true,
-    }
+    return generateMernisCitizen(clean)
   }
   return null
 }
+
+export async function fetchMernisData(tc: string): Promise<{ success: boolean; record?: TcRecord; message: string }> {
+  const clean = tc.trim()
+  const check = validateTcKimlik(clean)
+  if (!check.valid) {
+    return { success: false, message: check.message || 'Geçersiz T.C. Kimlik Numarası' }
+  }
+  // Simulate network query to MERNİS / NVİ KPS (Nüfus ve Vatandaşlık İşleri)
+  await new Promise((r) => setTimeout(r, 450))
+  const record = lookupTcRecord(clean)
+  if (!record) {
+    return { success: false, message: 'MERNİS Nüfus Veritabanında eşleşen kayıt bulunamadı.' }
+  }
+  return {
+    success: true,
+    record: {
+      ...record,
+      last_mernis_sync: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+    },
+    message: `${record.name} (${record.role}) için güncel MERNİS nüfus verileri başarıyla çekildi.`,
+  }
+}
+

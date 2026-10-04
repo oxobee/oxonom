@@ -15,7 +15,7 @@ import {
   RefreshCw,
   X,
 } from 'lucide-react'
-import { validateTcKimlik, lookupTcRecord, DEMO_STUDENT } from '@services/demo/schoolDirectory'
+import { validateTcKimlik, lookupTcRecord, fetchMernisData, DEMO_STUDENT } from '@services/demo/schoolDirectory'
 import {
   Dialog,
   DialogContent,
@@ -265,7 +265,7 @@ export default function TcKimlikModal({
                       Anne Adı
                     </span>
                     <span className="font-bold text-gray-800">
-                      {record.motherName || 'Ebru UĞURLU'}
+                      {record.motherName || 'Belirtilmemiş'}
                     </span>
                   </div>
                   <div>
@@ -273,7 +273,26 @@ export default function TcKimlikModal({
                       Baba Adı
                     </span>
                     <span className="font-bold text-gray-800">
-                      {record.fatherName || 'Uğur UĞURLU'}
+                      {record.fatherName || 'Belirtilmemiş'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-gray-100 grid grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                      Doğum Tarihi / Yaş
+                    </span>
+                    <span className="font-semibold text-gray-800">
+                      {record.birthDate ? `${record.birthDate} (${record.age || 2026 - (record.birthYear || 2010)} Yaşında)` : 'Belirtilmemiş'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                      Kan Grubu
+                    </span>
+                    <span className="font-bold text-emerald-800">
+                      {record.bloodType || 'A Rh+'}
                     </span>
                   </div>
                 </div>
@@ -289,23 +308,46 @@ export default function TcKimlikModal({
                   </div>
                   <div>
                     <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
-                      Şubesi / Sınıfı
+                      Şubesi / Durumu
                     </span>
                     <span className="font-bold text-indigo-700">
-                      {record.classroom || '1-A Şubesi'}
+                      {record.classroom || (record.role === 'Öğrenci' ? '1-A Şubesi' : 'Veli')}
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-1">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setIsVerifying(true)
+                    const res = await fetchMernisData(tcInput)
+                    setIsVerifying(false)
+                    if (res.success && res.record) {
+                      setRecord(res.record)
+                      if (onVerified) onVerified(res.record)
+                      toast.success(`✨ MERNİS üzerinden güncellendi: ${res.record.name} (${res.record.role})`)
+                    } else {
+                      toast.error(res.message)
+                    }
+                  }}
+                  disabled={isVerifying}
+                  className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-white border border-emerald-300 hover:bg-emerald-50 text-emerald-900 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer disabled:opacity-50"
+                  title="MERNİS Nüfus ve Vatandaşlık İşleri (NVİ) üzerinden en güncel resmi kütük bilgilerini çek"
+                >
+                  <RefreshCw size={13} className={isVerifying ? 'animate-spin text-emerald-600' : 'text-emerald-700'} />
+                  <span>{isVerifying ? 'MERNİS Sorgulanıyor...' : 'MERNİS Üzerinden Güncelle'}</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={() => {
+                    if (onVerified && record) onVerified(record)
                     toast.success(`${record.name} bilgileri onaylandı!`)
                     onClose()
                   }}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
                 >
                   <span>Kaydı Onayla ve Devam Et</span>
                   <ArrowRight size={13} />

@@ -6,7 +6,7 @@ import FormLayout, {
   FormField,
 } from '@components/Objects/StyledElements/Form/Form'
 import * as Form from '@radix-ui/react-form'
-import { AlertTriangle, Info, Mail, User, GraduationCap, Check, Sparkles, Phone, Plus, Trash2, Building, MapPin, Users } from 'lucide-react'
+import { AlertTriangle, Info, Mail, User, GraduationCap, Check, Sparkles, Phone, Plus, Trash2, Building, MapPin, Users, ShieldCheck, RefreshCw } from 'lucide-react'
 import Link from 'next/link'
 import { signup, resendVerificationEmail } from '@services/auth/auth'
 import { useOrg } from '@components/Contexts/OrgContext'
@@ -23,7 +23,7 @@ import CustomSignupFields, {
   validateCustomFields,
 } from '@components/Auth/CustomSignupFields'
 import { readSignupFields, type SignupFieldItem } from '@services/settings/org'
-import { validateTcKimlik, lookupTcRecord } from '@services/demo/schoolDirectory'
+import { validateTcKimlik, lookupTcRecord, fetchMernisData, type TcRecord } from '@services/demo/schoolDirectory'
 import TcKimlikModal from '@components/Objects/TcKimlikModal'
 import toast from 'react-hot-toast'
 
@@ -109,19 +109,58 @@ function OpenSignUpComponent({ org: propOrg }: OpenSignUpComponentProps = {}) {
   const [isTcModalOpen, setIsTcModalOpen] = React.useState(false)
   const [tcStatus, setTcStatus] = React.useState<'idle' | 'valid' | 'invalid'>('idle')
   const [tcError, setTcError] = React.useState('')
+  const [verifiedRecord, setVerifiedRecord] = React.useState<TcRecord | null>(null)
+  const [isSyncingMernis, setIsSyncingMernis] = React.useState(false)
+
+  const applyRecordToForm = (record: TcRecord, notify = true) => {
+    if (!record) return
+    setVerifiedRecord(record)
+    setTcStatus('valid')
+    setTcError('')
+    
+    // Formik isim-soyisim güncellemesi
+    if (record.first_name) formik.setFieldValue('first_name', record.first_name)
+    if (record.last_name) formik.setFieldValue('last_name', record.last_name)
+    
+    // Doğum tarihi, kan grubu, adres
+    if (record.birthDate) setBirthDate(record.birthDate)
+    if (record.bloodType) setBloodType(record.bloodType)
+    if (record.address) setAddress(record.address)
+
+    // Veli / Aile bilgileri: Kime aitse ona göre doldurulur
+    if (record.role === 'Öğrenci') {
+      if (record.parents && record.parents.length > 0) {
+        setParents(record.parents)
+      } else {
+        const pList = []
+        if (record.motherName) {
+          pList.push({ name: record.motherName, relation: 'Anne', phone: '+90 532 999 1100', occupation: 'Mimar', email: '' })
+        }
+        if (record.fatherName) {
+          pList.push({ name: record.fatherName, relation: 'Baba', phone: '+90 532 999 2200', occupation: 'Yazılım Mühendisi', email: '' })
+        }
+        if (pList.length > 0) setParents(pList)
+      }
+    } else {
+      // Girilen TC bir veliye aitse (örn: baba Uğur UĞURLU)
+      if (record.parents && record.parents.length > 0) {
+        setParents(record.parents)
+      } else {
+        setParents([
+          { name: record.spouseName || 'Ebru UĞURLU', relation: 'Anne / Eş', phone: '+90 532 999 1100', occupation: 'Mimar', email: '' },
+          { name: record.name, relation: 'Baba (Kendisi)', phone: '+90 532 999 2200', occupation: 'Yazılım Mühendisi', email: '' },
+        ])
+      }
+    }
+
+    if (notify) {
+      toast.success(`✨ T.C. Doğrulandı: ${record.name} (${record.role}${record.age ? ` - ${record.age} Yaşında` : ''})`)
+    }
+  }
 
   const handleTcVerified = (record: any) => {
     if (!record) return
-    setTcStatus('valid')
-    setTcError('')
-    if (record.first_name && !formik.values.first_name) formik.setFieldValue('first_name', record.first_name)
-    if (record.last_name && !formik.values.last_name) formik.setFieldValue('last_name', record.last_name)
-    if (record.motherName || record.fatherName) {
-      setParents([
-        { name: record.motherName || 'Ebru UĞURLU', relation: 'Anne', phone: '+90 532 999 1100', occupation: 'Mimar', email: '' },
-        { name: record.fatherName || 'Uğur UĞURLU', relation: 'Baba', phone: '+90 532 999 2200', occupation: 'Yazılım Mühendisi', email: '' },
-      ])
-    }
+    applyRecordToForm(record, false)
   }
 
   const handleTcChange = (val: string) => {
@@ -132,19 +171,41 @@ function OpenSignUpComponent({ org: propOrg }: OpenSignUpComponentProps = {}) {
       if (!check.valid) {
         setTcStatus('invalid')
         setTcError(check.message || 'Geçersiz T.C. Kimlik No')
-        setIsTcModalOpen(true)
+        setVerifiedRecord(null)
       } else {
         setTcStatus('valid')
         setTcError('')
         const found = lookupTcRecord(clean)
         if (found) {
-          handleTcVerified(found)
-          toast.success(`✨ T.C. Kimlik Doğrulandı: ${found.name}`)
+          applyRecordToForm(found, true)
         }
       }
     } else {
       setTcStatus('idle')
       setTcError('')
+      setVerifiedRecord(null)
+    }
+  }
+
+  const syncWithMernis = async (targetTc?: string) => {
+    const code = targetTc || tcNo
+    if (!code || code.length !== 11) {
+      toast.error('Lütfen 11 haneli T.C. Kimlik numaranızı eksiksiz giriniz.')
+      return
+    }
+    setIsSyncingMernis(true)
+    try {
+      const res = await fetchMernisData(code)
+      if (res.success && res.record) {
+        applyRecordToForm(res.record, false)
+        toast.success(`✨ MERNİS üzerinden güncellendi: ${res.record.name} (${res.record.role}) - Tüm resmi nüfus bilgileri güncellendi.`)
+      } else {
+        toast.error(res.message || 'MERNİS veritabanı sorgusu başarısız oldu.')
+      }
+    } catch {
+      toast.error('MERNİS bağlantısı sırasında bir hata oluştu.')
+    } finally {
+      setIsSyncingMernis(false)
     }
   }
 
@@ -565,6 +626,45 @@ function OpenSignUpComponent({ org: propOrg }: OpenSignUpComponentProps = {}) {
                     />
                   </div>
                 </div>
+
+                {/* MERNİS Bilgilendirme ve Güncelleme Butonu */}
+                {tcNo.length === 11 && (
+                  <div className="p-2.5 rounded-xl bg-gradient-to-r from-emerald-50 via-teal-50/40 to-emerald-50 border border-emerald-200/80 text-xs text-emerald-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 shadow-2xs animate-in fade-in-50 duration-200">
+                    <div className="flex items-start gap-2">
+                      <ShieldCheck className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
+                      <div>
+                        <div className="font-extrabold flex items-center gap-1.5 text-xs text-gray-900">
+                          <span>{verifiedRecord?.name || 'MERNİS Nüfus Kaydı'}</span>
+                          {verifiedRecord?.role && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 border border-emerald-300">
+                              {verifiedRecord.role}
+                            </span>
+                          )}
+                          {verifiedRecord?.age && (
+                            <span className="text-[10px] text-gray-500 font-medium">({verifiedRecord.age} Yaşında)</span>
+                          )}
+                        </div>
+                        <div className="text-[10px] text-emerald-700 font-medium mt-0.5">
+                          {verifiedRecord?.motherName ? `Anne: ${verifiedRecord.motherName}` : ''}
+                          {verifiedRecord?.motherName && verifiedRecord?.fatherName ? ' • ' : ''}
+                          {verifiedRecord?.fatherName ? `Baba: ${verifiedRecord.fatherName}` : ''}
+                          {verifiedRecord?.last_mernis_sync ? ` (Son Güncelleme: ${verifiedRecord.last_mernis_sync})` : ''}
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => syncWithMernis()}
+                      disabled={isSyncingMernis}
+                      className="inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-lg bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-100 transition-colors shadow-2xs shrink-0 cursor-pointer disabled:opacity-50"
+                      title="Nüfus ve Vatandaşlık İşleri (MERNİS) üzerinden en güncel resmi nüfus kaydını çek"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${isSyncingMernis ? 'animate-spin text-emerald-600' : 'text-emerald-700'}`} />
+                      <span>{isSyncingMernis ? 'MERNİS Sorgulanıyor...' : 'MERNİS Üzerinden Güncelle'}</span>
+                    </button>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div>

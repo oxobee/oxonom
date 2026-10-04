@@ -110,13 +110,16 @@ async function handleFallback(request: NextRequest, path: string): Promise<Respo
   const activeClassItem = ALL_CLASSROOMS.find((c) => c.code === activeClassCode || c.name.startsWith(activeClassCode)) || ALL_CLASSROOMS[0]
 
   // TC Kimlik No Verification & Lookup Endpoint
-  if (path.startsWith('/api/v1/tc/validate') || path.startsWith('/api/v1/tc/lookup')) {
+  if (path.startsWith('/api/v1/tc/validate') || path.startsWith('/api/v1/tc/lookup') || path.startsWith('/api/v1/tc/mernis-sync')) {
     const tcParam = request.nextUrl.searchParams.get('tc') || ''
     const check = validateTcKimlik(tcParam)
     const record = lookupTcRecord(tcParam)
     return NextResponse.json({
       ...check,
-      record: record || null,
+      record: record ? {
+        ...record,
+        last_mernis_sync: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      } : null,
     }, { status: 200 })
   }
 
