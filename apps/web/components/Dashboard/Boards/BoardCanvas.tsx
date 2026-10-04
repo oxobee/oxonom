@@ -211,6 +211,8 @@ function BoardEditorInner({
     }
   }, [provider, username, userColor])
 
+  const undoManager = useMemo(() => new Y.UndoManager(ydoc.getXmlFragment('default')), [ydoc])
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -248,7 +250,19 @@ function BoardEditorInner({
       Extension.create({
         name: 'yUndoManager',
         addProseMirrorPlugins() {
-          return [yUndoPlugin()]
+          return [yUndoPlugin({ undoManager })]
+        },
+        addCommands() {
+          return {
+            undo: () => () => {
+              try { undoManager.undo() } catch {}
+              return true
+            },
+            redo: () => () => {
+              try { undoManager.redo() } catch {}
+              return true
+            },
+          }
         },
       }),
     ],
@@ -258,20 +272,13 @@ function BoardEditorInner({
     editorProps: {
       attributes: {
         class: 'board-editor outline-none min-h-[2000px] min-w-[3000px] relative',
-        // The canvas coordinate space is dir="ltr" in every locale. Cards store
-        // absolute left/top pixels in the Yjs doc, and those coordinates are
-        // shared live between collaborators — mirroring the canvas for an RTL
-        // client would put its cards somewhere else than everyone else sees.
-        // Card *text* still follows its own direction via dir="auto".
         dir: 'ltr',
       },
-      // Block free-floating text at the canvas root — typing must happen inside
-      // a card, note or textBlock. Without this, a click on empty canvas lets ProseMirror
-      // insert text into the root paragraph, which renders "on the map".
       handleTextInput(view) {
         const { $from } = view.state.selection
+        if (!$from) return true
         for (let d = $from.depth; d > 0; d--) {
-          const name = $from.node(d).type.name
+          const name = $from.node(d)?.type?.name
           if (name === 'boardCard' || name === 'noteBlock' || name === 'textBlock') return false
         }
         return true
@@ -279,8 +286,9 @@ function BoardEditorInner({
       handleKeyDown(view, event) {
         if (event.key !== 'Enter') return false
         const { $from } = view.state.selection
+        if (!$from) return false
         for (let d = $from.depth; d > 0; d--) {
-          const name = $from.node(d).type.name
+          const name = $from.node(d)?.type?.name
           if (name === 'boardCard' || name === 'noteBlock' || name === 'textBlock') return false
         }
         event.preventDefault()
@@ -548,13 +556,14 @@ function BoardEditorInner({
     const doc = editor.state.doc
     const toDelete: { from: number; to: number }[] = []
     doc.descendants((node, pos) => {
+      if (!node || !node.type) return false
       if (node.isBlock || node.type.name === 'drawingStroke' || node.type.name === 'textBlock') {
-        const nx = node.attrs.x ?? 0
-        const ny = node.attrs.y ?? 0
-        let nw = node.attrs.width ?? 100
-        let nh = node.attrs.height ?? 60
+        const nx = node.attrs?.x ?? 0
+        const ny = node.attrs?.y ?? 0
+        let nw = node.attrs?.width ?? 100
+        let nh = node.attrs?.height ?? 60
         if (node.type.name === 'drawingStroke') {
-          const vb = (node.attrs.viewBox || '0 0 100 100').split(' ').map(Number)
+          const vb = (node.attrs?.viewBox || '0 0 100 100').split(' ').map(Number)
           nw = vb[2] || 100
           nh = vb[3] || 100
         }
@@ -753,8 +762,9 @@ function BoardEditorInner({
 
         const hits: number[] = []
         editor.state.doc.forEach((node: any, pos: number) => {
-          const nx = node.attrs.x ?? 0
-          const ny = node.attrs.y ?? 0
+          if (!node || !node.type) return
+          const nx = node.attrs?.x ?? 0
+          const ny = node.attrs?.y ?? 0
 
           // Resolve actual rendered size per node type
           let nw: number, nh: number
@@ -762,12 +772,12 @@ function BoardEditorInner({
           if (typeName === 'stickerBlock') {
             nw = 80; nh = 80
           } else if (typeName === 'drawingStroke') {
-            const vb = (node.attrs.viewBox || '0 0 100 100').split(' ').map(Number)
+            const vb = (node.attrs?.viewBox || '0 0 100 100').split(' ').map(Number)
             nw = vb[2] || 100
             nh = vb[3] || 100
           } else {
-            nw = node.attrs.width ?? 300
-            nh = node.attrs.height ?? 200
+            nw = node.attrs?.width ?? 300
+            nh = node.attrs?.height ?? 200
           }
 
           // Check if block overlaps marquee rect
@@ -802,15 +812,16 @@ function BoardEditorInner({
     let count = 0
 
     editor.state.doc.forEach((node: any) => {
-      const x = node.attrs.x ?? 0
-      const y = node.attrs.y ?? 0
-      let w = node.attrs.width ?? 300
-      let h = node.attrs.height ?? 200
+      if (!node || !node.type) return
+      const x = node.attrs?.x ?? 0
+      const y = node.attrs?.y ?? 0
+      let w = node.attrs?.width ?? 300
+      let h = node.attrs?.height ?? 200
 
       if (node.type.name === 'stickerBlock') {
         w = 80; h = 80
       } else if (node.type.name === 'drawingStroke') {
-        const vb = (node.attrs.viewBox || '0 0 100 100').split(' ').map(Number)
+        const vb = (node.attrs?.viewBox || '0 0 100 100').split(' ').map(Number)
         w = vb[2] || 100
         h = vb[3] || 100
       }

@@ -126,6 +126,18 @@ export default function SchoolAssignmentsPage() {
     enabled: !!(org?.id && access_token && viewMode === 'student'),
   })
 
+  // Listen to live assignments updates across tabs/modals
+  React.useEffect(() => {
+    const handleUpdated = () => {
+      queryClient.invalidateQueries({ queryKey: ['school-assignments'] })
+      queryClient.invalidateQueries({ queryKey: ['student-school-assignments'] })
+      refetchAssignments()
+      refetchStudentAssignments()
+    }
+    window.addEventListener('oxonom_assignments_updated', handleUpdated)
+    return () => window.removeEventListener('oxonom_assignments_updated', handleUpdated)
+  }, [queryClient, refetchAssignments, refetchStudentAssignments])
+
   // Filtered teacher assignments with search
   const filteredTeacherAssignments = useMemo(() => {
     return assignments.filter((a) => {
@@ -668,6 +680,9 @@ export default function SchoolAssignmentsPage() {
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
         onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['school-assignments'] })
+          queryClient.invalidateQueries({ queryKey: ['student-school-assignments'] })
+          queryClient.invalidateQueries({ queryKey: ['org-boards'] })
           refetchAssignments()
           refetchStudentAssignments()
         }}

@@ -5,6 +5,55 @@ import {
   getResponseMetadata,
 } from '@services/utils/ts/requests'
 import { generateAssignmentSubmissionsData } from '@services/demo/schoolDirectory'
+import { createBoard } from '@services/boards/boards'
+
+export const CUSTOM_ASSIGNMENTS_STORAGE_KEY = 'oxonom_custom_school_assignments_v2'
+
+export function getStoredCustomAssignments(orgId?: number): SchoolAssignmentItem[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = localStorage.getItem(CUSTOM_ASSIGNMENTS_STORAGE_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+    return parsed
+  } catch (e) {
+    return []
+  }
+}
+
+export function saveStoredCustomAssignment(asg: SchoolAssignmentItem): void {
+  if (typeof window === 'undefined') return
+  try {
+    const current = getStoredCustomAssignments()
+    const filtered = current.filter(
+      (a) => a.assignment_uuid !== asg.assignment_uuid && String(a.id) !== String(asg.id)
+    )
+    const updated = [asg, ...filtered]
+    localStorage.setItem(CUSTOM_ASSIGNMENTS_STORAGE_KEY, JSON.stringify(updated))
+    window.dispatchEvent(new CustomEvent('oxonom_assignments_updated', { detail: asg }))
+  } catch (e) {
+    console.warn('Failed to save custom assignment to storage:', e)
+  }
+}
+
+export function deleteStoredCustomAssignment(assignmentUuid: string): void {
+  if (typeof window === 'undefined') return
+  try {
+    const current = getStoredCustomAssignments()
+    const updated = current.filter(
+      (a) => a.assignment_uuid !== assignmentUuid && String(a.id) !== assignmentUuid
+    )
+    localStorage.setItem(CUSTOM_ASSIGNMENTS_STORAGE_KEY, JSON.stringify(updated))
+    window.dispatchEvent(
+      new CustomEvent('oxonom_assignments_updated', {
+        detail: { assignment_uuid: assignmentUuid },
+      })
+    )
+  } catch (e) {
+    console.warn('Failed to delete custom assignment from storage:', e)
+  }
+}
 
 export interface SchoolAssignmentItem {
   id: number
@@ -116,11 +165,89 @@ export async function createSchoolAssignment(
   },
   accessToken: string
 ) {
-  const result = await fetch(
-    `${getAPIUrl()}school_assignments/org/${orgId}`,
-    RequestBodyWithAuthHeader('POST', data, null, accessToken)
+  let createdAssignment: SchoolAssignmentItem | null = null
+  let boardUuid = data.board_uuid
+
+  // If interactive whiteboard is requested and a new board should be created
+  if (data.tool_type === 'WHITEBOARD' && (data.create_new_board || !boardUuid)) {
+    try {
+      const newBoard = await createBoard(
+        orgId || 1,
+        {
+          name: data.new_board_name || `${data.title} — Ödev Tahtası`,
+          description: data.description || 'Ödev için hazırlanan interaktif akıllı tahta.',
+          usergroup_id: data.usergroup_ids?.[0],
+        },
+        accessToken || ''
+      )
+      if (newBoard?.board_uuid) {
+        boardUuid = newBoard.board_uuid
+      }
+    } catch (_e) {}
+  }
+
+  const payload = {
+    ...data,
+    board_uuid: boardUuid,
+  }
+
+  try {
+    const targetOrgId = orgId || 1
+    const result = await fetch(
+      `${getAPIUrl()}school_assignments/org/${targetOrgId}`,
+      RequestBodyWithAuthHeader('POST', payload, null, accessToken || '')
+    )
+    if (result.ok) {
+      const resData = await errorHandling(result)
+      if (resData && (resData.assignment_uuid || resData.id)) {
+        createdAssignment = resData
+      }
+    }
+  } catch (err) {
+    console.warn('API call failed in createSchoolAssignment, falling back to local creation:', err)
+  }
+
+  if (!createdAssignment || !createdAssignment.assignment_uuid) {
+    const uniqueId = Date.now()
+    createdAssignment = {
+      id: uniqueId,
+      assignment_uuid: `sch_asg_${uniqueId}_${Math.random().toString(36).substring(2, 7)}`,
+      title: data.title,
+      description: data.description || '',
+      grade_level: data.grade_level,
+      grade_category: data.grade_category,
+      subject: data.subject,
+      tool_type: data.tool_type as any,
+      tool_data: data.tool_data || {},
+      board_uuid: boardUuid,
+      usergroup_ids: data.usergroup_ids,
+      classes: data.usergroup_ids?.map((id) => ({ id, name: `${id}. Sınıf` })) || [],
+      due_date: data.due_date || undefined,
+      max_score: data.max_score || 100,
+      published: data.published ?? true,
+      teacher_name: 'Öğretmen',
+      creation_date: new Date().toISOString(),
+      total_submissions: 0,
+      graded_submissions: 0,
+      average_score: null,
+      submission: {
+        id: null,
+        status: 'PENDING',
+      },
+    }
+  }
+
+  // Prepend in-memory so any immediate sync renders it
+  const filteredDefaults = DEFAULT_SCHOOL_ASSIGNMENTS.filter(
+    (a) => a.assignment_uuid !== createdAssignment!.assignment_uuid && a.id !== createdAssignment!.id
   )
-  return errorHandling(result)
+  DEFAULT_SCHOOL_ASSIGNMENTS.length = 0
+  DEFAULT_SCHOOL_ASSIGNMENTS.push(createdAssignment, ...filteredDefaults)
+
+  // Persist to localStorage
+  saveStoredCustomAssignment(createdAssignment)
+
+  return createdAssignment
 }
 
 export const DEFAULT_SCHOOL_ASSIGNMENTS: SchoolAssignmentItem[] = [
@@ -278,6 +405,7 @@ export async function getSchoolAssignments(
   },
   accessToken: string
 ): Promise<SchoolAssignmentItem[]> {
+  let list: SchoolAssignmentItem[] = []
   try {
     const params = new URLSearchParams()
     if (filters.usergroup_id) params.set('usergroup_id', String(filters.usergroup_id))
@@ -286,17 +414,32 @@ export async function getSchoolAssignments(
     if (filters.subject && filters.subject !== 'all') params.set('subject', filters.subject)
     if (filters.tool_type && filters.tool_type !== 'all') params.set('tool_type', filters.tool_type)
 
-    const url = `${getAPIUrl()}school_assignments/org/${orgId}${params.toString() ? '?' + params.toString() : ''}`
-    const result = await fetch(url, RequestBodyWithAuthHeader('GET', null, null, accessToken))
+    const targetOrgId = orgId || 1
+    const url = `${getAPIUrl()}school_assignments/org/${targetOrgId}${params.toString() ? '?' + params.toString() : ''}`
+    const result = await fetch(url, RequestBodyWithAuthHeader('GET', null, null, accessToken || ''))
     if (result.ok) {
       const data = await errorHandling(result)
-      if (Array.isArray(data) && data.length > 0) return data
+      if (Array.isArray(data) && data.length > 0) {
+        list = data
+      }
     }
   } catch (_e) {}
 
-  // Filter default assignments based on criteria
-  return DEFAULT_SCHOOL_ASSIGNMENTS.filter((a) => {
-    if (filters.grade_level && filters.grade_level !== 'all' && a.grade_level !== filters.grade_level) return false
+  if (list.length === 0) {
+    list = [...DEFAULT_SCHOOL_ASSIGNMENTS]
+  }
+
+  // Merge client-side stored custom assignments
+  const stored = getStoredCustomAssignments(orgId)
+  const existingUuids = new Set(list.map((a) => a.assignment_uuid))
+  const newFromStored = stored.filter((a) => !existingUuids.has(a.assignment_uuid))
+  list = [...newFromStored, ...list]
+
+  // Filter default/fetched assignments based on criteria
+  return list.filter((a) => {
+    if (filters.usergroup_id && a.usergroup_ids && a.usergroup_ids.length > 0 && !a.usergroup_ids.includes(filters.usergroup_id)) return false
+    if (filters.grade_category && filters.grade_category !== 'all' && a.grade_category && a.grade_category !== filters.grade_category) return false
+    if (filters.grade_level && filters.grade_level !== 'all' && a.grade_level && a.grade_level !== filters.grade_level) return false
     if (filters.subject && filters.subject !== 'all' && a.subject !== filters.subject) return false
     if (filters.tool_type && filters.tool_type !== 'all' && a.tool_type !== filters.tool_type) return false
     return true
@@ -307,10 +450,14 @@ export async function getSchoolAssignmentDetail(
   assignmentUuid: string,
   accessToken: string
 ): Promise<SchoolAssignmentItem> {
+  const stored = getStoredCustomAssignments()
+  const storedMatch = stored.find((a) => a.assignment_uuid === assignmentUuid || String(a.id) === assignmentUuid)
+  if (storedMatch) return storedMatch
+
   try {
     const result = await fetch(
       `${getAPIUrl()}school_assignments/${assignmentUuid}`,
-      RequestBodyWithAuthHeader('GET', null, null, accessToken)
+      RequestBodyWithAuthHeader('GET', null, null, accessToken || '')
     )
     if (result.ok) {
       return await errorHandling(result)
@@ -327,15 +474,22 @@ export async function getStudentAssignments(
 ): Promise<SchoolAssignmentItem[]> {
   let list = DEFAULT_SCHOOL_ASSIGNMENTS
   try {
+    const targetOrgId = orgId || 1
     const result = await fetch(
-      `${getAPIUrl()}school_assignments/student/my_assignments?org_id=${orgId}`,
-      RequestBodyWithAuthHeader('GET', null, null, accessToken)
+      `${getAPIUrl()}school_assignments/student/my_assignments?org_id=${targetOrgId}`,
+      RequestBodyWithAuthHeader('GET', null, null, accessToken || '')
     )
     if (result.ok) {
       const data = await errorHandling(result)
       if (Array.isArray(data) && data.length > 0) list = data
     }
   } catch (_e) {}
+
+  // Merge stored custom assignments
+  const stored = getStoredCustomAssignments(orgId)
+  const existingUuids = new Set(list.map((a) => a.assignment_uuid))
+  const newFromStored = stored.filter((a) => !existingUuids.has(a.assignment_uuid))
+  list = [...newFromStored, ...list]
 
   if (typeof window !== 'undefined') {
     try {
@@ -374,7 +528,8 @@ export async function submitSchoolAssignment(
   accessToken: string
 ) {
   const now = new Date()
-  const match = DEFAULT_SCHOOL_ASSIGNMENTS.find(
+  const allKnown = [...getStoredCustomAssignments(), ...DEFAULT_SCHOOL_ASSIGNMENTS]
+  const match = allKnown.find(
     (a) => a.assignment_uuid === assignmentUuid || String(a.id) === assignmentUuid
   )
   let isLate = false
@@ -405,7 +560,7 @@ export async function submitSchoolAssignment(
   try {
     const result = await fetch(
       `${getAPIUrl()}school_assignments/${assignmentUuid}/submit`,
-      RequestBodyWithAuthHeader('POST', payload, null, accessToken)
+      RequestBodyWithAuthHeader('POST', payload, null, accessToken || '')
     )
     return await errorHandling(result)
   } catch (_e) {
@@ -423,7 +578,8 @@ export async function getAssignmentSubmissions(
   usergroupId: number | null,
   accessToken: string
 ): Promise<SubmissionsResponse> {
-  const match = DEFAULT_SCHOOL_ASSIGNMENTS.find(
+  const allKnown = [...getStoredCustomAssignments(), ...DEFAULT_SCHOOL_ASSIGNMENTS]
+  const match = allKnown.find(
     (a) => a.assignment_uuid === assignmentUuid || String(a.id) === assignmentUuid
   ) || DEFAULT_SCHOOL_ASSIGNMENTS[0]
 

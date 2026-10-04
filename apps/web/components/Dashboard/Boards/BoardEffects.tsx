@@ -824,6 +824,7 @@ export default function BoardEffects({ ydoc, provider }: BoardEffectsProps) {
       const now = Date.now()
 
       for (const ev of events) {
+        if (!ev || !ev.type) continue
         if (seenIdsRef.current.has(ev.id)) continue
         if (now - ev.timestamp > EFFECT_LIFETIME) continue
         seenIdsRef.current.add(ev.id)

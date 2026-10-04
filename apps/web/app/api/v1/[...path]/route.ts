@@ -32,6 +32,7 @@ import {
 let ADMIN_GAMES_STORE: any[] = [...SYNCED_GAMES]
 let ORG_MENU_CONFIGS: Record<string, any> = {}
 let SERVER_FALLBACK_BOARDS: any[] = []
+let SERVER_CUSTOM_ASSIGNMENTS: any[] = []
 import {
   SCHOOL_ORGS,
   DEFAULT_SCHOOL_ALIAS_MAP,
@@ -606,10 +607,87 @@ async function handleFallback(request: NextRequest, path: string): Promise<Respo
 
   // School Assignments & Homework
   if (path.startsWith('/api/v1/school_assignments') || path.startsWith('/api/v1/assignments')) {
+    // 1. POST - Create new assignment
+    if (request.method === 'POST' && (path.includes('/org/') || path.endsWith('/school_assignments') || path.endsWith('/assignments'))) {
+      const body = await request.json().catch(() => ({}))
+      const uniqueId = Date.now()
+      const asgUuid = `sch_asg_${uniqueId}_${Math.random().toString(36).substring(2, 7)}`
+
+      let boardUuid = body.board_uuid
+      if (body.tool_type === 'WHITEBOARD' && (body.create_new_board || !boardUuid)) {
+        const boardUniqueId = Date.now() + 1
+        boardUuid = `board_${boardUniqueId}_${Math.random().toString(36).substring(2, 7)}`
+        const newBoard = {
+          id: boardUniqueId,
+          board_uuid: boardUuid,
+          org_id: body.org_id || 1,
+          usergroup_id: body.usergroup_ids?.[0] || null,
+          name: body.new_board_name || `${body.title || 'Yeni'} — Ödev Tahtası`,
+          description: body.description || 'Ödev için hazırlanan akıllı tahta.',
+          thumbnail_image: null,
+          slug: (body.title || 'odev').toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+          published: true,
+          creation_date: new Date().toISOString(),
+          update_date: new Date().toISOString(),
+          is_owner: true,
+          is_member: true,
+          member_count: 1,
+          share_type: 'public',
+          share_code: null,
+          features: {
+            effects_enabled: true,
+            chat_enabled: true,
+            reactions_enabled: true,
+          },
+          creator: {
+            username: 'Öğretmen',
+            avatar_image: null,
+          },
+        }
+        SERVER_FALLBACK_BOARDS.unshift(newBoard)
+      }
+
+      const newAssignment = {
+        id: uniqueId,
+        assignment_uuid: asgUuid,
+        title: body.title || 'Yeni Ödev',
+        description: body.description || '',
+        grade_level: body.grade_level || '1. Sınıf',
+        grade_category: body.grade_category || 'İlkokul (1-4)',
+        subject: body.subject || 'Genel',
+        tool_type: body.tool_type || 'WHITEBOARD',
+        tool_data: body.tool_data || {},
+        board_uuid: boardUuid,
+        usergroup_ids: body.usergroup_ids || [],
+        classes: (body.usergroup_ids || []).map((id: number) => {
+          const matchedClass = ALL_CLASSROOMS.find((c) => c.id === id)
+          return matchedClass ? { id: matchedClass.id, name: matchedClass.name, code: matchedClass.code } : { id, name: `${id}. Sınıf` }
+        }),
+        due_date: body.due_date || undefined,
+        max_score: Number(body.max_score) || 100,
+        published: body.published ?? true,
+        teacher_name: 'Öğretmen',
+        creation_date: new Date().toISOString(),
+        total_submissions: 0,
+        graded_submissions: 0,
+        average_score: null,
+        submission: {
+          id: null,
+          status: 'PENDING',
+        },
+      }
+
+      SERVER_CUSTOM_ASSIGNMENTS.unshift(newAssignment)
+      return NextResponse.json(newAssignment, { status: 201 })
+    }
+
+    // 2. Submissions review
     if (path.includes('/submissions') || path.endsWith('/submissions')) {
       const parts = path.split('/')
       const asgUuid = parts[parts.indexOf('submissions') - 1] || 'asg_ritmik_sayma_01'
-      const matchedAsg = DEFAULT_SCHOOL_ASSIGNMENTS.find((a) => a.assignment_uuid === asgUuid || String(a.id) === asgUuid) || DEFAULT_SCHOOL_ASSIGNMENTS[0]
+      const matchedAsg = SERVER_CUSTOM_ASSIGNMENTS.find((a) => a.assignment_uuid === asgUuid || String(a.id) === asgUuid) ||
+                         DEFAULT_SCHOOL_ASSIGNMENTS.find((a) => a.assignment_uuid === asgUuid || String(a.id) === asgUuid) ||
+                         DEFAULT_SCHOOL_ASSIGNMENTS[0]
       const subData = generateAssignmentSubmissionsData(asgUuid, activeClassItem, matchedAsg?.due_date)
       return NextResponse.json({
         assignment: matchedAsg,
@@ -620,19 +698,28 @@ async function handleFallback(request: NextRequest, path: string): Promise<Respo
       }, { status: 200 })
     }
 
+    // 3. Submissions grade
     if (path.includes('/grade')) {
       return NextResponse.json({ success: true, message: 'Not ve değerlendirme başarıyla kaydedildi.' }, { status: 200 })
     }
 
+    // 4. Student assignments list
+    if (path.includes('/student/my_assignments')) {
+      const classAssignments = generateClassroomAssignments(activeClassItem)
+      return NextResponse.json([...SERVER_CUSTOM_ASSIGNMENTS, ...classAssignments], { status: 200 })
+    }
+
+    // 5. Single assignment detail or full list
     const classAssignments = generateClassroomAssignments(activeClassItem)
+    const allAssignments = [...SERVER_CUSTOM_ASSIGNMENTS, ...classAssignments]
     const parts = path.split('/')
     const asgId = parts[parts.length - 1]
     if (asgId && asgId !== 'school_assignments' && asgId !== 'assignments' && asgId !== 'org') {
-      const matched = classAssignments.find((a) => a.assignment_uuid === asgId || String(a.id) === asgId) ||
+      const matched = allAssignments.find((a) => a.assignment_uuid === asgId || String(a.id) === asgId) ||
                       SYNCED_ASSIGNMENTS.find((a: any) => a.assignment_uuid === asgId || String(a.id) === asgId)
       if (matched) return NextResponse.json(matched, { status: 200 })
     }
-    return NextResponse.json(classAssignments, { status: 200 })
+    return NextResponse.json(allAssignments, { status: 200 })
   }
 
   // Communities & Discussions (Full in-memory Turkish parent forums)

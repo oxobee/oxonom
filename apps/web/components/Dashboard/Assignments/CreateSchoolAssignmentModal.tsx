@@ -220,7 +220,7 @@ export default function CreateSchoolAssignmentModal({
       }
 
       await createSchoolAssignment(
-        orgId,
+        orgId || 1,
         {
           title,
           description,
@@ -237,10 +237,15 @@ export default function CreateSchoolAssignmentModal({
           max_score: maxScore,
           published: true,
         },
-        accessToken
+        accessToken || ''
       )
 
       toast.success('Ödev başarıyla oluşturuldu ve sınıflara atandı!')
+      setTitle('')
+      setDescription('')
+      setWorksheetFile(null)
+      setReadingText('')
+      setDueDate('')
       onSuccess()
       onClose()
     } catch (err: any) {
