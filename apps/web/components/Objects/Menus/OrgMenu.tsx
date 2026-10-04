@@ -133,7 +133,6 @@ export const OrgMenu = (props: any) => {
     'library',
     'communities',
     'classrooms',
-    'podcasts',
     'boards',
     'playgrounds',
   ])
@@ -347,9 +346,8 @@ export const OrgMenu = (props: any) => {
                       { id: 'home', href: getUriWithOrg(orgslug, '/dash'), icon: House, label: 'Ana Sayfa' },
                       { id: 'assignments', href: getUriWithOrg(orgslug, '/dash/assignments'), icon: Files, label: 'Ödevler' },
                       { id: 'library', href: getUriWithOrg(orgslug, '/dash/library'), icon: FolderSimple, label: 'Kütüphane' },
-                      { id: 'communities', href: getUriWithOrg(orgslug, '/dash/communities'), icon: ChatsCircle, label: 'Veli Forum' },
+                      { id: 'communities', href: getUriWithOrg(orgslug, '/dash/communities'), icon: ChatsCircle, label: 'Topluluk' },
                       { id: 'classrooms', href: getUriWithOrg(orgslug, '/dash/classrooms'), icon: GraduationCap, label: 'Sınıflar' },
-                      { id: 'podcasts', href: getUriWithOrg(orgslug, '/dash/podcasts'), icon: Headphones, label: 'Podcastler' },
                       { id: 'boards', href: getUriWithOrg(orgslug, '/dash/boards'), icon: ChalkboardSimple, label: 'Panolar' },
                       { id: 'playgrounds', href: getUriWithOrg(orgslug, '/dash/playgrounds'), icon: Cube, label: 'Modüller' },
                     ]).map((item) => {

@@ -105,7 +105,7 @@ export default function UsageOverview() {
     },
     {
       key: 'communities',
-      label: 'Veli Forum',
+      label: 'Topluluk',
       icon: ChatCircle,
       enabled: orgFeatures?.communities?.enabled !== false,
       href: '/dash/communities',
@@ -114,7 +114,7 @@ export default function UsageOverview() {
       key: 'podcasts',
       label: t('dashboard.home.podcasts', 'Podcastler'),
       icon: Microphone,
-      enabled: orgFeatures?.podcasts?.enabled === true,
+      enabled: false,
       href: '/dash/podcasts',
     },
   ]

@@ -27,8 +27,8 @@ const BUILTIN: Record<string, Builtin> = {
   store: { feature: 'payments', link: '/store', labelKey: 'common.store', Icon: ShoppingBag },
 }
 
-// Default order for Oxonom Edu (Games is at the very end)
-const DEFAULT_ORDER = ['classrooms', 'boards', 'library', 'communities', 'playgrounds', 'podcasts', 'games']
+// Default order for Oxonom Edu (Games is at the very end, podcasts hidden)
+const DEFAULT_ORDER = ['classrooms', 'boards', 'library', 'communities', 'playgrounds', 'games']
 
 function MenuLinks(props: { orgslug: string; primaryColor?: string }) {
   const { t } = useTranslation()
@@ -40,6 +40,7 @@ function MenuLinks(props: { orgslug: string; primaryColor?: string }) {
 
   const rf = org?.config?.config?.resolved_features
   const isEnabled = (feature: string) => {
+    if (feature === 'podcasts') return false
     if (!rf) return true
     if (rf[feature] === undefined) return true
     return rf[feature]?.enabled !== false

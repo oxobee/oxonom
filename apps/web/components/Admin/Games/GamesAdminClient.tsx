@@ -818,17 +818,12 @@ export default function GamesAdminClient() {
                             ? 'Taslak'
                             : 'Yakında'}
                         </span>
-                        {game.is_3d_simulation && (
-                          <span className="bg-cyan-500/80 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-xs flex items-center gap-0.5 border border-cyan-400/30">
-                            🪐 3D
-                          </span>
-                        )}
                         <span className="bg-black/60 text-slate-300 text-[10px] font-extrabold px-1.5 py-0.5 rounded-md border border-white/10">
                           v{game.version || '1.0.0'}
                         </span>
                         {game.is_featured && (
                           <span className="bg-amber-400 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-full shadow-xs flex items-center gap-0.5">
-                            <Star size={10} weight="fill" /> 3D Slider
+                            <Star size={10} weight="fill" /> Öne Çıkan
                           </span>
                         )}
                       </div>
@@ -1212,7 +1207,7 @@ export default function GamesAdminClient() {
 
                 <div className="flex flex-col justify-center space-y-1.5 pt-1">
                   <label className="font-bold text-slate-300 flex items-center gap-1.5">
-                    <span>3D Simülasyon Modu</span>
+                    <span>Gelişmiş Simülasyon</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -1222,7 +1217,7 @@ export default function GamesAdminClient() {
                       className="w-4 h-4 rounded text-indigo-600 bg-[#202024] border-[#2e2e34] focus:ring-0 cursor-pointer"
                     />
                     <span className="text-xs text-slate-300 font-semibold">
-                      🪐 Bu oyun 3D / WebGL Simülasyondur
+                      🪐 Gelişmiş simülasyon modu
                     </span>
                   </label>
                 </div>
@@ -1468,7 +1463,7 @@ export default function GamesAdminClient() {
                       onChange={(e) => setFormIsFeatured(e.target.checked)}
                       className="rounded accent-amber-500 w-4 h-4 cursor-pointer"
                     />
-                    <span>Üst 3D Hero Slider'da Göster</span>
+                    <span>Öne Çıkanlar Vitrininde Göster</span>
                   </label>
                 </div>
               </div>

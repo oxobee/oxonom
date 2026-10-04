@@ -114,14 +114,6 @@ export function GlobalEduFooter() {
       color: 'from-rose-500/20 to-red-500/10 text-rose-400 border-rose-500/30',
       badge: '🎮 Oyna',
     },
-    {
-      title: 'Eğitim Podcastleri',
-      desc: 'Masallar, sesli dersler ve rehberlik',
-      href: `/orgs/${orgslug}/podcasts`,
-      icon: Headphones,
-      color: 'from-cyan-500/20 to-blue-500/10 text-cyan-400 border-cyan-500/30',
-      badge: 'Sesli',
-    },
   ]
 
   return (
@@ -251,7 +243,7 @@ export function GlobalEduFooter() {
                 <span>Akıllı Okul Ekosistemi</span>
               </span>
               <p className="text-xs text-slate-400 leading-relaxed max-w-sm">
-                MEB temel eğitim ve ortaöğretim standartlarına uygun; akıllı tahta panoları, otomatik TC Kimlik doğrulamalı öğrenci işleri, zengin kütüphane ve 3D simülasyonları tek ekranda buluşturan bütünleşik eğitim portalı.
+                MEB temel eğitim ve ortaöğretim standartlarına uygun; akıllı tahta panoları, otomatik TC Kimlik doğrulamalı öğrenci işleri, zengin kütüphane ve eğitici ders simülasyonlarını tek ekranda buluşturan bütünleşik eğitim portalı.
               </p>
             </div>
 
@@ -358,7 +350,7 @@ export function GlobalEduFooter() {
                   href={`/games`}
                   className="hover:text-white transition flex items-center gap-1.5"
                 >
-                  <span>🚀 Roket Ritmik Sayma</span>
+                  <span>🔢 2048 Sayı & Mantık Bulmacası</span>
                 </Link>
               </li>
               <li>

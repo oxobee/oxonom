@@ -369,7 +369,7 @@ export default function MobileMenu({
                 </div>
                 <div className="min-w-0">
                   <h3 className="text-sm font-bold text-gray-900 group-hover:text-rose-700 transition-colors truncate">
-                    Veli & Sınıf Forumu
+                    Topluluk
                   </h3>
                   <p className="text-xs text-gray-500 truncate mt-0.5">
                     Okul duyuruları, sınıf tartışmaları ve veli iletişimi
@@ -380,32 +380,6 @@ export default function MobileMenu({
                 size={16}
                 weight="bold"
                 className="text-gray-300 group-hover:text-rose-700 group-hover:translate-x-1 transition-all shrink-0 ml-2"
-              />
-            </Link>
-
-            {/* 2.3 Okul Podcastleri */}
-            <Link
-              href={getUriWithOrg(orgslug, isTeacher ? '/dash/podcasts' : '/podcasts')}
-              onClick={onClose}
-              className="flex items-center justify-between p-3.5 rounded-2xl bg-white border border-gray-200/90 shadow-xs hover:border-violet-300 active:scale-[0.99] transition-all group"
-            >
-              <div className="flex items-center gap-3.5 min-w-0">
-                <div className="w-10 h-10 rounded-xl bg-violet-50 text-violet-700 border border-violet-200/80 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                  <Headphones size={20} weight="fill" />
-                </div>
-                <div className="min-w-0">
-                  <h3 className="text-sm font-bold text-gray-900 group-hover:text-violet-700 transition-colors truncate">
-                    Okul Podcastleri
-                  </h3>
-                  <p className="text-xs text-gray-500 truncate mt-0.5">
-                    Öğretmen ses kayıtları, ders özetleri ve okul radyosu
-                  </p>
-                </div>
-              </div>
-              <ArrowRight
-                size={16}
-                weight="bold"
-                className="text-gray-300 group-hover:text-violet-700 group-hover:translate-x-1 transition-all shrink-0 ml-2"
               />
             </Link>
           </div>

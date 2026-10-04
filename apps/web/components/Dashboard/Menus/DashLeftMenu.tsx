@@ -533,11 +533,11 @@ function DashLeftMenu() {
                   active={isActivePath('/dash/library')}
                 />
 
-                {/* Veli Forum */}
+                {/* Topluluk */}
                 <MenuLink
                   href="/dash/communities"
                   icon={<ChatsCircle size={20} weight="fill" />}
-                  label="Veli Forum"
+                  label="Topluluk"
                   isCollapsed={isCollapsed}
                   active={isActivePath('/dash/communities')}
                 />
@@ -552,15 +552,6 @@ function DashLeftMenu() {
                     active={isActivePath('/dash/classrooms')}
                   />
                 )}
-
-                {/* Podcastler */}
-                <MenuLink
-                  href="/dash/podcasts"
-                  icon={<Headphones size={20} weight="fill" />}
-                  label="Podcastler"
-                  isCollapsed={isCollapsed}
-                  active={isActivePath('/dash/podcasts')}
-                />
 
                 {/* Panolar */}
                 <MenuLink
@@ -583,7 +574,7 @@ function DashLeftMenu() {
             )}
 
             {/* Disabled features shown in an "Other" hover menu (teachers/students only) */}
-            {!canManageOrg && (!showCommunities || !showPodcasts || !showBoards || !showPlaygrounds) && (
+            {!canManageOrg && (!showCommunities || !showBoards || !showPlaygrounds) && (
               <HoverMenu
                 content={
                   <HoverMenuContent className="w-64">
@@ -599,14 +590,6 @@ function DashLeftMenu() {
                         <Link href="/dash/communities" className="flex items-center gap-2 px-3 py-2 text-sm text-white/30 hover:text-white/50 hover:bg-white/[0.05] cursor-pointer transition-colors">
                           <ChatsCircle size={16} weight="fill" />
                           <span>{t('communities.title')}</span>
-                        </Link>
-                      </HoverMenuItem>
-                    )}
-                    {!showPodcasts && (
-                      <HoverMenuItem asChild>
-                        <Link href="/dash/podcasts" className="flex items-center gap-2 px-3 py-2 text-sm text-white/30 hover:text-white/50 hover:bg-white/[0.05] cursor-pointer transition-colors">
-                          <Headphones size={16} weight="fill" />
-                          <span>{t('podcasts.podcasts')}</span>
                         </Link>
                       </HoverMenuItem>
                     )}

@@ -109,7 +109,7 @@ export default function ContentOverview() {
       show: true,
     },
     {
-      label: 'Veli Forum',
+      label: 'Topluluk',
       value: communities.length,
       sub: `${communities.filter((c: any) => c.public).length} ${t('dashboard.home.public', 'genel')}`,
       icon: ChatCircle,
@@ -126,7 +126,7 @@ export default function ContentOverview() {
       iconColor: 'text-amber-500',
       iconBg: 'bg-amber-50',
       href: '/dash/podcasts',
-      show: podcastsEnabled,
+      show: false,
     },
   ]
 

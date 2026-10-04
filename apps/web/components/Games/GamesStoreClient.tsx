@@ -276,9 +276,6 @@ export default function GamesStoreClient() {
             />
             <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight mt-1.5 flex items-center gap-2.5">
               <span>Eğitici Oyunlar Dünyası</span>
-              <span className="text-xs px-2.5 py-1 bg-amber-100 text-amber-800 font-extrabold rounded-full border border-amber-200">
-                HTML5 Arcade & 3D
-              </span>
             </h1>
           </div>
           <div className="text-xs text-gray-500 font-medium">
@@ -356,12 +353,6 @@ export default function GamesStoreClient() {
                   <span className="px-3 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 rounded-xl text-xs font-bold">
                     {currentFeatured.category_icon} {currentFeatured.category_name}
                   </span>
-                  {currentFeatured.is_3d_simulation && (
-                    <span className="px-3 py-1 bg-amber-400 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1 shadow-sm">
-                      <Cube size={13} weight="fill" />
-                      <span>3D Simülasyon</span>
-                    </span>
-                  )}
                   {currentFeatured.age_range && (
                     <span className="px-3 py-1 bg-white/10 text-white rounded-xl text-xs font-bold">
                       {currentFeatured.age_range}
@@ -481,11 +472,6 @@ export default function GamesStoreClient() {
                               <Eye size={13} /> {game.play_count} kez
                             </span>
                             <div className="flex items-center gap-1.5">
-                              {game.is_3d_simulation && (
-                                <span className="bg-amber-400 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-md">
-                                  3D
-                                </span>
-                              )}
                               <span className="bg-indigo-600 text-white text-[10px] font-black px-2 py-0.5 rounded-md">
                                 {game.category_name}
                               </span>
@@ -606,21 +592,12 @@ export default function GamesStoreClient() {
                     onClick={() => setActiveCategorySlug(cat.slug)}
                     className={`px-3.5 py-2 rounded-2xl text-xs font-black transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
                       isActive
-                        ? is3D
-                          ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 shadow-md shadow-amber-200'
-                          : 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-200'
+                        ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-md shadow-indigo-200'
                         : 'bg-gray-50 text-gray-700 hover:bg-gray-100 hover:text-gray-900 border border-gray-200/80'
                     }`}
                   >
                     <span>{cat.icon}</span>
                     <span>{cat.name}</span>
-                    {is3D && (
-                      <span className={`text-[9px] px-1.5 py-0.2 font-black rounded-md ${
-                        isActive ? 'bg-slate-950 text-amber-300' : 'bg-amber-400 text-slate-950'
-                      }`}>
-                        3D
-                      </span>
-                    )}
                   </button>
                 )
               })}
@@ -648,7 +625,7 @@ export default function GamesStoreClient() {
                   Eğitici Oyunlar Dünyası Hazırlanıyor
                 </h3>
                 <p className="text-xs text-indigo-200/80 leading-relaxed font-normal">
-                  MEB müfredatına uygun interaktif ders oyunları ve 3D simülasyonlar derleniyor...
+                  MEB müfredatına uygun interaktif ders oyunları derleniyor...
                 </p>
               </div>
 
@@ -709,11 +686,6 @@ export default function GamesStoreClient() {
                       <div>
                         <h2 className="text-base font-black text-gray-900 tracking-tight flex items-center gap-2">
                           <span>{slider.category.name}</span>
-                          {slider.category.slug === '3d-simulasyon' && (
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-black border border-amber-200">
-                              3D WebGL
-                            </span>
-                          )}
                         </h2>
                         {slider.category.description && (
                           <p className="text-[11px] text-gray-500">{slider.category.description}</p>
@@ -817,12 +789,6 @@ export default function GamesStoreClient() {
                       <span className="px-2.5 py-0.5 rounded-full bg-white/15 text-indigo-200 text-[11px] font-bold border border-white/20">
                         {selectedGameDetail.category_icon} {selectedGameDetail.category_name}
                       </span>
-                      {selectedGameDetail.is_3d_simulation && (
-                        <span className="px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[11px] font-black shadow-sm flex items-center gap-1">
-                          <Cube size={12} weight="fill" />
-                          <span>3D Simülasyon</span>
-                        </span>
-                      )}
                       {selectedGameDetail.version && (
                         <span className="px-2 py-0.5 rounded-full bg-white/10 text-white/70 text-[10px] font-mono">
                           v{selectedGameDetail.version}
@@ -1019,11 +985,6 @@ export default function GamesStoreClient() {
                     <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 hidden sm:inline-block">
                       {playingGame.category_name}
                     </span>
-                    {playingGame.is_3d_simulation && (
-                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 hidden sm:inline-block">
-                        3D
-                      </span>
-                    )}
                   </div>
                   <div className="flex items-center gap-3 text-[11px] text-slate-400 mt-0.5">
                     {/* Live Community Rating */}
@@ -1104,11 +1065,7 @@ export default function GamesStoreClient() {
 
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[11px] text-slate-400">
                     <Sparkle size={12} className="text-amber-400" />
-                    <span>
-                      {playingGame.is_3d_simulation
-                        ? '3D WebGL Motoru Aktif'
-                        : 'HTML5 Etkileşimli Modül'}
-                    </span>
+                    <span>Eğitici Etkileşimli Modül</span>
                   </div>
                 </div>
               ) : (
@@ -1260,13 +1217,6 @@ function GameCard({ game, onSelect }: { game: GameItem; onSelect: () => void }) 
             </div>
           )}
 
-          {/* 3D Simulation Badge */}
-          {game.is_3d_simulation && (
-            <div className="absolute bottom-2.5 left-2.5 bg-amber-400 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-full shadow-md flex items-center gap-1">
-              <Cube size={11} weight="fill" />
-              <span>3D</span>
-            </div>
-          )}
 
           {/* Rating Badge on Card */}
           <div className="absolute top-2.5 right-2.5 bg-black/60 backdrop-blur-md text-amber-300 text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 border border-amber-400/30">
