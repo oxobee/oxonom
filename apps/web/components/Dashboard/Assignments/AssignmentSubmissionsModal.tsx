@@ -66,9 +66,9 @@ export default function AssignmentSubmissionsModal({
     enabled: !!(isOpen && assignment?.assignment_uuid),
   })
 
-  if (!assignment) return null
-
-  const students: StudentSubmissionRow[] = Array.isArray(submissionsData?.students) ? submissionsData.students : []
+  const students: StudentSubmissionRow[] = useMemo(() => {
+    return Array.isArray(submissionsData?.students) ? submissionsData.students : []
+  }, [submissionsData?.students])
 
   const onTimeStudents = useMemo(() => {
     return students.filter((s) => s && (s.status === 'SUBMITTED' || s.status === 'GRADED') && !s.is_late)
@@ -100,6 +100,8 @@ export default function AssignmentSubmissionsModal({
       return sName.toLowerCase().includes(q) || sUsername.toLowerCase().includes(q)
     })
   }, [students, submissionFilter, searchQuery])
+
+  if (!isOpen || !assignment) return null
 
   const handleSelectStudent = (s: StudentSubmissionRow) => {
     if (!s) return

@@ -717,12 +717,14 @@ export default function SchoolAssignmentsPage() {
       />
 
       {/* SUBMISSIONS REVIEW & GRADING MODAL (TEACHER) */}
-      <AssignmentSubmissionsModal
-        isOpen={!!selectedAssignmentForSubmissions}
-        onClose={() => setSelectedAssignmentForSubmissions(null)}
-        assignment={selectedAssignmentForSubmissions}
-        accessToken={access_token}
-      />
+      {selectedAssignmentForSubmissions && (
+        <AssignmentSubmissionsModal
+          isOpen={!!selectedAssignmentForSubmissions}
+          onClose={() => setSelectedAssignmentForSubmissions(null)}
+          assignment={selectedAssignmentForSubmissions}
+          accessToken={access_token}
+        />
+      )}
     </div>
   )
 }

@@ -1179,13 +1179,15 @@ export default function ClassDetailClient({ orgslug, classroomId }: ClassDetailC
         defaultClassroomId={classroomId}
       />
 
-      <AssignmentSubmissionsModal
-        isOpen={!!selectedAssignmentForReview}
-        onClose={() => setSelectedAssignmentForReview(null)}
-        assignment={selectedAssignmentForReview}
-        accessToken={token}
-        onGraded={() => refetchClassAssignments()}
-      />
+      {selectedAssignmentForReview && (
+        <AssignmentSubmissionsModal
+          isOpen={!!selectedAssignmentForReview}
+          onClose={() => setSelectedAssignmentForReview(null)}
+          assignment={selectedAssignmentForReview}
+          accessToken={token}
+          onGraded={() => refetchClassAssignments()}
+        />
+      )}
 
       {/* 3. Manage Users Modal */}
       <Modal
