@@ -1,6 +1,8 @@
 // Generated from PostgreSQL database — Single Source of Truth
 import { GameCategory, GameItem, GamesStoreResponse, GamePlayResponse } from '../games/games'
 import { READING_MODULE_HTML } from '../playgrounds/readingModuleHtml'
+import { ENGLISH_MODULE_HTML } from '../playgrounds/englishModuleHtml'
+import { LETTER_STROKES_MODULE_HTML } from '../playgrounds/letterStrokesModuleHtml'
 
 export const SYNCED_CATEGORIES: GameCategory[] = [
   {
@@ -38281,11 +38283,17 @@ export function getSyncedGamePlay(identifier: string): any {
   }
 }
 
-// Ensure all reading modules (playground_1-dk-okuma) use the enhanced READING_MODULE_HTML
+// Ensure all interactive playgrounds use their enhanced, upgraded HTML modules
 if (typeof SYNCED_PLAYGROUNDS !== 'undefined') {
   SYNCED_PLAYGROUNDS.forEach((p: any) => {
     if (p.name?.includes('Okuma') || p.playground_uuid === 'playground_1-dk-okuma') {
       p.html_content = READING_MODULE_HTML
+    }
+    if (p.name?.includes('İngilizce') || p.playground_uuid === 'playground_ingilizce-kelime-atolyesi') {
+      p.html_content = ENGLISH_MODULE_HTML
+    }
+    if (p.name?.includes('Harf Çizgi') || p.playground_uuid === 'playground_harf-cizgi-atolyesi') {
+      p.html_content = LETTER_STROKES_MODULE_HTML
     }
   })
 }
@@ -38294,5 +38302,12 @@ if (typeof SYNCED_PLAYGROUNDS_MAP !== 'undefined') {
     if (k.includes('okuma') || SYNCED_PLAYGROUNDS_MAP[k]?.name?.includes('Okuma')) {
       SYNCED_PLAYGROUNDS_MAP[k].html_content = READING_MODULE_HTML
     }
+    if (k.includes('ingilizce') || SYNCED_PLAYGROUNDS_MAP[k]?.name?.includes('İngilizce')) {
+      SYNCED_PLAYGROUNDS_MAP[k].html_content = ENGLISH_MODULE_HTML
+    }
+    if (k.includes('harf') || SYNCED_PLAYGROUNDS_MAP[k]?.name?.includes('Harf Çizgi')) {
+      SYNCED_PLAYGROUNDS_MAP[k].html_content = LETTER_STROKES_MODULE_HTML
+    }
   })
 }
+
