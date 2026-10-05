@@ -112,15 +112,27 @@ export const ENGLISH_MODULE_HTML = `<!DOCTYPE html>
   </header>
 
   <!-- Main Content Workspace -->
-  <main class="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden p-3 md:p-5 gap-4">
+  <main class="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden p-3 md:p-5 gap-3 md:gap-4 min-h-0">
+
+    <!-- Mobile Segmented View Switcher (Hidden on md and up) -->
+    <div class="md:hidden flex bg-teal-100/80 p-1 rounded-2xl shrink-0 gap-1 shadow-2xs">
+      <button id="tabCardsBtn" onclick="switchMobileTab('cards')" class="flex-1 py-2 text-xs font-black rounded-xl transition bg-white text-teal-950 shadow-xs cursor-pointer flex items-center justify-center gap-1.5">
+        <span>🃏</span>
+        <span>Kelime Kartları</span>
+      </button>
+      <button id="tabQuizBtn" onclick="switchMobileTab('quiz')" class="flex-1 py-2 text-xs font-black rounded-xl transition text-teal-800 hover:text-teal-950 cursor-pointer flex items-center justify-center gap-1.5">
+        <span>🎮</span>
+        <span>Mini Oyun</span>
+      </button>
+    </div>
 
     <!-- Left Column: Flashcards Grid with Cheat-Guard Overlay -->
-    <div class="flex-1 bg-white rounded-3xl border border-teal-200/90 shadow-sm p-4 sm:p-5 flex flex-col justify-between overflow-hidden relative min-h-[400px]">
+    <div id="colCards" class="flex-1 min-w-0 bg-white rounded-3xl border border-teal-200/90 shadow-sm p-3.5 sm:p-5 flex flex-col justify-between overflow-hidden relative min-h-[380px]">
       
       <!-- Top Card Header -->
-      <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100 flex-wrap gap-2 shrink-0">
+      <div class="flex items-center justify-between pb-3 mb-2 border-b border-slate-100 flex-wrap gap-2 shrink-0">
         <div class="flex items-center gap-2">
-          <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Karta Dokununca Net Dinleyin</span>
+          <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Karta Dokun, Net Dinle</span>
           <span id="cardCountBadge" class="text-[11px] font-extrabold text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200">16 Kelime</span>
         </div>
 
@@ -129,37 +141,39 @@ export const ENGLISH_MODULE_HTML = `<!DOCTYPE html>
           <div class="relative">
             <input type="text" id="cardSearchInput" oninput="filterCards(this.value)" placeholder="Kelime ara..." class="w-28 sm:w-36 text-xs px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-1 focus:ring-teal-400">
           </div>
-          <button id="togglePeekBtn" onclick="toggleCheatPeek()" class="text-xs font-bold px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer hidden">
-            👁️ Kartları Göster
+          <!-- Quick switch to quiz button on mobile/tablet -->
+          <button onclick="switchMobileTab('quiz')" class="md:hidden text-xs font-bold px-2.5 py-1 rounded-xl bg-teal-600 text-white transition cursor-pointer flex items-center gap-1">
+            <span>🎮</span>
+            <span>Oyuna Geç</span>
           </button>
         </div>
       </div>
 
       <!-- Flashcards Grid Area Container -->
-      <div class="flex-1 relative overflow-y-auto pr-1">
-        <div id="cardsGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3.5 select-none cheat-clear">
+      <div id="cardsGridContainer" class="flex-1 relative overflow-y-auto pr-1">
+        <div id="cardsGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3.5 select-none cheat-clear pb-2">
           <!-- Flashcards dynamically injected -->
         </div>
 
         <!-- Cheat Guard Overlay (Appears when mini-game is answering) -->
-        <div id="cheatGuardOverlay" class="hidden absolute inset-0 z-20 flex flex-col items-center justify-center p-6 text-center bg-teal-950/20 backdrop-blur-xs rounded-2xl animate-fadeIn">
-          <div class="p-6 bg-white/95 rounded-3xl shadow-xl border border-teal-200 max-w-sm space-y-3">
-            <div class="w-14 h-14 bg-amber-100 text-amber-700 rounded-2xl mx-auto flex items-center justify-center text-3xl shadow-inner">
+        <div id="cheatGuardOverlay" class="hidden absolute inset-0 z-20 flex flex-col items-center justify-center p-4 text-center bg-teal-950/25 backdrop-blur-sm rounded-2xl animate-fadeIn">
+          <div class="p-5 bg-white/95 rounded-3xl shadow-xl border border-teal-200 max-w-sm space-y-3">
+            <div class="w-12 h-12 bg-amber-100 text-amber-700 rounded-2xl mx-auto flex items-center justify-center text-2xl shadow-inner">
               🙈
             </div>
             <div>
-              <h3 class="text-base font-black text-slate-900">Kopya Çekmek Yok!</h3>
+              <h3 class="text-sm sm:text-base font-black text-slate-900">Kopya Çekmek Yok!</h3>
               <p class="text-xs text-slate-600 mt-1 leading-relaxed">
                 Mini oyunu çözerken kelimeleri hafızandan hatırlamalısın. Kartlar geçici olarak gizlendi!
               </p>
             </div>
             <div class="pt-1 flex items-center justify-center gap-2">
-              <button onclick="peekTemporarily(3)" class="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl shadow-xs transition cursor-pointer flex items-center gap-1.5">
+              <button onclick="peekTemporarily(3)" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl shadow-xs transition cursor-pointer flex items-center gap-1.5">
                 <span>👀</span>
                 <span>İpucu Gör (3 sn)</span>
               </button>
-              <button onclick="disableQuizBlur()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition cursor-pointer">
-                Kartları Aç
+              <button onclick="disableQuizBlur()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition cursor-pointer">
+                Kilidi Aç
               </button>
             </div>
           </div>
@@ -167,8 +181,8 @@ export const ENGLISH_MODULE_HTML = `<!DOCTYPE html>
       </div>
 
       <!-- Bottom Audio Info Bar -->
-      <div class="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 shrink-0 flex-wrap gap-2">
-        <span class="flex items-center gap-1.5">
+      <div class="pt-2.5 mt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 shrink-0 flex-wrap gap-2">
+        <span class="flex items-center gap-1.5 text-[11px]">
           <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
           <span>Doğal İngilizce (en-US) yüksek netlikli telaffuz motoru devrede.</span>
         </span>
@@ -179,28 +193,28 @@ export const ENGLISH_MODULE_HTML = `<!DOCTYPE html>
     </div>
 
     <!-- Right Column: Interactive Quiz Mini Game -->
-    <div class="w-full md:w-88 bg-gradient-to-br from-teal-700 via-teal-800 to-emerald-800 text-white rounded-3xl p-5 sm:p-6 shadow-xl flex flex-col justify-between shrink-0">
+    <div id="colQuiz" class="hidden md:flex w-full md:w-[350px] lg:w-[390px] bg-gradient-to-br from-teal-700 via-teal-800 to-emerald-800 text-white rounded-3xl p-4 sm:p-5 shadow-xl flex-col justify-between shrink-0">
       <div>
         <div class="flex items-center justify-between mb-3 pb-2 border-b border-white/15">
           <div>
-            <span class="text-[11px] font-black text-teal-200 uppercase tracking-widest block">MİNİ KELİME OYUNU</span>
-            <h2 class="text-lg font-black leading-tight text-white">Doğru Eşleştir!</h2>
+            <span class="text-[10px] font-black text-teal-200 uppercase tracking-widest block">MİNİ KELİME OYUNU</span>
+            <h2 class="text-base sm:text-lg font-black leading-tight text-white">Doğru Eşleştir!</h2>
           </div>
           <!-- Blur Toggle Button for Game -->
-          <button id="blurToggleBtn" onclick="toggleCheatBlurMode()" title="Oyun sırasında kopya çekmeyi önle" class="px-2.5 py-1 bg-white/20 hover:bg-white/30 rounded-xl text-[11px] font-bold text-white border border-white/20 transition cursor-pointer flex items-center gap-1">
+          <button id="blurToggleBtn" onclick="toggleCheatBlurMode()" title="Oyun sırasında kopya çekmeyi önle" class="px-2.5 py-1 bg-white/20 hover:bg-white/30 rounded-xl text-[10px] font-black text-white border border-white/20 transition cursor-pointer flex items-center gap-1 shrink-0">
             <span id="blurToggleIcon">🔒</span>
-            <span id="blurToggleText">Gizleme: Açık</span>
+            <span id="blurToggleText">Kopya Kilidi: Açık</span>
           </button>
         </div>
 
         <!-- Big Question Card with Emoji Display -->
-        <div class="p-5 sm:p-6 bg-white/15 rounded-3xl text-center flex flex-col items-center justify-center space-y-3 mb-4 shadow-inner border border-white/20 backdrop-blur-md relative overflow-hidden">
-          <div class="w-28 h-28 sm:w-32 sm:h-32 rounded-3xl bg-white/25 backdrop-blur-lg flex items-center justify-center shadow-lg border border-white/40 transform hover:scale-105 transition">
-            <span id="quizEmoji" class="text-6xl sm:text-7xl block select-none drop-shadow-md">🦁</span>
+        <div class="p-4 sm:p-5 bg-white/15 rounded-3xl text-center flex flex-col items-center justify-center space-y-2.5 mb-3 shadow-inner border border-white/20 backdrop-blur-md relative overflow-hidden">
+          <div class="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-white/25 backdrop-blur-lg flex items-center justify-center shadow-lg border border-white/40 transform hover:scale-105 transition">
+            <span id="quizEmoji" class="text-5xl sm:text-6xl block select-none drop-shadow-md">🦁</span>
           </div>
 
           <div>
-            <p id="quizQuestion" class="font-black text-sm text-teal-100">Bu görselin İngilizcesi hangisidir?</p>
+            <p id="quizQuestion" class="font-black text-xs sm:text-sm text-teal-100">Bu görselin İngilizcesi hangisidir?</p>
             <p id="quizHintTr" class="text-[11px] text-teal-200/90 font-semibold mt-0.5">(Türkçesi: Aslan)</p>
           </div>
 
@@ -212,25 +226,25 @@ export const ENGLISH_MODULE_HTML = `<!DOCTYPE html>
         </div>
 
         <!-- 4 Multiple Choice Options Grid -->
-        <div id="quizOptions" class="grid grid-cols-2 gap-2.5 text-xs">
+        <div id="quizOptions" class="grid grid-cols-2 gap-2 text-xs">
           <!-- Quiz buttons injected via JS -->
         </div>
       </div>
 
       <!-- Bottom Score, Streak & Next Button -->
-      <div class="pt-4 mt-4 border-t border-white/15 flex items-center justify-between text-xs">
+      <div class="pt-3 mt-3 border-t border-white/15 flex items-center justify-between text-xs">
         <div class="flex items-center gap-3">
           <div>
             <span class="text-[10px] text-teal-200 uppercase tracking-wider block">Skor</span>
-            <strong id="scoreDisplay" class="text-base font-black text-amber-300">0 Puan</strong>
+            <strong id="scoreDisplay" class="text-sm sm:text-base font-black text-amber-300">0 Puan</strong>
           </div>
           <div class="pl-2 border-l border-white/20">
             <span class="text-[10px] text-teal-200 uppercase tracking-wider block">Seri</span>
-            <strong id="streakDisplay" class="text-sm font-black text-white">🔥 0</strong>
+            <strong id="streakDisplay" class="text-xs sm:text-sm font-black text-white">🔥 0</strong>
           </div>
         </div>
 
-        <button onclick="nextQuiz()" class="touch-btn px-4 py-2 bg-white text-teal-950 hover:bg-teal-50 font-black rounded-xl text-xs shadow-md transition cursor-pointer flex items-center gap-1 active:scale-95">
+        <button onclick="nextQuiz()" class="touch-btn px-3.5 py-2 bg-white text-teal-950 hover:bg-teal-50 font-black rounded-xl text-xs shadow-md transition cursor-pointer flex items-center gap-1 active:scale-95">
           <span>Sıradaki Soru</span>
           <span>➔</span>
         </button>
@@ -469,17 +483,61 @@ export const ENGLISH_MODULE_HTML = `<!DOCTYPE html>
       }
     }
 
+    // Mobile tab switcher ('cards' | 'quiz')
+    let activeMobileTab = 'cards';
+    function switchMobileTab(tab) {
+      activeMobileTab = tab;
+      const colCards = document.getElementById('colCards');
+      const colQuiz = document.getElementById('colQuiz');
+      const btnCards = document.getElementById('tabCardsBtn');
+      const btnQuiz = document.getElementById('tabQuizBtn');
+
+      if (tab === 'cards') {
+        if (colCards) {
+          colCards.classList.remove('hidden');
+          colCards.classList.add('flex');
+        }
+        if (colQuiz) {
+          colQuiz.classList.add('hidden');
+          colQuiz.classList.remove('flex');
+        }
+        if (btnCards) {
+          btnCards.className = 'flex-1 py-2 text-xs font-black rounded-xl transition bg-white text-teal-950 shadow-xs cursor-pointer flex items-center justify-center gap-1.5';
+        }
+        if (btnQuiz) {
+          btnQuiz.className = 'flex-1 py-2 text-xs font-black rounded-xl transition text-teal-800 hover:text-teal-950 cursor-pointer flex items-center justify-center gap-1.5';
+        }
+      } else {
+        if (colCards) {
+          colCards.classList.add('hidden');
+          colCards.classList.remove('flex');
+        }
+        if (colQuiz) {
+          colQuiz.classList.remove('hidden');
+          colQuiz.classList.add('flex');
+        }
+        if (btnQuiz) {
+          btnQuiz.className = 'flex-1 py-2 text-xs font-black rounded-xl transition bg-white text-teal-950 shadow-xs cursor-pointer flex items-center justify-center gap-1.5';
+        }
+        if (btnCards) {
+          btnCards.className = 'flex-1 py-2 text-xs font-black rounded-xl transition text-teal-800 hover:text-teal-950 cursor-pointer flex items-center justify-center gap-1.5';
+        }
+      }
+    }
+
     // ==========================================
     // CHEAT GUARD BLUR MECHANICS
     // ==========================================
     function applyCheatBlur() {
       const grid = document.getElementById('cardsGrid');
       const overlay = document.getElementById('cheatGuardOverlay');
+      if (!grid || !overlay) return;
+
       if (cheatBlurEnabled && !isPeeking) {
-        grid.className = 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3.5 select-none cheat-blurred';
+        grid.className = 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3.5 select-none cheat-blurred pb-2';
         overlay.classList.remove('hidden');
       } else {
-        grid.className = 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3.5 select-none cheat-clear';
+        grid.className = 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3.5 select-none cheat-clear pb-2';
         overlay.classList.add('hidden');
       }
     }
@@ -488,20 +546,26 @@ export const ENGLISH_MODULE_HTML = `<!DOCTYPE html>
       cheatBlurEnabled = !cheatBlurEnabled;
       const icon = document.getElementById('blurToggleIcon');
       const text = document.getElementById('blurToggleText');
-      if (cheatBlurEnabled) {
-        icon.textContent = '🔒';
-        text.textContent = 'Gizleme: Açık';
-      } else {
-        icon.textContent = '🔓';
-        text.textContent = 'Gizleme: Kapalı';
+      if (icon && text) {
+        if (cheatBlurEnabled) {
+          icon.textContent = '🔒';
+          text.textContent = 'Kopya Kilidi: Açık';
+        } else {
+          icon.textContent = '🔓';
+          text.textContent = 'Kopya Kilidi: Kapalı';
+        }
       }
       applyCheatBlur();
     }
 
     function disableQuizBlur() {
       cheatBlurEnabled = false;
-      document.getElementById('blurToggleIcon').textContent = '🔓';
-      document.getElementById('blurToggleText').textContent = 'Gizleme: Kapalı';
+      const icon = document.getElementById('blurToggleIcon');
+      const text = document.getElementById('blurToggleText');
+      if (icon && text) {
+        icon.textContent = '🔓';
+        text.textContent = 'Kopya Kilidi: Kapalı';
+      }
       applyCheatBlur();
     }
 
@@ -529,8 +593,10 @@ export const ENGLISH_MODULE_HTML = `<!DOCTYPE html>
 
       currentQuizItem = items[Math.floor(Math.random() * items.length)];
 
-      document.getElementById('quizEmoji').textContent = currentQuizItem.icon;
-      document.getElementById('quizHintTr').textContent = '(Türkçesi: ' + currentQuizItem.tr + ')';
+      const quizEmoji = document.getElementById('quizEmoji');
+      const quizHintTr = document.getElementById('quizHintTr');
+      if (quizEmoji) quizEmoji.textContent = currentQuizItem.icon;
+      if (quizHintTr) quizHintTr.textContent = '(Türkçesi: ' + currentQuizItem.tr + ')';
 
       // 4 unique choices
       const opts = [currentQuizItem.en];
@@ -543,14 +609,16 @@ export const ENGLISH_MODULE_HTML = `<!DOCTYPE html>
       opts.sort(() => Math.random() - 0.5);
 
       const optContainer = document.getElementById('quizOptions');
-      optContainer.innerHTML = '';
-      opts.forEach(opt => {
-        const btn = document.createElement('button');
-        btn.className = 'touch-btn p-3 rounded-2xl bg-white text-teal-950 font-black hover:bg-teal-50 transition shadow-xs active:scale-95 cursor-pointer text-center';
-        btn.textContent = opt;
-        btn.onclick = () => checkQuiz(opt, btn);
-        optContainer.appendChild(btn);
-      });
+      if (optContainer) {
+        optContainer.innerHTML = '';
+        opts.forEach(opt => {
+          const btn = document.createElement('button');
+          btn.className = 'touch-btn p-3 rounded-2xl bg-white text-teal-950 font-black hover:bg-teal-50 transition shadow-xs active:scale-95 cursor-pointer text-center';
+          btn.textContent = opt;
+          btn.onclick = () => checkQuiz(opt, btn);
+          optContainer.appendChild(btn);
+        });
+      }
 
       // Apply blur when new question appears
       applyCheatBlur();
@@ -562,8 +630,10 @@ export const ENGLISH_MODULE_HTML = `<!DOCTYPE html>
         btn.innerHTML = '✅ ' + selected;
         quizScore += 10;
         quizStreak += 1;
-        document.getElementById('scoreDisplay').textContent = quizScore + ' Puan';
-        document.getElementById('streakDisplay').textContent = '🔥 ' + quizStreak;
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const streakDisplay = document.getElementById('streakDisplay');
+        if (scoreDisplay) scoreDisplay.textContent = quizScore + ' Puan';
+        if (streakDisplay) streakDisplay.textContent = '🔥 ' + quizStreak;
         
         speakWord(currentQuizItem.en);
 
@@ -575,12 +645,22 @@ export const ENGLISH_MODULE_HTML = `<!DOCTYPE html>
       } else {
         btn.className = 'touch-btn p-3 rounded-2xl bg-rose-500 text-white font-bold animate-shake';
         quizStreak = 0;
-        document.getElementById('streakDisplay').textContent = '🔥 0';
+        const streakDisplay = document.getElementById('streakDisplay');
+        if (streakDisplay) streakDisplay.textContent = '🔥 0';
         speakWord('Try again');
       }
     }
 
-    window.onload = init;
+    function startApp() {
+      init();
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', startApp);
+    } else {
+      startApp();
+    }
+    window.addEventListener('load', startApp);
   </script>
 </body>
 </html>

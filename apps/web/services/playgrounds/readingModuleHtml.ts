@@ -1752,7 +1752,16 @@ export const READING_MODULE_HTML = `<!DOCTYPE html>
       renderPyramid(activePyramidIdx);
     }
 
-    window.onload = init;
+    function startApp() {
+      init();
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', startApp);
+    } else {
+      startApp();
+    }
+    window.addEventListener('load', startApp);
   </script>
 </body>
 </html>

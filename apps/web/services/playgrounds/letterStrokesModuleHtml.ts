@@ -127,22 +127,20 @@ export const LETTER_STROKES_MODULE_HTML = `<!DOCTYPE html>
       <!-- 4-Line Guide Ruling & Canvas Area -->
       <div class="flex-1 relative my-2 bg-indigo-50/20 rounded-2xl border border-indigo-100 flex items-center justify-center overflow-hidden min-h-[300px]" id="canvasWrapper">
         
-        <!-- Ruler Line Legend Badges (Left Margin) -->
-        <div class="absolute left-2 top-0 bottom-0 pointer-events-none flex flex-col justify-between py-6 text-[9px] font-extrabold text-slate-400 select-none z-10 hidden sm:flex">
-          <span class="text-slate-400">Tepe</span>
-          <span class="text-indigo-400">Orta Gövde (Kesikli)</span>
-          <span class="text-rose-500">Zemin (Kırmızı Taban)</span>
-          <span class="text-slate-400">Alt Kuyruk</span>
-        </div>
+        <!-- Ruler Line Legend Badges (Left Margin, aligned with exact MEB guide lines) -->
+        <div class="absolute left-2.5 top-[18%] -translate-y-1/2 pointer-events-none text-[9px] font-black text-slate-400 select-none hidden sm:block z-10">Tepe</div>
+        <div class="absolute left-2.5 top-[45%] -translate-y-1/2 pointer-events-none text-[9px] font-black text-indigo-400 select-none hidden sm:block z-10">Orta Gövde (Kesikli)</div>
+        <div class="absolute left-2.5 top-[72%] -translate-y-1/2 pointer-events-none text-[9px] font-black text-rose-500 font-bold select-none hidden sm:block z-10">Zemin (Kırmızı Taban)</div>
+        <div class="absolute left-2.5 top-[90%] -translate-y-1/2 pointer-events-none text-[9px] font-black text-slate-400 select-none hidden sm:block z-10">Alt Kuyruk</div>
 
         <!-- Background Canvas: 4 MEB lines + Faint Tracing Guide (Silik Kılavuz Harf) -->
-        <canvas id="bgCanvas" class="absolute inset-0 w-full h-full pointer-events-none select-none"></canvas>
+        <canvas id="bgCanvas" width="800" height="400" class="absolute inset-0 w-full h-full pointer-events-none select-none"></canvas>
 
         <!-- User Drawing Canvas: Freehand finger/pen drawing -->
-        <canvas id="paintCanvas" class="absolute inset-0 w-full h-full cursor-crosshair touch-none"></canvas>
+        <canvas id="paintCanvas" width="800" height="400" class="absolute inset-0 w-full h-full cursor-crosshair touch-none"></canvas>
 
         <!-- Animation Layer Canvas: For MEB "Nasıl Yazılır" step animation, pencil stylus, and glowing arrows -->
-        <canvas id="animCanvas" class="absolute inset-0 w-full h-full pointer-events-none z-10"></canvas>
+        <canvas id="animCanvas" width="800" height="400" class="absolute inset-0 w-full h-full pointer-events-none z-10"></canvas>
 
         <!-- Floating Animated Stylus Cursor (Never stamps on canvas) -->
         <div id="stylusCursor" class="hidden absolute pointer-events-none z-30 transition-none text-2xl select-none" style="left: 0px; top: 0px; transform: translate(-4px, -24px);">
@@ -1360,11 +1358,25 @@ export const LETTER_STROKES_MODULE_HTML = `<!DOCTYPE html>
     // ==========================================
     function init() {
       bgCanvas = document.getElementById('bgCanvas');
-      bgCtx = bgCanvas.getContext('2d');
+      bgCtx = bgCanvas ? bgCanvas.getContext('2d') : null;
       paintCanvas = document.getElementById('paintCanvas');
-      paintCtx = paintCanvas.getContext('2d');
+      paintCtx = paintCanvas ? paintCanvas.getContext('2d') : null;
       animCanvas = document.getElementById('animCanvas');
-      animCtx = animCanvas.getContext('2d');
+      animCtx = animCanvas ? animCanvas.getContext('2d') : null;
+
+      const wrapper = document.getElementById('canvasWrapper');
+      if (typeof ResizeObserver !== 'undefined' && wrapper) {
+        try {
+          const ro = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+              if (entry.contentRect.width > 80 && entry.contentRect.height > 80) {
+                resizeCanvases();
+              }
+            }
+          });
+          ro.observe(wrapper);
+        } catch (e) {}
+      }
 
       window.addEventListener('resize', resizeCanvases);
       resizeCanvases();
@@ -1374,12 +1386,20 @@ export const LETTER_STROKES_MODULE_HTML = `<!DOCTYPE html>
 
     function resizeCanvases() {
       const wrapper = document.getElementById('canvasWrapper');
-      const w = wrapper.clientWidth;
-      const h = wrapper.clientHeight;
+      if (!wrapper) return;
+      const rect = wrapper.getBoundingClientRect();
+      const w = Math.round(rect.width || wrapper.clientWidth || 0);
+      const h = Math.round(rect.height || wrapper.clientHeight || 0);
+
+      // Do not collapse canvases during modal open animation frames
+      if (w < 80 || h < 80) return;
 
       [bgCanvas, paintCanvas, animCanvas].forEach(canvas => {
-        canvas.width = w;
-        canvas.height = h;
+        if (!canvas) return;
+        if (canvas.width !== w || canvas.height !== h) {
+          canvas.width = w;
+          canvas.height = h;
+        }
       });
 
       drawMebRulingAndGuide();
@@ -1771,7 +1791,20 @@ export const LETTER_STROKES_MODULE_HTML = `<!DOCTYPE html>
       }
     }
 
-    window.onload = init;
+    function startApp() {
+      init();
+      setTimeout(resizeCanvases, 60);
+      setTimeout(resizeCanvases, 180);
+      setTimeout(resizeCanvases, 350);
+      setTimeout(resizeCanvases, 700);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', startApp);
+    } else {
+      startApp();
+    }
+    window.addEventListener('load', startApp);
   </script>
 </body>
 </html>
