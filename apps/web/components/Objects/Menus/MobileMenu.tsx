@@ -534,7 +534,7 @@ export default function MobileMenu({
               Giriş Yap
             </Link>
             <Link
-              href={getUriWithOrg(orgslug, '/auth/signup')}
+              href={getUriWithOrg(orgslug, '/signup')}
               onClick={onClose}
               className="flex-1 py-3 px-4 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 text-xs font-bold text-center transition-all"
             >

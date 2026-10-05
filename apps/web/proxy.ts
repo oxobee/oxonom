@@ -344,6 +344,24 @@ export default async function proxy(req: NextRequest) {
   }
 
   // -------------------------------------------------------------------------
+  // 2b. Legacy or explicit /auth/* routes — redirect to canonical routes
+  // -------------------------------------------------------------------------
+  const AUTH_PREFIX_MAP: Record<string, string> = {
+    '/auth': '/login',
+    '/auth/': '/login',
+    '/auth/login': '/login',
+    '/auth/signup': '/signup',
+    '/auth/reset': '/reset',
+    '/auth/forgot': '/forgot',
+    '/auth/verify-email': '/verify-email',
+  }
+  const cleanAuthPath = pathname.toLowerCase().replace(/\/+$/, '')
+  if (AUTH_PREFIX_MAP[cleanAuthPath] || AUTH_PREFIX_MAP[pathname.toLowerCase()]) {
+    const target = AUTH_PREFIX_MAP[cleanAuthPath] || AUTH_PREFIX_MAP[pathname.toLowerCase()]
+    return NextResponse.redirect(new URL(`${target}${search}`, req.url), 308)
+  }
+
+  // -------------------------------------------------------------------------
   // 3. Auth pages — resolve tenant for cookie context, rewrite to /auth
   // -------------------------------------------------------------------------
   const authPaths = ['/login', '/signup', '/reset', '/forgot', '/verify-email']
