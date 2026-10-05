@@ -257,16 +257,22 @@ const LoginClient = (props: LoginClientProps) => {
 
   const validate = (values: any) => {
     const errors: any = {}
+    const rawIdent = (values.email || '').trim()
 
-    if (!values.email) {
-      errors.email = t('validation.required')
-    } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(values.email)) {
-      errors.email = t('validation.invalid_email')
+    if (!rawIdent) {
+      errors.email = t('validation.required', { defaultValue: 'Bu alan zorunludur' })
+    } else {
+      const isEmail = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(rawIdent)
+      const isPhone = /^[0-9+() \-]{7,20}$/.test(rawIdent) && rawIdent.replace(/\D/g, '').length >= 10
+      const isUsername = rawIdent.length >= 3 && !rawIdent.includes(' ')
+      if (!isEmail && !isPhone && !isUsername) {
+        errors.email = 'Geçerli bir e-posta, cep telefonu veya kullanıcı adı giriniz.'
+      }
     }
 
     if (!values.password) {
       errors.password = t('validation.required')
-    } else if (values.password.length < 8) {
+    } else if (values.password.length < 6) {
       errors.password = t('validation.password_min_length')
     }
 
@@ -854,7 +860,9 @@ const LoginClient = (props: LoginClientProps) => {
               <FormLayout onSubmit={formik.handleSubmit}>
                 <FormField name="email">
                   <div className="flex items-center space-x-2 mb-1.5">
-                    <Form.Label className="grow text-[13px] font-semibold text-black/70">{t('auth.email')}</Form.Label>
+                    <Form.Label className="grow text-[13px] font-semibold text-black/70">
+                      E-posta, Telefon No veya Kullanıcı Adı
+                    </Form.Label>
                     {formik.touched.email && formik.errors.email && (
                       <span className="text-red-500 text-xs flex items-center space-x-1">
                         <Info size={11} />
@@ -867,8 +875,11 @@ const LoginClient = (props: LoginClientProps) => {
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
                       value={formik.values.email}
-                      type="email"
-                      className="box-border w-full bg-neutral-50 text-black rounded-lg px-4 border border-neutral-200 inline-flex h-[44px] appearance-none items-center focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-neutral-400 transition-all placeholder:text-black/25 text-sm"
+                      type="text"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      placeholder="05XX XXX XX XX veya ornek@mail.com"
+                      className="box-border w-full bg-neutral-50 text-black rounded-lg px-4 border border-neutral-200 inline-flex h-[44px] appearance-none items-center focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-neutral-400 transition-all placeholder:text-black/30 text-sm"
                     />
                   </Form.Control>
                 </FormField>

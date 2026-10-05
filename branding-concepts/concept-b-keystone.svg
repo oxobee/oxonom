@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title-b">
+  <title id="title-b">OXONOM — The Keystone Monolith</title>
+  <!--
+    Concept B: The Keystone Monolith (Isometric Foundation Hexagon)
+    3 solid interlocking architectural planes forming an isometric cube/hexagon.
+    Separated by a 14px negative-space isometric Y-channel.
+    Represents institutional solidity, enterprise foundations, and computational scale.
+  -->
+  <g fill="#000000">
+    <!-- Top Monolithic Plane -->
+    <polygon points="128,38 200,80 128,121 56,80" />
+    <!-- Bottom-Right Monolithic Plane -->
+    <polygon points="135,125 207,84 207,168 135,210" />
+    <!-- Bottom-Left Monolithic Plane -->
+    <polygon points="121,125 49,84 49,168 121,210" />
+  </g>
+</svg>

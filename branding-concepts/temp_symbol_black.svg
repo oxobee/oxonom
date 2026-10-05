@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title-a1">
+  <title id="title-a1">OXONOM — The Open Folio Nexus</title>
+  <g fill="#000000">
+    <!-- Top-Left Arch Segment -->
+    <path d="M 118 30 A 102 102 0 0 0 32 116 L 76 116 A 58 58 0 0 1 118 74 Z" />
+    <!-- Top-Right Arch Segment -->
+    <path d="M 138 30 A 102 102 0 0 1 224 116 L 180 116 A 58 58 0 0 0 138 74 Z" />
+    <!-- Bottom-Left Folio (Book Page) -->
+    <path d="M 32 140 A 102 102 0 0 0 118 226 L 118 182 A 58 58 0 0 1 76 140 Z" />
+    <!-- Bottom-Right Folio (Book Page) -->
+    <path d="M 224 140 A 102 102 0 0 1 138 226 L 138 182 A 58 58 0 0 0 180 140 Z" />
+    <!-- Central Academic Mortarboard Diamond -->
+    <polygon points="128,104 152,128 128,152 104,128" />
+  </g>
+</svg>

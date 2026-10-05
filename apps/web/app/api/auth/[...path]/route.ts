@@ -293,11 +293,14 @@ async function proxyRequest(
     } else if (contentType?.includes('application/x-www-form-urlencoded')) {
       try {
         const text = await request.text()
-        body = text
         const params = new URLSearchParams(text)
-        username = (params.get('username') || params.get('email') || '').toString()
+        const rawUser = (params.get('username') || params.get('email') || '').toString().trim()
+        const isDigitsOnly = /^[0-9+() \-]+$/.test(rawUser) && rawUser.replace(/\D/g, '').length >= 10
+        username = isDigitsOnly ? rawUser.replace(/\D/g, '') : rawUser
         password = (params.get('password') || '').toString()
         orgSlug = (params.get('org_slug') || params.get('orgSlug') || 'default').toString()
+        params.set('username', username)
+        body = params.toString()
       } catch {
         body = await request.text()
       }

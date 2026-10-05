@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title-c">
+  <title id="title-c">OXONOM — The Meridian Aperture</title>
+  <!--
+    Concept C: The Meridian Aperture (Kinetic Elevation Letterform)
+    A precision circular letterform 'O' bisected along a horizontal meridian.
+    Upper and lower hemispheres step dynamically (+16px / -16px), forming
+    a forward ascension vector (Progressive Intelligence) and dual-aperture lock.
+    Rock-solid at 16px favicon scale; pure Swiss typographic reduction.
+  -->
+  <g fill="#000000">
+    <path d="M 42 119 A 102 102 0 0 1 246 119 H 198 A 54 54 0 0 0 90 119 Z" />
+    <path d="M 214 137 A 102 102 0 0 1 10 137 H 58 A 54 54 0 0 0 166 137 Z" />
+  </g>
+</svg>

@@ -1,0 +1,274 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1600" height="984" viewBox="0 0 1600 984"><defs><filter id="grey"><feColorMatrix type="saturate" values="0"/></filter></defs><rect width="1600" height="984" fill="#f7f7f4"/><text x="60" y="78" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="40" font-weight="700" fill="#161616">OXONOM | Edu — Logo Concepts</text><text x="60" y="116" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="20" fill="#6b6b6b">Concepts for review — pick a direction (or tell me what you like in each).</text><rect x="60" y="150" width="474.667" height="774" rx="18" fill="#fff" stroke="#161616" stroke-width="2"/><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title-a" viewBox="0 0 256 256" x="90" y="190" width="414.667" height="300" preserveAspectRatio="xMidYMid meet">
+  <title id="c0-title-a">OXONOM — The Nexus Ring</title>
+  <g fill="#000000">
+    <path d="M 64.23 45.85 A 104.00 104.00 0 0 1 191.77 45.85 L 157.32 80.29 A 56.00 56.00 0 0 0 98.68 80.29 Z" />
+    <path d="M 210.15 64.23 A 104.00 104.00 0 0 1 210.15 191.77 L 175.71 157.32 A 56.00 56.00 0 0 0 175.71 98.68 Z" />
+    <path d="M 191.77 210.15 A 104.00 104.00 0 0 1 64.23 210.15 L 98.68 175.71 A 56.00 56.00 0 0 0 157.32 175.71 Z" />
+    <path d="M 45.85 191.77 A 104.00 104.00 0 0 1 45.85 64.23 L 80.29 98.68 A 56.00 56.00 0 0 0 80.29 157.32 Z" />
+    <rect x="112" y="112" width="32" height="32" rx="4" transform="rotate(45 128 128)" />
+  </g>
+</svg></g><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title-lockup-a" viewBox="0 0 860 256" x="90" y="514" width="414.667" height="120" preserveAspectRatio="xMidYMid meet">
+  <title id="l0-title-lockup-a">OXONOM | Edu — Concept A Lockup</title>
+  <!-- Symbol scaled and positioned on left: 200x200 inside 256x256 -->
+  <g id="l0-symbol" transform="translate(16, 28) scale(0.78125)">
+    <g fill="#000000">
+    <path d="M 64.23 45.85 A 104.00 104.00 0 0 1 191.77 45.85 L 157.32 80.29 A 56.00 56.00 0 0 0 98.68 80.29 Z" />
+    <path d="M 210.15 64.23 A 104.00 104.00 0 0 1 210.15 191.77 L 175.71 157.32 A 56.00 56.00 0 0 0 175.71 98.68 Z" />
+    <path d="M 191.77 210.15 A 104.00 104.00 0 0 1 64.23 210.15 L 98.68 175.71 A 56.00 56.00 0 0 0 157.32 175.71 Z" />
+    <path d="M 45.85 191.77 A 104.00 104.00 0 0 1 45.85 64.23 L 80.29 98.68 A 56.00 56.00 0 0 0 80.29 157.32 Z" />
+    <rect x="112" y="112" width="32" height="32" rx="4" transform="rotate(45 128 128)" />
+  </g>
+
+  </g>
+  <!-- Wordmark 'OXONOM | Edu' in pure vector geometry -->
+  <g id="l0-wordmark" fill="#000000">
+    <path fill-rule="evenodd" d="M 302 96 A 32 32 0 1 1 301.9 96 Z M 302 110 A 18 18 0 1 0 302.1 110 Z" />
+<polygon points="
+      346,96 362,96 372,112 382,96 398,96 
+      380,128 398,160 382,160 372,144 362,160 346,160 
+      364,128" />
+<path fill-rule="evenodd" d="M 442 96 A 32 32 0 1 1 441.9 96 Z M 442 110 A 18 18 0 1 0 442.1 110 Z" />
+<polygon points="
+      484,96 498,96 522,138 522,96 536,96 
+      536,160 522,160 498,118 498,160 484,160" />
+<path fill-rule="evenodd" d="M 580 96 A 32 32 0 1 1 579.9 96 Z M 580 110 A 18 18 0 1 0 580.1 110 Z" />
+<polygon points="
+      622,96 636,96 652,132 668,96 682,96 
+      682,160 669,160 669,114 656,144 648,144 635,114 635,160 622,160" />
+<rect x="710" y="98" width="3" height="60" rx="1.5" fill="#666666" />
+<polygon points="
+      734,98 766,98 766,110 747,110 
+      747,122 762,122 762,133 747,133 
+      747,147 767,147 767,158 734,158" />
+<path fill-rule="evenodd" d="
+      M 798 98 H 809 V 158 H 798 V 152 
+      A 19 19 0 0 1 776 137 A 19 19 0 0 1 798 120 Z 
+      M 795 137 A 9 9 0 1 0 795 137.1 Z" />
+<path d="
+      M 820 120 H 831 V 143 A 8 8 0 0 0 847 143 V 120 H 858 V 158 H 848 V 152 
+      A 16 16 0 0 1 820 142 Z" />
+  </g>
+</svg></g><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title-a" viewBox="0 0 256 256" x="90" y="660" width="64" height="64" preserveAspectRatio="xMidYMid meet">
+  <title id="s064-title-a">OXONOM — The Nexus Ring</title>
+  <g fill="#000000">
+    <path d="M 64.23 45.85 A 104.00 104.00 0 0 1 191.77 45.85 L 157.32 80.29 A 56.00 56.00 0 0 0 98.68 80.29 Z" />
+    <path d="M 210.15 64.23 A 104.00 104.00 0 0 1 210.15 191.77 L 175.71 157.32 A 56.00 56.00 0 0 0 175.71 98.68 Z" />
+    <path d="M 191.77 210.15 A 104.00 104.00 0 0 1 64.23 210.15 L 98.68 175.71 A 56.00 56.00 0 0 0 157.32 175.71 Z" />
+    <path d="M 45.85 191.77 A 104.00 104.00 0 0 1 45.85 64.23 L 80.29 98.68 A 56.00 56.00 0 0 0 80.29 157.32 Z" />
+    <rect x="112" y="112" width="32" height="32" rx="4" transform="rotate(45 128 128)" />
+  </g>
+</svg></g><text x="122" y="744" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">64px</text><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title-a" viewBox="0 0 256 256" x="180" y="692" width="32" height="32" preserveAspectRatio="xMidYMid meet">
+  <title id="s032-title-a">OXONOM — The Nexus Ring</title>
+  <g fill="#000000">
+    <path d="M 64.23 45.85 A 104.00 104.00 0 0 1 191.77 45.85 L 157.32 80.29 A 56.00 56.00 0 0 0 98.68 80.29 Z" />
+    <path d="M 210.15 64.23 A 104.00 104.00 0 0 1 210.15 191.77 L 175.71 157.32 A 56.00 56.00 0 0 0 175.71 98.68 Z" />
+    <path d="M 191.77 210.15 A 104.00 104.00 0 0 1 64.23 210.15 L 98.68 175.71 A 56.00 56.00 0 0 0 157.32 175.71 Z" />
+    <path d="M 45.85 191.77 A 104.00 104.00 0 0 1 45.85 64.23 L 80.29 98.68 A 56.00 56.00 0 0 0 80.29 157.32 Z" />
+    <rect x="112" y="112" width="32" height="32" rx="4" transform="rotate(45 128 128)" />
+  </g>
+</svg></g><text x="196" y="744" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">32px</text><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title-a" viewBox="0 0 256 256" x="238" y="708" width="16" height="16" preserveAspectRatio="xMidYMid meet">
+  <title id="s016-title-a">OXONOM — The Nexus Ring</title>
+  <g fill="#000000">
+    <path d="M 64.23 45.85 A 104.00 104.00 0 0 1 191.77 45.85 L 157.32 80.29 A 56.00 56.00 0 0 0 98.68 80.29 Z" />
+    <path d="M 210.15 64.23 A 104.00 104.00 0 0 1 210.15 191.77 L 175.71 157.32 A 56.00 56.00 0 0 0 175.71 98.68 Z" />
+    <path d="M 191.77 210.15 A 104.00 104.00 0 0 1 64.23 210.15 L 98.68 175.71 A 56.00 56.00 0 0 0 157.32 175.71 Z" />
+    <path d="M 45.85 191.77 A 104.00 104.00 0 0 1 45.85 64.23 L 80.29 98.68 A 56.00 56.00 0 0 0 80.29 157.32 Z" />
+    <rect x="112" y="112" width="32" height="32" rx="4" transform="rotate(45 128 128)" />
+  </g>
+</svg></g><text x="246" y="744" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">16px</text><text x="90.0" y="780" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="26" font-weight="700" fill="#161616">A · The Nexus Ring</text><text x="90.0" y="808" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="15" font-weight="700" fill="#161616" letter-spacing="1.5">RECOMMENDED</text><text x="90.0" y="842" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="19" fill="#555">O-X convergence: 4 balanced quadrant arcs</text><text x="90.0" y="868" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="19" fill="#555">framing an inner computational cross.</text><rect x="562.667" y="150" width="474.667" height="774" rx="18" fill="#fff" stroke="#e4e4e0" stroke-width="1"/><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title-b" viewBox="0 0 256 256" x="592.667" y="190" width="414.667" height="300" preserveAspectRatio="xMidYMid meet">
+  <title id="c1-title-b">OXONOM — The Keystone Monolith</title>
+  <!--
+    Concept B: The Keystone Monolith (Isometric Foundation Hexagon)
+    3 solid interlocking architectural planes forming an isometric cube/hexagon.
+    Separated by a 14px negative-space isometric Y-channel.
+    Represents institutional solidity, enterprise foundations, and computational scale.
+  -->
+  <g fill="#000000">
+    <!-- Top Monolithic Plane -->
+    <polygon points="128,38 200,80 128,121 56,80" />
+    <!-- Bottom-Right Monolithic Plane -->
+    <polygon points="135,125 207,84 207,168 135,210" />
+    <!-- Bottom-Left Monolithic Plane -->
+    <polygon points="121,125 49,84 49,168 121,210" />
+  </g>
+</svg></g><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title-lockup-b" viewBox="0 0 860 256" x="592.667" y="514" width="414.667" height="120" preserveAspectRatio="xMidYMid meet">
+  <title id="l1-title-lockup-b">OXONOM | Edu — Concept B Lockup</title>
+  <!-- Symbol scaled and positioned on left: 200x200 inside 256x256 -->
+  <g id="l1-symbol" transform="translate(16, 28) scale(0.78125)">
+    <g fill="#000000">
+    <!-- Top Monolithic Plane -->
+    <polygon points="128,38 200,80 128,121 56,80" />
+    <!-- Bottom-Right Monolithic Plane -->
+    <polygon points="135,125 207,84 207,168 135,210" />
+    <!-- Bottom-Left Monolithic Plane -->
+    <polygon points="121,125 49,84 49,168 121,210" />
+  </g>
+
+  </g>
+  <!-- Wordmark 'OXONOM | Edu' in pure vector geometry -->
+  <g id="l1-wordmark" fill="#000000">
+    <path fill-rule="evenodd" d="M 302 96 A 32 32 0 1 1 301.9 96 Z M 302 110 A 18 18 0 1 0 302.1 110 Z" />
+<polygon points="
+      346,96 362,96 372,112 382,96 398,96 
+      380,128 398,160 382,160 372,144 362,160 346,160 
+      364,128" />
+<path fill-rule="evenodd" d="M 442 96 A 32 32 0 1 1 441.9 96 Z M 442 110 A 18 18 0 1 0 442.1 110 Z" />
+<polygon points="
+      484,96 498,96 522,138 522,96 536,96 
+      536,160 522,160 498,118 498,160 484,160" />
+<path fill-rule="evenodd" d="M 580 96 A 32 32 0 1 1 579.9 96 Z M 580 110 A 18 18 0 1 0 580.1 110 Z" />
+<polygon points="
+      622,96 636,96 652,132 668,96 682,96 
+      682,160 669,160 669,114 656,144 648,144 635,114 635,160 622,160" />
+<rect x="710" y="98" width="3" height="60" rx="1.5" fill="#666666" />
+<polygon points="
+      734,98 766,98 766,110 747,110 
+      747,122 762,122 762,133 747,133 
+      747,147 767,147 767,158 734,158" />
+<path fill-rule="evenodd" d="
+      M 798 98 H 809 V 158 H 798 V 152 
+      A 19 19 0 0 1 776 137 A 19 19 0 0 1 798 120 Z 
+      M 795 137 A 9 9 0 1 0 795 137.1 Z" />
+<path d="
+      M 820 120 H 831 V 143 A 8 8 0 0 0 847 143 V 120 H 858 V 158 H 848 V 152 
+      A 16 16 0 0 1 820 142 Z" />
+  </g>
+</svg></g><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title-b" viewBox="0 0 256 256" x="592.667" y="660" width="64" height="64" preserveAspectRatio="xMidYMid meet">
+  <title id="s164-title-b">OXONOM — The Keystone Monolith</title>
+  <!--
+    Concept B: The Keystone Monolith (Isometric Foundation Hexagon)
+    3 solid interlocking architectural planes forming an isometric cube/hexagon.
+    Separated by a 14px negative-space isometric Y-channel.
+    Represents institutional solidity, enterprise foundations, and computational scale.
+  -->
+  <g fill="#000000">
+    <!-- Top Monolithic Plane -->
+    <polygon points="128,38 200,80 128,121 56,80" />
+    <!-- Bottom-Right Monolithic Plane -->
+    <polygon points="135,125 207,84 207,168 135,210" />
+    <!-- Bottom-Left Monolithic Plane -->
+    <polygon points="121,125 49,84 49,168 121,210" />
+  </g>
+</svg></g><text x="624.667" y="744" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">64px</text><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title-b" viewBox="0 0 256 256" x="682.667" y="692" width="32" height="32" preserveAspectRatio="xMidYMid meet">
+  <title id="s132-title-b">OXONOM — The Keystone Monolith</title>
+  <!--
+    Concept B: The Keystone Monolith (Isometric Foundation Hexagon)
+    3 solid interlocking architectural planes forming an isometric cube/hexagon.
+    Separated by a 14px negative-space isometric Y-channel.
+    Represents institutional solidity, enterprise foundations, and computational scale.
+  -->
+  <g fill="#000000">
+    <!-- Top Monolithic Plane -->
+    <polygon points="128,38 200,80 128,121 56,80" />
+    <!-- Bottom-Right Monolithic Plane -->
+    <polygon points="135,125 207,84 207,168 135,210" />
+    <!-- Bottom-Left Monolithic Plane -->
+    <polygon points="121,125 49,84 49,168 121,210" />
+  </g>
+</svg></g><text x="698.667" y="744" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">32px</text><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title-b" viewBox="0 0 256 256" x="740.667" y="708" width="16" height="16" preserveAspectRatio="xMidYMid meet">
+  <title id="s116-title-b">OXONOM — The Keystone Monolith</title>
+  <!--
+    Concept B: The Keystone Monolith (Isometric Foundation Hexagon)
+    3 solid interlocking architectural planes forming an isometric cube/hexagon.
+    Separated by a 14px negative-space isometric Y-channel.
+    Represents institutional solidity, enterprise foundations, and computational scale.
+  -->
+  <g fill="#000000">
+    <!-- Top Monolithic Plane -->
+    <polygon points="128,38 200,80 128,121 56,80" />
+    <!-- Bottom-Right Monolithic Plane -->
+    <polygon points="135,125 207,84 207,168 135,210" />
+    <!-- Bottom-Left Monolithic Plane -->
+    <polygon points="121,125 49,84 49,168 121,210" />
+  </g>
+</svg></g><text x="748.667" y="744" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">16px</text><text x="592.6666666666667" y="780" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="26" font-weight="700" fill="#161616">B · The Keystone Monolith</text><text x="592.6666666666667" y="814" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="19" fill="#555">Tri-hexagonal monolithic foundation: 3</text><text x="592.6666666666667" y="840" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="19" fill="#555">interlocking structural planes.</text><rect x="1065.33" y="150" width="474.667" height="774" rx="18" fill="#fff" stroke="#e4e4e0" stroke-width="1"/><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title-c" viewBox="0 0 256 256" x="1095.33" y="190" width="414.667" height="300" preserveAspectRatio="xMidYMid meet">
+  <title id="c2-title-c">OXONOM — The Meridian Aperture</title>
+  <!--
+    Concept C: The Meridian Aperture (Kinetic Elevation Letterform)
+    A precision circular letterform 'O' bisected along a horizontal meridian.
+    Upper and lower hemispheres step dynamically (+16px / -16px), forming
+    a forward ascension vector (Progressive Intelligence) and dual-aperture lock.
+    Rock-solid at 16px favicon scale; pure Swiss typographic reduction.
+  -->
+  <g fill="#000000">
+    <path d="M 42 119 A 102 102 0 0 1 246 119 H 198 A 54 54 0 0 0 90 119 Z" />
+    <path d="M 214 137 A 102 102 0 0 1 10 137 H 58 A 54 54 0 0 0 166 137 Z" />
+  </g>
+</svg></g><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title-lockup-c" viewBox="0 0 860 256" x="1095.33" y="514" width="414.667" height="120" preserveAspectRatio="xMidYMid meet">
+  <title id="l2-title-lockup-c">OXONOM | Edu — Concept C Lockup</title>
+  <!-- Symbol scaled and positioned on left: 200x200 inside 256x256 -->
+  <g id="l2-symbol" transform="translate(16, 28) scale(0.78125)">
+    <g fill="#000000">
+    <path d="M 42 119 A 102 102 0 0 1 246 119 H 198 A 54 54 0 0 0 90 119 Z" />
+    <path d="M 214 137 A 102 102 0 0 1 10 137 H 58 A 54 54 0 0 0 166 137 Z" />
+  </g>
+
+  </g>
+  <!-- Wordmark 'OXONOM | Edu' in pure vector geometry -->
+  <g id="l2-wordmark" fill="#000000">
+    <path fill-rule="evenodd" d="M 302 96 A 32 32 0 1 1 301.9 96 Z M 302 110 A 18 18 0 1 0 302.1 110 Z" />
+<polygon points="
+      346,96 362,96 372,112 382,96 398,96 
+      380,128 398,160 382,160 372,144 362,160 346,160 
+      364,128" />
+<path fill-rule="evenodd" d="M 442 96 A 32 32 0 1 1 441.9 96 Z M 442 110 A 18 18 0 1 0 442.1 110 Z" />
+<polygon points="
+      484,96 498,96 522,138 522,96 536,96 
+      536,160 522,160 498,118 498,160 484,160" />
+<path fill-rule="evenodd" d="M 580 96 A 32 32 0 1 1 579.9 96 Z M 580 110 A 18 18 0 1 0 580.1 110 Z" />
+<polygon points="
+      622,96 636,96 652,132 668,96 682,96 
+      682,160 669,160 669,114 656,144 648,144 635,114 635,160 622,160" />
+<rect x="710" y="98" width="3" height="60" rx="1.5" fill="#666666" />
+<polygon points="
+      734,98 766,98 766,110 747,110 
+      747,122 762,122 762,133 747,133 
+      747,147 767,147 767,158 734,158" />
+<path fill-rule="evenodd" d="
+      M 798 98 H 809 V 158 H 798 V 152 
+      A 19 19 0 0 1 776 137 A 19 19 0 0 1 798 120 Z 
+      M 795 137 A 9 9 0 1 0 795 137.1 Z" />
+<path d="
+      M 820 120 H 831 V 143 A 8 8 0 0 0 847 143 V 120 H 858 V 158 H 848 V 152 
+      A 16 16 0 0 1 820 142 Z" />
+  </g>
+</svg></g><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title-c" viewBox="0 0 256 256" x="1095.33" y="660" width="64" height="64" preserveAspectRatio="xMidYMid meet">
+  <title id="s264-title-c">OXONOM — The Meridian Aperture</title>
+  <!--
+    Concept C: The Meridian Aperture (Kinetic Elevation Letterform)
+    A precision circular letterform 'O' bisected along a horizontal meridian.
+    Upper and lower hemispheres step dynamically (+16px / -16px), forming
+    a forward ascension vector (Progressive Intelligence) and dual-aperture lock.
+    Rock-solid at 16px favicon scale; pure Swiss typographic reduction.
+  -->
+  <g fill="#000000">
+    <path d="M 42 119 A 102 102 0 0 1 246 119 H 198 A 54 54 0 0 0 90 119 Z" />
+    <path d="M 214 137 A 102 102 0 0 1 10 137 H 58 A 54 54 0 0 0 166 137 Z" />
+  </g>
+</svg></g><text x="1127.33" y="744" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">64px</text><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title-c" viewBox="0 0 256 256" x="1185.33" y="692" width="32" height="32" preserveAspectRatio="xMidYMid meet">
+  <title id="s232-title-c">OXONOM — The Meridian Aperture</title>
+  <!--
+    Concept C: The Meridian Aperture (Kinetic Elevation Letterform)
+    A precision circular letterform 'O' bisected along a horizontal meridian.
+    Upper and lower hemispheres step dynamically (+16px / -16px), forming
+    a forward ascension vector (Progressive Intelligence) and dual-aperture lock.
+    Rock-solid at 16px favicon scale; pure Swiss typographic reduction.
+  -->
+  <g fill="#000000">
+    <path d="M 42 119 A 102 102 0 0 1 246 119 H 198 A 54 54 0 0 0 90 119 Z" />
+    <path d="M 214 137 A 102 102 0 0 1 10 137 H 58 A 54 54 0 0 0 166 137 Z" />
+  </g>
+</svg></g><text x="1201.33" y="744" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">32px</text><g filter="url(#grey)"><svg xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title-c" viewBox="0 0 256 256" x="1243.33" y="708" width="16" height="16" preserveAspectRatio="xMidYMid meet">
+  <title id="s216-title-c">OXONOM — The Meridian Aperture</title>
+  <!--
+    Concept C: The Meridian Aperture (Kinetic Elevation Letterform)
+    A precision circular letterform 'O' bisected along a horizontal meridian.
+    Upper and lower hemispheres step dynamically (+16px / -16px), forming
+    a forward ascension vector (Progressive Intelligence) and dual-aperture lock.
+    Rock-solid at 16px favicon scale; pure Swiss typographic reduction.
+  -->
+  <g fill="#000000">
+    <path d="M 42 119 A 102 102 0 0 1 246 119 H 198 A 54 54 0 0 0 90 119 Z" />
+    <path d="M 214 137 A 102 102 0 0 1 10 137 H 58 A 54 54 0 0 0 166 137 Z" />
+  </g>
+</svg></g><text x="1251.33" y="744" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8a8a8a" text-anchor="middle">16px</text><text x="1095.3333333333335" y="780" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="26" font-weight="700" fill="#161616">C · The Meridian Aperture</text><text x="1095.3333333333335" y="814" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="19" fill="#555">Bisected kinetic letterform: horizontal</text><text x="1095.3333333333335" y="840" font-family="system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="19" fill="#555">elevation step and aperture.</text></svg>

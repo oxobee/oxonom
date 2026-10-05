@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 256" width="860" height="256" role="img" aria-labelledby="title-lockup-c">
+  <title id="title-lockup-c">OXONOM | Edu — Concept C Lockup</title>
+  <!-- Symbol scaled and positioned on left: 200x200 inside 256x256 -->
+  <g id="symbol" transform="translate(16, 28) scale(0.78125)">
+    <g fill="#000000">
+    <path d="M 42 119 A 102 102 0 0 1 246 119 H 198 A 54 54 0 0 0 90 119 Z" />
+    <path d="M 214 137 A 102 102 0 0 1 10 137 H 58 A 54 54 0 0 0 166 137 Z" />
+  </g>
+
+  </g>
+  <!-- Wordmark 'OXONOM | Edu' in pure vector geometry -->
+  <g id="wordmark" fill="#000000">
+    <path fill-rule="evenodd" d="M 302 96 A 32 32 0 1 1 301.9 96 Z M 302 110 A 18 18 0 1 0 302.1 110 Z" />
+<polygon points="
+      346,96 362,96 372,112 382,96 398,96 
+      380,128 398,160 382,160 372,144 362,160 346,160 
+      364,128" />
+<path fill-rule="evenodd" d="M 442 96 A 32 32 0 1 1 441.9 96 Z M 442 110 A 18 18 0 1 0 442.1 110 Z" />
+<polygon points="
+      484,96 498,96 522,138 522,96 536,96 
+      536,160 522,160 498,118 498,160 484,160" />
+<path fill-rule="evenodd" d="M 580 96 A 32 32 0 1 1 579.9 96 Z M 580 110 A 18 18 0 1 0 580.1 110 Z" />
+<polygon points="
+      622,96 636,96 652,132 668,96 682,96 
+      682,160 669,160 669,114 656,144 648,144 635,114 635,160 622,160" />
+<rect x="710" y="98" width="3" height="60" rx="1.5" fill="#666666" />
+<polygon points="
+      734,98 766,98 766,110 747,110 
+      747,122 762,122 762,133 747,133 
+      747,147 767,147 767,158 734,158" />
+<path fill-rule="evenodd" d="
+      M 798 98 H 809 V 158 H 798 V 152 
+      A 19 19 0 0 1 776 137 A 19 19 0 0 1 798 120 Z 
+      M 795 137 A 9 9 0 1 0 795 137.1 Z" />
+<path d="
+      M 820 120 H 831 V 143 A 8 8 0 0 0 847 143 V 120 H 858 V 158 H 848 V 152 
+      A 16 16 0 0 1 820 142 Z" />
+  </g>
+</svg>

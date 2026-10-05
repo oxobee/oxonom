@@ -1045,14 +1045,39 @@ async def delete_user_by_id(
 
 async def security_get_user(request: Request, db_session: AsyncSession, email: str) -> User | None:
     """
-    Get user by email for security/authentication purposes.
-
-    Returns None if user doesn't exist (rather than throwing an exception)
-    to allow the caller to handle the "user not found" case appropriately
-    and prevent email enumeration vulnerabilities.
+    Get user by email, username, or phone number for security/authentication purposes.
+    Case-insensitive matching for both email and username.
     """
-    # Check if user exists
-    statement = select(User).where(User.email == email)
+    import re
+    from sqlalchemy import func, or_
+
+    clean_identifier = (email or "").strip()
+    clean_digits = re.sub(r"\D", "", clean_identifier)
+
+    conditions = [
+        func.lower(User.email) == clean_identifier.lower(),
+        func.lower(User.username) == clean_identifier.lower(),
+    ]
+
+    if clean_digits and len(clean_digits) >= 10:
+        conditions.extend([
+            User.username == clean_digits,
+            func.lower(User.email) == f"{clean_digits}@oxonom.edu",
+        ])
+        if clean_digits.startswith("0"):
+            without_zero = clean_digits[1:]
+            conditions.extend([
+                User.username == without_zero,
+                func.lower(User.email) == f"{without_zero}@oxonom.edu",
+            ])
+        else:
+            with_zero = f"0{clean_digits}"
+            conditions.extend([
+                User.username == with_zero,
+                func.lower(User.email) == f"{with_zero}@oxonom.edu",
+            ])
+
+    statement = select(User).where(or_(*conditions))
     user = (await db_session.execute(statement)).scalars().first()
 
     if not user:

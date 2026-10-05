@@ -526,9 +526,29 @@ export default function StudentsClient({ orgslug }: { orgslug: string }) {
 
   const filteredStudents = useMemo(() => {
     return students.filter((s) => {
-      const matchesSearch =
-        !search.trim() ||
-        searchMatchesAny([s.name, s.studentNo, s.email, s.classroomName, s.parentName, s.tcNo], search)
+      const searchTerms: Array<unknown> = [
+        s.name,
+        s.studentNo,
+        s.email,
+        s.classroomName,
+        s.mentorTeacher,
+        s.parentName,
+        s.parentPhone,
+        s.tcNo,
+        s.secondParentName,
+        s.secondParentPhone,
+        s.emergencyContact,
+        s.emergencyPhone,
+      ]
+      if (Array.isArray(s.parents)) {
+        s.parents.forEach((p) => {
+          if (p) {
+            searchTerms.push(p.name, p.phone, p.relation, p.email, p.occupation)
+          }
+        })
+      }
+
+      const matchesSearch = !search.trim() || searchMatchesAny(searchTerms, search)
       const matchesClass =
         selectedClassFilter === 'all' || s.classroomName === selectedClassFilter
       const matchesStatus =
@@ -937,15 +957,25 @@ export default function StudentsClient({ orgslug }: { orgslug: string }) {
               <option value="frozen">Dondurulmuş Kayıtlar</option>
             </select>
 
-            <div className="relative w-full sm:w-64">
+            <div className="relative w-full sm:w-72">
               <MagnifyingGlass className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Öğrenci no, ad, T.C., veli ara..."
+                placeholder="Öğrenci no, ad, T.C., veli, telefon ara..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full text-xs ps-9 pe-3 py-2 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full text-xs ps-9 pe-8 py-2 rounded-xl bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
               />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  className="absolute end-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5 rounded-full hover:bg-gray-200/60 transition-colors"
+                  title="Aramayı Temizle"
+                >
+                  <X size={13} weight="bold" />
+                </button>
+              )}
             </div>
           </div>
         </div>

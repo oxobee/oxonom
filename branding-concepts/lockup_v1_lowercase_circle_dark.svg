@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 256" width="920" height="256" role="img" aria-labelledby="title-v1_lowercase_circle-dark">
+  <title id="title-v1_lowercase_circle-dark">OXONOM edu. — Yön 1 · Dinamik Küçük Harf (edu.) + Dairesel Nokta (Dark)</title>
+  <rect width="920" height="256" rx="28" fill="#090D16" />
+  <!-- A1 Open Folio Nexus Symbol -->
+  <g id="symbol" transform="translate(18, 28) scale(0.78125)" fill="#ffffff">
+    <path d="M 118 30 A 102 102 0 0 0 32 116 L 76 116 A 58 58 0 0 1 118 74 Z" />
+    <!-- Top-Right Arch Segment -->
+    <path d="M 138 30 A 102 102 0 0 1 224 116 L 180 116 A 58 58 0 0 0 138 74 Z" />
+    <!-- Bottom-Left Folio (Book Page) -->
+    <path d="M 32 140 A 102 102 0 0 0 118 226 L 118 182 A 58 58 0 0 1 76 140 Z" />
+    <!-- Bottom-Right Folio (Book Page) -->
+    <path d="M 224 140 A 102 102 0 0 1 138 226 L 138 182 A 58 58 0 0 0 180 140 Z" />
+    <!-- Central Academic Mortarboard Diamond -->
+    <polygon points="128,104 152,128 128,152 104,128" />
+  
+  </g>
+  <!-- Wordmark 'OXONOM edu.' -->
+  <g id="wordmark">
+    <path fill="#ffffff" fill-rule="evenodd" d="M 267 96 A 31 31 0 1 1 266.9 96 Z M 267 110.5 A 16.5 16.5 0 1 0 267.1 110.5 Z" />
+    <polygon fill="#ffffff" points="
+      307,96 324,96 335.0,125.0 346,96 363,96 
+      345.0,127.0 363,158 346,158 335.0,129.0 324,158 307,158 
+      325.0,127.0" />
+    <path fill="#ffffff" fill-rule="evenodd" d="M 403 96 A 31 31 0 1 1 402.9 96 Z M 403 110.5 A 16.5 16.5 0 1 0 403.1 110.5 Z" />
+    <polygon fill="#ffffff" points="
+      443,96 457.5,96 484.5,141 484.5,96 499,96 
+      499,158 484.5,158 457.5,113 457.5,158 443,158" />
+    <path fill="#ffffff" fill-rule="evenodd" d="M 539 96 A 31 31 0 1 1 538.9 96 Z M 539 110.5 A 16.5 16.5 0 1 0 539.1 110.5 Z" />
+    <polygon fill="#ffffff" points="
+      579,96 593.5,96 613.0,136 632.5,96 647,96 
+      647,158 633.5,158 633.5,118 613.0,156 592.5,118 592.5,158 579,158" />
+    <g transform="translate(683, 158) skewX(-11) translate(0, -158)">
+      <path fill="#ffffff" fill-rule="evenodd" d="
+      M 21 116 C 34 116 42 124 42 136 C 42 138 41 139 40 139 H 12 C 13 145 17 148 24 148 C 30 148 35 146 38 142 L 45 149 C 40 156 33 158 24 158 C 10 158 0 147 0 137 C 0 124 10 116 21 116 Z
+      M 12 131 H 31 C 31 125 27 123 21 123 C 16 123 13 126 12 131 Z" /><path fill="#ffffff" fill-rule="evenodd" d="
+      M 76 96 H 87 V 158 H 76 V 152 C 73 156 68 158 62 158 C 53 158 48 148 48 137 C 48 125 53 116 62 116 C 68 116 73 119 76 123 Z
+      M 68 125 C 62 125 59 130 59 137 C 59 144 62 149 68 149 C 74 149 77 144 77 137 C 77 130 74 125 68 125 Z" /><path fill="#ffffff" fill-rule="evenodd" d="
+      M 94 116 H 105 V 143 C 105 148 109 150 114 150 C 119 150 123 147 123 143 V 116 H 134 V 158 H 124 V 152 C 121 156 116 158 110 158 C 99 158 94 149 94 139 Z" /><circle cx="146" cy="152" r="6" fill="#ffffff" />
+    </g>
+  </g>
+</svg>

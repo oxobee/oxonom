@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 256" width="940" height="256" role="img" aria-labelledby="title-opt_b_azure_pen_accent-dark">
+  <title id="title-opt_b_azure_pen_accent-dark">OXONOM edu. — Yön B · Electric Azure Dolma Kalem & El Yazısı Vurgusu (Dark)</title>
+  <rect width="940" height="256" rx="28" fill="#090D16" />
+  <!-- A1 Open Folio Nexus Symbol -->
+  <g id="symbol" transform="translate(18, 28) scale(0.78125)" fill="#ffffff">
+    <path d="M 118 30 A 102 102 0 0 0 32 116 L 76 116 A 58 58 0 0 1 118 74 Z" />
+    <!-- Top-Right Arch Segment -->
+    <path d="M 138 30 A 102 102 0 0 1 224 116 L 180 116 A 58 58 0 0 0 138 74 Z" />
+    <!-- Bottom-Left Folio (Book Page) -->
+    <path d="M 32 140 A 102 102 0 0 0 118 226 L 118 182 A 58 58 0 0 1 76 140 Z" />
+    <!-- Bottom-Right Folio (Book Page) -->
+    <path d="M 224 140 A 102 102 0 0 1 138 226 L 138 182 A 58 58 0 0 0 180 140 Z" />
+    <!-- Central Academic Mortarboard Diamond -->
+    <polygon points="128,104 152,128 128,152 104,128" />
+  
+  </g>
+  <!-- Wordmark -->
+  <g id="wordmark">
+    <path fill="#ffffff" fill-rule="evenodd" d="M 267 96 A 31 31 0 1 1 266.9 96 Z M 267 110.5 A 16.5 16.5 0 1 0 267.1 110.5 Z" />
+    <polygon fill="#ffffff" points="
+          307,96 324,96 335.0,124.0 346,96 363,96 
+          344.5,127.0 363,158 346,158 335.0,130.0 324,158 307,158 
+          325.5,127.0" />
+    <path fill="#ffffff" fill-rule="evenodd" d="M 403 96 A 31 31 0 1 1 402.9 96 Z M 403 110.5 A 16.5 16.5 0 1 0 403.1 110.5 Z" />
+    <polygon fill="#ffffff" points="
+      443,96 457.5,96 484.5,141 484.5,96 499,96 
+      499,158 484.5,158 457.5,113 457.5,158 443,158" />
+    <path fill="#ffffff" fill-rule="evenodd" d="M 539 96 A 31 31 0 1 1 538.9 96 Z M 539 110.5 A 16.5 16.5 0 1 0 539.1 110.5 Z" />
+    <polygon fill="#ffffff" points="
+      579,96 593.5,96 613.0,136 632.5,96 647,96 
+      647,158 633.5,158 633.5,118 613.0,156 592.5,118 592.5,158 579,158" />
+    <g fill="#ffffff">
+          <!-- 'e' cursive loop -->
+          <path d="
+            M 683 145
+            C 687 139 693 126 702 118
+            C 709 111 718 111 721 116
+            C 724 121 723 130 715 137
+            C 707 143 696 144 691 144
+            C 692 150 697 155 704 155
+            C 711 155 717 151 721 146
+            L 728 151
+            C 722 158 714 162 703 162
+            C 690 162 683 153 683 145 Z
+            M 693 136
+            C 699 135 710 133 713 128
+            C 715 125 714 120 710 120
+            C 703 120 696 127 693 136 Z" />
+          
+          <!-- 'd' flowing loop & graceful stem -->
+          <path d="
+            M 757 96
+            C 761 95 766 96 768 99
+            C 769 102 769 112 769 123
+            C 763 118 756 115 748 115
+            C 734 115 724 125 724 139
+            C 724 153 735 162 749 162
+            C 756 162 763 158 767 152
+            V 158
+            H 779
+            V 102
+            C 779 96 771 95 757 96 Z
+            M 751 124
+            C 759 124 767 130 767 139
+            C 767 148 760 153 751 153
+            C 742 153 735 146 735 139
+            C 735 130 743 124 751 124 Z" />
+            
+          <!-- 'u' rhythmic calligraphic wave -->
+          <path d="
+            M 787 122
+            H 799
+            V 143
+            C 799 149 803 152 809 152
+            C 815 152 820 148 820 142
+            V 122
+            H 831
+            V 158
+            H 820
+            V 152
+            C 816 157 810 160 804 160
+            C 791 160 787 151 787 141
+            Z" />
+        </g>
+    <!-- Nexus Diamond Period ◆ -->
+    <polygon points="846,145.5 853.5,153 846,160.5 838.5,153" fill="#ffffff" />
+    <!-- Proportional Fountain Pen Nib (Dolma Kalem Ucu) -->
+    <g id="fountain-pen" transform="translate(848, 141) rotate(32)">
+      <!-- Metallic nib body -->
+      <path fill="#2563eb" fill-rule="evenodd" d="
+        M 0 0 
+        C -1.8 -3.5 -5.2 -10.5 -6 -15
+        C -6.8 -18.5 -5.8 -22.5 -5 -27
+        L 5 -27
+        C 5.8 -22.5 6.8 -18.5 6 -15
+        C 5.2 -10.5 1.8 -3.5 0 0 Z
+        M 0 -12
+        A 1.6 1.6 0 1 0 0.01 -12 Z
+        M -0.55 -12
+        V -1.2
+        H 0.55
+        V -12
+        Z" />
+    </g>
+  </g>
+</svg>

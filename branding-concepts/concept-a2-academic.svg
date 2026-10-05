@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title-a2">
+  <title id="title-a2">OXONOM — The Academic Diamond Nexus</title>
+  <!--
+    Concept A2: The Academic Diamond Nexus
+    Refined 4-sector circular mark with an explicit academic diamond keystone.
+    The bottom sector features an open-book spine contour, framing the central diamond
+    like an academic cap sitting atop an open tome.
+  -->
+  <g fill="#000000">
+    <!-- Top Canopy (Dome of Wisdom) -->
+    <path d="M 64 52 A 104 104 0 0 1 192 52 L 161 83 A 60 60 0 0 0 95 83 Z" />
+    <!-- Left Wing (Adaptive Progress) -->
+    <path d="M 52 64 A 104 104 0 0 0 52 192 L 83 161 A 60 60 0 0 1 83 95 Z" />
+    <!-- Right Wing (Computational Scale) -->
+    <path d="M 204 64 A 104 104 0 0 1 204 192 L 173 161 A 60 60 0 0 0 173 95 Z" />
+    <!-- Bottom Folio (Open Book Spine with V-Notch) -->
+    <path d="M 64 204 A 104 104 0 0 0 128 228 A 104 104 0 0 0 192 204 L 161 173 A 60 60 0 0 1 128 186 A 60 60 0 0 1 95 173 Z" />
+    <!-- Central Academic Mortarboard Diamond -->
+    <polygon points="128,102 154,128 128,154 102,128" />
+  </g>
+</svg>

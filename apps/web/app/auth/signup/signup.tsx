@@ -87,7 +87,7 @@ function SignUpClient(props: SignUpClientProps) {
             </div>
           )
         ) : (
-          <div className="flex-1 flex items-center justify-center px-6 md:px-12 lg:px-20">
+          <div className="flex-1 flex items-center justify-center px-4 sm:px-6 md:px-12 lg:px-16 w-full">
             <OpenSignUpComponent org={props.org} />
           </div>
         ))}

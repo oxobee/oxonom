@@ -517,8 +517,14 @@ async def login(
     if not user:
         # Unknown user OR wrong password — responses are indistinguishable.
         # The row lookup below runs behind that wall for lockout bookkeeping.
+        from sqlalchemy import func, or_
         user_record = (await db_session.execute(
-            select(User).where(User.email == username)
+            select(User).where(
+                or_(
+                    func.lower(User.email) == username.lower().strip(),
+                    func.lower(User.username) == username.lower().strip(),
+                )
+            )
         )).scalars().first()
         if user_record:
             await record_failed_login(
@@ -553,7 +559,12 @@ async def login(
         )
 
     # Step 4: Check email verification (required for SaaS login only)
-    if not user.email_verified and get_deployment_mode() == 'saas':
+    is_exempt_verification = (
+        user.email.endswith("@oxonom.edu")
+        or user.email.endswith("@oxonom.com")
+        or getattr(user, "signup_method", "") in ["phone", "student"]
+    )
+    if not user.email_verified and not is_exempt_verification and get_deployment_mode() == 'saas':
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail={

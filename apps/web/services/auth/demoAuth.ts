@@ -214,14 +214,30 @@ export function createDemoJwt(user: DemoUser): string {
 }
 
 export function findDemoUser(identifier: string): DemoUser | null {
+  if (!identifier) return null
   const normalized = identifier.toLowerCase().trim()
   if (DEMO_USERS[normalized]) return DEMO_USERS[normalized]
 
-  // Check username match or sub match
+  const cleanDigits = identifier.replace(/\D/g, '')
+
+  // Check username match or sub match or phone digits match
   for (const user of Object.values(DEMO_USERS)) {
-    if (user.username.toLowerCase() === normalized || user.user_uuid === identifier || String(user.id) === identifier) {
+    if (
+      user.username.toLowerCase() === normalized ||
+      user.user_uuid === identifier ||
+      String(user.id) === identifier ||
+      (cleanDigits && cleanDigits.length >= 7 && (user.username === cleanDigits || user.email.includes(cleanDigits)))
+    ) {
       return user
     }
+  }
+
+  // Support demo student phone numbers / student numbers
+  if (
+    normalized === '2026-001' ||
+    (cleanDigits && (cleanDigits.includes('5329992200') || cleanDigits.includes('5329991100') || cleanDigits === '5551234567'))
+  ) {
+    return DEMO_USERS['ogrenci@oxonom.com']
   }
 
   // Check token

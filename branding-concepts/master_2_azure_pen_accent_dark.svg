@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 256" width="940" height="256" role="img" aria-labelledby="title-master_2_azure_pen_accent-dark">
+  <title id="title-master_2_azure_pen_accent-dark">OXONOM edu. — Yön 2 · Electric Azure Dolma Kalem Vurgusu (Dark)</title>
+  <rect width="940" height="256" rx="28" fill="#090D16" />
+  <!-- A1 Open Folio Nexus Symbol -->
+  <g id="symbol" transform="translate(18, 28) scale(0.78125)" fill="#ffffff">
+    <path d="M 118 30 A 102 102 0 0 0 32 116 L 76 116 A 58 58 0 0 1 118 74 Z" />
+    <!-- Top-Right Arch Segment -->
+    <path d="M 138 30 A 102 102 0 0 1 224 116 L 180 116 A 58 58 0 0 0 138 74 Z" />
+    <!-- Bottom-Left Folio (Book Page) -->
+    <path d="M 32 140 A 102 102 0 0 0 118 226 L 118 182 A 58 58 0 0 1 76 140 Z" />
+    <!-- Bottom-Right Folio (Book Page) -->
+    <path d="M 224 140 A 102 102 0 0 1 138 226 L 138 182 A 58 58 0 0 0 180 140 Z" />
+    <!-- Central Academic Mortarboard Diamond -->
+    <polygon points="128,104 152,128 128,152 104,128" />
+  
+  </g>
+  <!-- Wordmark -->
+  <g id="wordmark">
+    <path fill="#ffffff" fill-rule="evenodd" d="M 267 96 A 31 31 0 1 1 266.9 96 Z M 267 110.5 A 16.5 16.5 0 1 0 267.1 110.5 Z" />
+    <polygon fill="#ffffff" points="
+          307,96 324,96 336.0,124 348,96 365,96 
+          345.5,127 365,158 348,158 336.0,130 324,158 307,158 
+          326.5,127" />
+    <path fill="#ffffff" fill-rule="evenodd" d="M 405 96 A 31 31 0 1 1 404.9 96 Z M 405 110.5 A 16.5 16.5 0 1 0 405.1 110.5 Z" />
+    <polygon fill="#ffffff" points="
+      445,96 459.5,96 486.5,141 486.5,96 501,96 
+      501,158 486.5,158 459.5,113 459.5,158 445,158" />
+    <path fill="#ffffff" fill-rule="evenodd" d="M 541 96 A 31 31 0 1 1 540.9 96 Z M 541 110.5 A 16.5 16.5 0 1 0 541.1 110.5 Z" />
+    <polygon fill="#ffffff" points="
+      581,96 595.5,96 615.0,136 634.5,96 649,96 
+      649,158 635.5,158 635.5,118 615.0,156 594.5,118 594.5,158 581,158" />
+    <g fill="#ffffff">
+      <!-- 'e': calligraphic loop, sweeping counter -->
+      <path d="
+        M 685 145
+        C 689 139 695 126 704 118
+        C 711 111 720 111 723 116
+        C 726 121 725 130 717 137
+        C 709 143 698 144 693 144
+        C 694 150 699 155 706 155
+        C 713 155 719 151 723 146
+        L 730 151
+        C 724 158 716 162 705 162
+        C 692 162 685 153 685 145 Z
+        M 695 136
+        C 701 135 712 133 715 128
+        C 717 125 716 120 712 120
+        C 705 120 698 127 695 136 Z" />
+      
+      <!-- 'd': tall expressive ascender with fluid loop -->
+      <path d="
+        M 759 96
+        C 763 95 768 96 770 99
+        C 771 102 771 112 771 123
+        C 765 118 758 115 750 115
+        C 736 115 726 125 726 139
+        C 726 153 737 162 751 162
+        C 758 162 765 158 769 152
+        V 158
+        H 781
+        V 102
+        C 781 96 773 95 759 96 Z
+        M 753 124
+        C 761 124 769 130 769 139
+        C 769 148 762 153 753 153
+        C 744 153 737 146 737 139
+        C 737 130 745 124 753 124 Z" />
+        
+      <!-- 'u': harmonic cursive double-cup -->
+      <path d="
+        M 789 122
+        H 801
+        V 143
+        C 801 149 805 152 811 152
+        C 817 152 822 148 822 142
+        V 122
+        H 833
+        V 158
+        H 822
+        V 152
+        C 818 157 812 160 806 160
+        C 793 160 789 151 789 141
+        Z" />
+    </g>
+    <!-- Nexus Diamond Period ◆ -->
+    <polygon points="848,145.5 855.5,153 848,160.5 840.5,153" fill="#ffffff" />
+    <!-- Proportional Fountain Pen Nib (Dolma Kalem Ucu) -->
+        <g id="fountain-pen-nib" transform="translate(851, 142) rotate(32)">
+          <path fill="#2563eb" fill-rule="evenodd" d="
+            M 0 0 
+            C -1.8 -3.5 -5.2 -10.5 -6 -15
+            C -6.8 -18.5 -5.8 -22.5 -5 -27
+            L 5 -27
+            C 5.8 -22.5 6.8 -18.5 6 -15
+            C 5.2 -10.5 1.8 -3.5 0 0 Z
+            M 0 -12
+            A 1.6 1.6 0 1 0 0.01 -12 Z
+            M -0.55 -12
+            V -1.2
+            H 0.55
+            V -12
+            Z" />
+        </g>
+  </g>
+</svg>

@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 256" width="940" height="256" role="img" aria-labelledby="title-opt_c_signature_pen">
+  <title id="title-opt_c_signature_pen">OXONOM edu. — Yön C · Dinamik İmza El Yazısı (edu.) + 38° Açılı Kalem</title>
+  <!-- A1 Open Folio Nexus Symbol -->
+  <g id="symbol" transform="translate(18, 28) scale(0.78125)" fill="#000000">
+    <path d="M 118 30 A 102 102 0 0 0 32 116 L 76 116 A 58 58 0 0 1 118 74 Z" />
+    <!-- Top-Right Arch Segment -->
+    <path d="M 138 30 A 102 102 0 0 1 224 116 L 180 116 A 58 58 0 0 0 138 74 Z" />
+    <!-- Bottom-Left Folio (Book Page) -->
+    <path d="M 32 140 A 102 102 0 0 0 118 226 L 118 182 A 58 58 0 0 1 76 140 Z" />
+    <!-- Bottom-Right Folio (Book Page) -->
+    <path d="M 224 140 A 102 102 0 0 1 138 226 L 138 182 A 58 58 0 0 0 180 140 Z" />
+    <!-- Central Academic Mortarboard Diamond -->
+    <polygon points="128,104 152,128 128,152 104,128" />
+  
+  </g>
+  <!-- Wordmark: OXONOM + Script edu. + Diamond Dot + Fountain Pen -->
+  <g id="wordmark">
+    <path fill="#000000" fill-rule="evenodd" d="M 267 96 A 31 31 0 1 1 266.9 96 Z M 267 110.5 A 16.5 16.5 0 1 0 267.1 110.5 Z" />
+    <polygon fill="#000000" points="
+          307,96 325,96 335.0,124.5 345,96 363,96 
+          344.0,127.0 363,158 345,158 335.0,129.5 325,158 307,158 
+          326.0,127.0" />
+    <path fill="#000000" fill-rule="evenodd" d="M 403 96 A 31 31 0 1 1 402.9 96 Z M 403 110.5 A 16.5 16.5 0 1 0 403.1 110.5 Z" />
+    <polygon fill="#000000" points="
+      443,96 457.5,96 484.5,141 484.5,96 499,96 
+      499,158 484.5,158 457.5,113 457.5,158 443,158" />
+    <path fill="#000000" fill-rule="evenodd" d="M 539 96 A 31 31 0 1 1 538.9 96 Z M 539 110.5 A 16.5 16.5 0 1 0 539.1 110.5 Z" />
+    <polygon fill="#000000" points="
+      579,96 593.5,96 613.0,136 632.5,96 647,96 
+      647,158 633.5,158 633.5,118 613.0,156 592.5,118 592.5,158 579,158" />
+    <g transform="translate(681, 158) skewX(-13) translate(0, -158)" fill="#000000">
+          <!-- 'e' signature -->
+          <path d="
+            M 2 145
+            C 6 139 12 126 21 118
+            C 28 111 37 111 40 116
+            C 43 121 42 130 34 137
+            C 26 143 15 144 10 144
+            C 11 150 16 155 23 155
+            C 30 155 36 151 40 146
+            L 47 151
+            C 41 158 33 162 22 162
+            C 9 162 2 153 2 145 Z
+            M 12 136
+            C 18 135 29 133 32 128
+            C 34 125 33 120 29 120
+            C 22 120 15 127 12 136 Z" />
+          <!-- 'd' signature -->
+          <path d="
+            M 76 96 H 88 V 123
+            C 82 118 75 115 67 115
+            C 53 115 43 125 43 139
+            C 43 153 54 162 68 162
+            C 75 162 82 158 86 152
+            V 158 H 98 V 96 H 88 Z
+            M 70 124
+            C 78 124 86 130 86 139
+            C 86 148 79 153 70 153
+            C 61 153 54 146 54 139
+            C 54 130 62 124 70 124 Z" />
+          <!-- 'u' signature -->
+          <path d="
+            M 106 122 H 118 V 143
+            C 118 149 122 152 128 152
+            C 134 152 139 148 139 142
+            V 122 H 150 V 158 H 139 V 152
+            C 135 157 129 160 123 160
+            C 110 160 106 151 106 141 Z" />
+        </g>
+    <!-- Nexus Diamond Period ◆ -->
+    <polygon points="846,145.5 853.5,153 846,160.5 838.5,153" fill="#000000" />
+    <!-- Proportional Fountain Pen Nib (Dolma Kalem Ucu) -->
+    <g id="fountain-pen" transform="translate(848, 141) rotate(38)">
+      <!-- Metallic nib body -->
+      <path fill="#000000" fill-rule="evenodd" d="
+        M 0 0 
+        C -1.8 -3.5 -5.2 -10.5 -6 -15
+        C -6.8 -18.5 -5.8 -22.5 -5 -27
+        L 5 -27
+        C 5.8 -22.5 6.8 -18.5 6 -15
+        C 5.2 -10.5 1.8 -3.5 0 0 Z
+        M 0 -12
+        A 1.6 1.6 0 1 0 0.01 -12 Z
+        M -0.55 -12
+        V -1.2
+        H 0.55
+        V -12
+        Z" />
+    </g>
+  </g>
+</svg>
