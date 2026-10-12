@@ -65,6 +65,7 @@ import TeacherNotesModal from './TeacherNotesModal'
 import { useMobileTheme } from '@components/Mobile/useMobileTheme'
 import {
   getAttendanceForClass,
+  normalizeClassCode,
   AttendanceRecord,
 } from '@services/demo/attendanceService'
 
@@ -125,8 +126,8 @@ export default function DashV2Client({
         }
       } catch (_) {}
     }
-    // Default to 1-A (Özlem ZOR) as shown in the screenshot
-    return ALL_CLASSROOMS.find((c) => c.code === '1-A') || ALL_CLASSROOMS[0]
+    // Default to authentic single class 9/A (Ebru TEKNECİ)
+    return ALL_CLASSROOMS.find((c) => c.code === '9/A' || c.code === '9-A') || ALL_CLASSROOMS[0]
   })
 
   // Modal Dialog States
@@ -146,19 +147,21 @@ export default function DashV2Client({
 
   // Real Classroom Daily Attendance Synchronization
   const [attendanceData, setAttendanceData] = useState<AttendanceRecord | null>(() => {
-    return getAttendanceForClass(selectedClass?.code || '1-A')
+    return getAttendanceForClass(normalizeClassCode(selectedClass?.code || '9/A'))
   })
 
   useEffect(() => {
     const refreshAttendance = () => {
-      const data = getAttendanceForClass(selectedClass?.code || '1-A')
+      const data = getAttendanceForClass(normalizeClassCode(selectedClass?.code || '9/A'))
       setAttendanceData(data)
     }
 
     refreshAttendance()
 
     const handleAttendanceUpdated = (e: any) => {
-      if (!e?.detail?.classCode || e.detail.classCode === selectedClass?.code) {
+      const updatedCode = normalizeClassCode(e?.detail?.classCode)
+      const currentCode = normalizeClassCode(selectedClass?.code || '9/A')
+      if (!e?.detail?.classCode || updatedCode === currentCode) {
         if (e?.detail?.record) {
           setAttendanceData(e.detail.record)
         } else {
@@ -1183,27 +1186,27 @@ export default function DashV2Client({
             </button>
           </motion.section>
 
-          {/* ── CARD 5: KAYNAKLAR & ARŞİV ── */}
+          {/* ── CARD 5: DOSYALARIM & PAYLAŞIMLAR ── */}
           <motion.section
             variants={itemVariants}
             className="w-full bg-white dark:bg-[#121826] rounded-[24px] p-4.5 sm:p-5 border border-gray-100 dark:border-gray-800 shadow-sm flex items-center justify-between gap-3.5"
           >
-            <Link href="/teacher/library" className="flex items-center gap-3 min-w-0 flex-1">
+            <Link href="/teacher/files" className="flex items-center gap-3 min-w-0 flex-1">
               <div className="w-10 h-10 rounded-2xl bg-[#EFF6FF] dark:bg-sky-950/60 text-[#2563EB] dark:text-sky-300 flex items-center justify-center shrink-0">
-                <FolderOpen size={18} />
+                <FileText size={18} />
               </div>
               <div className="min-w-0">
                 <h3 className="text-sm font-bold text-gray-900 dark:text-white leading-tight">
-                  Kaynaklar & Arşiv
+                  Dosyalarım ve Paylaşımlar
                 </h3>
                 <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">
-                  Ders içerikleri, çalışma kağıtları, etkinlikler
+                  Kişisel ders dosyaları, tahta çıktıları ve arşiv
                 </p>
               </div>
             </Link>
 
             <span className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold text-xs px-3 py-1 rounded-full shrink-0">
-              124 kaynak
+              18 dosya
             </span>
           </motion.section>
 

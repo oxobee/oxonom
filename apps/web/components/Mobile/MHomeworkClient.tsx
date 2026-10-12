@@ -32,6 +32,10 @@ import {
   Check,
   Sun,
   Moon,
+  Plus,
+  PenTool,
+  HelpCircle,
+  BookOpen,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import MobileHeader from '@components/Mobile/MobileHeader'
@@ -42,6 +46,7 @@ import { ALL_INITIAL_STUDENTS, type MStudentItem } from '@components/Mobile/MStu
 import {
   DEFAULT_SCHOOL_ASSIGNMENTS,
   getStoredCustomAssignments,
+  saveStoredCustomAssignment,
   type SchoolAssignmentItem,
 } from '@services/school_assignments/school_assignments'
 
@@ -289,6 +294,109 @@ export default function MHomeworkClient({
   const [homeworkSearch, setHomeworkSearch] = useState('')
   const [homeworkSortBy, setHomeworkSortBy] = useState<'newest' | 'due' | 'subject'>('newest')
 
+  // Assignment Creation Form State
+  const [assignmentVersion, setAssignmentVersion] = useState(0)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [createTitle, setCreateTitle] = useState('')
+  const [createSubject, setCreateSubject] = useState('Türk Dili ve Edebiyatı')
+  const [createToolType, setCreateToolType] = useState<'WHITEBOARD' | 'WORKSHEET' | 'QUIZ' | 'READING'>('WORKSHEET')
+  const [createDueDate, setCreateDueDate] = useState('2026-10-20T23:59')
+  const [createMaxScore, setCreateMaxScore] = useState(100)
+  const [createDescription, setCreateDescription] = useState('')
+
+  // Seed default authentic assignments if storage is empty
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = getStoredCustomAssignments()
+        if (stored.length === 0) {
+          const defaults: SchoolAssignmentItem[] = [
+            {
+              id: 1001,
+              assignment_uuid: 'asg_dede_korkut_okuma',
+              title: 'Dede Korkut Hikâyeleri Metin Tahlili & Karakter İncelemesi',
+              description: 'Dede Korkut destanlarından "Dirse Han Oğlu Boğaç Han" boyunun ana fikri, olay örgüsü ve kültürel motiflerinin tahlili.',
+              grade_level: '9. Sınıf',
+              grade_category: 'Lise (9-12)',
+              subject: 'Türk Dili ve Edebiyatı',
+              tool_type: 'READING',
+              classes: [{ id: 101, name: '9/A Şubesi', code: '9/A' }],
+              due_date: '2026-10-18T23:59:00',
+              max_score: 100,
+              published: true,
+              teacher_name: 'Ebru TEKNECİ',
+              creation_date: '2026-10-06T09:00:00',
+            },
+            {
+              id: 1002,
+              assignment_uuid: 'asg_edebi_sanatlar_tahta',
+              title: 'Edebi Sanatlar & Teşbih-Mecaz Kavram Haritası Çizimi',
+              description: 'Divan ve Halk edebiyatında kullanılan teşbih, istiare ve mecaz-ı mürsel sanatlarını gösteren interaktif kavram haritası.',
+              grade_level: '9. Sınıf',
+              grade_category: 'Lise (9-12)',
+              subject: 'Türk Dili ve Edebiyatı',
+              tool_type: 'WHITEBOARD',
+              classes: [{ id: 101, name: '9/A Şubesi', code: '9/A' }],
+              due_date: '2026-10-20T23:59:00',
+              max_score: 100,
+              published: true,
+              teacher_name: 'Ebru TEKNECİ',
+              creation_date: '2026-10-08T10:00:00',
+            },
+          ]
+          defaults.forEach((d) => saveStoredCustomAssignment(d))
+          setAssignmentVersion((v) => v + 1)
+        }
+      } catch (_) {}
+    }
+  }, [])
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      setAssignmentVersion((v) => v + 1)
+    }
+    window.addEventListener('oxonom_assignments_updated', handleUpdate)
+    window.addEventListener('storage', handleUpdate)
+    return () => {
+      window.removeEventListener('oxonom_assignments_updated', handleUpdate)
+      window.removeEventListener('storage', handleUpdate)
+    }
+  }, [])
+
+  const handleCreateAssignment = (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+    if (!createTitle.trim()) {
+      toast.error('Lütfen ödev başlığı giriniz.')
+      return
+    }
+
+    const newId = Date.now()
+    const newAsg: SchoolAssignmentItem = {
+      id: newId,
+      assignment_uuid: `asg_${newId}`,
+      title: createTitle.trim(),
+      description: createDescription.trim() || 'Öğretmen tarafından tanımlanan ödev görevi.',
+      grade_level: '9. Sınıf',
+      grade_category: 'Lise (9-12)',
+      subject: createSubject,
+      tool_type: createToolType,
+      classes: [{ id: 101, name: '9/A Şubesi', code: '9/A' }],
+      due_date: createDueDate || '2026-10-20T23:59:00',
+      max_score: Number(createMaxScore) || 100,
+      published: true,
+      teacher_name: 'Ebru TEKNECİ',
+      creation_date: new Date().toISOString(),
+    }
+
+    saveStoredCustomAssignment(newAsg)
+    setAssignmentVersion((v) => v + 1)
+    setSelectedHomeworkId(String(newId))
+    setIsCreateModalOpen(false)
+    setCreateTitle('')
+    setCreateDescription('')
+    toast.success('Yeni ödev başarıyla oluşturuldu ve 9/A şubesine atandı!')
+  }
+
   // Real merged school assignments (Custom created only for new accounts)
   const allSchoolHomeworks = useMemo(() => {
     const customList = getStoredCustomAssignments()
@@ -326,14 +434,14 @@ export default function MHomeworkClient({
           description: asg.description || 'Öğretmen tarafından tanımlanan ödev görevi.',
           period,
           periodLabel,
-          accentColor: asg.subject === 'Türkçe' ? 'rose' : asg.subject === 'Hayat Bilgisi' ? 'emerald' : 'blue',
+          accentColor: asg.subject === 'Türkçe' || asg.subject.includes('Edebiyat') ? 'rose' : asg.subject === 'Hayat Bilgisi' ? 'emerald' : 'blue',
           max_score: asg.max_score || 100,
           teacher_name: asg.teacher_name || 'Ebru TEKNECİ',
         }
       })
 
     return convertedCustom
-  }, [])
+  }, [assignmentVersion])
 
   // Branch-specific students roster
   const students = useMemo(() => {
@@ -581,16 +689,26 @@ export default function MHomeworkClient({
                 Henüz Verilmiş Bir Ödev Bulunmuyor
               </h3>
               <p className="text-xs text-gray-500 dark:text-gray-400 max-w-xs leading-relaxed">
-                9-A şubesi için henüz tanımlanmış bir ödev görevi bulunmuyor. Yeni bir ödev veya çalışma oluşturduğunuzda öğrenci teslimleri ve değerlendirmeleri burada listelenecektir.
+                9/A şubesi için henüz tanımlanmış bir ödev görevi bulunmuyor. Yeni bir ödev veya çalışma oluşturduğunuzda öğrenci teslimleri ve değerlendirmeleri burada listelenecektir.
               </p>
             </div>
-            <Link
-              href="/teacher/classes?class=9-A"
-              className="mt-1 px-4 py-2.5 rounded-xl bg-[#34D399] hover:bg-[#2ee59d] text-[#0A0D15] font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
-            >
-              <span>Öğrenci Listesine Git</span>
-              <ChevronRight size={14} />
-            </Link>
+            <div className="flex items-center gap-2 mt-1">
+              <button
+                type="button"
+                onClick={() => setIsCreateModalOpen(true)}
+                className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-[#0A0D15] font-black text-xs flex items-center gap-2 shadow-sm active:scale-95 transition-all cursor-pointer"
+              >
+                <Plus size={15} strokeWidth={2.5} />
+                <span>Yeni Ödev Tanımla</span>
+              </button>
+              <Link
+                href="/teacher/classes?class=9/A"
+                className="px-4 py-2.5 rounded-xl bg-gray-100 dark:bg-white/10 hover:bg-gray-200 text-gray-700 dark:text-gray-200 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+              >
+                <span>Öğrenci Listesi</span>
+                <ChevronRight size={14} />
+              </Link>
+            </div>
           </div>
         ) : (
           <>
@@ -625,7 +743,7 @@ export default function MHomeworkClient({
                     <ChevronDown size={11} className="text-white/70" />
                   </button>
 
-                  {/* Ödev Seç Butonu (Yeni İstek) */}
+                  {/* Ödev Seç Butonu */}
                   <button
                     type="button"
                     onClick={() => setIsHomeworkModalOpen(true)}
@@ -635,6 +753,17 @@ export default function MHomeworkClient({
                     <BookOpenCheck size={12} className="text-[#34D399] group-hover:scale-110 transition-transform" />
                     <span>Ödev Seç</span>
                     <ChevronDown size={11} className="text-indigo-300" />
+                  </button>
+
+                  {/* Yeni Ödev Ver Butonu */}
+                  <button
+                    type="button"
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500 hover:bg-emerald-400 text-[10.5px] font-extrabold text-[#0A0D15] transition-all cursor-pointer shadow-xs active:scale-95 group"
+                    title="9/A Şubesine Yeni Ödev Tanımla"
+                  >
+                    <Plus size={12} strokeWidth={2.5} />
+                    <span>Yeni Ödev Ver</span>
                   </button>
                 </div>
 
@@ -1240,6 +1369,21 @@ export default function MHomeworkClient({
                   </button>
                 </div>
 
+                {/* ── YENİ ÖDEV OLUŞTUR BUTONU ── */}
+                <div className="mb-3 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsHomeworkModalOpen(false)
+                      setIsCreateModalOpen(true)
+                    }}
+                    className="w-full py-2.5 px-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-[#0A0D15] font-extrabold text-xs flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer"
+                  >
+                    <Plus size={15} strokeWidth={2.5} />
+                    <span>+ Yeni Ödev Oluştur (9/A Şubesi)</span>
+                  </button>
+                </div>
+
                 {/* ── TARİHSEL FİLTRELEME SEKMELERİ (shrink-0, no collision) ── */}
                 <div className="flex gap-2 overflow-x-auto scrollbar-hide py-1 shrink-0 mb-3">
                   <button
@@ -1410,7 +1554,201 @@ export default function MHomeworkClient({
           )}
         </AnimatePresence>
 
-        {/* ── 9. MODAL: SINIFSAL KATEGORİLER & ŞUBELER ── */}
+        {/* ── 9. MODAL: YENİ ÖDEV TANIMLA VE YAYINLA ── */}
+        <AnimatePresence>
+          {isCreateModalOpen && (
+            <div className="fixed inset-0 z-50 flex flex-col justify-end">
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsCreateModalOpen(false)}
+                className="fixed inset-0 bg-black/65 backdrop-blur-xs"
+              />
+
+              {/* Bottom Sheet Drawer */}
+              <motion.div
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+                className="relative w-full max-w-[460px] mx-auto bg-white dark:bg-[#111624] text-[#0F172A] dark:text-white rounded-t-[30px] p-5 shadow-2xl z-10 flex flex-col max-h-[92vh] overflow-hidden pb-8"
+              >
+                {/* Drag Handle */}
+                <div className="w-12 h-1 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-2 shrink-0" />
+
+                {/* Header */}
+                <div className="flex items-start justify-between gap-3 shrink-0 mb-4 pb-3 border-b border-gray-100 dark:border-white/10">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-[14px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                      <Plus size={22} strokeWidth={2.5} />
+                    </div>
+                    <div>
+                      <h3 className="text-[16px] font-extrabold text-gray-900 dark:text-white leading-tight m-0">
+                        Yeni Ödev Oluştur
+                      </h3>
+                      <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-0.5 m-0">
+                        9/A Şubesine yeni ödev ve çalışma görevi tanımlayın
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsCreateModalOpen(false)}
+                    className="w-8 h-8 rounded-full bg-gray-100 dark:bg-white/10 flex items-center justify-center text-gray-500 dark:text-gray-300 hover:text-black shrink-0 cursor-pointer"
+                  >
+                    <X size={15} />
+                  </button>
+                </div>
+
+                {/* Scrollable Form */}
+                <form onSubmit={handleCreateAssignment} className="flex-1 overflow-y-auto pr-0.5 space-y-4">
+                  {/* Sınıf & Şube Bilgisi */}
+                  <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Users size={16} className="text-emerald-600 dark:text-emerald-400" />
+                      <span className="text-xs font-bold text-gray-800 dark:text-gray-200">Hedef Şube</span>
+                    </div>
+                    <span className="text-xs font-black text-emerald-700 dark:text-emerald-300 bg-emerald-500/20 px-2.5 py-0.5 rounded-full">
+                      9/A Şubesi (Erçil UĞURLU)
+                    </span>
+                  </div>
+
+                  {/* Ödev Başlığı */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
+                      Ödev Başlığı *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={createTitle}
+                      onChange={(e) => setCreateTitle(e.target.value)}
+                      placeholder="Örn: Tanzimat Edebiyatı Şiir Tahlili..."
+                      className="w-full h-11 px-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+
+                  {/* Ders Seçimi */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
+                      Ders / Zümre
+                    </label>
+                    <select
+                      value={createSubject}
+                      onChange={(e) => setCreateSubject(e.target.value)}
+                      className="w-full h-11 px-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                    >
+                      <option value="Türk Dili ve Edebiyatı">Türk Dili ve Edebiyatı</option>
+                      <option value="Matematik">Matematik</option>
+                      <option value="Tarih">Tarih</option>
+                      <option value="Fizik">Fizik</option>
+                      <option value="Kimya">Kimya</option>
+                      <option value="Biyoloji">Biyoloji</option>
+                      <option value="İngilizce">İngilizce</option>
+                      <option value="Coğrafya">Coğrafya</option>
+                      <option value="Felsefe">Felsefe</option>
+                      <option value="Bilişim & Kodlama">Bilişim & Kodlama</option>
+                    </select>
+                  </div>
+
+                  {/* Ödev Türü (4 Cards) */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
+                      Ödev Çalışma Türü
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { id: 'WORKSHEET', label: 'Çalışma Kâğıdı', icon: FileText, desc: 'Metin & yönergeli soru' },
+                        { id: 'WHITEBOARD', label: 'Akıllı Tahta', icon: PenTool, desc: 'Çizim & interaktif çözüm' },
+                        { id: 'READING', label: 'Okuma & Tahlil', icon: BookOpen, desc: 'Metin incelemesi & analiz' },
+                        { id: 'QUIZ', label: 'Test & Quiz', icon: HelpCircle, desc: 'Çoktan seçmeli sorular' },
+                      ].map((type) => {
+                        const Icon = type.icon
+                        const isSelected = createToolType === type.id
+                        return (
+                          <button
+                            key={type.id}
+                            type="button"
+                            onClick={() => setCreateToolType(type.id as any)}
+                            className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500'
+                                : 'bg-gray-50 dark:bg-gray-800/60 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-gray-300'
+                            }`}
+                          >
+                            <div className="flex items-center gap-1.5 font-bold text-xs">
+                              <Icon size={14} className={isSelected ? 'text-emerald-600' : 'text-gray-400'} />
+                              <span>{type.label}</span>
+                            </div>
+                            <p className="text-[10px] text-gray-400 mt-1 line-clamp-1">{type.desc}</p>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Son Teslim Tarihi & Puan */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
+                        Son Teslim Tarihi
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={createDueDate}
+                        onChange={(e) => setCreateDueDate(e.target.value)}
+                        className="w-full h-11 px-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
+                        Maksimum Puan
+                      </label>
+                      <input
+                        type="number"
+                        min="10"
+                        max="100"
+                        value={createMaxScore}
+                        onChange={(e) => setCreateMaxScore(Number(e.target.value))}
+                        className="w-full h-11 px-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Açıklama & Yönergeler */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
+                      Ödev Açıklaması ve Öğrenci Yönergeleri
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={createDescription}
+                      onChange={(e) => setCreateDescription(e.target.value)}
+                      placeholder="Ödevin nasıl çözüleceği ve beklentiler hakkında notlar..."
+                      className="w-full p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-xs text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+
+                  {/* Submit Button */}
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      className="w-full h-12 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-[#0A0D15] font-black text-sm flex items-center justify-center gap-2 shadow-md shadow-emerald-500/20 active:scale-98 transition-all cursor-pointer"
+                    >
+                      <Plus size={18} strokeWidth={2.5} />
+                      <span>Ödevi Oluştur ve Sınıfa Ata</span>
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* ── 10. MODAL: SINIFSAL KATEGORİLER & ŞUBELER ── */}
         <AnimatePresence>
           {isBranchModalOpen && (
             <div className="fixed inset-0 z-50 flex flex-col justify-end">

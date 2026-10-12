@@ -34,6 +34,19 @@ import {
   Award,
   Camera,
   Trash2,
+  Calendar,
+  CreditCard,
+  FileCheck,
+  CalendarClock,
+  Download,
+  Copy,
+  Plus,
+  X,
+  FileText,
+  DollarSign,
+  Heart,
+  PhoneCall,
+  CheckCircle2,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import ConnectBoardModal from '@components/DashboardV2/ConnectBoardModal'
@@ -48,24 +61,26 @@ export interface MProfileClientProps {
   hideHeader?: boolean
   theme?: 'light' | 'dark'
   onToggleTheme?: () => void
-  initialSubTab?: 'general' | 'profile' | 'security'
+  initialSubTab?: 'ozluk' | 'gorev' | 'izin' | 'maas' | 'belgeler' | 'security'
   onBackToHome?: () => void
 }
+
+export type ProfileTabKey = 'ozluk' | 'gorev' | 'izin' | 'maas' | 'belgeler' | 'security'
 
 export default function MProfileClient({
   hideDock = false,
   hideHeader = false,
   theme: propTheme,
   onToggleTheme: propToggleTheme,
-  initialSubTab = 'general',
+  initialSubTab = 'ozluk',
   onBackToHome,
 }: MProfileClientProps = {}) {
   const { signOut: authSignOut } = useAuth()
   const session = useLHSession() as any
   const user = session?.data?.user
 
-  // Active sub-tab in Profile: 'general' (Genel), 'profile' (Profil), 'security' (Güvenlik)
-  const [activeSubTab, setActiveSubTab] = useState<'general' | 'profile' | 'security'>(initialSubTab)
+  // Active categorical tab matching teacher screenshots
+  const [activeSubTab, setActiveSubTab] = useState<ProfileTabKey>(initialSubTab)
 
   // Synchronized theme state
   const { theme: internalTheme, toggleTheme: internalToggleTheme } = useMobileTheme()
@@ -78,20 +93,72 @@ export default function MProfileClient({
   // Avatar State & File Input Ref
   const [avatarImage, setAvatarImage] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const docInputRef = useRef<HTMLInputElement>(null)
 
-  // General Form States — Real Teacher Details (Ebru TEKNECİ)
-  const [email, setEmail] = useState('ogretmen@oxonom.com')
-  const [username, setUsername] = useState('ogretmen')
+  // ── 1. ÖZLÜK & KÜNYE STATE ──
   const [firstName, setFirstName] = useState('Ebru')
   const [lastName, setLastName] = useState('TEKNECİ')
+  const [username, setUsername] = useState('ogretmen')
+  const [email, setEmail] = useState('ogretmen@oxonom.com')
+  const [phone, setPhone] = useState('+90 533 280 0399')
+  const [tcNo, setTcNo] = useState('20000002803')
+  const [birthDate, setBirthDate] = useState('1990-05-14 (36 Yaşında)')
+  const [bloodType, setBloodType] = useState('A Rh+')
+  const [graduationFaculty, setGraduationFaculty] = useState('Boğaziçi Üniversitesi Türk Dili ve Edebiyatı')
+  const [graduationDiploma, setGraduationDiploma] = useState('2016 · DIP-84920')
+  const [mebbisNo, setMebbisNo] = useState('MEB-34019284')
+  const [address, setAddress] = useState('Beşiktaş / İstanbul')
+  const [emergencyContact, setEmergencyContact] = useState('Eşi · +90 533 280 0399')
   const [bio, setBio] = useState('Türk Dili ve Edebiyatı Öğretmeni · 9-A Sınıf Rehber Öğretmeni · Oxonom Okulları')
-  const [extraDetails, setExtraDetails] = useState<string[]>([
-    'Edebiyat Zümre Başkanı',
-    '9-A Rehber Öğretmeni',
-    'Akıllı Tahta & Kütüphane Koordinatörü',
+
+  // ── 2. GÖREV & DERSLER STATE ──
+  const [branchTitle, setBranchTitle] = useState('Türk Dili ve Edebiyatı (Edebiyat Öğretmeni)')
+  const [titleLevel, setTitleLevel] = useState('Uzman Öğretmen (9 Yıl)')
+  const [employmentType, setEmploymentType] = useState('Kadrolu · MEB Kadrosu')
+  const [homeroomClass, setHomeroomClass] = useState('9/A Şubesi')
+  const [weeklyLessonHours, setWeeklyLessonHours] = useState('30 Saat / Hafta')
+  const [lessonDistribution, setLessonDistribution] = useState('15 Saat Maaş Karşılığı + 15 Saat Ek Ders')
+  const [teachingClasses, setTeachingClasses] = useState('9/A')
+  const [dutyDayLocation, setDutyDayLocation] = useState('Salı · 1. Kat Koridor & Bahçe Kapısı')
+  const [clubAdvisory, setClubAdvisory] = useState('Satranç ve Akıl Oyunları Kulübü')
+  const [workingHours, setWorkingHours] = useState('08:30 – 15:30 (Pazartesi – Cuma)')
+
+  // ── 3. İZİN VE MESAİ STATE ──
+  const [annualLeaveLeft, setAnnualLeaveLeft] = useState(16)
+  const [excuseLeaveLeft, setExcuseLeaveLeft] = useState(8)
+  const [medicalLeaveDays, setMedicalLeaveDays] = useState(2)
+  const [isAddLeaveModalOpen, setIsAddLeaveModalOpen] = useState(false)
+  const [newLeaveType, setNewLeaveType] = useState('Mazeret İzni')
+  const [newLeaveDays, setNewLeaveDays] = useState(1)
+  const [newLeaveDate, setNewLeaveDate] = useState('2026-10-15')
+  const [newLeaveDesc, setNewLeaveDesc] = useState('')
+  const [leaveHistory, setLeaveHistory] = useState([
+    { id: 'lv-1', type: 'Mazeret İzni', days: '1 Gün', date: '12.02.2026', desc: 'Ailevi mazeret izni', status: 'Onaylandı' },
+    { id: 'lv-2', type: 'Hizmetiçi Eğitim İzni', days: '2 Gün', date: '24.11.2025', desc: 'MEB ÖBA Dijital Eğitim Semineri', status: 'Onaylandı' },
+    { id: 'lv-3', type: 'Sağlık Raporu', days: '2 Gün', date: '10.10.2025', desc: 'Devlet Hastanesi KBB İstirahat', status: 'Raporlu' },
   ])
 
-  // Security Form States
+  // ── 4. MAAŞ, AVANS & EK DERS STATE ──
+  const [netSalary, setNetSalary] = useState('₺72.000 / Net')
+  const [baseSalary, setBaseSalary] = useState('₺52.450')
+  const [extraLessonPay, setExtraLessonPay] = useState('₺19.550')
+  const [bankName, setBankName] = useState('Vakıfbank Kadıköy Şubesi')
+  const [ibanNo, setIbanNo] = useState('TR45 0001 5001 5800 7392 1891 02')
+  const [isAddAdvanceModalOpen, setIsAddAdvanceModalOpen] = useState(false)
+  const [advanceAmount, setAdvanceAmount] = useState('10000')
+  const [advanceNote, setAdvanceNote] = useState('')
+  const [advanceList, setAdvanceList] = useState<any[]>([])
+
+  // ── 5. ÖZLÜK BELGELERİ STATE ──
+  const [documentsList, setDocumentsList] = useState([
+    { id: 'doc-1', title: 'Lisans Diploması & Not Dökümü (Transkript)', size: 'PDF · 2.1 MB', status: 'Onaylı', color: 'emerald' },
+    { id: 'doc-2', title: 'Pedagojik Formasyon Sertifikası', size: 'PDF · 1.4 MB', status: 'Onaylı', color: 'emerald' },
+    { id: 'doc-3', title: 'Adli Sicil ve Arşiv Kayıt Belgesi (E-Devlet Barkodlu)', size: 'PDF · 650 KB', status: 'Doğrulandı', color: 'blue' },
+    { id: 'doc-4', title: 'Sağlık Kurulu Heyet Raporu (Öğretmenlik)', size: 'PDF · 1.2 MB', status: 'Onaylı', color: 'blue' },
+    { id: 'doc-5', title: 'Hizmet Sözleşmesi & SGK İşe Giriş Bildirgesi', size: 'PDF · 890 KB', status: 'İmzalı', color: 'emerald' },
+  ])
+
+  // ── 6. GÜVENLİK STATE ──
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
@@ -100,129 +167,172 @@ export default function MProfileClient({
 
   // Load from session or local storage if available
   useEffect(() => {
-    if (user?.first_name) setFirstName(user.first_name)
-    if (user?.last_name) setLastName(user.last_name)
-    if (user?.email) setEmail(user.email)
-    if (user?.username) setUsername(user.username)
-
     if (typeof window !== 'undefined') {
       try {
         const savedProfile = localStorage.getItem('oxonom_teacher_profile')
         if (savedProfile) {
-          const parsed = JSON.parse(savedProfile)
-          if (parsed.email) setEmail(parsed.email)
-          if (parsed.username) setUsername(parsed.username)
-          if (parsed.firstName) setFirstName(parsed.firstName)
-          if (parsed.lastName) setLastName(parsed.lastName)
-          if (parsed.bio) setBio(parsed.bio)
-          if (Array.isArray(parsed.extraDetails)) setExtraDetails(parsed.extraDetails)
-          if (parsed.avatarImage || parsed.avatarUrl) {
-            setAvatarImage(parsed.avatarImage || parsed.avatarUrl)
-          }
-        }
-        const savedAvatar = localStorage.getItem('oxonom_teacher_avatar')
-        if (savedAvatar) {
-          setAvatarImage(savedAvatar)
+          const p = JSON.parse(savedProfile)
+          if (p.firstName) setFirstName(p.firstName)
+          if (p.lastName) setLastName(p.lastName)
+          if (p.email) setEmail(p.email)
+          if (p.phone) setPhone(p.phone)
+          if (p.tcNo) setTcNo(p.tcNo)
+          if (p.birthDate) setBirthDate(p.birthDate)
+          if (p.bloodType) setBloodType(p.bloodType)
+          if (p.graduationFaculty) setGraduationFaculty(p.graduationFaculty)
+          if (p.graduationDiploma) setGraduationDiploma(p.graduationDiploma)
+          if (p.mebbisNo) setMebbisNo(p.mebbisNo)
+          if (p.address) setAddress(p.address)
+          if (p.emergencyContact) setEmergencyContact(p.emergencyContact)
+          if (p.bio) setBio(p.bio)
+          if (p.branchTitle) setBranchTitle(p.branchTitle)
+          if (p.titleLevel) setTitleLevel(p.titleLevel)
+          if (p.homeroomClass) setHomeroomClass(p.homeroomClass)
+          if (p.bankName) setBankName(p.bankName)
+          if (p.ibanNo) setIbanNo(p.ibanNo)
+          if (p.avatarImage) setAvatarImage(p.avatarImage)
+          if (Array.isArray(p.leaveHistory)) setLeaveHistory(p.leaveHistory)
+          if (Array.isArray(p.advanceList)) setAdvanceList(p.advanceList)
         }
       } catch (_) {}
     }
-  }, [user])
+  }, [])
 
-  // Save Avatar Helper
-  const saveAvatarToStorage = (avatarData: string | null) => {
-    if (typeof window === 'undefined') return
+  // Universal Save Function with Feedback
+  const handleSaveAllProfile = () => {
     try {
-      if (avatarData) {
-        localStorage.setItem('oxonom_teacher_avatar', avatarData)
-      } else {
-        localStorage.removeItem('oxonom_teacher_avatar')
+      const fullProfile = {
+        firstName,
+        lastName,
+        username,
+        email,
+        phone,
+        tcNo,
+        birthDate,
+        bloodType,
+        graduationFaculty,
+        graduationDiploma,
+        mebbisNo,
+        address,
+        emergencyContact,
+        bio,
+        branchTitle,
+        titleLevel,
+        employmentType,
+        homeroomClass,
+        weeklyLessonHours,
+        lessonDistribution,
+        teachingClasses,
+        dutyDayLocation,
+        clubAdvisory,
+        workingHours,
+        annualLeaveLeft,
+        excuseLeaveLeft,
+        medicalLeaveDays,
+        leaveHistory,
+        netSalary,
+        baseSalary,
+        extraLessonPay,
+        bankName,
+        ibanNo,
+        advanceList,
+        avatarImage,
+        updatedAt: new Date().toISOString(),
       }
-      const savedProfile = localStorage.getItem('oxonom_teacher_profile')
-      const parsed = savedProfile ? JSON.parse(savedProfile) : {}
-      parsed.avatarImage = avatarData
-      parsed.avatarUrl = avatarData
-      localStorage.setItem('oxonom_teacher_profile', JSON.stringify(parsed))
-      window.dispatchEvent(new CustomEvent('oxonom_teacher_profile_updated', { detail: parsed }))
-    } catch (_) {}
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('oxonom_teacher_profile', JSON.stringify(fullProfile))
+        window.dispatchEvent(
+          new CustomEvent('oxonom_teacher_profile_updated', { detail: fullProfile })
+        )
+      }
+
+      toast.success('Öğretmen profili ve tüm özlük bilgileri başarıyla güncellendi!', {
+        id: 'teacher-profile-save-success',
+        duration: 4000,
+        icon: '✅',
+      })
+    } catch (e) {
+      toast.error('Güncelleme sırasında bir hata oluştu. Lütfen tekrar deneyin.', {
+        id: 'teacher-profile-save-error',
+      })
+    }
   }
 
-  // Handle local avatar file picker
+  // Handle Avatar Change
   const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     if (!file.type.startsWith('image/')) {
-      toast.error('Lütfen geçerli bir görsel dosyası seçin (PNG, JPG, WebP).')
-      return
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Görsel boyutu en fazla 5 MB olabilir.')
+      toast.error('Lütfen geçerli bir resim dosyası seçin.')
       return
     }
     const reader = new FileReader()
-    reader.onload = () => {
-      const base64 = reader.result as string
-      setAvatarImage(base64)
-      saveAvatarToStorage(base64)
-      toast.success('Profil resmi başarıyla güncellendi!')
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string
+      setAvatarImage(dataUrl)
+      toast.success('Profil fotoğrafı seçildi.')
     }
     reader.readAsDataURL(file)
   }
 
-  // Generate modern educator avatar with AI
-  const handleGenerateAiAvatar = () => {
-    const seed = `${username || firstName || 'teacher'}_${Date.now()}`
-    const aiAvatar = `https://api.dicebear.com/7.x/notionists/svg?seed=${seed}&backgroundColor=e2f3ef,eef0ff,fef3c7`
-    setAvatarImage(aiAvatar)
-    saveAvatarToStorage(aiAvatar)
-    toast.success('Yapay zeka profil resmi oluşturuldu ve uygulandı!')
+  // Copy IBAN Helper
+  const handleCopyIban = () => {
+    navigator.clipboard.writeText(ibanNo.replace(/\s+/g, ''))
+    toast.success('IBAN panoya kopyalandı!')
   }
 
-  // Remove avatar
-  const handleRemoveAvatar = () => {
-    setAvatarImage(null)
-    saveAvatarToStorage(null)
-    if (fileInputRef.current) fileInputRef.current.value = ''
-    toast.success('Profil resmi kaldırıldı.')
-  }
-
-  // Save General Profile Changes
-  const handleSaveGeneral = () => {
-    if (typeof window !== 'undefined') {
-      const profileData = {
-        email,
-        username,
-        firstName,
-        lastName,
-        bio,
-        extraDetails,
-        avatarImage,
-        avatarUrl: avatarImage,
-      }
-      localStorage.setItem('oxonom_teacher_profile', JSON.stringify(profileData))
-      window.dispatchEvent(
-        new CustomEvent('oxonom_teacher_profile_updated', { detail: profileData })
-      )
+  // Handle Add Leave
+  const handleAddLeaveSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    const newEntry = {
+      id: `lv-${Date.now()}`,
+      type: newLeaveType,
+      days: `${newLeaveDays} Gün`,
+      date: newLeaveDate,
+      desc: newLeaveDesc.trim() || 'Personel izin talebi',
+      status: 'Onaylandı',
     }
-    toast.success('Hesap bilgileri başarıyla kaydedildi!')
+    setLeaveHistory([newEntry, ...leaveHistory])
+    if (newLeaveType === 'Yıllık İzin') {
+      setAnnualLeaveLeft((prev) => Math.max(0, prev - newLeaveDays))
+    } else if (newLeaveType === 'Mazeret İzni') {
+      setExcuseLeaveLeft((prev) => Math.max(0, prev - newLeaveDays))
+    }
+    setIsAddLeaveModalOpen(false)
+    setNewLeaveDesc('')
+    toast.success('Yeni izin talebi sisteme işlendi!')
   }
 
-  // Add detail tags
-  const handleAddDetail = (type: 'Genel' | 'Akademik' | 'Profesyonel') => {
-    const sampleDetails = {
-      Genel: 'Rehberlik Koordinatörü',
-      Akademik: 'Hacettepe Üniv. Sınıf Öğretmenliği',
-      Profesyonel: 'MEB Sertifikalı Eğitmen',
+  // Handle Add Advance
+  const handleAddAdvanceSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    const newEntry = {
+      id: `adv-${Date.now()}`,
+      amount: `₺${Number(advanceAmount).toLocaleString('tr-TR')}`,
+      date: new Date().toLocaleDateString('tr-TR'),
+      note: advanceNote || 'Avans talebi',
+      status: 'İnceleniyor',
     }
-    const val = sampleDetails[type]
-    if (!extraDetails.includes(val)) {
-      setExtraDetails([...extraDetails, val])
-      toast.success(`${type} detay eklendi.`)
-    }
+    setAdvanceList([newEntry, ...advanceList])
+    setIsAddAdvanceModalOpen(false)
+    setAdvanceNote('')
+    toast.success('Avans talebi muhasebeye iletildi!')
   }
 
-  const handleClearDetails = () => {
-    setExtraDetails([])
-    toast.success('Tüm ek detaylar temizlendi.')
+  // Handle Document Upload
+  const handleDocumentUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const newDoc = {
+      id: `doc-${Date.now()}`,
+      title: file.name.replace(/\.[^/.]+$/, ''),
+      size: `PDF · ${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+      status: 'Onaylı',
+      color: 'emerald',
+    }
+    setDocumentsList([newDoc, ...documentsList])
+    toast.success(`"${file.name}" MEBBİS arşivine yüklendi!`)
   }
 
   // Change Password
@@ -241,107 +351,22 @@ export default function MProfileClient({
     }, 1500)
   }
 
-  // Handle Logout
-  const handleSignOutClick = async () => {
-    toast.loading('Oturum kapatılıyor...', { id: 'logout-toast' })
-    try {
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('oxonom_pano_paired_session')
-        localStorage.removeItem('oxonom_pano_active_session_id')
-        localStorage.removeItem('oxonom_pano_device_token')
-        localStorage.removeItem('oxonom_pano_device_type')
-        localStorage.removeItem('oxonom_selected_class')
-        localStorage.removeItem('oxonom_pano_selected_class_id')
-        sessionStorage.clear()
-      }
-      await authSignOut({ redirect: true, callbackUrl: '/m-login' })
-    } catch {
-      await signOut({ redirect: true, callbackUrl: '/m-login' })
-    }
-  }
+  return (
+    <div className="flex flex-col flex-1 w-full font-jakarta pb-12">
+      {/* ── TOP HEADER / IDENTITY HERO ── */}
+      <section className="mx-4 mt-3 bg-[#0A0D15] text-white rounded-[26px] p-5 shadow-xl border border-white/5 relative overflow-hidden">
+        <div
+          className="absolute inset-0 pointer-events-none opacity-30"
+          style={{
+            backgroundImage:
+              'radial-gradient(circle at 100% 0%,rgba(255,255,255,.15) 0%,rgba(255,255,255,0) 60%),linear-gradient(45deg,rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(-45deg,rgba(255,255,255,.04) 1px,transparent 1px)',
+            backgroundSize: 'auto,24px 24px,24px 24px',
+          }}
+        />
 
-  const pageContent = (
-    <div className="flex flex-col flex-1 w-full">
-      {/* ── STAGGERED PAGE CONTENT WRAPPER (Fluid Left Entrance) ── */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.2 }}
-        className="flex flex-col flex-1 w-full dash-stagger-items"
-      >
-
-        {/* ── 2. SUBBAR & BREADCRUMB ── */}
-        <div className="px-4 pt-3 flex items-center gap-2.5">
-          {/* Back Button */}
-          <Link
-            href="/dashv2"
-            onClick={(e) => {
-              if (onBackToHome) {
-                e.preventDefault()
-                onBackToHome()
-              }
-            }}
-            aria-label="Geri"
-            className="w-10 h-10 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#121826] text-gray-800 dark:text-gray-200 flex items-center justify-center shrink-0 shadow-xs hover:bg-gray-50 dark:hover:bg-gray-800/80 transition-colors"
-          >
-            <ChevronLeft size={20} strokeWidth={2.2} />
-          </Link>
-
-          {/* Breadcrumb Pill */}
-          <nav aria-label="Konum" className="flex-1 min-w-0 flex items-center gap-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400">
-            <Link
-              href="/dashv2"
-              onClick={(e) => {
-                if (onBackToHome) {
-                  e.preventDefault()
-                  onBackToHome()
-                }
-              }}
-              className="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition-colors"
-            >
-              Ana Sayfa
-            </Link>
-            <span className="text-gray-400">/</span>
-            <span className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800 text-gray-900 dark:text-white font-bold shadow-xs truncate">
-              <Settings size={13} className="text-[#4338CA] dark:text-indigo-400 shrink-0" />
-              <span className="truncate">Hesap Ayarları</span>
-            </span>
-          </nav>
-
-          {/* Class Pill */}
-          <span className="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-full bg-[#E3F3EF] dark:bg-emerald-950/60 text-[#0F766E] dark:text-emerald-300 text-xs font-black shrink-0 border border-emerald-200/40 dark:border-emerald-800/40">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
-            9-A
-          </span>
-        </div>
-
-        {/* ── 3. HERO PROFILE CARD WITH 3 SUB-TABS (Matching Reference Mockups) ── */}
-        <section className="mx-4 mt-3.5 bg-[#0A0D15] rounded-3xl p-4 sm:p-4.5 text-white flex flex-col gap-3.5 shadow-xl border border-gray-800/80 relative overflow-hidden">
-          {/* Animated Background Subtle Circles (Soft & eye-friendly) */}
-          <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full pointer-events-none opacity-25">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 42, repeat: Infinity, ease: 'linear' }}
-              className="w-full h-full relative"
-            >
-              <div className="absolute inset-0 rounded-full border border-teal-400/30" />
-              <div className="absolute inset-6 rounded-full border border-white/10 border-dashed" />
-              <div className="absolute inset-12 rounded-full border border-teal-400/40" />
-            </motion.div>
-          </div>
-
-          {/* Subtle grid pattern & glow */}
-          <div
-            className="absolute inset-0 pointer-events-none opacity-40"
-            style={{
-              backgroundImage:
-                'linear-gradient(45deg,rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(-45deg,rgba(255,255,255,.05) 1px,transparent 1px)',
-              backgroundSize: '24px 24px',
-            }}
-          />
-
-          {/* Teacher Identity Row */}
-          <div className="relative z-10 flex items-center gap-3.5">
+        {/* Teacher Identity Row */}
+        <div className="relative z-10 flex items-center justify-between gap-4 mb-4">
+          <div className="flex items-center gap-3.5">
             <div
               onClick={() => fileInputRef.current?.click()}
               className="relative cursor-pointer group shrink-0"
@@ -362,688 +387,919 @@ export default function MProfileClient({
                 <Camera size={10} strokeWidth={2.5} />
               </span>
             </div>
+
             <div className="min-w-0">
-              <h1 className="text-lg sm:text-xl font-extrabold tracking-tight text-white leading-tight truncate">
-                {firstName} {lastName}
-              </h1>
-              <div className="text-xs text-slate-300 font-medium mt-0.5">
-                @{username} · <span className="text-emerald-400 font-semibold">Öğretmen</span>
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg sm:text-xl font-black tracking-tight text-white leading-tight truncate">
+                  {firstName} {lastName}
+                </h1>
+                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500 text-[#0A0D15]">
+                  Aktif Görevde
+                </span>
+              </div>
+              <div className="text-xs text-slate-300 font-medium mt-0.5 truncate">
+                {branchTitle} · <span className="text-emerald-400 font-bold">{homeroomClass}</span>
               </div>
             </div>
           </div>
 
-          {/* 3 Sub-Tabs Switcher Bar */}
-          <div className="relative z-10 grid grid-cols-3 gap-2 p-1 rounded-2xl bg-white/10 backdrop-blur-xs border border-white/10">
-            {/* 1. Genel */}
-            <button
-              type="button"
-              onClick={() => setActiveSubTab('general')}
-              className={`h-10 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                activeSubTab === 'general'
-                  ? 'bg-[#34D399] text-[#0A0D15] shadow-md'
-                  : 'text-white hover:bg-white/10'
-              }`}
-            >
-              <Settings size={14} strokeWidth={2} />
-              <span>Genel</span>
-            </button>
+          <button
+            type="button"
+            onClick={handleSaveAllProfile}
+            className="hidden sm:inline-flex h-9 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-[#0A0D15] text-xs font-black items-center gap-2 shadow-sm transition-all cursor-pointer active:scale-95 shrink-0"
+          >
+            <Save size={14} />
+            <span>Tümünü Kaydet</span>
+          </button>
+        </div>
 
-            {/* 2. Profil */}
-            <button
-              type="button"
-              onClick={() => setActiveSubTab('profile')}
-              className={`h-10 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                activeSubTab === 'profile'
-                  ? 'bg-[#34D399] text-[#0A0D15] shadow-md'
-                  : 'text-white hover:bg-white/10'
-              }`}
-            >
-              <User size={14} strokeWidth={2} />
-              <span>Profil</span>
-            </button>
+        {/* ── 5 KATEGORİSEL SEKMELER PİLLS (Birebir Ekran Görüntüleri) ── */}
+        <div className="relative z-10 flex items-center gap-1.5 overflow-x-auto scrollbar-hide -mx-1 px-1 py-1">
+          {[
+            { id: 'ozluk', label: 'Özlük & Künye', icon: User },
+            { id: 'gorev', label: 'Görev & Dersler', icon: Briefcase },
+            { id: 'izin', label: 'İzin Talepleri & Mesai', icon: CalendarClock },
+            { id: 'maas', label: 'Maaş, Avans & Ek Ders', icon: CreditCard },
+            { id: 'belgeler', label: 'Özlük Belgeleri', icon: FileCheck },
+            { id: 'security', label: 'Güvenlik', icon: Lock },
+          ].map((tab) => {
+            const Icon = tab.icon
+            const isActive = activeSubTab === tab.id
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveSubTab(tab.id as ProfileTabKey)}
+                className={`h-9 px-3.5 rounded-xl text-xs font-black shrink-0 flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+                  isActive
+                    ? 'bg-emerald-500 text-[#0A0D15] shadow-md shadow-emerald-500/20'
+                    : 'bg-white/10 hover:bg-white/15 text-white/90'
+                }`}
+              >
+                <Icon size={14} strokeWidth={2.2} />
+                <span>{tab.label}</span>
+              </button>
+            )
+          })}
+        </div>
+      </section>
 
-            {/* 3. Güvenlik */}
-            <button
-              type="button"
-              onClick={() => setActiveSubTab('security')}
-              className={`h-10 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                activeSubTab === 'security'
-                  ? 'bg-[#34D399] text-[#0A0D15] shadow-md'
-                  : 'text-white hover:bg-white/10'
-              }`}
-            >
-              <Lock size={14} strokeWidth={2} />
-              <span>Güvenlik</span>
-            </button>
-          </div>
-        </section>
+      {/* Hidden File Inputs */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleAvatarFileChange}
+        className="hidden"
+      />
+      <input
+        ref={docInputRef}
+        type="file"
+        accept=".pdf,.png,.jpg,.jpeg"
+        onChange={handleDocumentUpload}
+        className="hidden"
+      />
 
-        {/* ── 4. TAB CONTENTS ── */}
-        <main className="flex-1 px-4 pt-3.5 space-y-4">
-          {/* ========================================================= */}
-          {/* ── TAB 1: GENEL (Matching Settings.dc.html Reference) ── */}
-          {/* ========================================================= */}
-          {activeSubTab === 'general' && (
-            <motion.div
-              key="subtab-general"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.18 }}
-              className="space-y-4"
-            >
-              {/* Section Header */}
-              <div>
-                <div className="flex items-center gap-2 text-[11px] font-bold tracking-wider text-gray-500 dark:text-gray-400 uppercase">
-                  <span className="w-4 h-1 rounded-full bg-[#34D399]" />
-                  <span>HESAP AYARLARI</span>
-                  <span className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Kişisel bilgilerinizi ve tercihlerinizi yönetin
-                </p>
+      {/* ── TAB CONTENTS ── */}
+      <main className="flex-1 px-4 pt-4 space-y-4">
+        {/* ========================================================= */}
+        {/* ── TAB 1: ÖZLÜK & KÜNYE (1. Görsel Birebir) ── */}
+        {/* ========================================================= */}
+        {activeSubTab === 'ozluk' && (
+          <motion.div
+            key="subtab-ozluk"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
+            {/* Quick Contact Action Bar */}
+            <div className="grid grid-cols-2 gap-3">
+              <a
+                href={`tel:${phone.replace(/\s+/g, '')}`}
+                className="h-11 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 text-blue-700 dark:text-blue-300 font-extrabold text-xs flex items-center justify-center gap-2 hover:bg-blue-100 transition-colors"
+              >
+                <PhoneCall size={16} />
+                <span>Telefonla Ara</span>
+              </a>
+              <a
+                href={`mailto:${email}`}
+                className="h-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 text-emerald-700 dark:text-emerald-300 font-extrabold text-xs flex items-center justify-center gap-2 hover:bg-emerald-100 transition-colors"
+              >
+                <Mail size={16} />
+                <span>E-Posta Gönder</span>
+              </a>
+            </div>
+
+            {/* Künye Bilgileri Tablosu / Kartları */}
+            <div className="bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800 rounded-3xl p-5 shadow-sm divide-y divide-gray-100 dark:divide-gray-800/80">
+              {/* T.C. Kimlik No */}
+              <div className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                <span className="text-xs font-bold text-gray-500 dark:text-gray-400">T.C. Kimlik No</span>
+                <input
+                  type="text"
+                  value={tcNo}
+                  onChange={(e) => setTcNo(e.target.value)}
+                  className="text-xs sm:text-sm font-mono font-black text-gray-900 dark:text-white bg-transparent border-none text-left sm:text-right focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded p-1"
+                />
               </div>
 
-              {/* Card 1: Profil Resmi */}
-              <section className="bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800 rounded-3xl p-4 shadow-sm flex items-center gap-4">
-                <div className="relative shrink-0">
-                  {avatarImage ? (
-                    <img
-                      src={avatarImage}
-                      alt="Profil Resmi"
-                      className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover shadow-md border-2 border-emerald-500/30"
-                    />
-                  ) : (
-                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-slate-600 to-slate-800 text-slate-300 flex items-center justify-center shadow-md">
-                      <User size={46} strokeWidth={1.5} />
-                    </div>
-                  )}
+              {/* Doğum Tarihi & Yaş */}
+              <div className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                <span className="text-xs font-bold text-gray-500 dark:text-gray-400">Doğum Tarihi & Yaş</span>
+                <input
+                  type="text"
+                  value={birthDate}
+                  onChange={(e) => setBirthDate(e.target.value)}
+                  className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white bg-transparent border-none text-left sm:text-right focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded p-1"
+                />
+              </div>
 
-                  {avatarImage && (
-                    <button
-                      type="button"
-                      onClick={handleRemoveAvatar}
-                      title="Profil Resmini Kaldır"
-                      className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-rose-500 hover:bg-rose-600 text-white flex items-center justify-center shadow-md cursor-pointer transition-colors"
-                    >
-                      <Trash2 size={12} strokeWidth={2.4} />
-                    </button>
-                  )}
+              {/* Kan Grubu */}
+              <div className="py-3 flex items-center justify-between gap-1.5">
+                <span className="text-xs font-bold text-gray-500 dark:text-gray-400">Kan Grubu</span>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={bloodType}
+                    onChange={(e) => setBloodType(e.target.value)}
+                    className="text-xs font-black text-rose-600 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 rounded-xl px-2.5 py-1 focus:outline-none cursor-pointer"
+                  >
+                    <option value="A Rh+">A Rh+</option>
+                    <option value="A Rh-">A Rh-</option>
+                    <option value="B Rh+">B Rh+</option>
+                    <option value="B Rh-">B Rh-</option>
+                    <option value="AB Rh+">AB Rh+</option>
+                    <option value="AB Rh-">AB Rh-</option>
+                    <option value="0 Rh+">0 Rh+</option>
+                    <option value="0 Rh-">0 Rh-</option>
+                  </select>
                 </div>
+              </div>
 
-                <div className="flex-1 min-w-0 flex flex-col gap-2">
-                  <div className="text-xs sm:text-[13px] font-extrabold text-gray-900 dark:text-white">
-                    Profil Resmi
-                  </div>
+              {/* Mezuniyet & Fakülte */}
+              <div className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                <span className="text-xs font-bold text-gray-500 dark:text-gray-400">Mezuniyet & Fakülte</span>
+                <input
+                  type="text"
+                  value={graduationFaculty}
+                  onChange={(e) => setGraduationFaculty(e.target.value)}
+                  className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white bg-transparent border-none text-left sm:text-right focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded p-1 flex-1 sm:max-w-md"
+                />
+              </div>
 
+              {/* Mezuniyet Yılı & Diploma */}
+              <div className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                <span className="text-xs font-bold text-gray-500 dark:text-gray-400">Mezuniyet Yılı & Diploma</span>
+                <input
+                  type="text"
+                  value={graduationDiploma}
+                  onChange={(e) => setGraduationDiploma(e.target.value)}
+                  className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white bg-transparent border-none text-left sm:text-right focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded p-1"
+                />
+              </div>
+
+              {/* MEBBİS Sicil No */}
+              <div className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                <span className="text-xs font-bold text-gray-500 dark:text-gray-400">MEBBİS Sicil No</span>
+                <input
+                  type="text"
+                  value={mebbisNo}
+                  onChange={(e) => setMebbisNo(e.target.value)}
+                  className="text-xs sm:text-sm font-mono font-bold text-gray-900 dark:text-white bg-transparent border-none text-left sm:text-right focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded p-1"
+                />
+              </div>
+
+              {/* İkametgah Adresi */}
+              <div className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                <span className="text-xs font-bold text-gray-500 dark:text-gray-400">İkametgah Adresi</span>
+                <input
+                  type="text"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white bg-transparent border-none text-left sm:text-right focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded p-1 flex-1 sm:max-w-xs"
+                />
+              </div>
+
+              {/* Acil Durum İletişim */}
+              <div className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                <span className="text-xs font-bold text-gray-500 dark:text-gray-400">Acil Durum İletişim</span>
+                <input
+                  type="text"
+                  value={emergencyContact}
+                  onChange={(e) => setEmergencyContact(e.target.value)}
+                  className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white bg-transparent border-none text-left sm:text-right focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded p-1 flex-1 sm:max-w-xs"
+                />
+              </div>
+
+              {/* İletişim Telefonu & E-posta */}
+              <div className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                <span className="text-xs font-bold text-gray-500 dark:text-gray-400">Kişisel Telefon & E-Posta</span>
+                <div className="flex items-center gap-2">
                   <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarFileChange}
-                    className="hidden"
+                    type="text"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="text-xs font-bold text-gray-900 dark:text-white bg-transparent border-none text-left sm:text-right focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded p-1"
                   />
-
-                  <div className="flex flex-col sm:flex-row gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="h-9 px-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a2234] hover:bg-gray-50 dark:hover:bg-gray-700/60 text-gray-900 dark:text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
-                    >
-                      <Upload size={14} className="text-emerald-500" />
-                      <span>{avatarImage ? 'Resmi Değiştir' : 'Resim Yükle'}</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleGenerateAiAvatar}
-                      className="h-9 px-3 rounded-xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/60 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-[#4338CA] dark:text-indigo-300 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
-                    >
-                      <Sparkles size={14} />
-                      <span>Generate with AI</span>
-                    </button>
-                  </div>
-
-                  <div className="flex items-center gap-1 text-[10px] text-gray-400">
-                    <Info size={12} />
-                    <span>Önerilen kare format (JPG, PNG, WebP · maks 5MB)</span>
-                  </div>
-                </div>
-              </section>
-
-              {/* Card 2: Form Bilgileri */}
-              <section className="bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800 rounded-3xl p-4 sm:p-5 shadow-sm flex flex-col gap-3.5">
-                {/* E-posta */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-900 dark:text-white block">
-                    E-posta
-                  </label>
+                  <span className="text-gray-400">·</span>
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="E-posta"
-                    className="w-full h-12 px-3.5 rounded-2xl bg-[#F6F8FC] dark:bg-[#0E131F] border border-gray-200 dark:border-gray-800 text-sm font-semibold text-gray-900 dark:text-white outline-hidden focus:border-emerald-500 transition-colors"
+                    className="text-xs font-bold text-gray-900 dark:text-white bg-transparent border-none text-left sm:text-right focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded p-1"
                   />
                 </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
-                {/* Kullanıcı adı */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-900 dark:text-white block">
-                    Kullanıcı adı
-                  </label>
+        {/* ========================================================= */}
+        {/* ── TAB 2: GÖREV & DERSLER (2. Görsel Birebir) ── */}
+        {/* ========================================================= */}
+        {activeSubTab === 'gorev' && (
+          <motion.div
+            key="subtab-gorev"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
+            {/* Akademik Görevlendirme Hero Card */}
+            <div className="bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200/80 dark:border-emerald-800/60 rounded-3xl p-5 shadow-xs">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-black text-emerald-900 dark:text-emerald-200">
+                  Akademik Görevlendirme
+                </h3>
+                <span className="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-emerald-500 text-[#0A0D15]">
+                  Aktif
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 block">
+                    Branş & Unvan
+                  </span>
                   <input
                     type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Kullanıcı adınız"
-                    className="w-full h-12 px-3.5 rounded-2xl bg-[#F6F8FC] dark:bg-[#0E131F] border border-gray-200 dark:border-gray-800 text-sm font-semibold text-gray-900 dark:text-white outline-hidden focus:border-emerald-500 transition-colors"
+                    value={branchTitle}
+                    onChange={(e) => setBranchTitle(e.target.value)}
+                    className="text-sm font-black text-gray-900 dark:text-white bg-transparent border-none w-full p-0 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded mt-0.5"
+                  />
+                  <input
+                    type="text"
+                    value={titleLevel}
+                    onChange={(e) => setTitleLevel(e.target.value)}
+                    className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-transparent border-none w-full p-0 focus:outline-none rounded mt-0.5"
                   />
                 </div>
 
-                {/* Ad - Soyad (2 Sütun) */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-900 dark:text-white block">
-                      Ad
-                    </label>
-                    <input
-                      type="text"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      placeholder="Adınız"
-                      className="w-full h-12 px-3.5 rounded-2xl bg-[#F6F8FC] dark:bg-[#0E131F] border border-gray-200 dark:border-gray-800 text-sm font-semibold text-gray-900 dark:text-white outline-hidden focus:border-emerald-500 transition-colors"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-900 dark:text-white block">
-                      Soyad
-                    </label>
-                    <input
-                      type="text"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      placeholder="Soyadınız"
-                      className="w-full h-12 px-3.5 rounded-2xl bg-[#F6F8FC] dark:bg-[#0E131F] border border-gray-200 dark:border-gray-800 text-sm font-semibold text-gray-900 dark:text-white outline-hidden focus:border-emerald-500 transition-colors"
-                    />
-                  </div>
-                </div>
-
-                {/* Biyografi */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <label className="font-bold text-gray-900 dark:text-white">
-                      Biyografi
-                    </label>
-                    <span className="text-gray-400 font-medium">
-                      ({Math.max(0, 400 - bio.length)} karakter kaldı)
-                    </span>
-                  </div>
-                  <textarea
-                    rows={4}
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value.slice(0, 400))}
-                    placeholder="Bize kendinizden bahsedin..."
-                    className="w-full p-3.5 rounded-2xl bg-[#F6F8FC] dark:bg-[#0E131F] border border-gray-200 dark:border-gray-800 text-sm font-medium text-gray-900 dark:text-white outline-hidden focus:border-emerald-500 transition-colors resize-none"
+                <div>
+                  <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 block">
+                    Kadro Şekli
+                  </span>
+                  <input
+                    type="text"
+                    value={employmentType}
+                    onChange={(e) => setEmploymentType(e.target.value)}
+                    className="text-sm font-black text-gray-900 dark:text-white bg-transparent border-none w-full p-0 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded mt-0.5"
                   />
-                </div>
-              </section>
-
-              {/* Card 3: Ek Detaylar */}
-              <section className="bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800 rounded-3xl p-4 sm:p-5 shadow-sm space-y-3.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-extrabold text-gray-900 dark:text-white">
-                    Ek Detaylar
-                  </span>
-                  <span className="text-xs text-gray-400 font-medium">
-                    {extraDetails.length} etiket
+                  <span className="text-xs font-bold text-blue-600 dark:text-blue-400 block mt-0.5">
+                    MEB Kadrosu
                   </span>
                 </div>
+              </div>
+            </div>
 
-                {/* Mevcut Etiketler */}
-                {extraDetails.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {extraDetails.map((item, idx) => (
-                      <span
-                        key={idx}
-                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-xs font-bold"
-                      >
-                        <span>{item}</span>
-                        <button
-                          type="button"
-                          onClick={() => setExtraDetails(extraDetails.filter((_, i) => i !== idx))}
-                          className="hover:text-rose-500 text-gray-400"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
+            {/* Görev & Ders Dağılımı Tablosu */}
+            <div className="bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800 rounded-3xl p-5 shadow-sm divide-y divide-gray-100 dark:divide-gray-800/80">
+              {/* Sınıf Rehberliği */}
+              <div className="py-3 flex items-center justify-between">
+                <span className="text-xs font-bold text-gray-500 dark:text-gray-400">Sınıf Rehberliği</span>
+                <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">
+                  {homeroomClass}
+                </span>
+              </div>
 
-                {/* Eylemler: Tümünü Temizle & Detay Ekle */}
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={handleClearDetails}
-                    className="flex-1 h-10 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-white dark:bg-[#121826] text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
-                  >
-                    Tümünü Temizle
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleAddDetail('Genel')}
-                    className="flex-1 h-10 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#121826] text-gray-900 dark:text-white text-xs font-bold hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                  >
-                    Detay Ekle
-                  </button>
+              {/* Haftalık Toplam Ders */}
+              <div className="py-3 flex items-center justify-between">
+                <span className="text-xs font-bold text-gray-500 dark:text-gray-400">Haftalık Toplam Ders</span>
+                <span className="text-sm font-black text-gray-900 dark:text-white">
+                  {weeklyLessonHours}
+                </span>
+              </div>
+
+              {/* Ders Dağılımı */}
+              <div className="py-3 flex items-center justify-between">
+                <span className="text-xs font-bold text-gray-500 dark:text-gray-400">Ders Dağılımı</span>
+                <span className="text-xs sm:text-sm font-black text-gray-900 dark:text-white">
+                  {lessonDistribution}
+                </span>
+              </div>
+
+              {/* Girdiği Şubeler */}
+              <div className="py-3 flex items-center justify-between">
+                <span className="text-xs font-bold text-gray-500 dark:text-gray-400">Girdiği Şubeler</span>
+                <span className="text-sm font-black text-gray-900 dark:text-white">
+                  {teachingClasses}
+                </span>
+              </div>
+
+              {/* Haftalık Nöbet Günü & Yeri */}
+              <div className="py-3 flex items-center justify-between">
+                <span className="text-xs font-bold text-gray-500 dark:text-gray-400">Haftalık Nöbet Günü & Yeri</span>
+                <span className="text-xs sm:text-sm font-black text-purple-600 dark:text-purple-400">
+                  {dutyDayLocation}
+                </span>
+              </div>
+
+              {/* Kulüp Danışmanlığı */}
+              <div className="py-3 flex items-center justify-between">
+                <span className="text-xs font-bold text-gray-500 dark:text-gray-400">Kulüp Danışmanlığı</span>
+                <span className="text-xs sm:text-sm font-black text-gray-900 dark:text-white">
+                  {clubAdvisory}
+                </span>
+              </div>
+
+              {/* Mesai Saatleri */}
+              <div className="py-3 flex items-center justify-between">
+                <span className="text-xs font-bold text-gray-500 dark:text-gray-400">Mesai Saatleri</span>
+                <span className="text-xs sm:text-sm font-mono font-black text-gray-900 dark:text-white">
+                  {workingHours}
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* ========================================================= */}
+        {/* ── TAB 3: İZİN TALEPLERİ & MESAİ (3. Görsel Birebir) ── */}
+        {/* ========================================================= */}
+        {activeSubTab === 'izin' && (
+          <motion.div
+            key="subtab-izin"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
+            {/* 3 Stat Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Yıllık İzin */}
+              <div className="p-4 rounded-3xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/60 text-center">
+                <div className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400">
+                  {annualLeaveLeft}
                 </div>
-
-                {/* Hızlı Ekleme Butonları */}
-                <div className="flex flex-wrap gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => handleAddDetail('Genel')}
-                    className="h-10 px-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-[#F6F8FC] dark:bg-[#0E131F] text-gray-900 dark:text-white text-xs font-bold flex items-center gap-2 hover:border-indigo-400 transition-colors"
-                  >
-                    <Briefcase size={14} className="text-[#4338CA] dark:text-indigo-400" />
-                    <span>Genel Ekle</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleAddDetail('Akademik')}
-                    className="h-10 px-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-[#F6F8FC] dark:bg-[#0E131F] text-gray-900 dark:text-white text-xs font-bold flex items-center gap-2 hover:border-indigo-400 transition-colors"
-                  >
-                    <GraduationCap size={15} className="text-[#4338CA] dark:text-indigo-400" />
-                    <span>Akademik Ekle</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleAddDetail('Profesyonel')}
-                    className="h-10 px-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-[#F6F8FC] dark:bg-[#0E131F] text-gray-900 dark:text-white text-xs font-bold flex items-center gap-2 hover:border-indigo-400 transition-colors"
-                  >
-                    <Award size={15} className="text-[#4338CA] dark:text-indigo-400" />
-                    <span>Profesyonel Ekle</span>
-                  </button>
+                <div className="text-xs font-extrabold text-emerald-900 dark:text-emerald-200 mt-1">
+                  Kalan Yıllık İzin
                 </div>
-              </section>
+                <div className="text-[10px] text-emerald-700 dark:text-emerald-400 font-medium mt-0.5">
+                  (20 Gün Hak)
+                </div>
+              </div>
 
-              {/* Değişiklikleri Kaydet Butonu */}
+              {/* Mazeret İzni */}
+              <div className="p-4 rounded-3xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/60 text-center">
+                <div className="text-2xl sm:text-3xl font-black text-blue-600 dark:text-blue-400">
+                  {excuseLeaveLeft}
+                </div>
+                <div className="text-xs font-extrabold text-blue-900 dark:text-blue-200 mt-1">
+                  Mazeret İzni
+                </div>
+                <div className="text-[10px] text-blue-700 dark:text-blue-400 font-medium mt-0.5">
+                  (10 Gün Hak)
+                </div>
+              </div>
+
+              {/* Sağlık Raporu */}
+              <div className="p-4 rounded-3xl bg-purple-50/70 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-900/60 text-center">
+                <div className="text-2xl sm:text-3xl font-black text-purple-600 dark:text-purple-400">
+                  {medicalLeaveDays} Gün
+                </div>
+                <div className="text-xs font-extrabold text-purple-900 dark:text-purple-200 mt-1">
+                  Sağlık Raporu
+                </div>
+                <div className="text-[10px] text-purple-700 dark:text-purple-400 font-medium mt-0.5">
+                  (Bu Dönem)
+                </div>
+              </div>
+            </div>
+
+            {/* İdare İzin Tanımlama Barı */}
+            <div className="bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800 rounded-3xl p-4 shadow-sm flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CalendarClock size={18} className="text-emerald-600" />
+                <span className="text-xs sm:text-sm font-black text-gray-900 dark:text-white">
+                  İdare İzin Tanımlama
+                </span>
+              </div>
+
               <button
                 type="button"
-                onClick={handleSaveGeneral}
-                className="w-full h-13 rounded-2xl bg-gradient-to-r from-[#0A0D15] to-[#1E293B] dark:from-[#131c31] dark:to-[#1e293b] text-white text-sm font-extrabold flex items-center justify-center gap-2 shadow-lg hover:shadow-xl active:scale-98 transition-all cursor-pointer border border-gray-800/80"
+                onClick={() => setIsAddLeaveModalOpen(true)}
+                className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-[#0A0D15] text-xs font-black flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
               >
-                <Save size={18} className="text-[#34D399]" />
-                <span>Değişiklikleri Kaydet</span>
+                <Plus size={14} strokeWidth={2.5} />
+                <span>Yeni İzin Ekle</span>
               </button>
-            </motion.div>
-          )}
+            </div>
 
-          {/* ========================================================= */}
-          {/* ── TAB 2: PROFİL (Öğretmen Kartı ve Kurum Bilgileri) ── */}
-          {/* ========================================================= */}
-          {activeSubTab === 'profile' && (
-            <motion.div
-              key="subtab-profile"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.18 }}
-              className="space-y-4"
-            >
-              {/* Section Header */}
-              <div>
-                <div className="flex items-center gap-2 text-[11px] font-bold tracking-wider text-gray-500 dark:text-gray-400 uppercase">
-                  <span className="w-4 h-1 rounded-full bg-[#34D399]" />
-                  <span>KURUM & GÖREV KİMLİĞİ</span>
-                  <span className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Resmi okul kaydı, görevli şube ve yetki bilgileri
-                </p>
-              </div>
+            {/* Son İzin ve Rapor Geçmişi */}
+            <div className="space-y-2.5">
+              <span className="text-xs font-black tracking-wider text-gray-500 dark:text-gray-400 uppercase block px-1">
+                SON İZİN VE RAPOR GEÇMİŞİ ({leaveHistory.length})
+              </span>
 
-              {/* Okul & Görev Detayları Kartı */}
-              <section className="bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800 rounded-3xl p-4 sm:p-5 shadow-sm space-y-3.5">
-                <div className="flex items-center gap-3 pb-3 border-b border-gray-100 dark:border-gray-800">
-                  <div className="w-11 h-11 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                    <Building size={20} />
-                  </div>
+              {leaveHistory.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800 rounded-2xl p-4 shadow-xs flex items-center justify-between gap-3"
+                >
                   <div>
-                    <div className="text-sm font-extrabold text-gray-900 dark:text-white">
-                      Oxonom Okulları
-                    </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                      MEB Maarif Modeli · Bütünleşik Kampüs
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                  <div className="p-3 rounded-2xl bg-[#F6F8FC] dark:bg-[#0E131F] border border-gray-100 dark:border-gray-800">
-                    <span className="text-[10px] text-gray-400 font-bold uppercase block">
-                      GÖREV
-                    </span>
-                    <span className="font-extrabold text-gray-900 dark:text-white mt-0.5 block">
-                      Türk Dili ve Edebiyatı & Rehberlik
-                    </span>
-                  </div>
-                  <div className="p-3 rounded-2xl bg-[#F6F8FC] dark:bg-[#0E131F] border border-gray-100 dark:border-gray-800">
-                    <span className="text-[10px] text-gray-400 font-bold uppercase block">
-                      ŞUBE
-                    </span>
-                    <span className="font-extrabold text-gray-900 dark:text-white mt-0.5 block">
-                      9-A Şubesi (1 Öğrenci — Erçil UĞURLU)
-                    </span>
-                  </div>
-                  <div className="p-3 rounded-2xl bg-[#F6F8FC] dark:bg-[#0E131F] border border-gray-100 dark:border-gray-800">
-                    <span className="text-[10px] text-gray-400 font-bold uppercase block">
-                      BAŞLANGIÇ
-                    </span>
-                    <span className="font-extrabold text-gray-900 dark:text-white mt-0.5 block">
-                      2018 · 8. Hizmet Yılı
-                    </span>
-                  </div>
-                  <div className="p-3 rounded-2xl bg-[#F6F8FC] dark:bg-[#0E131F] border border-gray-100 dark:border-gray-800">
-                    <span className="text-[10px] text-gray-400 font-bold uppercase block">
-                      SİCİL NO
-                    </span>
-                    <span className="font-mono font-extrabold text-gray-900 dark:text-white mt-0.5 block">
-                      MEB-280301
-                    </span>
-                  </div>
-                </div>
-              </section>
-
-              {/* İletişim & Veli Görüşme Kartı */}
-              <section className="bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800 rounded-3xl p-4 sm:p-5 shadow-sm space-y-3">
-                <span className="text-xs font-bold uppercase tracking-wider text-gray-400 block">
-                  İLETİŞİM & VELİ RANDEVULARI
-                </span>
-
-                <div className="space-y-2 text-xs">
-                  <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/40">
-                    <Mail size={15} className="text-gray-400" />
-                    <span className="text-gray-600 dark:text-gray-300">ogretmen@oxonom.com</span>
-                  </div>
-                  <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/40">
-                    <Phone size={15} className="text-gray-400" />
-                    <span className="text-gray-600 dark:text-gray-300">+90 (533) 280 03 01</span>
-                  </div>
-                  <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/40">
-                    <Clock size={15} className="text-gray-400" />
-                    <span className="text-gray-600 dark:text-gray-300">
-                      Veli Görüşme: Çarşamba 13:30 - 15:00
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/40">
-                    <MapPin size={15} className="text-gray-400" />
-                    <span className="text-gray-600 dark:text-gray-300">
-                      Derslik: A Blok · Zemin Kat · 101 Nolu Salon
-                    </span>
-                  </div>
-                </div>
-              </section>
-
-              {/* Aktif Dersler Kartı */}
-              <section className="bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800 rounded-3xl p-4 sm:p-5 shadow-sm space-y-3">
-                <span className="text-xs font-bold uppercase tracking-wider text-gray-400 block">
-                  VERİLEN BRANŞ DERSLERİ
-                </span>
-
-                <div className="grid grid-cols-2 gap-2 text-xs font-bold">
-                  <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-900/40 flex items-center gap-2">
-                    <BookOpen size={14} />
-                    <span>Türkçe (1-A)</span>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/40 flex items-center gap-2">
-                    <BookOpen size={14} />
-                    <span>Matematik (1-A)</span>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-900/40 flex items-center gap-2">
-                    <BookOpen size={14} />
-                    <span>Hayat Bilgisi (1-A)</span>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-900/40 flex items-center gap-2">
-                    <BookOpen size={14} />
-                    <span>Görsel Sanatlar (1-A)</span>
-                  </div>
-                </div>
-              </section>
-            </motion.div>
-          )}
-
-          {/* ========================================================= */}
-          {/* ── TAB 3: GÜVENLİK (Matching Security.dc.html Reference) ─ */}
-          {/* ========================================================= */}
-          {activeSubTab === 'security' && (
-            <motion.div
-              key="subtab-security"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.18 }}
-              className="space-y-4"
-            >
-              {/* Section Header 1 */}
-              <div>
-                <div className="flex items-center gap-2 text-[11px] font-bold tracking-wider text-gray-500 dark:text-gray-400 uppercase">
-                  <span className="w-4 h-1 rounded-full bg-[#34D399]" />
-                  <span>MEVCUT OTURUM</span>
-                  <span className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Şu anda giriş yaptığınız cihaz
-                </p>
-              </div>
-
-              {/* Card 1: Mevcut Oturum */}
-              <section className="bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800 rounded-3xl p-4 shadow-sm flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl bg-[#E4F0FC] dark:bg-blue-950/60 text-[#1D4ED8] dark:text-blue-400 flex items-center justify-center shrink-0">
-                  <Monitor size={20} strokeWidth={1.8} />
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-extrabold text-gray-900 dark:text-white truncate">
-                    Chrome · macOS
-                  </div>
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 mt-0.5 font-medium">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
-                    <span>Bu cihaz</span>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleSignOutClick}
-                  className="h-10 px-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#1a2234] text-rose-600 dark:text-rose-400 text-xs font-bold flex items-center gap-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors shrink-0"
-                >
-                  <LogOut size={14} />
-                  <span>Çıkış yap</span>
-                </button>
-              </section>
-
-              {/* Section Header 2 */}
-              <div className="pt-1">
-                <div className="flex items-center gap-2 text-[11px] font-bold tracking-wider text-gray-500 dark:text-gray-400 uppercase">
-                  <span className="w-4 h-1 rounded-full bg-[#34D399]" />
-                  <span>ŞİFRE DEĞİŞTİR</span>
-                  <span className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Hesabınızı güvende tutmak için şifrenizi güncelleyin
-                </p>
-              </div>
-
-              {/* Card 2: Şifre Değiştir Formu */}
-              <section className="bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800 rounded-3xl p-4 sm:p-5 shadow-sm flex flex-col gap-3.5">
-                {/* Mevcut Şifre */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-900 dark:text-white block">
-                    Mevcut Şifre
-                  </label>
-                  <div className="flex items-center h-12 px-3.5 rounded-2xl bg-[#F6F8FC] dark:bg-[#0E131F] border border-gray-200 dark:border-gray-800">
-                    <input
-                      type={showCurrentPassword ? 'text' : 'password'}
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      placeholder="Mevcut şifreniz"
-                      className="flex-1 bg-transparent text-sm font-semibold text-gray-900 dark:text-white outline-hidden"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-                    >
-                      {showCurrentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Yeni Şifre */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-900 dark:text-white block">
-                    Yeni Şifre
-                  </label>
-                  <div className="flex items-center h-12 px-3.5 rounded-2xl bg-[#F6F8FC] dark:bg-[#0E131F] border border-gray-200 dark:border-gray-800">
-                    <input
-                      type={showNewPassword ? 'text' : 'password'}
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="Yeni şifreniz"
-                      className="flex-1 bg-transparent text-sm font-semibold text-gray-900 dark:text-white outline-hidden"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowNewPassword(!showNewPassword)}
-                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-                    >
-                      {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Uyarı Kutusu */}
-                <div className="flex items-center gap-2.5 bg-[#FDF6E3] dark:bg-amber-950/40 border border-[#F5D9A8] dark:border-amber-800/60 rounded-2xl p-3 text-[#92400E] dark:text-amber-200 text-xs font-bold leading-relaxed">
-                  <AlertTriangle size={18} className="shrink-0 text-amber-600 dark:text-amber-400" />
-                  <span>Şifrenizi değiştirdikten sonra tüm cihazlardan çıkış yapılacaksınız</span>
-                </div>
-
-                {/* Şifreyi Güncelle Butonu */}
-                <button
-                  type="button"
-                  onClick={handleUpdatePassword}
-                  className="w-full h-13 rounded-2xl bg-gradient-to-r from-[#0A0D15] to-[#1E293B] dark:from-[#131c31] dark:to-[#1e293b] text-white text-sm font-extrabold flex items-center justify-center gap-2 shadow-lg hover:shadow-xl active:scale-98 transition-all cursor-pointer border border-gray-800/80"
-                >
-                  <Lock size={16} className="text-[#34D399]" />
-                  <span>Şifreyi Güncelle</span>
-                </button>
-              </section>
-
-              {/* Section Header 3 */}
-              <div className="pt-1">
-                <div className="flex items-center gap-2 text-[11px] font-bold tracking-wider text-gray-500 dark:text-gray-400 uppercase">
-                  <span className="w-4 h-1 rounded-full bg-[#34D399]" />
-                  <span>İKİ FAKTÖRLÜ KİMLİK DOĞRULAMA</span>
-                  <span className="flex-1 h-px bg-gray-200 dark:bg-gray-800" />
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Giriş yaptığınızda kimlik doğrulama uygulamanızdan tek kullanımlık bir kod isteyin
-                </p>
-              </div>
-
-              {/* Card 3: 2FA */}
-              <section className="bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800 rounded-3xl p-4 sm:p-5 shadow-sm space-y-3.5">
-                <div className="flex items-start gap-3">
-                  <div className="w-11 h-11 rounded-2xl bg-[#F1F4F9] dark:bg-gray-800 text-gray-500 dark:text-gray-400 flex items-center justify-center shrink-0">
-                    <Shield size={20} strokeWidth={1.8} />
-                  </div>
-
-                  <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-extrabold text-gray-900 dark:text-white">
-                        {is2FAEnabled ? 'Etkinleştirildi' : 'Etkinleştirilmedi'}
+                      <span className="text-xs sm:text-sm font-black text-gray-900 dark:text-white">
+                        {item.type}
                       </span>
-                      <span
-                        className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
-                          is2FAEnabled
-                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
-                            : 'bg-[#FDF0DC] text-[#92400E] dark:bg-amber-950/60 dark:text-amber-300'
-                        }`}
-                      >
-                        {is2FAEnabled ? 'AÇIK' : 'KAPALI'}
-                      </span>
+                      <span className="text-[11px] text-gray-400 font-bold">· {item.days}</span>
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
-                      Hesabınızı korumak için, oturum açarken kimlik doğrulama uygulamanızdan tek
-                      kullanımlık bir kod da isteyin.
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                      {item.date} — {item.desc}
                     </p>
                   </div>
-                </div>
 
+                  <span
+                    className={`text-[11px] font-black px-2.5 py-0.5 rounded-full ${
+                      item.status === 'Onaylandı'
+                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300'
+                        : 'bg-teal-100 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300'
+                    }`}
+                  >
+                    {item.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* ========================================================= */}
+        {/* ── TAB 4: MAAŞ, AVANS & EK DERS (4. Görsel Birebir) ── */}
+        {/* ========================================================= */}
+        {activeSubTab === 'maas' && (
+          <motion.div
+            key="subtab-maas"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
+            {/* Aylık Net Tahakkuk Banner */}
+            <div className="bg-emerald-600 text-white rounded-3xl p-5 sm:p-6 shadow-md relative overflow-hidden">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-black tracking-wider uppercase opacity-90">
+                  AYLIK NET TAHAKKUK
+                </span>
+                <span className="text-[11px] font-black bg-white/20 px-2.5 py-0.5 rounded-full">
+                  1/4 Derece · Uzman
+                </span>
+              </div>
+
+              <div className="text-3xl sm:text-4xl font-black tracking-tight mb-4">
+                {netSalary}
+              </div>
+
+              <div className="pt-3 border-t border-white/20 grid grid-cols-2 gap-4 text-xs">
+                <div>
+                  <span className="text-[10px] opacity-80 block uppercase">Net Taban Maaş</span>
+                  <span className="text-sm font-black mt-0.5 block">{baseSalary}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] opacity-80 block uppercase">Ek Ders + Tazminat</span>
+                  <span className="text-sm font-black mt-0.5 block">{extraLessonPay}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Banka & IBAN Kartı */}
+            <div className="bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800 rounded-3xl p-4.5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <span className="text-xs font-bold text-gray-500 dark:text-gray-400 block">
+                  Maaş Bankası
+                </span>
+                <span className="text-sm font-black text-gray-900 dark:text-white mt-0.5 block">
+                  {bankName}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-xs sm:text-sm font-black text-blue-600 dark:text-blue-400">
+                  {ibanNo}
+                </span>
                 <button
                   type="button"
-                  onClick={() => {
-                    setIs2FAEnabled(!is2FAEnabled)
-                    toast.success(
-                      !is2FAEnabled
-                        ? 'İki faktörlü kimlik doğrulama (2FA) aktifleştirildi.'
-                        : 'İki faktörlü kimlik doğrulama devre dışı bırakıldı.'
-                    )
-                  }}
-                  className="w-full h-12 rounded-2xl bg-[#34D399] hover:bg-[#2fe0a0] active:scale-98 text-[#0A0D15] text-xs font-black flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+                  onClick={handleCopyIban}
+                  className="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white cursor-pointer transition-colors"
+                  title="IBAN Kopyala"
                 >
-                  <ShieldCheck size={18} strokeWidth={2.2} />
-                  <span>{is2FAEnabled ? '2FA Durumunu Güncelle' : 'Onayla'}</span>
+                  <Copy size={14} />
                 </button>
-              </section>
-            </motion.div>
-          )}
-
-          {/* ── EN ALT KISIM: OTURUMU KAPAT BUTONU (KIRMIZI ŞIK TASARIM) ── */}
-          <section className="pt-2 pb-4">
-            <motion.button
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.98 }}
-              type="button"
-              onClick={handleSignOutClick}
-              className="w-full h-14 rounded-2xl bg-gradient-to-r from-rose-500 via-rose-600 to-red-600 hover:from-rose-600 hover:to-red-700 text-white font-extrabold text-sm flex items-center justify-center gap-2.5 shadow-lg shadow-rose-500/25 dark:shadow-rose-950/50 border border-rose-400/30 active:shadow-sm transition-all cursor-pointer group"
-            >
-              <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center group-hover:rotate-12 transition-transform">
-                <LogOut size={16} className="text-white" />
               </div>
-              <span>Oturumu Kapat</span>
-            </motion.button>
-            <p className="text-[11px] text-gray-400 dark:text-gray-500 text-center mt-2.5 font-medium">
-              Oxonom EDU oturumunuz bu cihazda güvenle sonlandırılır.
-            </p>
-          </section>
-        </main>
-      </motion.div>
+            </div>
 
-        {/* ── 6. CONNECT BOARD MODAL ── */}
-        <ConnectBoardModal
-          isOpen={isConnectModalOpen}
-          onClose={() => setIsConnectModalOpen(false)}
-          theme={theme}
-        />
-    </div>
-  )
+            {/* E-Bordro Geçmişi (Son 3 Ay) */}
+            <div className="space-y-2.5">
+              <span className="text-xs font-black tracking-wider text-gray-500 dark:text-gray-400 uppercase block px-1">
+                E-BORDRO GEÇMİŞİ (SON 3 AY)
+              </span>
 
-  if (hideHeader) {
-    return pageContent
-  }
+              {[
+                { title: 'Mart 2026 Bordrosu', meta: '₺72.000 · 420 KB · Onaylı' },
+                { title: 'Şubat 2026 Bordrosu', meta: '₺71.450 · 418 KB · Onaylı' },
+                { title: 'Ocak 2026 Bordrosu', meta: '₺68.900 · 415 KB · Onaylı' },
+              ].map((bordro, i) => (
+                <div
+                  key={i}
+                  className="bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800 rounded-2xl p-3.5 shadow-xs flex items-center justify-between gap-3"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                      <FileText size={18} />
+                    </div>
+                    <div>
+                      <div className="text-xs sm:text-sm font-black text-gray-900 dark:text-white">
+                        {bordro.title}
+                      </div>
+                      <div className="text-[11px] text-gray-400 mt-0.5">{bordro.meta}</div>
+                    </div>
+                  </div>
 
-  return (
-    <div
-      className={`${theme} min-h-[100dvh] w-full bg-[#0A0D15] sm:bg-[#E2E8F0] sm:dark:bg-[#06090F] font-jakarta text-[#0F172A] dark:text-white flex justify-center selection:bg-[#34D399]/30 transition-colors duration-200`}
-    >
-      <div
-        className="w-full sm:max-w-[390px] min-h-[100dvh] bg-[#F8FAFC] dark:bg-[#0A0D15] sm:shadow-2xl relative flex flex-col sm:border-x border-gray-200/60 dark:border-gray-800/80 overflow-x-hidden overscroll-y-none"
-        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 6.5rem)' }}
-      >
-        <MobileHeader theme={theme} onToggleTheme={toggleTheme} />
-        {pageContent}
-        {!hideDock && <MobileFloatingDock activeTab="profile" />}
-      </div>
+                  <button
+                    type="button"
+                    onClick={() => toast.success(`${bordro.title} PDF olarak indiriliyor...`)}
+                    className="h-8 px-3 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 text-gray-700 dark:text-gray-300 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <Download size={13} />
+                    <span>İndir</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Avans Talepleri & Ödemeler */}
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between px-1">
+                <span className="text-xs font-black tracking-wider text-gray-500 dark:text-gray-400 uppercase">
+                  AVANS TALEPLERİ & ÖDEMELER
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsAddAdvanceModalOpen(true)}
+                  className="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-[#0A0D15] text-[11px] font-black flex items-center gap-1 shadow-xs cursor-pointer"
+                >
+                  <Plus size={12} strokeWidth={2.5} />
+                  <span>Yeni Avans Tanımla</span>
+                </button>
+              </div>
+
+              {advanceList.length === 0 ? (
+                <div className="p-6 text-center rounded-2xl bg-white dark:bg-[#121826] border border-dashed border-gray-200 dark:border-gray-800 text-xs text-gray-400">
+                  Bu personele ait kayıtlı avans bulunmamaktadır.
+                </div>
+              ) : (
+                advanceList.map((adv) => (
+                  <div
+                    key={adv.id}
+                    className="p-3.5 rounded-2xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800 flex items-center justify-between text-xs"
+                  >
+                    <div>
+                      <span className="font-black text-gray-900 dark:text-white block">{adv.amount}</span>
+                      <span className="text-gray-400 text-[11px]">{adv.date} — {adv.note}</span>
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">
+                      {adv.status}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Ek Ders, Nöbet & Mesai Dökümü (Aylık) */}
+            <div className="space-y-2.5">
+              <span className="text-xs font-black tracking-wider text-gray-500 dark:text-gray-400 uppercase block px-1">
+                EK DERS, NÖBET & MESAİ DÖKÜMÜ (AYLIK)
+              </span>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-4 rounded-2xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase block">
+                    Haftalık Ek Ders
+                  </span>
+                  <div className="text-sm sm:text-base font-black text-gray-900 dark:text-white mt-0.5">
+                    6 Saat / Hafta
+                  </div>
+                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-1 block">
+                    ~₺4.800 / Ay
+                  </span>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase block">
+                    Nöbet Görevi
+                  </span>
+                  <div className="text-sm sm:text-base font-black text-gray-900 dark:text-white mt-0.5">
+                    1 Gün / Hafta
+                  </div>
+                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-1 block">
+                    ~₺1.800 / Ay
+                  </span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* ========================================================= */}
+        {/* ── TAB 5: ÖZLÜK BELGELERİ (5. Görsel Birebir) ── */}
+        {/* ========================================================= */}
+        {activeSubTab === 'belgeler' && (
+          <motion.div
+            key="subtab-belgeler"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
+            <div className="flex items-center justify-between px-1">
+              <span className="text-xs font-black tracking-wider text-gray-500 dark:text-gray-400 uppercase">
+                MEBBİS & KURUM ARŞİV BELGELERİ ({documentsList.length})
+              </span>
+
+              <button
+                type="button"
+                onClick={() => docInputRef.current?.click()}
+                className="px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-[#0A0D15] text-xs font-black flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95 transition-all"
+              >
+                <Plus size={14} strokeWidth={2.5} />
+                <span>Yeni Belge Yükle</span>
+              </button>
+            </div>
+
+            <div className="space-y-2.5">
+              {documentsList.map((doc) => (
+                <div
+                  key={doc.id}
+                  className="bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800 rounded-2xl p-4 shadow-xs flex items-center justify-between gap-3"
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                        doc.color === 'blue'
+                          ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400'
+                          : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400'
+                      }`}
+                    >
+                      <FileCheck size={18} />
+                    </div>
+                    <div>
+                      <div className="text-xs sm:text-sm font-black text-gray-900 dark:text-white">
+                        {doc.title}
+                      </div>
+                      <div className="text-[11px] text-gray-400 mt-0.5">{doc.size}</div>
+                    </div>
+                  </div>
+
+                  <span
+                    className={`text-[11px] font-black px-2.5 py-0.5 rounded-full shrink-0 ${
+                      doc.color === 'blue'
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300'
+                        : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300'
+                    }`}
+                  >
+                    {doc.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* ========================================================= */}
+        {/* ── TAB 6: GÜVENLİK ── */}
+        {/* ========================================================= */}
+        {activeSubTab === 'security' && (
+          <motion.div
+            key="subtab-security"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
+            <div className="bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800 rounded-3xl p-5 shadow-sm space-y-4">
+              <h3 className="text-sm font-black text-gray-900 dark:text-white">Şifre Değiştir</h3>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700 dark:text-gray-300">Mevcut Şifre</label>
+                <input
+                  type={showCurrentPassword ? 'text' : 'password'}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Mevcut şifreniz"
+                  className="w-full h-11 px-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-xs font-bold text-gray-900 dark:text-white focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700 dark:text-gray-300">Yeni Şifre</label>
+                <input
+                  type={showNewPassword ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Yeni şifreniz (en az 6 karakter)"
+                  className="w-full h-11 px-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-xs font-bold text-gray-900 dark:text-white focus:outline-none"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleUpdatePassword}
+                className="w-full h-11 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-xs font-black cursor-pointer hover:opacity-90 transition-opacity"
+              >
+                Şifreyi Güncelle
+              </button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* ── STICKY / BOTTOM "TÜM BİLGİLERİ KAYDET VE GÜNCELLE" BUTTON ── */}
+        <div className="pt-4">
+          <button
+            type="button"
+            onClick={handleSaveAllProfile}
+            className="w-full h-13 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-[#0A0D15] text-sm font-black flex items-center justify-center gap-2.5 shadow-lg shadow-emerald-500/25 active:scale-98 transition-all cursor-pointer border border-emerald-400"
+          >
+            <Save size={18} strokeWidth={2.5} />
+            <span>Tüm Bilgileri Kaydet ve Güncelle</span>
+          </button>
+        </div>
+      </main>
+
+      {/* ── MODAL: YENİ İZİN EKLE ── */}
+      <AnimatePresence>
+        {isAddLeaveModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsAddLeaveModalOpen(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs"
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full max-w-md bg-white dark:bg-[#121826] border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl z-10 space-y-4"
+            >
+              <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3">
+                <h3 className="text-base font-black text-gray-900 dark:text-white">Yeni İzin / Rapor Talebi</h3>
+                <button
+                  type="button"
+                  onClick={() => setIsAddLeaveModalOpen(false)}
+                  className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 flex items-center justify-center"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+
+              <form onSubmit={handleAddLeaveSubmit} className="space-y-3.5 text-xs">
+                <div>
+                  <label className="font-bold text-gray-700 dark:text-gray-300 block mb-1">İzin Türü</label>
+                  <select
+                    value={newLeaveType}
+                    onChange={(e) => setNewLeaveType(e.target.value)}
+                    className="w-full h-10 px-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 font-bold"
+                  >
+                    <option value="Mazeret İzni">Mazeret İzni</option>
+                    <option value="Yıllık İzin">Yıllık İzin</option>
+                    <option value="Sağlık Raporu">Sağlık Raporu</option>
+                    <option value="Hizmetiçi Eğitim İzni">Hizmetiçi Eğitim İzni</option>
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-bold text-gray-700 dark:text-gray-300 block mb-1">Tarih</label>
+                    <input
+                      type="date"
+                      value={newLeaveDate}
+                      onChange={(e) => setNewLeaveDate(e.target.value)}
+                      className="w-full h-10 px-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-gray-700 dark:text-gray-300 block mb-1">Gün Sayısı</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="30"
+                      value={newLeaveDays}
+                      onChange={(e) => setNewLeaveDays(Number(e.target.value))}
+                      className="w-full h-10 px-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 font-bold"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="font-bold text-gray-700 dark:text-gray-300 block mb-1">Açıklama / Mazeret</label>
+                  <textarea
+                    rows={2}
+                    value={newLeaveDesc}
+                    onChange={(e) => setNewLeaveDesc(e.target.value)}
+                    placeholder="İzin gerekçesi..."
+                    className="w-full p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
+                  />
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    className="w-full h-11 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-[#0A0D15] font-black"
+                  >
+                    Talebi Kaydet
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── MODAL: YENİ AVANS TALEBİ ── */}
+      <AnimatePresence>
+        {isAddAdvanceModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsAddAdvanceModalOpen(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs"
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full max-w-md bg-white dark:bg-[#121826] border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl z-10 space-y-4"
+            >
+              <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3">
+                <h3 className="text-base font-black text-gray-900 dark:text-white">Yeni Avans Talebi</h3>
+                <button
+                  type="button"
+                  onClick={() => setIsAddAdvanceModalOpen(false)}
+                  className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 flex items-center justify-center"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+
+              <form onSubmit={handleAddAdvanceSubmit} className="space-y-3.5 text-xs">
+                <div>
+                  <label className="font-bold text-gray-700 dark:text-gray-300 block mb-1">Avans Tutarı (TL)</label>
+                  <input
+                    type="number"
+                    min="1000"
+                    step="500"
+                    value={advanceAmount}
+                    onChange={(e) => setAdvanceAmount(e.target.value)}
+                    className="w-full h-10 px-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-bold text-gray-700 dark:text-gray-300 block mb-1">Gerekçe / Not</label>
+                  <textarea
+                    rows={2}
+                    value={advanceNote}
+                    onChange={(e) => setAdvanceNote(e.target.value)}
+                    placeholder="Maaştan mahsup edilecek avans notu..."
+                    className="w-full p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
+                  />
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    className="w-full h-11 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-[#0A0D15] font-black"
+                  >
+                    Avans Talebini Gönder
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <ConnectBoardModal
+        isOpen={isConnectModalOpen}
+        onClose={() => setIsConnectModalOpen(false)}
+        theme={theme}
+      />
     </div>
   )
 }

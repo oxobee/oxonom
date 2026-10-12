@@ -268,7 +268,7 @@ export default function MAdminClient({
   const [isMoreSheetOpen, setIsMoreSheetOpen] = useState(false)
 
   // ── STATİSTİKSEL GRAFİKLER & ANALİTİK STATE ──
-  type ChartTab = 'attendance' | 'academic' | 'smartboard' | 'workload'
+  type ChartTab = 'attendance' | 'academic' | 'workload'
   const [activeChartTab, setActiveChartTab] = useState<ChartTab>('attendance')
   const [selectedTrendDay, setSelectedTrendDay] = useState<DayKey>('wed')
 
@@ -707,9 +707,6 @@ export default function MAdminClient({
               Canlı Veri
             </span>
           </div>
-          <span className="text-[11px] text-gray-400 font-medium">
-            MERNİS & MEBBİS Eşzamanlı
-          </span>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -1027,12 +1024,12 @@ export default function MAdminClient({
               </p>
             </div>
 
-            {/* Interactive Tab Selector */}
+            {/* Interactive Tab Selector (Akıllı Tahta Matris Silindi) */}
             <div className="flex items-center p-1 rounded-2xl bg-gray-100 dark:bg-gray-800/80 overflow-x-auto scrollbar-none">
               <button
                 type="button"
                 onClick={() => setActiveChartTab('attendance')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
                   activeChartTab === 'attendance'
                     ? 'bg-white dark:bg-gray-900 text-emerald-600 dark:text-emerald-400 shadow-xs'
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
@@ -1044,7 +1041,7 @@ export default function MAdminClient({
               <button
                 type="button"
                 onClick={() => setActiveChartTab('academic')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
                   activeChartTab === 'academic'
                     ? 'bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-xs'
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
@@ -1055,20 +1052,8 @@ export default function MAdminClient({
 
               <button
                 type="button"
-                onClick={() => setActiveChartTab('smartboard')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
-                  activeChartTab === 'smartboard'
-                    ? 'bg-white dark:bg-gray-900 text-cyan-600 dark:text-cyan-400 shadow-xs'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                Akıllı Tahta Matrix
-              </button>
-
-              <button
-                type="button"
                 onClick={() => setActiveChartTab('workload')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer whitespace-nowrap ${
                   activeChartTab === 'workload'
                     ? 'bg-white dark:bg-gray-900 text-purple-600 dark:text-purple-400 shadow-xs'
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
@@ -1079,66 +1064,131 @@ export default function MAdminClient({
             </div>
           </div>
 
-          {/* TAB 1: HAFTALIK KATILIM & DEVAMSIZLIK TRENDİ */}
+          {/* TAB 1: HAFTALIK KATILIM & DEVAMSIZLIK TRENDİ (YENİ SVG ALAN/DALGA GRAFİĞİ) */}
           {activeChartTab === 'attendance' && (
             <div className="pt-4 space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <span className="text-xs font-bold text-gray-700 dark:text-gray-300">
-                  Haftalık Yoklama Katılım Oranları (Pazartesi – Cuma)
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-xs font-bold text-gray-700 dark:text-gray-300">
+                    Haftalık Katılım Eğrisi & Günlük Yoklama Analizi
+                  </span>
+                </div>
                 <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1 rounded-xl">
-                  Haftalık Ortalama: %100 Katılım
+                  Haftalık Katılım Ortalaması: %100
                 </span>
               </div>
 
-              {/* Interactive Bar Chart Visualization */}
-              <div className="grid grid-cols-5 gap-2 sm:gap-4 pt-2">
+              {/* Modern SVG Curved Area Trend Chart */}
+              <div className="p-4 sm:p-5 rounded-3xl bg-gray-50/80 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800">
+                <div className="w-full relative">
+                  <svg viewBox="0 0 500 160" className="w-full h-40 overflow-visible">
+                    <defs>
+                      <linearGradient id="attendanceAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#10B981" stopOpacity="0.35" />
+                        <stop offset="100%" stopColor="#10B981" stopOpacity="0.0" />
+                      </linearGradient>
+                      <linearGradient id="attendanceLineGrad" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="#059669" />
+                        <stop offset="50%" stopColor="#10B981" />
+                        <stop offset="100%" stopColor="#34D399" />
+                      </linearGradient>
+                    </defs>
+
+                    {/* Guidelines */}
+                    <line x1="20" y1="20" x2="480" y2="20" stroke="#E5E7EB" strokeDasharray="4 4" className="dark:stroke-gray-700/60" />
+                    <line x1="20" y1="70" x2="480" y2="70" stroke="#E5E7EB" strokeDasharray="4 4" className="dark:stroke-gray-700/60" />
+                    <line x1="20" y1="120" x2="480" y2="120" stroke="#E5E7EB" strokeDasharray="4 4" className="dark:stroke-gray-700/60" />
+
+                    <text x="5" y="24" fontSize="10" className="fill-gray-400 font-mono">%100</text>
+                    <text x="12" y="74" fontSize="10" className="fill-gray-400 font-mono">%95</text>
+                    <text x="12" y="124" fontSize="10" className="fill-gray-400 font-mono">%90</text>
+
+                    {/* Area path */}
+                    <path
+                      d="M 50,20 C 130,20 170,20 250,20 C 330,20 370,20 450,20 L 450,140 L 50,140 Z"
+                      fill="url(#attendanceAreaGrad)"
+                    />
+
+                    {/* Smooth curve line */}
+                    <path
+                      d="M 50,20 C 130,20 170,20 250,20 C 330,20 370,20 450,20"
+                      fill="none"
+                      stroke="url(#attendanceLineGrad)"
+                      strokeWidth="3.5"
+                      strokeLinecap="round"
+                    />
+
+                    {/* Interactive Circles / Nodes */}
+                    {[
+                      { x: 50, key: 'mon', label: 'Pzt' },
+                      { x: 150, key: 'tue', label: 'Sal' },
+                      { x: 250, key: 'wed', label: 'Çar' },
+                      { x: 350, key: 'thu', label: 'Per' },
+                      { x: 450, key: 'fri', label: 'Cum' },
+                    ].map((node) => {
+                      const isSel = selectedTrendDay === node.key
+                      return (
+                        <g
+                          key={node.key}
+                          className="cursor-pointer"
+                          onClick={() => setSelectedTrendDay(node.key as DayKey)}
+                        >
+                          <circle
+                            cx={node.x}
+                            cy="20"
+                            r={isSel ? '8' : '5.5'}
+                            className={`transition-all ${
+                              isSel
+                                ? 'fill-emerald-500 stroke-4 stroke-white dark:stroke-[#111827]'
+                                : 'fill-teal-400 stroke-2 stroke-white dark:stroke-gray-800 hover:scale-125'
+                            }`}
+                          />
+                          <text
+                            x={node.x}
+                            y="155"
+                            textAnchor="middle"
+                            fontSize="11"
+                            className={`font-bold ${
+                              isSel ? 'fill-emerald-600 font-black' : 'fill-gray-500 dark:fill-gray-400'
+                            }`}
+                          >
+                            {node.label}
+                          </text>
+                        </g>
+                      )
+                    })}
+                  </svg>
+                </div>
+              </div>
+
+              {/* Day Cards Row */}
+              <div className="grid grid-cols-5 gap-2">
                 {attendanceTrendData.map((item) => {
                   const isSelected = selectedTrendDay === item.key
                   return (
-                    <div
+                    <button
                       key={item.key}
+                      type="button"
                       onClick={() => setSelectedTrendDay(item.key)}
-                      className={`flex flex-col items-center p-3 rounded-2xl border transition-all cursor-pointer group ${
+                      className={`p-3 rounded-2xl border text-center transition-all cursor-pointer ${
                         isSelected
-                          ? 'bg-emerald-500/10 border-emerald-500/60 shadow-xs'
-                          : 'bg-gray-50/80 dark:bg-gray-800/40 border-gray-100 dark:border-gray-800/80 hover:border-gray-300 dark:hover:border-gray-700'
+                          ? 'bg-emerald-500/15 border-emerald-500 text-emerald-800 dark:text-emerald-200 ring-1 ring-emerald-500 shadow-xs'
+                          : 'bg-white dark:bg-gray-800/40 border-gray-100 dark:border-gray-800 hover:border-gray-300'
                       }`}
                     >
-                      <span className="text-[11px] font-black text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
-                        {item.day}
-                      </span>
-
-                      {/* Bar Container */}
-                      <div className="w-full h-32 flex items-end justify-center my-2.5">
-                        <div className="w-full max-w-[36px] bg-gray-200 dark:bg-gray-700/60 rounded-xl overflow-hidden h-full flex items-end p-0.5">
-                          <motion.div
-                            initial={{ height: 0 }}
-                            animate={{ height: `${item.rate}%` }}
-                            transition={{ duration: 0.6, delay: 0.1 }}
-                            className={`w-full rounded-lg transition-colors ${
-                              isSelected
-                                ? 'bg-gradient-to-t from-emerald-600 to-teal-400'
-                                : 'bg-gradient-to-t from-emerald-500/70 to-emerald-400/80 group-hover:from-emerald-600 group-hover:to-teal-400'
-                            }`}
-                          />
-                        </div>
-                      </div>
-
-                      <span
-                        className={`text-xs font-black ${
-                          isSelected ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-700 dark:text-gray-300'
-                        }`}
-                      >
+                      <div className="text-[11px] font-bold text-gray-500 dark:text-gray-400">{item.day}</div>
+                      <div className="text-sm font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
                         %{item.rate}
-                      </span>
-                    </div>
+                      </div>
+                      <div className="text-[9px] font-semibold text-gray-400 mt-0.5">Tam Katılım</div>
+                    </button>
                   )
                 })}
               </div>
 
               {/* Day Detail Card */}
-              <div className="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200/80 dark:border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200/80 dark:border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black shrink-0">
                     <CheckCircle2 size={20} />
@@ -1180,190 +1230,153 @@ export default function MAdminClient({
             </div>
           )}
 
-          {/* TAB 2: BRANŞ VE AKADEMİK DERS DAĞILIMI */}
+          {/* TAB 2: BRANŞ VE AKADEMİK DERS DAĞILIMI (HALKA/RADIAL GRAFİKLER) */}
           {activeChartTab === 'academic' && (
-            <div className="pt-4 space-y-3">
-              <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400 mb-2">
-                <span>Ders / Zümre Branş Başarı & Müfredat İlerleme Oranı</span>
-                <span className="font-bold">Haftalık Saat / Sınav Başarısı</span>
+            <div className="pt-4 space-y-3.5">
+              <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
+                <span className="font-bold">Branş Başarı & Müfredat İlerleme Oranları</span>
+                <span>Zümre: Edebiyat & Türkçe</span>
               </div>
 
-              {branchPerformanceData.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="p-3 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800/80 flex flex-col gap-2"
-                >
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="font-black text-gray-900 dark:text-white">
-                        {item.branch}
-                      </span>
-                      <span className="text-[10px] font-bold text-gray-500">
-                        ({item.teacher})
-                      </span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                {branchPerformanceData.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="p-4 rounded-3xl bg-white dark:bg-[#111827] border border-gray-200/90 dark:border-gray-800 shadow-xs flex items-center justify-between gap-4"
+                  >
+                    <div className="flex-1 min-w-0 space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-black text-gray-900 dark:text-white">
+                          {item.branch}
+                        </span>
+                        <span className="text-[10px] font-bold text-gray-400">
+                          ({item.hours} Saat/Hafta)
+                        </span>
+                      </div>
+                      <div className="text-xs text-emerald-600 dark:text-emerald-400 font-bold">
+                        Öğretmen: {item.teacher}
+                      </div>
+
+                      {/* Horizontal mini bar for curriculum */}
+                      <div className="pt-1">
+                        <div className="flex items-center justify-between text-[10px] text-gray-500 mb-1">
+                          <span>Müfredat İlerlemesi</span>
+                          <span className="font-bold">%{item.progress}</span>
+                        </div>
+                        <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-1.5 overflow-hidden">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${item.progress}%` }}
+                            transition={{ duration: 0.8 }}
+                            className="bg-emerald-500 h-full rounded-full"
+                          />
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-                        {item.hours} Saat / Hafta
-                      </span>
-                      <span className="text-xs font-black text-emerald-600 dark:text-emerald-400">
-                        %{item.score} Başarı
-                      </span>
+                    {/* Circular SVG Ring for Success Rate */}
+                    <div className="relative w-16 h-16 shrink-0 flex items-center justify-center">
+                      <svg className="w-16 h-16 -rotate-90" viewBox="0 0 36 36">
+                        <path
+                          className="text-gray-200 dark:text-gray-800"
+                          strokeWidth="3.2"
+                          stroke="currentColor"
+                          fill="none"
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                        <path
+                          className="text-emerald-500"
+                          strokeDasharray={`${item.score}, 100`}
+                          strokeWidth="3.2"
+                          strokeLinecap="round"
+                          stroke="currentColor"
+                          fill="none"
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                        <span className="text-xs font-black text-gray-900 dark:text-white leading-none">
+                          %{item.score}
+                        </span>
+                        <span className="text-[8px] text-gray-400 font-bold leading-none mt-0.5">
+                          Başarı
+                        </span>
+                      </div>
                     </div>
                   </div>
-
-                  {/* Progress Bar */}
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden flex">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${item.progress}%` }}
-                      transition={{ duration: 0.7, delay: idx * 0.1 }}
-                      className="bg-emerald-500 h-full rounded-full"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between text-[10px] text-gray-500 dark:text-gray-400">
-                    <span>Müfredat İlerlemesi: %{item.progress} Tamamlandı</span>
-                    <span className="text-emerald-600 font-bold">{item.status}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* TAB 3: AKILLI TAHTA & DERSLİK CANLI MATRIX */}
-          {activeChartTab === 'smartboard' && (
-            <div className="pt-4 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {/* Status Box 1 */}
-                <div className="p-3.5 rounded-2xl bg-cyan-50/70 dark:bg-cyan-950/30 border border-cyan-200 dark:border-cyan-900/60">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[11px] font-bold text-cyan-800 dark:text-cyan-300">
-                      Aktif Pano Bağlantısı
-                    </span>
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  </div>
-                  <div className="text-xl font-black text-gray-900 dark:text-white">
-                    {smartboardStats.classroom} ({smartboardStats.boardCode})
-                  </div>
-                  <div className="text-[11px] text-cyan-700 dark:text-cyan-400 mt-1">
-                    Öğretmen: {smartboardStats.activeTeacher}
-                  </div>
-                </div>
-
-                {/* Status Box 2 */}
-                <div className="p-3.5 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/60">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300">
-                      Günlük Oturum Süresi
-                    </span>
-                    <Clock size={13} className="text-emerald-600" />
-                  </div>
-                  <div className="text-xl font-black text-gray-900 dark:text-white">
-                    {smartboardStats.uptimeToday}
-                  </div>
-                  <div className="text-[11px] text-emerald-700 dark:text-emerald-400 mt-1">
-                    İnteraktif Slayt: %{smartboardStats.interactionRate}
-                  </div>
-                </div>
-
-                {/* Status Box 3 */}
-                <div className="p-3.5 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900/60">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[11px] font-bold text-indigo-800 dark:text-indigo-300">
-                      Derslik Ortam & Ağ
-                    </span>
-                    <Activity size={13} className="text-indigo-600" />
-                  </div>
-                  <div className="text-xl font-black text-gray-900 dark:text-white">
-                    {smartboardStats.roomTemp} · {smartboardStats.networkPing}
-                  </div>
-                  <div className="text-[11px] text-indigo-700 dark:text-indigo-400 mt-1">
-                    Tüm sensörler ideal aralıkta
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Button */}
-              <div className="flex items-center justify-between p-3 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 text-xs">
-                <div className="flex items-center gap-2">
-                  <Tv size={16} className="text-cyan-500" />
-                  <span className="font-bold text-gray-800 dark:text-gray-200">
-                    Akıllı Tahta Yönetim Merkezine Geç
-                  </span>
-                </div>
-                <Link
-                  href={getUrl('/m-admin-boards')}
-                  className="px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-extrabold text-[11px] flex items-center gap-1 transition-colors"
-                >
-                  <span>Tahtaları Aç</span>
-                  <ChevronRight size={13} />
-                </Link>
+                ))}
               </div>
             </div>
           )}
 
-          {/* TAB 4: ÖĞRETMEN MESAİ & DERS DAĞILIM GRAFİĞİ */}
+          {/* TAB 3: ÖĞRETMEN MESAİ & DERS DAĞILIM GRAFİĞİ (KAPASİTE GÖSTERGESİ) */}
           {activeChartTab === 'workload' && (
             <div className="pt-4 space-y-4">
-              <div className="p-4 rounded-2xl bg-purple-50/70 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-900/60">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+              <div className="p-5 rounded-3xl bg-purple-50/70 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-900/60">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
                   <div>
-                    <h4 className="text-xs font-black text-purple-950 dark:text-purple-200">
+                    <h4 className="text-sm font-black text-purple-950 dark:text-purple-200">
                       {teacherWorkloadStats.teacherName} — Haftalık Ders Yükü & Mesai Dağılımı
                     </h4>
                     <p className="text-[11px] text-purple-800 dark:text-purple-300 mt-0.5">
                       Branş: {teacherWorkloadStats.branch} · MEB Standart Çizelgesi
                     </p>
                   </div>
-                  <span className="text-xs font-black text-purple-700 dark:text-purple-300 bg-purple-200/60 dark:bg-purple-900/60 px-2.5 py-1 rounded-xl">
-                    Toplam: {teacherWorkloadStats.totalHours} Saat / Hafta
+                  <span className="text-xs font-black text-purple-700 dark:text-purple-300 bg-purple-200/60 dark:bg-purple-900/60 px-3 py-1 rounded-xl shrink-0">
+                    Toplam: 30 Saat / Hafta (%100 Kapasite)
                   </span>
                 </div>
 
-                {/* Workload Progress Bar */}
-                <div className="w-full bg-purple-200 dark:bg-purple-900/40 rounded-full h-3.5 overflow-hidden flex">
+                {/* Multi-Segment Capacity Bar */}
+                <div className="w-full bg-purple-200/60 dark:bg-purple-900/40 rounded-full h-4 overflow-hidden flex shadow-inner">
                   <div
-                    className="bg-purple-600 h-full text-[9px] font-black text-white flex items-center justify-center"
-                    style={{ width: `${(teacherWorkloadStats.baseHours / teacherWorkloadStats.maxAllowedHours) * 100}%` }}
+                    className="bg-purple-600 h-full text-[9px] font-black text-white flex items-center justify-center transition-all"
+                    style={{ width: '50%' }}
                     title="Maaş Karşılığı: 15 Saat"
                   >
                     15 Saat (Maaş)
                   </div>
                   <div
-                    className="bg-teal-500 h-full text-[9px] font-black text-white flex items-center justify-center"
-                    style={{ width: `${(teacherWorkloadStats.additionalHours / teacherWorkloadStats.maxAllowedHours) * 100}%` }}
-                    title="Ek Ders: 9 Saat"
+                    className="bg-teal-500 h-full text-[9px] font-black text-white flex items-center justify-center transition-all"
+                    style={{ width: '50%' }}
+                    title="Ek Ders: 15 Saat"
                   >
-                    9 Saat (Ek)
+                    15 Saat (Ek Ders)
                   </div>
                 </div>
 
-                {/* Metrics Breakdown */}
-                <div className="grid grid-cols-3 gap-2 mt-3.5 pt-3 border-t border-purple-200/60 dark:border-purple-900/60 text-center">
-                  <div>
-                    <div className="text-sm font-black text-purple-900 dark:text-purple-200">
-                      {teacherWorkloadStats.baseHours} Saat
+                {/* Metrics Breakdown Cards */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-4 pt-3 border-t border-purple-200/60 dark:border-purple-900/60 text-center">
+                  <div className="p-2 rounded-xl bg-white/60 dark:bg-purple-950/40">
+                    <div className="text-base font-black text-purple-950 dark:text-purple-200">
+                      15 Saat
                     </div>
-                    <div className="text-[10px] text-purple-700 dark:text-purple-400 font-semibold">
+                    <div className="text-[10px] text-purple-700 dark:text-purple-400 font-bold">
                       Maaş Karşılığı
                     </div>
                   </div>
-                  <div>
-                    <div className="text-sm font-black text-teal-600 dark:text-teal-400">
-                      {teacherWorkloadStats.additionalHours} Saat
+                  <div className="p-2 rounded-xl bg-white/60 dark:bg-purple-950/40">
+                    <div className="text-base font-black text-teal-600 dark:text-teal-400">
+                      15 Saat
                     </div>
-                    <div className="text-[10px] text-teal-700 dark:text-teal-400 font-semibold">
+                    <div className="text-[10px] text-teal-700 dark:text-teal-400 font-bold">
                       Zorunlu Ek Ders
                     </div>
                   </div>
-                  <div>
-                    <div className="text-sm font-black text-emerald-600 dark:text-emerald-400">
-                      0 Saat
+                  <div className="p-2 rounded-xl bg-white/60 dark:bg-purple-950/40">
+                    <div className="text-base font-black text-indigo-600 dark:text-indigo-400">
+                      2 Saat
                     </div>
-                    <div className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold">
-                      Aşım / Fazla Mesai
+                    <div className="text-[10px] text-indigo-700 dark:text-indigo-400 font-bold">
+                      Haftalık Nöbet
+                    </div>
+                  </div>
+                  <div className="p-2 rounded-xl bg-white/60 dark:bg-purple-950/40">
+                    <div className="text-base font-black text-emerald-600 dark:text-emerald-400">
+                      Uyumlu
+                    </div>
+                    <div className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold">
+                      MEB Yasal Sınır
                     </div>
                   </div>
                 </div>

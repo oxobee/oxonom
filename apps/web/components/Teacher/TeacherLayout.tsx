@@ -226,13 +226,6 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
             <QrCode size={16} />
             <span>Akıllı Tahtaya Bağlan</span>
           </button>
-          <Link
-            href="/principal/dashboard"
-            className="w-full h-9 px-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors border border-emerald-200/50 dark:border-emerald-800/50 mb-2"
-          >
-            <ShieldCheck size={14} />
-            <span>Müdür & İdare Paneline Geç</span>
-          </Link>
 
           <button
             type="button"

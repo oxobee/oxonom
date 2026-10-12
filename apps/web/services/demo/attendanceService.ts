@@ -37,13 +37,34 @@ export function formatDateTurkish(dateStr: string): string {
   }
 }
 
+export function normalizeClassCode(code?: string): string {
+  if (!code) return '9/A'
+  const trimmed = code.trim()
+  if (
+    trimmed === '9-A Şubesi' ||
+    trimmed === '9/A Şubesi' ||
+    trimmed === '9/A' ||
+    trimmed === '9-A' ||
+    trimmed === '9A'
+  ) {
+    return '9/A'
+  }
+  return trimmed.replace(/-/g, '/').replace(/\s+Şubesi$/i, '')
+}
+
 export function getAttendanceForClass(
   classCode: string,
   dateStr: string = getTodayDateString()
 ): AttendanceRecord | null {
   if (typeof window === 'undefined') return null
   try {
-    const raw = localStorage.getItem(`${STORAGE_PREFIX}${classCode}_${dateStr}`)
+    const norm = normalizeClassCode(classCode)
+    const raw =
+      localStorage.getItem(`${STORAGE_PREFIX}${norm}_${dateStr}`) ||
+      localStorage.getItem(`${STORAGE_PREFIX}${classCode}_${dateStr}`) ||
+      localStorage.getItem(`${STORAGE_PREFIX}9/A_${dateStr}`) ||
+      localStorage.getItem(`${STORAGE_PREFIX}9-A_${dateStr}`) ||
+      localStorage.getItem(`${STORAGE_PREFIX}9-A Şubesi_${dateStr}`)
     if (!raw) return null
     return JSON.parse(raw)
   } catch (_) {
@@ -57,6 +78,7 @@ export function saveAttendanceForClass(
   totalStudents: number,
   dateStr: string = getTodayDateString()
 ): AttendanceRecord {
+  const normCode = normalizeClassCode(classCode)
   let presentCount = 0
   let absentCount = 0
 
@@ -72,7 +94,7 @@ export function saveAttendanceForClass(
 
   const record: AttendanceRecord = {
     date: dateStr,
-    classCode,
+    classCode: normCode,
     taken: true,
     updatedAt: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
     records,
@@ -83,19 +105,25 @@ export function saveAttendanceForClass(
 
   if (typeof window !== 'undefined') {
     try {
-      localStorage.setItem(`${STORAGE_PREFIX}${classCode}_${dateStr}`, JSON.stringify(record))
+      // Save primary key
+      const recordJson = JSON.stringify(record)
+      localStorage.setItem(`${STORAGE_PREFIX}${normCode}_${dateStr}`, recordJson)
+      // Save alias keys for multi-format compatibility
+      localStorage.setItem(`${STORAGE_PREFIX}9-A_${dateStr}`, recordJson)
+      localStorage.setItem(`${STORAGE_PREFIX}9-A Şubesi_${dateStr}`, recordJson)
+      localStorage.setItem(`${STORAGE_PREFIX}9/A_${dateStr}`, recordJson)
 
       // Update Index
       const existingHistory = getAllAttendanceHistory()
       const filtered = existingHistory.filter(
-        (h) => !(h.classCode === classCode && h.date === dateStr)
+        (h) => !(normalizeClassCode(h.classCode) === normCode && h.date === dateStr)
       )
       const updated = [record, ...filtered].sort((a, b) => b.date.localeCompare(a.date))
       localStorage.setItem(INDEX_KEY, JSON.stringify(updated))
 
       window.dispatchEvent(
         new CustomEvent('oxonom_attendance_updated', {
-          detail: { classCode, date: dateStr, record },
+          detail: { classCode: normCode, date: dateStr, record },
         })
       )
     } catch (_) {}

@@ -421,14 +421,6 @@ export default function PrincipalLayout({ children }: PrincipalLayoutProps) {
               <span>Yönetim Çevrimiçi</span>
             </div>
 
-            <Link
-              href="/teacher/dashboard"
-              className="h-9 px-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-bold text-xs flex items-center gap-1.5 transition-colors border border-indigo-200/50 dark:border-indigo-800/50"
-              title="Öğretmen Çalışma Merkezine Geç (Ebru TEKNECİ)"
-            >
-              <GraduationCap size={13} />
-              <span>Öğretmen Portalı</span>
-            </Link>
 
             <Link
               href="/principal/schedule"

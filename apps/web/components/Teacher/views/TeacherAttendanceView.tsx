@@ -30,7 +30,7 @@ import {
   AttendanceRecord,
 } from '@services/demo/attendanceService'
 export default function TeacherAttendanceView() {
-  const [selectedClass, setSelectedClass] = useState('9-A Şubesi')
+  const [selectedClass, setSelectedClass] = useState('9/A')
   const [selectedDate, setSelectedDate] = useState<string>(getTodayDateString())
   const [activeTab, setActiveTab] = useState<'take' | 'history'>('take')
 
@@ -39,12 +39,10 @@ export default function TeacherAttendanceView() {
   const [historyFilterClass, setHistoryFilterClass] = useState<string>('all')
   const [historyList, setHistoryList] = useState<AttendanceRecord[]>(() => getAllAttendanceHistory())
 
-  // Students for the selected class
+  // Students for the selected class (Erçil UĞURLU in 9/A)
   const classStudents = useMemo(() => {
-    return ALL_INITIAL_STUDENTS.filter(
-      (s) => s.className === selectedClass || selectedClass === '9-A Şubesi'
-    )
-  }, [selectedClass])
+    return ALL_INITIAL_STUDENTS
+  }, [])
 
   // Records state: studentId -> 'present' | 'absent'
   const [records, setRecords] = useState<Record<string, 'present' | 'absent'>>({})
@@ -174,9 +172,7 @@ export default function TeacherAttendanceView() {
                   onChange={(e) => setSelectedClass(e.target.value)}
                   className="h-9 px-3 rounded-xl bg-gray-100 dark:bg-gray-800 text-xs font-bold border-none text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 cursor-pointer"
                 >
-                  <option value="9-A Şubesi">9-A Şubesi (Rehberlik)</option>
-                  <option value="9-B Şubesi">9-B Şubesi</option>
-                  <option value="1-A Şubesi">1-A Şubesi</option>
+                  <option value="9/A">9/A Şubesi (Sınıf Rehberliği)</option>
                 </select>
               </div>
 
@@ -357,9 +353,7 @@ export default function TeacherAttendanceView() {
                 className="h-8 px-2.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-xs font-bold border-none text-gray-900 dark:text-white"
               >
                 <option value="all">Tüm Şubeler</option>
-                <option value="9-A Şubesi">9-A Şubesi</option>
-                <option value="9-B Şubesi">9-B Şubesi</option>
-                <option value="1-A Şubesi">1-A Şubesi</option>
+                <option value="9/A">9/A Şubesi</option>
               </select>
 
               {historyFilterDate && (
