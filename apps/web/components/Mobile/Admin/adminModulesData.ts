@@ -23,10 +23,10 @@ export const ADMIN_MODULES: AdminModuleItem[] = [
     subItems: [
       'Yönetim Dashboard',
       'Okul İstatistikleri',
-      'Toplam öğrenci sayısı (348)',
-      'Toplam öğretmen sayısı (24)',
-      'Sınıf ve şube sayısı (12)',
-      'Aktif veli sayısı (312)',
+      'Toplam öğrenci mevcudu',
+      'Toplam öğretmen ve personel kadrosu',
+      'Aktif sınıf ve şubeler',
+      'Kayıtlı veliler ve iletişim kütüğü',
       'Bugünkü Ders Programı',
       'Günlük Devamsızlık Özeti',
       'Yaklaşan Sınavlar ve Etkinlikler',
@@ -91,7 +91,7 @@ export const ADMIN_MODULES: AdminModuleItem[] = [
     description: 'Haftalık program oluşturma, sürükle-bırak dağıtım ve çakışma kontrolü.',
     icon: 'Calendar',
     isAvailable: true,
-    href: '/principal/schedule',
+    href: '/principal/curriculum',
     subItems: [
       'Haftalık Ders Programı',
       'Sınıf Bazlı Program',

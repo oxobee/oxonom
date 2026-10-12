@@ -15,27 +15,34 @@ import {
   Wand2,
   Calendar,
   ChevronRight,
+  ChevronDown,
   GraduationCap,
   Building2,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
   Tv,
   Layers,
   ArrowRight,
   Copy,
   Users,
+  ShieldCheck,
+  Sliders,
+  Settings,
+  School,
+  Flame,
+  UserCheck,
+  UserX,
+  BarChart2,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import MobileHeader from '@components/Mobile/MobileHeader'
-import MobileAdminDock from './MobileAdminDock'
-import MobileAdminMoreSheet from './MobileAdminMoreSheet'
 import { useMobileTheme } from '@components/Mobile/useMobileTheme'
 import {
   SCHOOL_ORGS,
   getOrgTeachers,
 } from '@services/demo/schoolDirectory'
 import { useLHSession } from '@components/Contexts/LHSessionContext'
-import { INITIAL_SCHEDULE_ENTRIES } from './MAdminScheduleClient'
 
 export interface MAdminCurriculumClientProps {
   orgSlug?: string
@@ -85,16 +92,29 @@ export const MIDDLE_PERIODS: PeriodSlot[] = [
   { periodNumber: 7, time: '14:35 - 15:15' },
 ]
 
+export type RoomType = 'normal' | 'atolye' | 'laboratuvar'
+
+export interface BackupTeacher {
+  id: string
+  name: string
+  priority: number // 1: 1. Yedek, 2: 2. Yedek vb.
+  branch?: string
+}
+
 export interface CurriculumCourse {
   id: string
   code: string
   name: string
   category: 'Temel Ders' | 'Fen & Teknoloji' | 'Sosyal & Beşeri' | 'Sanat & Spor' | 'Yabancı Dil'
   gradeLevels: string[]
+  targetClass: string // Örn: '9/A', '10/G' vb.
   orgId: number
   weeklyHours: number
-  branchTeacher: string
-  requiredRoom: string
+  branchTeacher: string // Asıl Öğretmen
+  teacherBranch: string // Branş (Öğretmen seçilince otomatik gelir)
+  backupTeachers: BackupTeacher[] // Yedek Öğretmenler (Öncelik sıralı)
+  roomType: RoomType // Normal Sınıf | Atölye | Laboratuvar
+  requiredRoom: string // Belirli derslik adı (Derslik 9/A, Fen Laboratuvarı, vb.)
   isSmartBoardReady: boolean
   isElective: boolean
   color: string
@@ -107,7 +127,12 @@ export interface ScheduleEntry {
   period: number
   classCode: string
   subject: string
-  teacherName: string
+  teacherName: string // Asıl Öğretmen
+  teacherBranch?: string
+  backupTeacherName?: string // 1. Yedek Öğretmen
+  isTeacherOnLeave?: boolean // Asıl öğretmen izinli / raporlu mu?
+  activeTeacherName?: string // Fiilen derse giren öğretmen
+  roomType?: RoomType
   roomName: string
   color: string
   isSmartBoardActive: boolean
@@ -184,279 +209,7 @@ function getColorStyle(color: string) {
   return COLOR_OPTIONS[color] || COLOR_OPTIONS.blue
 }
 
-// ── INITIAL PRESET DATASETS ──
-const INITIAL_PRIMARY_COURSES: CurriculumCourse[] = [
-  {
-    id: 'c-1',
-    code: 'TUR-101',
-    name: 'Türkçe',
-    category: 'Temel Ders',
-    gradeLevels: ['1. Sınıf', '2. Sınıf', '3. Sınıf', '4. Sınıf'],
-    orgId: 10,
-    weeklyHours: 6,
-    branchTeacher: 'Özlem ZOR',
-    requiredRoom: 'Derslik 101',
-    isSmartBoardReady: true,
-    isElective: false,
-    color: 'blue',
-  },
-  {
-    id: 'c-2',
-    code: 'MAT-101',
-    name: 'Matematik',
-    category: 'Temel Ders',
-    gradeLevels: ['1. Sınıf', '2. Sınıf', '3. Sınıf', '4. Sınıf'],
-    orgId: 10,
-    weeklyHours: 5,
-    branchTeacher: 'Özlem ZOR',
-    requiredRoom: 'Derslik 101',
-    isSmartBoardReady: true,
-    isElective: false,
-    color: 'indigo',
-  },
-  {
-    id: 'c-3',
-    code: 'HAY-101',
-    name: 'Hayat Bilgisi',
-    category: 'Sosyal & Beşeri',
-    gradeLevels: ['1. Sınıf', '2. Sınıf', '3. Sınıf'],
-    orgId: 10,
-    weeklyHours: 4,
-    branchTeacher: 'Özlem ZOR',
-    requiredRoom: 'Derslik 101',
-    isSmartBoardReady: true,
-    isElective: false,
-    color: 'teal',
-  },
-  {
-    id: 'c-4',
-    code: 'BED-101',
-    name: 'Beden Eğitimi ve Oyun',
-    category: 'Sanat & Spor',
-    gradeLevels: ['1. Sınıf', '2. Sınıf', '3. Sınıf', '4. Sınıf'],
-    orgId: 10,
-    weeklyHours: 5,
-    branchTeacher: 'Özlem ZOR',
-    requiredRoom: 'Kapalı Spor Salonu',
-    isSmartBoardReady: false,
-    isElective: false,
-    color: 'orange',
-  },
-  {
-    id: 'c-5',
-    code: 'ING-101',
-    name: 'İngilizce',
-    category: 'Yabancı Dil',
-    gradeLevels: ['2. Sınıf', '3. Sınıf', '4. Sınıf'],
-    orgId: 10,
-    weeklyHours: 2,
-    branchTeacher: 'Beyzanur SALMANLI',
-    requiredRoom: 'Derslik 101',
-    isSmartBoardReady: true,
-    isElective: false,
-    color: 'purple',
-  },
-  {
-    id: 'c-6',
-    code: 'GOR-101',
-    name: 'Görsel Sanatlar',
-    category: 'Sanat & Spor',
-    gradeLevels: ['1. Sınıf', '2. Sınıf', '3. Sınıf', '4. Sınıf'],
-    orgId: 10,
-    weeklyHours: 1,
-    branchTeacher: 'Özlem ZOR',
-    requiredRoom: 'Görsel Sanatlar Atölyesi',
-    isSmartBoardReady: false,
-    isElective: false,
-    color: 'amber',
-  },
-  {
-    id: 'c-7',
-    code: 'MUZ-101',
-    name: 'Müzik',
-    category: 'Sanat & Spor',
-    gradeLevels: ['1. Sınıf', '2. Sınıf', '3. Sınıf', '4. Sınıf'],
-    orgId: 10,
-    weeklyHours: 1,
-    branchTeacher: 'Özlem ZOR',
-    requiredRoom: 'Müzik Dersliği',
-    isSmartBoardReady: true,
-    isElective: false,
-    color: 'pink',
-  },
-  {
-    id: 'c-8',
-    code: 'DIN-101',
-    name: 'Din Kültürü & Ahlak',
-    category: 'Sosyal & Beşeri',
-    gradeLevels: ['4. Sınıf'],
-    orgId: 10,
-    weeklyHours: 2,
-    branchTeacher: 'Özge KABA',
-    requiredRoom: 'Derslik 101',
-    isSmartBoardReady: true,
-    isElective: false,
-    color: 'emerald',
-  },
-  {
-    id: 'c-9',
-    code: 'SER-101',
-    name: 'Serbest Etkinlikler',
-    category: 'Temel Ders',
-    gradeLevels: ['1. Sınıf', '2. Sınıf'],
-    orgId: 10,
-    weeklyHours: 4,
-    branchTeacher: 'Özlem ZOR',
-    requiredRoom: 'Derslik 101',
-    isSmartBoardReady: true,
-    isElective: false,
-    color: 'cyan',
-  },
-]
-
-const INITIAL_MIDDLE_COURSES: CurriculumCourse[] = [
-  {
-    id: 'mc-1',
-    code: 'TUR-701',
-    name: 'Türkçe',
-    category: 'Temel Ders',
-    gradeLevels: ['5. Sınıf', '6. Sınıf', '7. Sınıf', '8. Sınıf'],
-    orgId: 20,
-    weeklyHours: 5,
-    branchTeacher: 'Beritan ŞENATEŞ',
-    requiredRoom: 'Derslik 301',
-    isSmartBoardReady: true,
-    isElective: false,
-    color: 'blue',
-  },
-  {
-    id: 'mc-2',
-    code: 'MAT-801',
-    name: 'Matematik',
-    category: 'Temel Ders',
-    gradeLevels: ['5. Sınıf', '6. Sınıf', '7. Sınıf', '8. Sınıf'],
-    orgId: 20,
-    weeklyHours: 5,
-    branchTeacher: 'Orkun AYDIN',
-    requiredRoom: 'Derslik 301',
-    isSmartBoardReady: true,
-    isElective: false,
-    color: 'indigo',
-  },
-  {
-    id: 'mc-3',
-    code: 'FEN-701',
-    name: 'Fen Bilimleri',
-    category: 'Fen & Teknoloji',
-    gradeLevels: ['5. Sınıf', '6. Sınıf', '7. Sınıf', '8. Sınıf'],
-    orgId: 20,
-    weeklyHours: 4,
-    branchTeacher: 'Bülent TURAN',
-    requiredRoom: 'Fen Laboratuvarı',
-    isSmartBoardReady: true,
-    isElective: false,
-    color: 'emerald',
-  },
-  {
-    id: 'mc-4',
-    code: 'SOS-701',
-    name: 'Sosyal Bilgiler',
-    category: 'Sosyal & Beşeri',
-    gradeLevels: ['5. Sınıf', '6. Sınıf', '7. Sınıf'],
-    orgId: 20,
-    weeklyHours: 3,
-    branchTeacher: 'Ayşe GÜL',
-    requiredRoom: 'Derslik 301',
-    isSmartBoardReady: true,
-    isElective: false,
-    color: 'amber',
-  },
-  {
-    id: 'mc-5',
-    code: 'ING-701',
-    name: 'Yabancı Dil (İngilizce)',
-    category: 'Yabancı Dil',
-    gradeLevels: ['5. Sınıf', '6. Sınıf', '7. Sınıf', '8. Sınıf'],
-    orgId: 20,
-    weeklyHours: 4,
-    branchTeacher: 'Deniz ARSLAN',
-    requiredRoom: 'Derslik 301',
-    isSmartBoardReady: true,
-    isElective: false,
-    color: 'purple',
-  },
-  {
-    id: 'mc-6',
-    code: 'DIN-701',
-    name: 'Din Kültürü ve Ahlak',
-    category: 'Sosyal & Beşeri',
-    gradeLevels: ['5. Sınıf', '6. Sınıf', '7. Sınıf', '8. Sınıf'],
-    orgId: 20,
-    weeklyHours: 2,
-    branchTeacher: 'Murat YILMAZ',
-    requiredRoom: 'Derslik 301',
-    isSmartBoardReady: true,
-    isElective: false,
-    color: 'teal',
-  },
-  {
-    id: 'mc-7',
-    code: 'BIL-701',
-    name: 'Bilişim Teknolojileri & Kodlama',
-    category: 'Fen & Teknoloji',
-    gradeLevels: ['5. Sınıf', '6. Sınıf'],
-    orgId: 20,
-    weeklyHours: 2,
-    branchTeacher: 'Emre ÇELİK',
-    requiredRoom: 'Bilişim Laboratuvarı',
-    isSmartBoardReady: true,
-    isElective: false,
-    color: 'cyan',
-  },
-  {
-    id: 'mc-8',
-    code: 'BED-701',
-    name: 'Beden Eğitimi ve Spor',
-    category: 'Sanat & Spor',
-    gradeLevels: ['5. Sınıf', '6. Sınıf', '7. Sınıf', '8. Sınıf'],
-    orgId: 20,
-    weeklyHours: 2,
-    branchTeacher: 'Hakan DEMİR',
-    requiredRoom: 'Kapalı Spor Salonu',
-    isSmartBoardReady: false,
-    isElective: false,
-    color: 'orange',
-  },
-  {
-    id: 'mc-9',
-    code: 'GOR-701',
-    name: 'Görsel Sanatlar',
-    category: 'Sanat & Spor',
-    gradeLevels: ['5. Sınıf', '6. Sınıf', '7. Sınıf', '8. Sınıf'],
-    orgId: 20,
-    weeklyHours: 1,
-    branchTeacher: 'Sema POLAT',
-    requiredRoom: 'Resim Atölyesi',
-    isSmartBoardReady: false,
-    isElective: false,
-    color: 'amber',
-  },
-  {
-    id: 'mc-10',
-    code: 'MUZ-701',
-    name: 'Müzik',
-    category: 'Sanat & Spor',
-    gradeLevels: ['5. Sınıf', '6. Sınıf', '7. Sınıf', '8. Sınıf'],
-    orgId: 20,
-    weeklyHours: 1,
-    branchTeacher: 'Elif ŞAHİN',
-    requiredRoom: 'Müzik Odası',
-    isSmartBoardReady: true,
-    isElective: false,
-    color: 'pink',
-  },
-]
-
+// ── AUTHENTIC INITIAL DATASETS (ORGANIZATION 30: OXONOM OKULLARI & 9/A) ──
 const INITIAL_OXONOM_COURSES: CurriculumCourse[] = [
   {
     id: 'c-ox-1',
@@ -464,9 +217,13 @@ const INITIAL_OXONOM_COURSES: CurriculumCourse[] = [
     name: 'Türk Dili ve Edebiyatı',
     category: 'Temel Ders',
     gradeLevels: ['9. Sınıf'],
+    targetClass: '9/A',
     orgId: 30,
     weeklyHours: 5,
     branchTeacher: 'Ebru TEKNECİ',
+    teacherBranch: 'Türk Dili ve Edebiyatı',
+    backupTeachers: [{ id: 'b-ox-1', name: 'Dr. Uğur UĞURLU', priority: 1, branch: 'Edebiyat & Kurum Yönetimi' }],
+    roomType: 'normal',
     requiredRoom: 'Derslik 9/A',
     isSmartBoardReady: true,
     isElective: false,
@@ -478,9 +235,13 @@ const INITIAL_OXONOM_COURSES: CurriculumCourse[] = [
     name: 'Matematik',
     category: 'Temel Ders',
     gradeLevels: ['9. Sınıf'],
+    targetClass: '9/A',
     orgId: 30,
     weeklyHours: 6,
     branchTeacher: 'Ebru TEKNECİ',
+    teacherBranch: 'Matematik',
+    backupTeachers: [{ id: 'b-ox-2', name: 'Dr. Uğur UĞURLU', priority: 1, branch: 'Matematik & Analitik' }],
+    roomType: 'normal',
     requiredRoom: 'Derslik 9/A',
     isSmartBoardReady: true,
     isElective: false,
@@ -489,126 +250,147 @@ const INITIAL_OXONOM_COURSES: CurriculumCourse[] = [
   {
     id: 'c-ox-3',
     code: 'FEN-901',
-    name: 'Fizik / Fen Bilimleri',
+    name: 'Fizik & Fen Bilimleri',
     category: 'Fen & Teknoloji',
     gradeLevels: ['9. Sınıf'],
+    targetClass: '9/A',
     orgId: 30,
     weeklyHours: 4,
     branchTeacher: 'Ebru TEKNECİ',
-    requiredRoom: 'Fen Laboratuvarı',
+    teacherBranch: 'Fen Bilimleri',
+    backupTeachers: [{ id: 'b-ox-3', name: 'Dr. Uğur UĞURLU', priority: 1, branch: 'Fen & Teknoloji' }],
+    roomType: 'laboratuvar',
+    requiredRoom: 'Fen & Teknoloji Laboratuvarı',
     isSmartBoardReady: true,
     isElective: false,
     color: 'emerald',
   },
   {
     id: 'c-ox-4',
-    code: 'TAR-901',
-    name: 'Tarih',
-    category: 'Sosyal & Beşeri',
-    gradeLevels: ['9. Sınıf'],
-    orgId: 30,
-    weeklyHours: 2,
-    branchTeacher: 'Ebru TEKNECİ',
-    requiredRoom: 'Derslik 9/A',
-    isSmartBoardReady: true,
-    isElective: false,
-    color: 'amber',
-  },
-  {
-    id: 'c-ox-5',
-    code: 'COG-901',
-    name: 'Coğrafya',
-    category: 'Sosyal & Beşeri',
-    gradeLevels: ['9. Sınıf'],
-    orgId: 30,
-    weeklyHours: 2,
-    branchTeacher: 'Ebru TEKNECİ',
-    requiredRoom: 'Derslik 9/A',
-    isSmartBoardReady: true,
-    isElective: false,
-    color: 'teal',
-  },
-  {
-    id: 'c-ox-6',
-    code: 'ING-901',
-    name: 'İngilizce / Yabancı Dil',
-    category: 'Yabancı Dil',
-    gradeLevels: ['9. Sınıf'],
-    orgId: 30,
-    weeklyHours: 4,
-    branchTeacher: 'Ebru TEKNECİ',
-    requiredRoom: 'Derslik 9/A',
-    isSmartBoardReady: true,
-    isElective: false,
-    color: 'purple',
-  },
-  {
-    id: 'c-ox-7',
     code: 'BIL-901',
-    name: 'Bilişim & Kodlama',
+    name: 'Bilişim & Yazılım',
     category: 'Fen & Teknoloji',
     gradeLevels: ['9. Sınıf'],
+    targetClass: '9/A',
     orgId: 30,
-    weeklyHours: 2,
+    weeklyHours: 3,
     branchTeacher: 'Ebru TEKNECİ',
+    teacherBranch: 'Bilişim Teknolojileri',
+    backupTeachers: [{ id: 'b-ox-4', name: 'Dr. Uğur UĞURLU', priority: 1, branch: 'Yazılım' }],
+    roomType: 'atolye',
     requiredRoom: 'Bilişim & Kodlama Atölyesi',
     isSmartBoardReady: true,
     isElective: false,
     color: 'cyan',
   },
   {
-    id: 'c-ox-8',
-    code: 'REH-901',
-    name: 'Rehberlik & Kariyer',
+    id: 'c-ox-5',
+    code: 'ING-901',
+    name: 'Yabancı Dil (İngilizce)',
+    category: 'Yabancı Dil',
+    gradeLevels: ['9. Sınıf'],
+    targetClass: '9/A',
+    orgId: 30,
+    weeklyHours: 4,
+    branchTeacher: 'Ebru TEKNECİ',
+    teacherBranch: 'İngilizce',
+    backupTeachers: [{ id: 'b-ox-5', name: 'Dr. Uğur UĞURLU', priority: 1, branch: 'Yabancı Diller' }],
+    roomType: 'normal',
+    requiredRoom: 'Derslik 9/A',
+    isSmartBoardReady: true,
+    isElective: false,
+    color: 'purple',
+  },
+  {
+    id: 'c-ox-6',
+    code: 'TAR-901',
+    name: 'Tarih',
     category: 'Sosyal & Beşeri',
     gradeLevels: ['9. Sınıf'],
+    targetClass: '9/A',
+    orgId: 30,
+    weeklyHours: 2,
+    branchTeacher: 'Ebru TEKNECİ',
+    teacherBranch: 'Tarih',
+    backupTeachers: [],
+    roomType: 'normal',
+    requiredRoom: 'Derslik 9/A',
+    isSmartBoardReady: true,
+    isElective: false,
+    color: 'amber',
+  },
+  {
+    id: 'c-ox-7',
+    code: 'COG-901',
+    name: 'Coğrafya',
+    category: 'Sosyal & Beşeri',
+    gradeLevels: ['9. Sınıf'],
+    targetClass: '9/A',
+    orgId: 30,
+    weeklyHours: 2,
+    branchTeacher: 'Ebru TEKNECİ',
+    teacherBranch: 'Coğrafya',
+    backupTeachers: [],
+    roomType: 'normal',
+    requiredRoom: 'Derslik 9/A',
+    isSmartBoardReady: true,
+    isElective: false,
+    color: 'teal',
+  },
+  {
+    id: 'c-ox-8',
+    code: 'BED-901',
+    name: 'Beden Eğitimi & Spor',
+    category: 'Sanat & Spor',
+    gradeLevels: ['9. Sınıf'],
+    targetClass: '9/A',
+    orgId: 30,
+    weeklyHours: 2,
+    branchTeacher: 'Ebru TEKNECİ',
+    teacherBranch: 'Beden Eğitimi',
+    backupTeachers: [],
+    roomType: 'atolye',
+    requiredRoom: 'Kapalı Spor Salonu',
+    isSmartBoardReady: false,
+    isElective: false,
+    color: 'orange',
+  },
+  {
+    id: 'c-ox-9',
+    code: 'GOR-901',
+    name: 'Görsel Sanatlar & Atölye',
+    category: 'Sanat & Spor',
+    gradeLevels: ['9. Sınıf'],
+    targetClass: '9/A',
     orgId: 30,
     weeklyHours: 1,
     branchTeacher: 'Ebru TEKNECİ',
-    requiredRoom: 'Derslik 9/A',
+    teacherBranch: 'Görsel Sanatlar',
+    backupTeachers: [],
+    roomType: 'atolye',
+    requiredRoom: 'Görsel Sanatlar Atölyesi',
+    isSmartBoardReady: false,
+    isElective: false,
+    color: 'pink',
+  },
+  {
+    id: 'c-ox-10',
+    code: 'MUZ-901',
+    name: 'Müzik & Sahne Sanatları',
+    category: 'Sanat & Spor',
+    gradeLevels: ['9. Sınıf'],
+    targetClass: '9/A',
+    orgId: 30,
+    weeklyHours: 1,
+    branchTeacher: 'Ebru TEKNECİ',
+    teacherBranch: 'Müzik',
+    backupTeachers: [],
+    roomType: 'atolye',
+    requiredRoom: 'Müzik Odası',
     isSmartBoardReady: true,
     isElective: false,
     color: 'pink',
   },
-]
-
-// Default pre-filled 1-A weekly template
-const DEFAULT_1A_SCHEDULE: ScheduleEntry[] = [
-  // Pazartesi (6 saat)
-  { id: 'sc-1', orgId: 10, day: 'mon', period: 1, classCode: '1-A', subject: 'Türkçe', teacherName: 'Özlem ZOR', roomName: 'Derslik 101', color: 'blue', isSmartBoardActive: true },
-  { id: 'sc-2', orgId: 10, day: 'mon', period: 2, classCode: '1-A', subject: 'Türkçe', teacherName: 'Özlem ZOR', roomName: 'Derslik 101', color: 'blue', isSmartBoardActive: true },
-  { id: 'sc-3', orgId: 10, day: 'mon', period: 3, classCode: '1-A', subject: 'Matematik', teacherName: 'Özlem ZOR', roomName: 'Derslik 101', color: 'indigo', isSmartBoardActive: true },
-  { id: 'sc-4', orgId: 10, day: 'mon', period: 4, classCode: '1-A', subject: 'Hayat Bilgisi', teacherName: 'Özlem ZOR', roomName: 'Derslik 101', color: 'teal', isSmartBoardActive: true },
-  { id: 'sc-5', orgId: 10, day: 'mon', period: 5, classCode: '1-A', subject: 'Görsel Sanatlar', teacherName: 'Özlem ZOR', roomName: 'Görsel Sanatlar Atölyesi', color: 'amber', isSmartBoardActive: false },
-  { id: 'sc-6', orgId: 10, day: 'mon', period: 6, classCode: '1-A', subject: 'Beden Eğitimi ve Oyun', teacherName: 'Özlem ZOR', roomName: 'Kapalı Spor Salonu', color: 'orange', isSmartBoardActive: false },
-  // Salı (6 saat)
-  { id: 'sc-7', orgId: 10, day: 'tue', period: 1, classCode: '1-A', subject: 'Matematik', teacherName: 'Özlem ZOR', roomName: 'Derslik 101', color: 'indigo', isSmartBoardActive: true },
-  { id: 'sc-8', orgId: 10, day: 'tue', period: 2, classCode: '1-A', subject: 'Matematik', teacherName: 'Özlem ZOR', roomName: 'Derslik 101', color: 'indigo', isSmartBoardActive: true },
-  { id: 'sc-9', orgId: 10, day: 'tue', period: 3, classCode: '1-A', subject: 'Türkçe', teacherName: 'Özlem ZOR', roomName: 'Derslik 101', color: 'blue', isSmartBoardActive: true },
-  { id: 'sc-10', orgId: 10, day: 'tue', period: 4, classCode: '1-A', subject: 'Hayat Bilgisi', teacherName: 'Özlem ZOR', roomName: 'Derslik 101', color: 'teal', isSmartBoardActive: true },
-  { id: 'sc-11', orgId: 10, day: 'tue', period: 5, classCode: '1-A', subject: 'Müzik', teacherName: 'Özlem ZOR', roomName: 'Müzik Dersliği', color: 'pink', isSmartBoardActive: false },
-  { id: 'sc-12', orgId: 10, day: 'tue', period: 6, classCode: '1-A', subject: 'Beden Eğitimi ve Oyun', teacherName: 'Özlem ZOR', roomName: 'Kapalı Spor Salonu', color: 'orange', isSmartBoardActive: false },
-  // Çarşamba (6 saat)
-  { id: 'sc-13', orgId: 10, day: 'wed', period: 1, classCode: '1-A', subject: 'Türkçe', teacherName: 'Özlem ZOR', roomName: 'Derslik 101', color: 'blue', isSmartBoardActive: true },
-  { id: 'sc-14', orgId: 10, day: 'wed', period: 2, classCode: '1-A', subject: 'Türkçe', teacherName: 'Özlem ZOR', roomName: 'Derslik 101', color: 'blue', isSmartBoardActive: true },
-  { id: 'sc-15', orgId: 10, day: 'wed', period: 3, classCode: '1-A', subject: 'Hayat Bilgisi', teacherName: 'Özlem ZOR', roomName: 'Derslik 101', color: 'teal', isSmartBoardActive: true },
-  { id: 'sc-16', orgId: 10, day: 'wed', period: 4, classCode: '1-A', subject: 'İngilizce', teacherName: 'Beyzanur SALMANLI', roomName: 'Derslik 101', color: 'purple', isSmartBoardActive: true },
-  { id: 'sc-17', orgId: 10, day: 'wed', period: 5, classCode: '1-A', subject: 'İngilizce', teacherName: 'Beyzanur SALMANLI', roomName: 'Derslik 101', color: 'purple', isSmartBoardActive: true },
-  { id: 'sc-18', orgId: 10, day: 'wed', period: 6, classCode: '1-A', subject: 'Beden Eğitimi ve Oyun', teacherName: 'Özlem ZOR', roomName: 'Kapalı Spor Salonu', color: 'orange', isSmartBoardActive: false },
-  // Perşembe (6 saat)
-  { id: 'sc-19', orgId: 10, day: 'thu', period: 1, classCode: '1-A', subject: 'Matematik', teacherName: 'Özlem ZOR', roomName: 'Derslik 101', color: 'indigo', isSmartBoardActive: true },
-  { id: 'sc-20', orgId: 10, day: 'thu', period: 2, classCode: '1-A', subject: 'Türkçe', teacherName: 'Özlem ZOR', roomName: 'Derslik 101', color: 'blue', isSmartBoardActive: true },
-  { id: 'sc-21', orgId: 10, day: 'thu', period: 3, classCode: '1-A', subject: 'Hayat Bilgisi', teacherName: 'Özlem ZOR', roomName: 'Derslik 101', color: 'teal', isSmartBoardActive: true },
-  { id: 'sc-22', orgId: 10, day: 'thu', period: 4, classCode: '1-A', subject: 'Beden Eğitimi ve Oyun', teacherName: 'Özlem ZOR', roomName: 'Kapalı Spor Salonu', color: 'orange', isSmartBoardActive: false },
-  { id: 'sc-23', orgId: 10, day: 'thu', period: 5, classCode: '1-A', subject: 'Beden Eğitimi ve Oyun', teacherName: 'Özlem ZOR', roomName: 'Kapalı Spor Salonu', color: 'orange', isSmartBoardActive: false },
-  { id: 'sc-24', orgId: 10, day: 'thu', period: 6, classCode: '1-A', subject: 'Serbest Etkinlikler', teacherName: 'Özlem ZOR', roomName: 'Derslik 101', color: 'cyan', isSmartBoardActive: true },
-  // Cuma (6 saat)
-  { id: 'sc-25', orgId: 10, day: 'fri', period: 1, classCode: '1-A', subject: 'Matematik', teacherName: 'Özlem ZOR', roomName: 'Derslik 101', color: 'indigo', isSmartBoardActive: true },
-  { id: 'sc-26', orgId: 10, day: 'fri', period: 2, classCode: '1-A', subject: 'Serbest Etkinlikler', teacherName: 'Özlem ZOR', roomName: 'Derslik 101', color: 'cyan', isSmartBoardActive: true },
-  { id: 'sc-27', orgId: 10, day: 'fri', period: 3, classCode: '1-A', subject: 'Serbest Etkinlikler', teacherName: 'Özlem ZOR', roomName: 'Derslik 101', color: 'cyan', isSmartBoardActive: true },
-  { id: 'sc-28', orgId: 10, day: 'fri', period: 4, classCode: '1-A', subject: 'Serbest Etkinlikler', teacherName: 'Özlem ZOR', roomName: 'Derslik 101', color: 'cyan', isSmartBoardActive: true },
-  { id: 'sc-29', orgId: 10, day: 'fri', period: 5, classCode: '1-A', subject: 'Din Kültürü & Ahlak', teacherName: 'Özge KABA', roomName: 'Derslik 101', color: 'emerald', isSmartBoardActive: true },
-  { id: 'sc-30', orgId: 10, day: 'fri', period: 6, classCode: '1-A', subject: 'Din Kültürü & Ahlak', teacherName: 'Özge KABA', roomName: 'Derslik 101', color: 'emerald', isSmartBoardActive: true },
 ]
 
 export default function MAdminCurriculumClient({
@@ -620,7 +402,6 @@ export default function MAdminCurriculumClient({
   const session = useLHSession() as any
   const user = session?.data?.user
 
-  const [isMoreSheetOpen, setIsMoreSheetOpen] = useState(false)
   const [selectedOrgId, setSelectedOrgId] = useState<number>(30)
   const [selectedClass, setSelectedClass] = useState<string>('9/A')
   const [activeDay, setActiveDay] = useState<DayKey>('mon')
@@ -630,160 +411,72 @@ export default function MAdminCurriculumClient({
 
   // Selected Active Course for 1-Tap Quick-Drop placement
   const [selectedCourseForDrop, setSelectedCourseForDrop] = useState<CurriculumCourse | null>(null)
-
-  // Dragging state for desktop HTML5 drag & drop
   const [draggedCourseName, setDraggedCourseName] = useState<string | null>(null)
 
+  // Workload monitor toggle
+  const [isWorkloadExpanded, setIsWorkloadExpanded] = useState<boolean>(true)
+
+  // Dynamic periods (can be customized by principal)
   const [periods, setPeriods] = useState<PeriodSlot[]>(() => {
-    const org = user?.school_org_id || 30
-    return org === 10 ? PRIMARY_PERIODS : MIDDLE_PERIODS
+    if (typeof window !== 'undefined') {
+      try {
+        const savedPeriods = localStorage.getItem(`oxonom_admin_periods_30`)
+        if (savedPeriods) {
+          const parsed = JSON.parse(savedPeriods)
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed
+        }
+      } catch (_) {}
+    }
+    return PRIMARY_PERIODS // 6 periods/day = 30 hours/week
   })
 
   // Modals state
   const [isNewCourseModalOpen, setIsNewCourseModalOpen] = useState(false)
   const [courseToEdit, setCourseToEdit] = useState<CurriculumCourse | null>(null)
+  const [isEditPeriodsModalOpen, setIsEditPeriodsModalOpen] = useState(false)
   const [selectedSlotForAction, setSelectedSlotForAction] = useState<{
     entry?: ScheduleEntry
     day: DayKey
     period: number
   } | null>(null)
 
-  // Class Selection Modals
-  const [isBatchApplyModalOpen, setIsBatchApplyModalOpen] = useState(false)
-  const [batchSelectedClasses, setBatchSelectedClasses] = useState<string[]>([])
-
-  // Form Fields for Add/Edit Course
+  // Form Fields for Add/Edit Course (Strictly grouped as requested)
+  // Section 1: Ders Bilgileri
   const [formName, setFormName] = useState('')
   const [formCode, setFormCode] = useState('')
-  const [formCategory, setFormCategory] = useState<'Temel Ders' | 'Fen & Teknoloji' | 'Sosyal & Beşeri' | 'Sanat & Spor' | 'Yabancı Dil'>('Temel Ders')
+  const [formTargetClass, setFormTargetClass] = useState('9/A')
   const [formWeeklyHours, setFormWeeklyHours] = useState<number>(4)
-  const [formBranchTeacher, setFormBranchTeacher] = useState('Sınıf Öğretmeni')
-  const [formRequiredRoom, setFormRequiredRoom] = useState('Standart Derslik')
+  const [formCategory, setFormCategory] = useState<'Temel Ders' | 'Fen & Teknoloji' | 'Sosyal & Beşeri' | 'Sanat & Spor' | 'Yabancı Dil'>('Temel Ders')
   const [formColor, setFormColor] = useState('blue')
   const [formIsSmartBoard, setFormIsSmartBoard] = useState(true)
 
-  // Courses Catalog State with localStorage
-  const [coursesList, setCoursesList] = useState<CurriculumCourse[]>(() => {
-    const org = user?.school_org_id || 30
+  // Section 2: Öğretmen Bilgileri
+  const [formBranchTeacher, setFormBranchTeacher] = useState('Ebru TEKNECİ')
+  const [formTeacherBranch, setFormTeacherBranch] = useState('Türk Dili ve Edebiyatı')
+  const [formBackupTeachers, setFormBackupTeachers] = useState<BackupTeacher[]>([
+    { id: 'b-default', name: 'Dr. Uğur UĞURLU', priority: 1, branch: 'Edebiyat & Kurum Yönetimi' },
+  ])
+  const [newBackupTeacherSelect, setNewBackupTeacherSelect] = useState('')
+
+  // Section 3: Derslik Bilgileri
+  const [formRoomType, setFormRoomType] = useState<RoomType>('normal')
+  const [formRequiredRoom, setFormRequiredRoom] = useState('Derslik 9/A')
+
+  // Dynamic Teachers List (Authentic source without mock data)
+  const [teachersList, setTeachersList] = useState<any[]>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const savedCourses = localStorage.getItem(`oxonom_admin_curriculum_${org}`)
-        if (savedCourses) {
-          const parsed = JSON.parse(savedCourses)
+        const saved = localStorage.getItem(`oxonom_admin_teachers_${selectedOrgId}`)
+        if (saved) {
+          const parsed = JSON.parse(saved)
           if (Array.isArray(parsed) && parsed.length > 0) return parsed
         }
       } catch (_) {}
     }
-    return org === 30 ? INITIAL_OXONOM_COURSES : org === 10 ? INITIAL_PRIMARY_COURSES : INITIAL_MIDDLE_COURSES
+    return getOrgTeachers(selectedOrgId)
   })
 
-  // Schedule Entries State with localStorage (shares same key with /m-admin-schedule!)
-  const [scheduleList, setScheduleList] = useState<ScheduleEntry[]>(() => {
-    const org = user?.school_org_id || 30
-    if (typeof window !== 'undefined') {
-      try {
-        const savedSchedule = localStorage.getItem(`oxonom_admin_schedule_${org}`)
-        if (savedSchedule) {
-          const parsedSchedule = JSON.parse(savedSchedule)
-          if (Array.isArray(parsedSchedule) && parsedSchedule.length > 0) return parsedSchedule
-        }
-      } catch (_) {}
-    }
-    return org === 30
-      ? INITIAL_SCHEDULE_ENTRIES.filter((e) => e.orgId === 30)
-      : org === 10
-      ? DEFAULT_1A_SCHEDULE
-      : []
-  })
-
-  // Load from localStorage on school change
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const savedCourses = localStorage.getItem(`oxonom_admin_curriculum_${selectedOrgId}`)
-        if (savedCourses) {
-          const parsed = JSON.parse(savedCourses)
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setCoursesList(parsed)
-          } else {
-            setCoursesList(
-              selectedOrgId === 30
-                ? INITIAL_OXONOM_COURSES
-                : selectedOrgId === 10
-                ? INITIAL_PRIMARY_COURSES
-                : INITIAL_MIDDLE_COURSES
-            )
-          }
-        } else {
-          setCoursesList(
-            selectedOrgId === 30
-              ? INITIAL_OXONOM_COURSES
-              : selectedOrgId === 10
-              ? INITIAL_PRIMARY_COURSES
-              : INITIAL_MIDDLE_COURSES
-          )
-        }
-
-        const savedSchedule = localStorage.getItem(`oxonom_admin_schedule_${selectedOrgId}`)
-        if (savedSchedule) {
-          const parsedSchedule = JSON.parse(savedSchedule)
-          if (Array.isArray(parsedSchedule) && parsedSchedule.length > 0) {
-            setScheduleList(parsedSchedule)
-          } else {
-            setScheduleList(
-              selectedOrgId === 30
-                ? INITIAL_SCHEDULE_ENTRIES.filter((e) => e.orgId === 30)
-                : selectedOrgId === 10
-                ? DEFAULT_1A_SCHEDULE
-                : []
-            )
-          }
-        } else {
-          setScheduleList(
-            selectedOrgId === 30
-              ? INITIAL_SCHEDULE_ENTRIES.filter((e) => e.orgId === 30)
-              : selectedOrgId === 10
-              ? DEFAULT_1A_SCHEDULE
-              : []
-          )
-        }
-      } catch (_) {}
-    }
-
-    if (selectedOrgId === 30) {
-      setSelectedClass('9/A')
-      setPeriods(MIDDLE_PERIODS)
-    } else if (selectedOrgId === 10) {
-      setSelectedClass('1/A')
-      setPeriods(PRIMARY_PERIODS)
-    } else {
-      setSelectedClass('7/A')
-      setPeriods(MIDDLE_PERIODS)
-    }
-    setSelectedCourseForDrop(null)
-  }, [selectedOrgId])
-
-  // Persist courses helper
-  const persistCourses = (updated: CurriculumCourse[]) => {
-    setCoursesList(updated)
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem(`oxonom_admin_curriculum_${selectedOrgId}`, JSON.stringify(updated))
-      } catch (_) {}
-    }
-  }
-
-  // Persist schedule helper
-  const persistSchedule = (updated: ScheduleEntry[]) => {
-    setScheduleList(updated)
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem(`oxonom_admin_schedule_${selectedOrgId}`, JSON.stringify(updated))
-      } catch (_) {}
-    }
-  }
-
-  const activeOrg = SCHOOL_ORGS.find((o) => o.id === selectedOrgId) || SCHOOL_ORGS[0]
+  // Dynamic Available Classes (Synchronized with /principal/classes)
   const availableClasses = useMemo(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -794,7 +487,7 @@ export default function MAdminCurriculumClient({
             return parsed.map((c: any) => {
               const code = (c.code || '').trim()
               const matchGrade = (c.gradeLevel || '').match(/\d+/) || code.match(/^\d+/)
-              const gNum = matchGrade ? matchGrade[0] : '1'
+              const gNum = matchGrade ? matchGrade[0] : '9'
               let branch = ''
               if (code.includes('/') || code.includes('-')) {
                 const parts = code.split(/[\/\-]/)
@@ -810,17 +503,103 @@ export default function MAdminCurriculumClient({
         }
       } catch (_) {}
     }
-    return selectedOrgId === 30
-      ? ['9/A']
-      : selectedOrgId === 10
-      ? ['1/A', '1/B', '1/C', '2/A', '2/B', '3/A', '4/A']
-      : ['5/A', '6/A', '7/A', '8/A']
+    return ['9/A']
   }, [selectedOrgId])
 
-  // Haftalık toplam saat kapasitesi (Dinamik: günde kaç ders saati varsa x 5 gün)
-  const targetWeeklyHours = periods.length * 5
+  // Courses Catalog State
+  const [coursesList, setCoursesList] = useState<CurriculumCourse[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const savedCourses = localStorage.getItem(`oxonom_admin_curriculum_${selectedOrgId}`)
+        if (savedCourses) {
+          const parsed = JSON.parse(savedCourses)
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed
+        }
+      } catch (_) {}
+    }
+    return INITIAL_OXONOM_COURSES
+  })
 
-  // Sınıfın haftalık yerleştirilmiş saatleri
+  // Schedule Entries State
+  const [scheduleList, setScheduleList] = useState<ScheduleEntry[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const savedSchedule = localStorage.getItem(`oxonom_admin_schedule_${selectedOrgId}`)
+        if (savedSchedule) {
+          const parsedSchedule = JSON.parse(savedSchedule)
+          if (Array.isArray(parsedSchedule)) return parsedSchedule
+        }
+      } catch (_) {}
+    }
+    return []
+  })
+
+  // Reload data on external storage changes
+  useEffect(() => {
+    const handleSync = () => {
+      if (typeof window !== 'undefined') {
+        try {
+          const savedT = localStorage.getItem(`oxonom_admin_teachers_${selectedOrgId}`)
+          if (savedT) setTeachersList(JSON.parse(savedT))
+        } catch (_) {}
+      }
+    }
+    window.addEventListener('storage', handleSync)
+    window.addEventListener('oxonom_teachers_updated', handleSync)
+    return () => {
+      window.removeEventListener('storage', handleSync)
+      window.removeEventListener('oxonom_teachers_updated', handleSync)
+    }
+  }, [selectedOrgId])
+
+  // Helpers to persist
+  const persistCourses = (updated: CurriculumCourse[]) => {
+    setCoursesList(updated)
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(`oxonom_admin_curriculum_${selectedOrgId}`, JSON.stringify(updated))
+      } catch (_) {}
+    }
+  }
+
+  const persistSchedule = (updated: ScheduleEntry[]) => {
+    setScheduleList(updated)
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(`oxonom_admin_schedule_${selectedOrgId}`, JSON.stringify(updated))
+      } catch (_) {}
+    }
+  }
+
+  const persistPeriods = (updated: PeriodSlot[]) => {
+    setPeriods(updated)
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(`oxonom_admin_periods_${selectedOrgId}`, JSON.stringify(updated))
+      } catch (_) {}
+    }
+  }
+
+  // Ensure selectedClass is valid
+  useEffect(() => {
+    if (availableClasses.length > 0 && !availableClasses.includes(selectedClass)) {
+      setSelectedClass(availableClasses[0])
+    }
+  }, [availableClasses, selectedClass])
+
+  // ── FILTERED COURSES POOL (STRICTLY BY SELECTED CLASS) ──
+  // User Rule: "program oluşturulurken ilk önce sınıf seçilmeli sınıflara göre ders havuzları filtrelenmeli"
+  const classCoursesPool = useMemo(() => {
+    return coursesList.filter((c) => {
+      if (c.orgId !== selectedOrgId) return false
+      if (c.targetClass) {
+        return c.targetClass.trim() === selectedClass.trim()
+      }
+      return true
+    })
+  }, [coursesList, selectedOrgId, selectedClass])
+
+  // Class Entries in current weekly schedule
   const classEntries = useMemo(() => {
     return scheduleList.filter((e) => {
       if (e.orgId !== selectedOrgId) return false
@@ -830,7 +609,7 @@ export default function MAdminCurriculumClient({
     })
   }, [scheduleList, selectedOrgId, selectedClass])
 
-  // Ders başına yerleştirilen saat sayıları
+  // Placed hours counts for the selected class
   const placedSubjectCounts = useMemo(() => {
     const counts: Record<string, number> = {}
     classEntries.forEach((e) => {
@@ -839,58 +618,124 @@ export default function MAdminCurriculumClient({
     return counts
   }, [classEntries])
 
+  const targetWeeklyHours = periods.length * 5
   const totalAssignedHours = classEntries.length
   const remainingTotalHours = Math.max(0, targetWeeklyHours - totalAssignedHours)
 
-  // Aktif günün dersleri
   const activeDayEntries = useMemo(() => {
     return classEntries.filter((e) => e.day === activeDay)
   }, [classEntries, activeDay])
 
-  // ── DİNAMİK DERS SAATİ EKLEME (KULLANICI ARTI BUTONUNA BASINCA) ──
-  const handleAddPeriod = () => {
-    const nextNum = periods.length + 1
-    const lastPeriod = periods[periods.length - 1]
-    let nextTime = '15:30 - 16:10'
+  // ── TEACHER WORKLOAD & OVERTIME MONITOR ──
+  // User Rule: "Öğretmenlerin mesai saatlerine göre ders saatleri hesaplanır ve öğretmen mesaisinden fazla çalışıyorsa grafiksel olarak gösterilir."
+  const teacherWorkloads = useMemo(() => {
+    // Combine teachers from teachersList and Dr. Uğur UĞURLU
+    const baseList = [...teachersList]
+    if (!baseList.some((t) => t.name === 'Dr. Uğur UĞURLU')) {
+      baseList.push({
+        id: 9999,
+        name: 'Dr. Uğur UĞURLU',
+        branch: 'Okul Müdürü & Edebiyat',
+        weeklyHours: 30,
+      })
+    }
 
-    if (lastPeriod && lastPeriod.time.includes('-')) {
-      const parts = lastPeriod.time.split('-')
-      if (parts[1]) {
-        const [endH, endM] = parts[1].trim().split(':').map(Number)
-        if (!isNaN(endH) && !isNaN(endM)) {
-          const startMin = endH * 60 + endM + 15 // 15 dk teneffüs
-          const endMin = startMin + 40 // 40 dk ders
-          const sH = String(Math.floor(startMin / 60)).padStart(2, '0')
-          const sM = String(startMin % 60).padStart(2, '0')
-          const eH = String(Math.floor(endMin / 60)).padStart(2, '0')
-          const eM = String(endMin % 60).padStart(2, '0')
-          nextTime = `${sH}:${sM} - ${eH}:${eM}`
-        }
+    return baseList.map((t) => {
+      // Total assigned hours across all classes in the school
+      const assignedHours = scheduleList.filter(
+        (e) => e.orgId === selectedOrgId && (e.activeTeacherName || e.teacherName) === t.name
+      ).length
+
+      const weeklyLimit = t.weeklyHours || 30
+      const percentage = Math.round((assignedHours / weeklyLimit) * 100)
+      const isOvertime = assignedHours > weeklyLimit
+      const overtimeHours = Math.max(0, assignedHours - weeklyLimit)
+
+      return {
+        id: t.id || t.name,
+        name: t.name,
+        branch: t.branch ? t.branch.split('(')[0].trim() : 'Branş Öğretmeni',
+        assignedHours,
+        weeklyLimit,
+        percentage,
+        isOvertime,
+        overtimeHours,
+      }
+    })
+  }, [teachersList, scheduleList, selectedOrgId])
+
+  // ── CONFLICT CHECK ENGINE ──
+  // User Rules:
+  // 1. Aynı öğretmen aynı saatte başka derse atanamamalı
+  // 2. Aynı derslik aynı anda iki sınıfa verilemez (laboratuvar, sınıf veya atölye)
+  const checkConflicts = (day: DayKey, period: number, courseToAssign: CurriculumCourse) => {
+    const dayLabel = DAYS_LIST.find((d) => d.key === day)?.label || day
+
+    // Check teacher conflict in other classes
+    const teacherConflict = scheduleList.find(
+      (e) =>
+        e.orgId === selectedOrgId &&
+        e.day === day &&
+        e.period === period &&
+        e.classCode !== selectedClass &&
+        (e.activeTeacherName || e.teacherName) === courseToAssign.branchTeacher &&
+        !e.isTeacherOnLeave
+    )
+
+    // Check room conflict in other classes
+    const roomConflict = scheduleList.find(
+      (e) =>
+        e.orgId === selectedOrgId &&
+        e.day === day &&
+        e.period === period &&
+        e.classCode !== selectedClass &&
+        e.roomName === courseToAssign.requiredRoom
+    )
+
+    return {
+      dayLabel,
+      teacherConflict,
+      roomConflict,
+    }
+  }
+
+  // ── ASSIGN COURSE TO SLOT ──
+  const handleAssignCourseToSlot = (
+    day: DayKey,
+    period: number,
+    courseToAssign: CurriculumCourse,
+    forceBackup: boolean = false
+  ) => {
+    const { dayLabel, teacherConflict, roomConflict } = checkConflicts(day, period, courseToAssign)
+
+    if (roomConflict) {
+      toast.error(
+        `❌ Derslik Çakışması! "${courseToAssign.requiredRoom}" (${courseToAssign.roomType === 'laboratuvar' ? 'Laboratuvar' : courseToAssign.roomType === 'atolye' ? 'Atölye' : 'Derslik'}) ${dayLabel} ${period}. saatte ${roomConflict.classCode} sınıfı tarafından kullanılmaktadır!`,
+        { duration: 4500 }
+      )
+      return
+    }
+
+    let actualTeacher = courseToAssign.branchTeacher
+    let isSub = false
+
+    if (teacherConflict) {
+      if (courseToAssign.backupTeachers && courseToAssign.backupTeachers.length > 0) {
+        actualTeacher = courseToAssign.backupTeachers[0].name
+        isSub = true
+        toast(
+          `⚠️ Asıl öğretmen (${courseToAssign.branchTeacher}) bu saatte ${teacherConflict.classCode} sınıfında derste. 1. Yedek Öğretmen (${actualTeacher}) devreye alındı.`,
+          { icon: '🛡️', duration: 4000 }
+        )
+      } else {
+        toast.error(
+          `❌ Öğretmen Zaman Çakışması! ${courseToAssign.branchTeacher} öğretmeni ${dayLabel} ${period}. saatte ${teacherConflict.classCode} sınıfında derstedir! Lütfen başka bir saat seçin veya derse bir yedek öğretmen tanımlayın.`,
+          { duration: 4500 }
+        )
+        return
       }
     }
 
-    const newSlot: PeriodSlot = {
-      periodNumber: nextNum,
-      time: nextTime,
-    }
-
-    setPeriods((prev) => [...prev, newSlot])
-    toast.success(`🎉 ${nextNum}. Ders saati (${nextTime}) programa eklendi!`)
-  }
-
-  // Dinamik eklenen ders saatini kaldırma
-  const handleRemovePeriod = (periodNum: number) => {
-    const updatedSchedule = scheduleList.filter(
-      (e) => !(e.orgId === selectedOrgId && e.period === periodNum)
-    )
-    persistSchedule(updatedSchedule)
-    setPeriods((prev) => prev.filter((p) => p.periodNumber !== periodNum))
-    toast.success(`${periodNum}. Ders saati kaldırıldı.`)
-  }
-
-  // ── QUICK DROP / ASSIGN LOGIC ──
-  const handleAssignCourseToSlot = (day: DayKey, period: number, courseToAssign: CurriculumCourse) => {
-    // Check if slot already has an entry
     const existingIndex = scheduleList.findIndex(
       (e) => e.orgId === selectedOrgId && e.classCode === selectedClass && e.day === day && e.period === period
     )
@@ -903,6 +748,11 @@ export default function MAdminCurriculumClient({
       classCode: selectedClass,
       subject: courseToAssign.name,
       teacherName: courseToAssign.branchTeacher,
+      teacherBranch: courseToAssign.teacherBranch,
+      backupTeacherName: courseToAssign.backupTeachers?.[0]?.name,
+      isTeacherOnLeave: isSub,
+      activeTeacherName: actualTeacher,
+      roomType: courseToAssign.roomType,
       roomName: courseToAssign.requiredRoom,
       color: courseToAssign.color,
       isSmartBoardActive: courseToAssign.isSmartBoardReady,
@@ -917,12 +767,10 @@ export default function MAdminCurriculumClient({
     }
 
     persistSchedule(updatedList)
-    toast.success(`✅ ${courseToAssign.name} (${DAYS_LIST.find((d) => d.key === day)?.label} ${period}. Ders) yerleştirildi!`, {
-      duration: 1800,
-    })
+    toast.success(`✅ ${courseToAssign.name} (${dayLabel} ${period}. Ders) ${selectedClass} sınıfına yerleştirildi!`)
   }
 
-  // Slot silme
+  // Remove slot
   const handleRemoveSlot = (day: DayKey, period: number) => {
     const updated = scheduleList.filter(
       (e) => !(e.orgId === selectedOrgId && e.classCode === selectedClass && e.day === day && e.period === period)
@@ -932,106 +780,238 @@ export default function MAdminCurriculumClient({
     setSelectedSlotForAction(null)
   }
 
-  // 1-Tıkla Otomatik Doldur
-  const handleAutoDistributeMEB = () => {
-    const newWeeklyEntries: ScheduleEntry[] = []
-    let currentCourseIndex = 0
-    const courseQueue: CurriculumCourse[] = []
+  // Toggle Leave / Substitute Teacher in Slot
+  const handleToggleTeacherLeave = (entry: ScheduleEntry) => {
+    const isNowOnLeave = !entry.isTeacherOnLeave
+    const newActiveTeacher = isNowOnLeave
+      ? entry.backupTeacherName || 'Dr. Uğur UĞURLU'
+      : entry.teacherName
 
-    coursesList.forEach((c) => {
+    const updated = scheduleList.map((e) => {
+      if (e.id === entry.id) {
+        return {
+          ...e,
+          isTeacherOnLeave: isNowOnLeave,
+          activeTeacherName: newActiveTeacher,
+        }
+      }
+      return e
+    })
+
+    persistSchedule(updated)
+    if (isNowOnLeave) {
+      toast.success(`⚠️ Asıl öğretmen izinli bildirildi. Ders ${newActiveTeacher} (Yedek) tarafından yürütülecektir.`)
+    } else {
+      toast.success(`✅ Asıl öğretmen (${entry.teacherName}) derse geri döndü.`)
+    }
+    setSelectedSlotForAction(null)
+  }
+
+  // ── SMART AUTO-FILL ENGINE ──
+  // User Rule: "Otomatik doldur ile ders saatine öğretmen mesai saatine göre ince hesaplamalar yapılmalı ve en uygun ve en doğru şekilde otomatik doldurmalar yapılmalıdır."
+  const handleSmartAutoFill = () => {
+    if (classCoursesPool.length === 0) {
+      toast.error(`"${selectedClass}" sınıfı için henüz tanımlanmış ders bulunmuyor! Lütfen önce "Yeni Ders Tanımla" butonuyla ders ekleyin.`)
+      return
+    }
+
+    // Build course hour queue
+    const queue: CurriculumCourse[] = []
+    classCoursesPool.forEach((c) => {
       for (let i = 0; i < c.weeklyHours; i++) {
-        courseQueue.push(c)
+        queue.push(c)
       }
     })
 
+    // Other classes' entries for conflict prevention
+    const otherClassesEntries = scheduleList.filter(
+      (e) => !(e.orgId === selectedOrgId && e.classCode === selectedClass)
+    )
+
+    const newEntries: ScheduleEntry[] = []
+    let placedCount = 0
+
+    // Loop through days and periods
     DAYS_LIST.forEach((day) => {
       periods.forEach((period) => {
-        if (currentCourseIndex < courseQueue.length) {
-          const course = courseQueue[currentCourseIndex]
-          newWeeklyEntries.push({
-            id: `sc-auto-${day.key}-${period.periodNumber}-${Date.now()}`,
+        if (queue.length === 0) return
+
+        // Find candidate that has no conflict at (day, period)
+        const matchIdx = queue.findIndex((candidate) => {
+          // Teacher conflict in other classes
+          const teacherBusy = otherClassesEntries.some(
+            (e) => e.day === day.key && e.period === period.periodNumber && (e.activeTeacherName || e.teacherName) === candidate.branchTeacher && !e.isTeacherOnLeave
+          )
+          // Room conflict in other classes
+          const roomBusy = otherClassesEntries.some(
+            (e) => e.day === day.key && e.period === period.periodNumber && e.roomName === candidate.requiredRoom
+          )
+          // Max 2 consecutive/day for same subject
+          const placedToday = newEntries.filter(
+            (e) => e.day === day.key && e.subject === candidate.name
+          ).length
+
+          return !teacherBusy && !roomBusy && placedToday < 2
+        })
+
+        if (matchIdx >= 0) {
+          const course = queue.splice(matchIdx, 1)[0]
+          newEntries.push({
+            id: `sc-auto-${day.key}-${period.periodNumber}-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
             orgId: selectedOrgId,
             day: day.key,
             period: period.periodNumber,
             classCode: selectedClass,
             subject: course.name,
             teacherName: course.branchTeacher,
+            teacherBranch: course.teacherBranch,
+            backupTeacherName: course.backupTeachers?.[0]?.name,
+            roomType: course.roomType,
             roomName: course.requiredRoom,
             color: course.color,
             isSmartBoardActive: course.isSmartBoardReady,
+            activeTeacherName: course.branchTeacher,
+            isTeacherOnLeave: false,
           })
-          currentCourseIndex++
+          placedCount++
+        } else if (queue.length > 0) {
+          // Secondary attempt with backup teacher or relaxed consecutive rule
+          const fallbackIdx = queue.findIndex((candidate) => {
+            const roomBusy = otherClassesEntries.some(
+              (e) => e.day === day.key && e.period === period.periodNumber && e.roomName === candidate.requiredRoom
+            )
+            return !roomBusy
+          })
+
+          if (fallbackIdx >= 0) {
+            const course = queue.splice(fallbackIdx, 1)[0]
+            const teacherBusy = otherClassesEntries.some(
+              (e) => e.day === day.key && e.period === period.periodNumber && (e.activeTeacherName || e.teacherName) === course.branchTeacher
+            )
+            const actualTeacher = teacherBusy && course.backupTeachers?.[0]
+              ? course.backupTeachers[0].name
+              : course.branchTeacher
+
+            newEntries.push({
+              id: `sc-auto-${day.key}-${period.periodNumber}-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+              orgId: selectedOrgId,
+              day: day.key,
+              period: period.periodNumber,
+              classCode: selectedClass,
+              subject: course.name,
+              teacherName: course.branchTeacher,
+              teacherBranch: course.teacherBranch,
+              backupTeacherName: course.backupTeachers?.[0]?.name,
+              roomType: course.roomType,
+              roomName: course.requiredRoom,
+              color: course.color,
+              isSmartBoardActive: course.isSmartBoardReady,
+              activeTeacherName: actualTeacher,
+              isTeacherOnLeave: actualTeacher !== course.branchTeacher,
+            })
+            placedCount++
+          }
         }
       })
     })
 
-    const otherEntries = scheduleList.filter(
-      (e) => !(e.orgId === selectedOrgId && e.classCode === selectedClass)
-    )
-    const combined = [...otherEntries, ...newWeeklyEntries]
+    const combined = [...otherClassesEntries, ...newEntries]
     persistSchedule(combined)
-    toast.success(`🎉 ${selectedClass} için ders programı otomatik dolduruldu!`)
+    toast.success(`🎉 ${selectedClass} için haftalık ders programı 0 çakışma ile otomatik oluşturuldu! (${placedCount} Saat)`)
   }
 
-  // Tüm haftayı sıfırla
+  // Clear weekly schedule
   const handleClearWeek = () => {
     const updated = scheduleList.filter(
       (e) => !(e.orgId === selectedOrgId && e.classCode === selectedClass)
     )
     persistSchedule(updated)
-    toast.success(`${selectedClass} haftalık ders programı sıfırlandı.`)
+    toast.success(`${selectedClass} haftalık ders programı temizlendi.`)
   }
 
-  // ── BİRDEN FAZLA SINIFA VE TÜMÜNE PROGRAMI KOPYALA / UYGULA ──
-  const handleBatchApplySchedule = () => {
-    if (batchSelectedClasses.length === 0) {
-      toast.error('Lütfen en az bir hedef sınıf seçin!')
-      return
-    }
-
-    const currentEntries = scheduleList.filter(
-      (e) => e.orgId === selectedOrgId && e.classCode === selectedClass
-    )
-
-    if (currentEntries.length === 0) {
-      toast.error(`${selectedClass} sınıfında henüz kayıtlı ders bulunmuyor!`)
-      return
-    }
-
-    // Seçili sınıfların mevcut programlarını temizle ve kopyala
-    const remaining = scheduleList.filter(
-      (e) => !(e.orgId === selectedOrgId && batchSelectedClasses.includes(e.classCode))
-    )
-
-    const newBatchEntries: ScheduleEntry[] = []
-    batchSelectedClasses.forEach((targetCls) => {
-      currentEntries.forEach((entry) => {
-        newBatchEntries.push({
-          ...entry,
-          id: `sc-batch-${targetCls}-${entry.day}-${entry.period}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-          classCode: targetCls,
-        })
-      })
-    })
-
-    persistSchedule([...remaining, ...newBatchEntries])
-    toast.success(`🎉 ${selectedClass} programı ${batchSelectedClasses.length} sınıfa (${batchSelectedClasses.join(', ')}) başarıyla uygulandı!`)
-    setIsBatchApplyModalOpen(false)
+  // Clear all courses and restart
+  const handleClearAllCourses = () => {
+    const updated = coursesList.filter((c) => c.targetClass !== selectedClass)
+    persistCourses(updated)
+    handleClearWeek()
+    toast.success(`${selectedClass} sınıfına ait tüm dersler silindi.`)
   }
 
-  // ── CREATE NEW COURSE ──
+  // Reset to authentic Oxonom preset courses
+  const handleLoadAuthenticPreset = () => {
+    persistCourses(INITIAL_OXONOM_COURSES)
+    toast.success('Oxonom Okulları 9/A standart ders müfredatı başarıyla yüklendi!')
+  }
+
+  // ── OPEN NEW COURSE MODAL HANDLERS ──
   const handleOpenNewCourseModal = () => {
+    const defaultTeacher = teachersList[0]?.name || 'Ebru TEKNECİ'
+    const defaultBranch = teachersList[0]?.branch?.split('(')[0].trim() || 'Türk Dili ve Edebiyatı'
+
     setFormName('')
     setFormCode('')
-    setFormCategory('Temel Ders')
+    setFormTargetClass(selectedClass)
     setFormWeeklyHours(4)
-    setFormBranchTeacher(selectedOrgId === 10 ? 'Sınıf Öğretmeni' : 'Branş Öğretmeni')
-    setFormRequiredRoom('Standart Derslik')
+    setFormCategory('Temel Ders')
+    setFormBranchTeacher(defaultTeacher)
+    setFormTeacherBranch(defaultBranch)
+    setFormBackupTeachers([
+      { id: 'b-default', name: 'Dr. Uğur UĞURLU', priority: 1, branch: 'Edebiyat & Kurum Yönetimi' },
+    ])
+    setNewBackupTeacherSelect('')
+    setFormRoomType('normal')
+    setFormRequiredRoom(`Derslik ${selectedClass}`)
     setFormColor('blue')
     setFormIsSmartBoard(true)
     setIsNewCourseModalOpen(true)
   }
 
+  // Handle teacher selection change (BRANCH AUTO-FILLS)
+  // User Rule: "Branş(Öğretmen seçince branşı Otomatik Gelir)"
+  const handleSelectPrimaryTeacher = (teacherName: string) => {
+    setFormBranchTeacher(teacherName)
+    const teacherObj = teachersList.find((t) => t.name === teacherName)
+    if (teacherObj && teacherObj.branch) {
+      const cleanBranch = teacherObj.branch.split('(')[0].trim()
+      setFormTeacherBranch(cleanBranch)
+    } else if (teacherName === 'Dr. Uğur UĞURLU') {
+      setFormTeacherBranch('Okul Müdürü & Edebiyat')
+    }
+  }
+
+  // Add backup teacher with priority order
+  // User Rule: "Birden fazla yedek öğretmen gerekiyorsa öncelik sırası da tanımlanabilir."
+  const handleAddBackupTeacher = () => {
+    if (!newBackupTeacherSelect) {
+      toast.error('Lütfen eklenecek yedek öğretmeni seçin.')
+      return
+    }
+    if (formBackupTeachers.some((b) => b.name === newBackupTeacherSelect)) {
+      toast.error('Bu öğretmen zaten yedek listesinde ekli.')
+      return
+    }
+    const tObj = teachersList.find((t) => t.name === newBackupTeacherSelect)
+    const nextPriority = formBackupTeachers.length + 1
+    const newBackup: BackupTeacher = {
+      id: `bk-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+      name: newBackupTeacherSelect,
+      priority: nextPriority,
+      branch: tObj?.branch?.split('(')[0].trim() || 'Branş Öğretmeni',
+    }
+    setFormBackupTeachers([...formBackupTeachers, newBackup])
+    setNewBackupTeacherSelect('')
+    toast.success(`${newBackup.name} ${nextPriority}. Öncelikli Yedek Öğretmen olarak eklendi.`)
+  }
+
+  const handleRemoveBackupTeacher = (id: string) => {
+    setFormBackupTeachers((prev) =>
+      prev
+        .filter((b) => b.id !== id)
+        .map((b, idx) => ({ ...b, priority: idx + 1 }))
+    )
+  }
+
+  // Create course submit
   const handleCreateCourse = (e?: React.FormEvent) => {
     if (e) e.preventDefault()
 
@@ -1050,11 +1030,15 @@ export default function MAdminCurriculumClient({
       code: autoCode,
       name: trimmedName,
       category: formCategory,
-      gradeLevels: selectedOrgId === 10 ? ['1. Sınıf', '2. Sınıf'] : ['5. Sınıf', '6. Sınıf'],
+      gradeLevels: [`${formTargetClass.split('/')[0]}. Sınıf`],
+      targetClass: formTargetClass,
       orgId: selectedOrgId,
       weeklyHours: Number(formWeeklyHours) || 4,
-      branchTeacher: formBranchTeacher.trim() || 'Sınıf Öğretmeni',
-      requiredRoom: formRequiredRoom.trim() || 'Standart Derslik',
+      branchTeacher: formBranchTeacher,
+      teacherBranch: formTeacherBranch,
+      backupTeachers: formBackupTeachers,
+      roomType: formRoomType,
+      requiredRoom: formRequiredRoom.trim() || `Derslik ${formTargetClass}`,
       isSmartBoardReady: Boolean(formIsSmartBoard),
       isElective: false,
       color: formColor,
@@ -1062,19 +1046,23 @@ export default function MAdminCurriculumClient({
 
     const updated = [...coursesList, newCourse]
     persistCourses(updated)
-    toast.success(`🎉 "${trimmedName}" (${newCourse.weeklyHours} Saat) ders kataloğuna eklendi!`)
+    toast.success(`🎉 "${trimmedName}" (${newCourse.weeklyHours} Saat) ${formTargetClass} sınıfı için tanımlandı!`)
     setIsNewCourseModalOpen(false)
     setSelectedCourseForDrop(newCourse)
   }
 
-  // Edit Course
+  // Edit course
   const handleOpenEditCourse = (course: CurriculumCourse) => {
     setCourseToEdit(course)
     setFormName(course.name)
     setFormCode(course.code)
-    setFormCategory(course.category)
+    setFormTargetClass(course.targetClass || selectedClass)
     setFormWeeklyHours(course.weeklyHours)
+    setFormCategory(course.category)
     setFormBranchTeacher(course.branchTeacher)
+    setFormTeacherBranch(course.teacherBranch || 'Branş Öğretmeni')
+    setFormBackupTeachers(course.backupTeachers || [])
+    setFormRoomType(course.roomType || 'normal')
     setFormRequiredRoom(course.requiredRoom)
     setFormColor(course.color)
     setFormIsSmartBoard(course.isSmartBoardReady)
@@ -1091,9 +1079,13 @@ export default function MAdminCurriculumClient({
           ...c,
           name: trimmedName,
           code: formCode.trim().toUpperCase() || c.code,
+          targetClass: formTargetClass,
           category: formCategory,
           weeklyHours: Number(formWeeklyHours) || c.weeklyHours,
-          branchTeacher: formBranchTeacher.trim() || c.branchTeacher,
+          branchTeacher: formBranchTeacher,
+          teacherBranch: formTeacherBranch,
+          backupTeachers: formBackupTeachers,
+          roomType: formRoomType,
           requiredRoom: formRequiredRoom.trim() || c.requiredRoom,
           color: formColor,
           isSmartBoardReady: Boolean(formIsSmartBoard),
@@ -1107,12 +1099,11 @@ export default function MAdminCurriculumClient({
     setCourseToEdit(null)
   }
 
-  // Delete Course
   const handleDeleteCourse = (courseId: string) => {
     const course = coursesList.find((c) => c.id === courseId)
     const updated = coursesList.filter((c) => c.id !== courseId)
     persistCourses(updated)
-    toast.success(`"${course?.name || 'Ders'}" ders kataloğundan silindi.`)
+    toast.success(`"${course?.name || 'Ders'}" ders havuzundan silindi.`)
     if (selectedCourseForDrop?.id === courseId) {
       setSelectedCourseForDrop(null)
     }
@@ -1125,7 +1116,7 @@ export default function MAdminCurriculumClient({
       }`}
       style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 6.5rem)' }}
     >
-      {/* ── 1. HEADER ── */}
+      {/* ── 1. HEADER (Optional mobile header) ── */}
       {!hideHeader && (
         <MobileHeader
           theme={theme}
@@ -1133,75 +1124,51 @@ export default function MAdminCurriculumClient({
         />
       )}
 
-      <main className={`w-full ${hideHeader ? 'max-w-7xl mx-auto p-2 sm:p-4 lg:p-6' : 'max-w-[430px] sm:max-w-[460px] mx-auto'} min-h-screen`}>
-        {/* ── 2. HERO CARD & OKUL / ŞUBE SEÇİCİ ── */}
-        <section className="px-4 pt-3">
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0E131F] via-[#121826] to-[#0A0D15] border border-gray-800 p-4 shadow-xl">
-            {/* Animated Subtle Circles */}
-            <div className="absolute -top-12 -right-12 w-44 h-44 rounded-full pointer-events-none opacity-30">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}
-                className="w-full h-full relative"
-              >
-                <div className="absolute inset-0 rounded-full border border-teal-400/20" />
-                <div className="absolute inset-6 rounded-full border border-white/10 border-dashed" />
-                <div className="absolute inset-12 rounded-full border border-teal-400/30" />
-              </motion.div>
-            </div>
-
-            {/* School Switcher */}
-            <div className="relative z-10 flex items-center justify-between pb-2.5 border-b border-white/10">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-teal-500/20 text-teal-400 flex items-center justify-center">
-                  <Calendar size={16} />
+      <main className={`w-full ${hideHeader ? 'max-w-7xl mx-auto p-2 sm:p-4 lg:p-6' : 'max-w-[430px] sm:max-w-[460px] mx-auto'} min-h-screen space-y-4`}>
+        {/* ── 2. HERO CARD & SINIF SEÇİCİ ── */}
+        <section className="px-3 pt-2">
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0B132B] via-[#0E1B38] to-[#06241C] border border-emerald-500/25 p-4 sm:p-5 shadow-xl text-white">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30 shadow-xs">
+                  <Calendar size={20} />
                 </div>
                 <div>
-                  <div className="text-xs font-black text-white flex items-center gap-1.5">
+                  <div className="text-sm font-black flex items-center gap-2">
                     <span>Haftalık Ders Programı</span>
-                    <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md bg-teal-500/20 text-teal-400 border border-teal-500/30">
-                      e-Okul Uyumlu
+                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                      Çakışma Korumalı
                     </span>
                   </div>
-                  <p className="text-[10px] text-gray-400 mt-0.5">
-                    {activeOrg.name} · Haftalık Ders Dağılımı ve Zümre Koordinasyonu
+                  <p className="text-xs text-gray-300/80 mt-0.5">
+                    Oxonom Okulları · Akıllı Zümre, Derslik ve Öğretmen Yerleşimi
                   </p>
                 </div>
               </div>
+
+              {/* Time slot edit button */}
+              <button
+                type="button"
+                onClick={() => setIsEditPeriodsModalOpen(true)}
+                className="self-start sm:self-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-xs font-bold text-white transition-all cursor-pointer"
+              >
+                <Sliders size={13} className="text-emerald-400" />
+                <span>Ders Saatlerini Düzenle</span>
+              </button>
             </div>
 
-            {/* Institution Badge */}
-            <div className="flex items-center justify-between p-2.5 px-3.5 mt-2.5 rounded-2xl bg-white/5 border border-white/10">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-xs font-black text-white">Oxonom Okulları</span>
-                <span className="text-[10px] text-emerald-400 font-bold px-1.5 py-0.5 rounded-md bg-emerald-500/10">MEB Onaylı</span>
-              </div>
-              <span className="text-[11px] font-semibold text-gray-400">{availableClasses.length} Şube / Sınıf</span>
-            </div>
-
-            {/* ── 3. SINIF SEÇİN ALANI (FERAH, SADE, YATAY KAYDIRILABİLİR & ÇOKLU UYGULAMA) ── */}
-            <div className="mt-2.5 p-2.5 rounded-2xl bg-white/5 border border-white/10 space-y-2">
-              <div className="flex items-center justify-between px-0.5">
-                <div className="flex items-center gap-1.5 text-xs font-black text-teal-300">
-                  <GraduationCap size={15} />
-                  <span>Sınıf Seçin:</span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setBatchSelectedClasses([selectedClass])
-                    setIsBatchApplyModalOpen(true)
-                  }}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/40 text-[10px] font-black transition-all cursor-pointer shadow-xs"
-                >
-                  <Copy size={11} />
-                  <span>Çoklu Sınıfa Uygula</span>
-                </button>
+            {/* Sınıf / Şube Seçici (User Rule: Program oluşturulurken ilk önce sınıf seçilmeli) */}
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-1.5 text-xs">
+                <span className="text-gray-300 font-bold flex items-center gap-1.5">
+                  <GraduationCap size={14} className="text-emerald-400" />
+                  <span>Programı Hazırlanan Sınıf / Şube:</span>
+                </span>
+                <span className="text-[11px] text-emerald-400 font-semibold">
+                  Seçili Sınıf: <strong>{selectedClass}</strong>
+                </span>
               </div>
 
-              {/* Yatay Rahat Kaydırılabilir Sınıf Rozetleri (Sıkışıklık Yok, Geniş ve Ferah) */}
               <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
                 {availableClasses.map((cls) => {
                   const isSelected = selectedClass === cls
@@ -1209,11 +1176,14 @@ export default function MAdminCurriculumClient({
                     <button
                       key={cls}
                       type="button"
-                      onClick={() => setSelectedClass(cls)}
-                      className={`min-w-[60px] px-3.5 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition-all cursor-pointer text-center shrink-0 ${
+                      onClick={() => {
+                        setSelectedClass(cls)
+                        setSelectedCourseForDrop(null)
+                      }}
+                      className={`min-w-[70px] px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer text-center shrink-0 ${
                         isSelected
-                          ? 'bg-gradient-to-r from-teal-500 to-emerald-500 text-white shadow-md ring-2 ring-teal-400/50 scale-105'
-                          : 'bg-white/10 text-gray-300 hover:bg-white/20 hover:text-white'
+                          ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg ring-2 ring-emerald-400/50 scale-105'
+                          : 'bg-white/10 hover:bg-white/20 text-gray-300'
                       }`}
                     >
                       {cls}
@@ -1223,162 +1193,281 @@ export default function MAdminCurriculumClient({
               </div>
             </div>
 
-            {/* Weekly Load Progress Stats (Dinamik: Saat eklenince güncellenir) */}
-            <div className="grid grid-cols-3 gap-2 mt-2.5 pt-2.5 border-t border-white/10 text-center">
-              <div className="p-2 rounded-xl bg-white/5">
-                <div className="text-sm font-black text-white">{targetWeeklyHours} Saat</div>
-                <div className="text-[10px] text-gray-400 font-semibold mt-0.5">Haftalık Yük</div>
+            {/* Weekly Hours Progress */}
+            <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-white/10 text-center text-xs">
+              <div className="p-2 rounded-2xl bg-white/5 border border-white/5">
+                <div className="text-base font-black text-white">{targetWeeklyHours} Saat</div>
+                <div className="text-[10px] text-gray-400 font-semibold mt-0.5">Haftalık Kapasite</div>
               </div>
-
-              <div className="p-2 rounded-xl bg-white/5">
-                <div className="text-sm font-black text-teal-400">{totalAssignedHours} Saat</div>
-                <div className="text-[10px] text-gray-400 font-semibold mt-0.5">Dağıtılan Saat</div>
+              <div className="p-2 rounded-2xl bg-white/5 border border-white/5">
+                <div className="text-base font-black text-emerald-400">{totalAssignedHours} Saat</div>
+                <div className="text-[10px] text-gray-400 font-semibold mt-0.5">Yerleştirilen Ders</div>
               </div>
-
-              <div className="p-2 rounded-xl bg-white/5">
-                <div className={`text-sm font-black ${remainingTotalHours === 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
-                  {remainingTotalHours === 0 ? '0 Saat' : `${remainingTotalHours} Saat`}
+              <div className="p-2 rounded-2xl bg-white/5 border border-white/5">
+                <div className={`text-base font-black ${remainingTotalHours === 0 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                  {remainingTotalHours === 0 ? 'Tamamlandı' : `${remainingTotalHours} Saat Boş`}
                 </div>
-                <div className="text-[10px] text-gray-400 font-semibold mt-0.5">Kalan Boş Saat</div>
+                <div className="text-[10px] text-gray-400 font-semibold mt-0.5">Kalan Slot</div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* ── 4. ANA SEKMELER (SÜRÜKLE-BIRAK DAĞITIM / DERS KATALOĞU) ── */}
-        <section className="px-4 mt-3">
+        {/* ── 3. ÖĞRETMEN MESAİ & DERS YÜKÜ MONİTÖRÜ (GRAFİKSEL GÖSTERİM) ── */}
+        {/* User Rule: "Öğretmenlerin mesai saatlerine göre ders saatleri hesaplanır ve öğretmen mesaisinden fazla çalışıyorsa grafiksel olarak gösterilir." */}
+        <section className="px-3">
+          <div className="rounded-3xl bg-white dark:bg-[#111827] border border-gray-200/90 dark:border-gray-800/80 p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                  <BarChart2 size={16} />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-gray-900 dark:text-white flex items-center gap-1.5">
+                    <span>Öğretmen Mesai & Haftalık Ders Yükü Monitörü</span>
+                    <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                      Canlı Hesaplama
+                    </span>
+                  </h4>
+                  <p className="text-[10px] text-gray-400">
+                    Okul geneli haftalık ders dağılımı vs. yasal mesai kapasitesi (30 Saat)
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsWorkloadExpanded(!isWorkloadExpanded)}
+                className="text-xs font-bold text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 flex items-center gap-1 cursor-pointer"
+              >
+                <span>{isWorkloadExpanded ? 'Gizle' : 'Göster'}</span>
+                <ChevronDown size={14} className={`transition-transform ${isWorkloadExpanded ? 'rotate-180' : ''}`} />
+              </button>
+            </div>
+
+            {isWorkloadExpanded && (
+              <div className="mt-3 space-y-2.5 pt-2 border-t border-gray-100 dark:border-gray-800">
+                {teacherWorkloads.map((t) => (
+                  <div key={t.id} className="p-3 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200/60 dark:border-gray-700/60">
+                    <div className="flex items-center justify-between mb-1.5 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="font-black text-gray-900 dark:text-white">{t.name}</span>
+                        <span className="text-[10px] text-gray-400 font-semibold">({t.branch})</span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-extrabold text-gray-700 dark:text-gray-300">
+                          {t.assignedHours} / {t.weeklyLimit} Saat
+                        </span>
+                        {t.isOvertime ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-[9px] font-black text-rose-600 dark:text-rose-400 animate-pulse">
+                            <Flame size={10} />
+                            <span>+{t.overtimeHours} Saat Ek Ders!</span>
+                          </span>
+                        ) : t.percentage === 100 ? (
+                          <span className="px-2 py-0.5 rounded-full bg-purple-500/15 text-[9px] font-bold text-purple-600 dark:text-purple-400">
+                            Tam Kapasite (%100)
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-[9px] font-bold text-emerald-600 dark:text-emerald-400">
+                            Optimum (%{t.percentage})
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Progress Bar (Graphical representation) */}
+                    <div className="w-full h-2.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${
+                          t.isOvertime
+                            ? 'bg-gradient-to-r from-amber-500 via-rose-500 to-red-600'
+                            : t.percentage >= 90
+                            ? 'bg-gradient-to-r from-purple-500 to-indigo-600'
+                            : 'bg-gradient-to-r from-teal-500 to-emerald-500'
+                        }`}
+                        style={{ width: `${Math.min(100, t.percentage)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* ── 4. SEKMELER (SÜRÜKLE-BIRAK DAĞITIM / DERS HAVUZU KATALOĞU) ── */}
+        <section className="px-3">
           <div className="flex items-center p-1 rounded-2xl bg-gray-200/60 dark:bg-gray-800/60 text-xs font-bold gap-1">
             <button
               type="button"
               onClick={() => setActiveTab('distribute')}
-              className={`flex-1 py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              className={`flex-1 py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 activeTab === 'distribute'
-                  ? 'bg-white dark:bg-[#121826] text-teal-600 dark:text-teal-400 shadow-sm'
+                  ? 'bg-white dark:bg-[#111827] text-emerald-600 dark:text-emerald-400 shadow-sm'
                   : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
               <Wand2 size={14} />
-              <span>Sürükle - Bırak Dağıtım</span>
+              <span>Sürükle - Bırak Dağıtım & Takvim</span>
             </button>
 
             <button
               type="button"
               onClick={() => setActiveTab('catalog')}
-              className={`flex-1 py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              className={`flex-1 py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 activeTab === 'catalog'
-                  ? 'bg-white dark:bg-[#121826] text-indigo-600 dark:text-indigo-400 shadow-sm'
+                  ? 'bg-white dark:bg-[#111827] text-indigo-600 dark:text-indigo-400 shadow-sm'
                   : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
               <Layers size={14} />
-              <span>Ders Tanımları & Saatler</span>
+              <span>Sınıf Ders Havuzu & Tanımlar</span>
             </button>
           </div>
         </section>
 
         {/* ════════════════════════════════════════════════════════════
-            SEKME 1: SÜRÜKLE - BIRAK VE PRATİK DOKUN-YERLEŞTİR HAFTALIK DAĞITIM
+            SEKME 1: HAFTALIK DERS PROGRAMI & SÜRÜKLE-BIRAK DAĞITIM
            ════════════════════════════════════════════════════════════ */}
         {activeTab === 'distribute' && (
-          <div className="space-y-3 mt-3">
-            {/* ── A. DERS HAVUZU (DRAGGABLE & 1-TAP PLACEMENT DOCK) ── */}
-            <section className="px-4">
-              <div className="p-3.5 rounded-2xl bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800/80 shadow-xs">
+          <div className="space-y-3">
+            {/* A. SEÇİLİ SINIFIN DERS HAVUZU */}
+            <section className="px-3">
+              <div className="p-4 rounded-3xl bg-white dark:bg-[#111827] border border-gray-200/90 dark:border-gray-800/80 shadow-sm">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-1.5">
-                    <Sparkles size={14} className="text-teal-500" />
+                  <div className="flex items-center gap-2">
+                    <Sparkles size={15} className="text-emerald-500" />
                     <span className="text-xs font-black text-gray-900 dark:text-white">
-                      Ders Havuzu ({coursesList.length} Ders)
+                      {selectedClass} Sınıfı Ders Havuzu ({classCoursesPool.length} Tanımlı Ders)
                     </span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleOpenNewCourseModal}
-                    className="flex items-center gap-1 px-2 py-1 rounded-lg bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 text-[10px] font-black cursor-pointer hover:bg-teal-100"
-                  >
-                    <Plus size={11} strokeWidth={2.5} />
-                    <span>Yeni Ders Ekle</span>
-                  </button>
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={handleOpenNewCourseModal}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
+                    >
+                      <Plus size={13} strokeWidth={2.5} />
+                      <span>Yeni Ders Tanımla</span>
+                    </button>
+                  </div>
                 </div>
 
-                <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-2.5">
-                  💡 <strong>Kullanım:</strong> Karta dokunun ve aşağıdaki boş ders saatine dokunarak yerleştirin (veya sürükleyip bırakın).
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-3">
+                  💡 <strong>Nasıl Yerleştirilir:</strong> Aşağıdaki ders kartına dokunun, ardından gün akışındaki boş bir ders saatine dokunarak atayın.
                 </p>
 
-                {/* Course Badges Horizontal Wrap / Grid */}
-                <div className="flex flex-wrap gap-1.5">
-                  {coursesList.map((course) => {
-                    const style = getColorStyle(course.color)
-                    const placedHours = placedSubjectCounts[course.name] || 0
-                    const isFullyPlaced = placedHours >= course.weeklyHours
-                    const isSelected = selectedCourseForDrop?.id === course.id
-
-                    return (
-                      <motion.div
-                        key={course.id}
-                        whileTap={{ scale: 0.96 }}
-                        draggable={true}
-                        onDragStart={(e) => {
-                          const dt = (e as unknown as { dataTransfer?: DataTransfer }).dataTransfer
-                          if (dt) {
-                            dt.setData('text/plain', course.name)
-                          }
-                          setDraggedCourseName(course.name)
-                        }}
-                        onDragEnd={() => setDraggedCourseName(null)}
-                        onClick={() => {
-                          if (isSelected) {
-                            setSelectedCourseForDrop(null)
-                          } else {
-                            setSelectedCourseForDrop(course)
-                            toast(`🎯 "${course.name}" seçildi. Yerleştirmek istediğiniz ders saatine dokunun.`, {
-                              icon: '👉',
-                              duration: 2000,
-                            })
-                          }
-                        }}
-                        className={`px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-grab active:cursor-grabbing flex items-center gap-1.5 ${
-                          isSelected
-                            ? 'ring-2 ring-teal-500 bg-teal-50 dark:bg-teal-950/80 border-teal-500 text-teal-900 dark:text-teal-100 shadow-sm'
-                            : isFullyPlaced
-                            ? 'bg-gray-100 dark:bg-gray-800/60 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 opacity-80'
-                            : `${style.bg} ${style.border} ${style.text}`
-                        }`}
+                {classCoursesPool.length === 0 ? (
+                  <div className="p-6 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-800 text-center space-y-2">
+                    <BookOpen size={24} className="mx-auto text-gray-400" />
+                    <div className="text-xs font-bold text-gray-700 dark:text-gray-300">
+                      {selectedClass} sınıfı için henüz ders tanımlanmadı.
+                    </div>
+                    <p className="text-[11px] text-gray-400">
+                      "Yeni Ders Tanımla" butonu ile ders ekleyebilir veya varsayılan müfredatı yükleyebilirsiniz.
+                    </p>
+                    <div className="pt-2 flex justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleOpenNewCourseModal}
+                        className="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-bold text-xs cursor-pointer"
                       >
-                        <span className={`w-2 h-2 rounded-full ${style.dot}`} />
-                        <span>{course.name}</span>
-                        <span
-                          className={`text-[9px] font-black px-1.5 py-0.2 rounded-md ${
-                            isFullyPlaced
-                              ? 'bg-emerald-500 text-white'
-                              : 'bg-white/80 dark:bg-black/30 border border-current'
+                        + Bu Sınıfa Ders Ekle
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleLoadAuthenticPreset}
+                        className="px-3 py-1.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold text-xs cursor-pointer"
+                      >
+                        Örnek Müfredatı Yükle
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {classCoursesPool.map((course) => {
+                      const style = getColorStyle(course.color)
+                      const placedHours = placedSubjectCounts[course.name] || 0
+                      const isFullyPlaced = placedHours >= course.weeklyHours
+                      const isSelected = selectedCourseForDrop?.id === course.id
+
+                      return (
+                        <motion.div
+                          key={course.id}
+                          whileTap={{ scale: 0.96 }}
+                          draggable={true}
+                          onDragStart={(e) => {
+                            const dt = (e as unknown as { dataTransfer?: DataTransfer }).dataTransfer
+                            if (dt) dt.setData('text/plain', course.name)
+                            setDraggedCourseName(course.name)
+                          }}
+                          onDragEnd={() => setDraggedCourseName(null)}
+                          onClick={() => {
+                            if (isSelected) {
+                              setSelectedCourseForDrop(null)
+                            } else {
+                              setSelectedCourseForDrop(course)
+                              toast(`🎯 "${course.name}" seçildi. Yerleştirmek istediğiniz ders saatine dokunun.`, {
+                                icon: '👉',
+                                duration: 2000,
+                              })
+                            }
+                          }}
+                          className={`p-2 px-3 rounded-2xl border text-xs font-bold transition-all cursor-grab active:cursor-grabbing flex items-center gap-2 shadow-xs ${
+                            isSelected
+                              ? 'ring-2 ring-emerald-500 bg-emerald-50 dark:bg-emerald-950/80 border-emerald-500 text-emerald-900 dark:text-emerald-100'
+                              : isFullyPlaced
+                              ? 'bg-gray-100 dark:bg-gray-800/60 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 opacity-80'
+                              : `${style.bg} ${style.border} ${style.text}`
                           }`}
                         >
-                          {placedHours}/{course.weeklyHours}s
-                        </span>
-                      </motion.div>
-                    )
-                  })}
-                </div>
+                          <span className={`w-2 h-2 rounded-full ${style.dot}`} />
+                          <div className="text-left">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-black">{course.name}</span>
+                              <span className="text-[9px] opacity-75 font-mono">({course.code})</span>
+                            </div>
+                            <div className="text-[10px] font-normal opacity-90">
+                              {course.branchTeacher} · {course.requiredRoom}
+                            </div>
+                          </div>
+                          <span
+                            className={`text-[9px] font-black px-1.5 py-0.5 rounded-md ${
+                              isFullyPlaced
+                                ? 'bg-emerald-500 text-white'
+                                : 'bg-white/80 dark:bg-black/40 border border-current'
+                            }`}
+                          >
+                            {placedHours}/{course.weeklyHours}s
+                          </span>
+                        </motion.div>
+                      )
+                    })}
+                  </div>
+                )}
 
-                {/* Selected Feedback Banner */}
+                {/* Selected Indicator Banner */}
                 {selectedCourseForDrop && (
                   <motion.div
                     initial={{ opacity: 0, y: -4 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="mt-2.5 p-2 rounded-xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-between text-xs"
+                    className="mt-3 p-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between text-xs"
                   >
-                    <div className="flex items-center gap-1.5 font-bold text-teal-700 dark:text-teal-300">
-                      <span className="w-2 h-2 rounded-full bg-teal-500 animate-ping" />
-                      <span>Seçili: <strong>{selectedCourseForDrop.name}</strong></span>
+                    <div className="flex items-center gap-2 font-bold text-emerald-700 dark:text-emerald-300">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+                      <span>
+                        Seçili Ders: <strong>{selectedCourseForDrop.name}</strong> ({selectedCourseForDrop.branchTeacher})
+                      </span>
                       <span className="text-[10px] text-gray-500">
-                        ({placedSubjectCounts[selectedCourseForDrop.name] || 0}/{selectedCourseForDrop.weeklyHours} Saat)
+                        {placedSubjectCounts[selectedCourseForDrop.name] || 0}/{selectedCourseForDrop.weeklyHours} Yerleşti
                       </span>
                     </div>
                     <button
                       type="button"
                       onClick={() => setSelectedCourseForDrop(null)}
-                      className="text-[10px] text-gray-400 hover:text-gray-600 font-bold px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-700"
+                      className="text-xs text-gray-500 hover:text-gray-700 font-bold px-2 py-0.5 rounded-lg bg-gray-200 dark:bg-gray-700 cursor-pointer"
                     >
                       Vazgeç
                     </button>
@@ -1387,75 +1476,77 @@ export default function MAdminCurriculumClient({
               </div>
             </section>
 
-            {/* ── B. GÜN SEÇİCİ & OTOMATİK DOLDUR BUTONU ── */}
-            <section className="px-4">
-              <div className="flex items-center justify-between mb-1.5">
-                <div className="grid grid-cols-5 gap-1 flex-1">
-                  {DAYS_LIST.map((day) => {
-                    const isActive = activeDay === day.key
-                    const dayCount = classEntries.filter((e) => e.day === day.key).length
-                    return (
-                      <button
-                        key={day.key}
-                        type="button"
-                        onClick={() => setActiveDay(day.key)}
-                        className={`py-2 px-1 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer ${
-                          isActive
-                            ? 'bg-teal-600 text-white shadow-sm'
-                            : 'bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800/80 text-gray-600 dark:text-gray-300'
-                        }`}
-                      >
-                        <span className="text-[10px] font-bold opacity-80">{day.shortLabel}</span>
-                        <span className="text-xs font-black">{day.label.slice(0, 3)}</span>
-                        <span className={`text-[9px] mt-0.5 font-bold px-1 rounded-full ${isActive ? 'bg-white/20' : 'text-gray-400'}`}>
-                          {dayCount}/{periods.length}
-                        </span>
-                      </button>
-                    )
-                  })}
-                </div>
+            {/* B. GÜN SEÇİCİ & AKILLI OTOMATİK DOLDUR AKSİYONLARI */}
+            <section className="px-3">
+              <div className="grid grid-cols-5 gap-1.5">
+                {DAYS_LIST.map((day) => {
+                  const isActive = activeDay === day.key
+                  const dayCount = classEntries.filter((e) => e.day === day.key).length
+                  return (
+                    <button
+                      key={day.key}
+                      type="button"
+                      onClick={() => setActiveDay(day.key)}
+                      className={`py-2.5 px-1 rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer ${
+                        isActive
+                          ? 'bg-emerald-600 text-white shadow-md ring-2 ring-emerald-400/40 scale-102'
+                          : 'bg-white dark:bg-[#111827] border border-gray-200/90 dark:border-gray-800/80 text-gray-700 dark:text-gray-300'
+                      }`}
+                    >
+                      <span className="text-[10px] font-bold opacity-80">{day.shortLabel}</span>
+                      <span className="text-xs font-black">{day.label.slice(0, 3)}</span>
+                      <span className={`text-[9px] mt-0.5 font-bold px-1.5 rounded-full ${isActive ? 'bg-white/20' : 'text-gray-400'}`}>
+                        {dayCount}/{periods.length}
+                      </span>
+                    </button>
+                  )
+                })}
               </div>
 
-              {/* Fast Action Tools */}
-              <div className="grid grid-cols-2 gap-2 mt-2">
+              {/* Action Buttons: Otomatik Doldur & Haftayı Sıfırla */}
+              <div className="grid grid-cols-2 gap-2 mt-2.5">
                 <button
                   type="button"
-                  onClick={handleAutoDistributeMEB}
-                  className="h-8 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-[11px] flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                  onClick={handleSmartAutoFill}
+                  className="h-10 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer active:scale-98"
                 >
-                  <Wand2 size={13} />
-                  <span>Otomatik Doldur</span>
+                  <Wand2 size={15} />
+                  <span>Akıllı Otomatik Doldur</span>
                 </button>
+
                 <button
                   type="button"
                   onClick={handleClearWeek}
-                  className="h-8 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 text-gray-700 dark:text-gray-300 font-bold text-[11px] flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                  className="h-10 rounded-2xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                 >
-                  <RotateCcw size={12} />
+                  <RotateCcw size={14} />
                   <span>Haftayı Sıfırla</span>
                 </button>
               </div>
             </section>
 
-            {/* ── C. SEÇİLİ GÜNÜN DERS SAATLERİ (SÜRÜKLE BIRAK / DOKUN YERLEŞTİR + DİNAMİK SAAT EKLEME) ── */}
-            <section className="px-4 space-y-2">
+            {/* C. GÜNLÜK DERS SAATLERİ AKIŞI (SLOTLAR) */}
+            <section className="px-3 space-y-2">
               <div className="flex items-center justify-between px-1">
                 <div className="text-xs font-black text-gray-900 dark:text-white flex items-center gap-1.5">
-                  <Clock size={13} className="text-teal-500" />
+                  <Clock size={14} className="text-emerald-500" />
                   <span>
-                    {DAYS_LIST.find((d) => d.key === activeDay)?.label} Akışı ({activeDayEntries.length}/{periods.length} Saat)
+                    {selectedClass} · {DAYS_LIST.find((d) => d.key === activeDay)?.label} Akışı ({activeDayEntries.length}/{periods.length} Saat)
                   </span>
                 </div>
-                <span className="text-[10px] text-gray-400 font-semibold">
-                  Dokunarak Yönetin
-                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsEditPeriodsModalOpen(true)}
+                  className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold hover:underline cursor-pointer"
+                >
+                  Saatleri Düzenle
+                </button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {periods.map((slot) => {
                   const entry = activeDayEntries.find((e) => e.period === slot.periodNumber)
                   const style = entry ? getColorStyle(entry.color) : null
-                  const isCustomPeriod = slot.periodNumber > (selectedOrgId === 10 ? 6 : 7)
 
                   return (
                     <motion.div
@@ -1466,7 +1557,7 @@ export default function MAdminCurriculumClient({
                         e.preventDefault()
                         const subjectName = e.dataTransfer.getData('text/plain') || draggedCourseName
                         if (subjectName) {
-                          const matched = coursesList.find((c) => c.name === subjectName)
+                          const matched = classCoursesPool.find((c) => c.name === subjectName)
                           if (matched) {
                             handleAssignCourseToSlot(activeDay, slot.periodNumber, matched)
                           }
@@ -1482,31 +1573,31 @@ export default function MAdminCurriculumClient({
                             period: slot.periodNumber,
                           })
                         } else {
-                          toast('Lütfen yukarıdaki Ders Havuzundan bir ders seçin veya Yeni Ders ekleyin.', {
+                          toast('Lütfen yukarıdaki ders havuzundan bir ders seçin veya Yeni Ders Tanımla butonunu kullanın.', {
                             icon: '☝️',
                           })
                         }
                       }}
-                      className={`p-3 rounded-2xl border transition-all cursor-pointer relative ${
+                      className={`p-3.5 rounded-2xl border transition-all cursor-pointer relative ${
                         entry
-                          ? `bg-white dark:bg-[#121826] border-gray-200/90 dark:border-gray-800/80 shadow-xs hover:border-teal-400 dark:hover:border-teal-500`
+                          ? `bg-white dark:bg-[#111827] border-gray-200/90 dark:border-gray-800/80 shadow-xs hover:border-emerald-500`
                           : selectedCourseForDrop
-                          ? 'border-2 border-dashed border-teal-400 bg-teal-50/40 dark:bg-teal-950/20 shadow-xs'
-                          : 'border-2 border-dashed border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 hover:border-teal-300'
+                          ? 'border-2 border-dashed border-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/20 shadow-xs'
+                          : 'border-2 border-dashed border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30 hover:border-emerald-300'
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2">
                         {/* Sol: Saat ve Periyot */}
-                        <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="flex items-center gap-3 min-w-0">
                           <div
-                            className={`w-9 h-9 rounded-xl flex flex-col items-center justify-center shrink-0 ${
+                            className={`w-10 h-10 rounded-2xl flex flex-col items-center justify-center shrink-0 ${
                               entry
-                                ? 'bg-teal-500/15 text-teal-700 dark:text-teal-300 font-black'
+                                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-black'
                                 : 'bg-gray-100 dark:bg-gray-800 text-gray-500 font-bold'
                             }`}
                           >
                             <span className="text-[9px] uppercase leading-none opacity-80">DERS</span>
-                            <span className="text-sm font-black leading-none mt-0.5">{slot.periodNumber}</span>
+                            <span className="text-base font-black leading-none mt-0.5">{slot.periodNumber}</span>
                           </div>
 
                           <div className="min-w-0">
@@ -1516,21 +1607,23 @@ export default function MAdminCurriculumClient({
                                   <span className="text-xs font-black text-gray-900 dark:text-white">
                                     {entry.subject}
                                   </span>
-                                  <span
-                                    className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded-md border ${style?.bg} ${style?.text} ${style?.border}`}
-                                  >
-                                    {entry.teacherName}
-                                  </span>
-                                  {isCustomPeriod && (
-                                    <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50">
-                                      Ek Ders
+                                  {entry.isTeacherOnLeave ? (
+                                    <span className="text-[9px] font-black px-1.5 py-0.2 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                                      <UserCheck size={9} />
+                                      <span>Yedek: {entry.activeTeacherName}</span>
+                                    </span>
+                                  ) : (
+                                    <span
+                                      className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded-md border ${style?.bg} ${style?.text} ${style?.border}`}
+                                    >
+                                      {entry.activeTeacherName || entry.teacherName}
                                     </span>
                                   )}
                                 </div>
-                                <div className="flex items-center gap-2 mt-0.5 text-[10px] text-gray-400">
+                                <div className="flex items-center gap-1.5 mt-1 text-[10px] text-gray-400">
                                   <span>⏰ {slot.time}</span>
                                   <span>·</span>
-                                  <span>{entry.roomName}</span>
+                                  <span className="font-semibold text-gray-600 dark:text-gray-300">{entry.roomName}</span>
                                 </div>
                               </>
                             ) : (
@@ -1540,15 +1633,15 @@ export default function MAdminCurriculumClient({
                                     ? `👉 "${selectedCourseForDrop.name}" dersini buraya bırak/dokun`
                                     : 'Boş Ders Saati'}
                                 </div>
-                                <div className="text-[10px] text-gray-400">
-                                  ⏰ {slot.time} {isCustomPeriod && '· İlave Ders Saati'}
+                                <div className="text-[10px] text-gray-400 mt-0.5">
+                                  ⏰ {slot.time}
                                 </div>
                               </>
                             )}
                           </div>
                         </div>
 
-                        {/* Sağ: İkon veya İşlem */}
+                        {/* Sağ Aksiyon */}
                         <div className="flex items-center gap-1 shrink-0">
                           {entry ? (
                             <button
@@ -1558,7 +1651,7 @@ export default function MAdminCurriculumClient({
                                 handleRemoveSlot(activeDay, slot.periodNumber)
                               }}
                               className="w-7 h-7 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-rose-500 flex items-center justify-center cursor-pointer transition-colors"
-                              title="Dersi Kaldır"
+                              title="Dersi Boşalt"
                             >
                               <Trash2 size={13} />
                             </button>
@@ -1567,128 +1660,124 @@ export default function MAdminCurriculumClient({
                               <Plus size={14} />
                             </div>
                           )}
-
-                          {/* İlave periyot ise periyodu tamamen kaldırma butonu */}
-                          {isCustomPeriod && !entry && (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleRemovePeriod(slot.periodNumber)
-                              }}
-                              className="w-7 h-7 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-500 hover:bg-rose-100 flex items-center justify-center cursor-pointer transition-colors"
-                              title="Ek Saati Sil"
-                            >
-                              <X size={13} />
-                            </button>
-                          )}
                         </div>
                       </div>
                     </motion.div>
                   )
                 })}
-
-                {/* ── + DAHA FAZLA DERS SAATİ EKLE BUTONU ── */}
-                <div className="pt-2">
-                  <button
-                    type="button"
-                    onClick={handleAddPeriod}
-                    className="w-full h-11 rounded-2xl border-2 border-dashed border-teal-500/40 hover:border-teal-500 bg-teal-50/30 dark:bg-teal-950/20 text-teal-700 dark:text-teal-300 font-black text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs active:scale-[0.99]"
-                  >
-                    <Plus size={16} strokeWidth={2.5} />
-                    <span>+ {periods.length + 1}. Ders Saatini Ekle</span>
-                  </button>
-                </div>
               </div>
             </section>
           </div>
         )}
 
         {/* ════════════════════════════════════════════════════════════
-            SEKME 2: DERS TANIMLARI & MEB SAAT KONTROLÜ (KATALOG)
+            SEKME 2: SINIF DERS TANIMLARI & KATALOG
            ════════════════════════════════════════════════════════════ */}
         {activeTab === 'catalog' && (
-          <div className="space-y-3 mt-3 px-4">
+          <div className="space-y-3 px-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-black text-gray-900 dark:text-white">
-                Tanımlı Dersler ({coursesList.length})
+                {selectedClass} Sınıfı Tanımlı Dersleri ({classCoursesPool.length})
               </span>
-              <button
-                type="button"
-                onClick={handleOpenNewCourseModal}
-                className="h-8 px-3 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer"
-              >
-                <Plus size={14} />
-                <span>Yeni Ders Tanımla</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleClearAllCourses}
+                  className="h-8 px-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900 text-xs font-bold transition-all cursor-pointer"
+                >
+                  Tümünü Temizle
+                </button>
+                <button
+                  type="button"
+                  onClick={handleOpenNewCourseModal}
+                  className="h-8 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                >
+                  <Plus size={14} />
+                  <span>Yeni Ders Tanımla</span>
+                </button>
+              </div>
             </div>
 
             <div className="space-y-2">
-              {coursesList.map((course) => {
+              {classCoursesPool.map((course) => {
                 const style = getColorStyle(course.color)
                 const placedHours = placedSubjectCounts[course.name] || 0
 
                 return (
                   <div
                     key={course.id}
-                    className="p-3.5 rounded-2xl bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800/80 shadow-xs"
+                    className="p-3.5 rounded-3xl bg-white dark:bg-[#111827] border border-gray-200/90 dark:border-gray-800/80 shadow-xs space-y-2"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5 flex-wrap">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-xs font-black text-gray-900 dark:text-white">
                             {course.name}
                           </span>
                           <span className="font-mono text-[9px] font-bold px-1.5 py-0.2 rounded bg-gray-100 dark:bg-gray-800 text-gray-500">
                             {course.code}
                           </span>
+                          <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                            {course.targetClass}
+                          </span>
                           <span
                             className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded-md border ${style.bg} ${style.text} ${style.border}`}
                           >
                             {course.category}
                           </span>
+                          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
+                            {course.roomType === 'laboratuvar' ? '🔬 Laboratuvar' : course.roomType === 'atolye' ? '🛠️ Atölye' : '🏫 Normal Sınıf'}
+                          </span>
                         </div>
 
-                        <div className="flex items-center gap-2 mt-1.5 text-[11px] text-gray-500 dark:text-gray-400">
-                          <span className="font-black text-teal-600 dark:text-teal-400">
-                            ⏱ {course.weeklyHours} Saat / Hafta
-                          </span>
-                          <span>·</span>
-                          <span>{course.branchTeacher}</span>
-                          <span>·</span>
-                          <span>{course.requiredRoom}</span>
-                        </div>
-
-                        <div className="flex items-center gap-1.5 mt-2">
-                          <span className="text-[10px] font-bold text-gray-500">
-                            Haftalık Durum: {placedHours}/{course.weeklyHours} Saat Dağıtıldı
-                          </span>
-                          {placedHours >= course.weeklyHours && (
-                            <span className="text-[10px] font-bold text-emerald-500">
-                              (Tamam ✅)
-                            </span>
+                        {/* Detailed Teacher & Room Meta */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-2 text-[11px] text-gray-500 dark:text-gray-400">
+                          <div>
+                            <strong>Asıl Öğretmen:</strong> {course.branchTeacher} ({course.teacherBranch})
+                          </div>
+                          <div>
+                            <strong>Derslik:</strong> {course.requiredRoom}
+                          </div>
+                          {course.backupTeachers && course.backupTeachers.length > 0 && (
+                            <div className="col-span-full text-amber-600 dark:text-amber-400">
+                              <strong>Yedek Öğretmenler:</strong>{' '}
+                              {course.backupTeachers.map((b) => `${b.priority}. ${b.name}`).join(', ')}
+                            </div>
                           )}
                         </div>
                       </div>
 
+                      {/* Edit / Delete */}
                       <div className="flex items-center gap-1 shrink-0">
                         <button
                           type="button"
                           onClick={() => handleOpenEditCourse(course)}
-                          className="w-7 h-7 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 hover:text-teal-600 flex items-center justify-center transition-colors cursor-pointer"
-                          title="Düzenle"
+                          className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:text-emerald-500 flex items-center justify-center cursor-pointer"
+                          title="Dersi Düzenle"
                         >
-                          <Edit3 size={13} />
+                          <Edit3 size={14} />
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDeleteCourse(course.id)}
-                          className="w-7 h-7 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 hover:text-rose-600 flex items-center justify-center transition-colors cursor-pointer"
-                          title="Sil"
+                          className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-400 hover:text-rose-500 flex items-center justify-center cursor-pointer"
+                          title="Dersi Sil"
                         >
-                          <Trash2 size={13} />
+                          <Trash2 size={14} />
                         </button>
                       </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="flex items-center justify-between text-[10px] text-gray-400 font-semibold pt-1 border-t border-gray-100 dark:border-gray-800">
+                      <span>Haftalık {course.weeklyHours} Saat</span>
+                      <span>
+                        {placedHours >= course.weeklyHours ? (
+                          <span className="text-emerald-500 font-bold">Tamamı Dağıtıldı ({placedHours}s)</span>
+                        ) : (
+                          <span className="text-amber-500 font-bold">{course.weeklyHours - placedHours} Saat Bekliyor</span>
+                        )}
+                      </span>
                     </div>
                   </div>
                 )
@@ -1698,133 +1787,7 @@ export default function MAdminCurriculumClient({
         )}
       </main>
 
-      {/* ── 5. DOCK MENU ── */}
-      {!hideDock && (
-        <MobileAdminDock
-          activeTab="more"
-          onOpenMoreSheet={() => setIsMoreSheetOpen(true)}
-          orgSlug={orgSlug}
-          theme={theme}
-        />
-      )}
-
-
-
-      {/* ── MODAL B: ÇOKLU SINIFA / TÜMÜNE UYGULA MODALI ── */}
-      <AnimatePresence>
-        {isBatchApplyModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 font-jakarta select-none">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsBatchApplyModalOpen(false)}
-              className="fixed inset-0 bg-black/75 backdrop-blur-xs"
-            />
-
-            <motion.div
-              initial={{ y: '100%', opacity: 0.8 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: '100%', opacity: 0.8 }}
-              transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-              className={`relative w-full sm:max-w-md rounded-t-[32px] sm:rounded-[32px] p-5 shadow-2xl z-10 ${
-                theme === 'dark' ? 'bg-[#121826] text-white border border-gray-800' : 'bg-white text-gray-900'
-              }`}
-            >
-              <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-gray-800">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-teal-500/20 text-teal-400 flex items-center justify-center">
-                    <Copy size={16} />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-black">Programı Çoklu Sınıfa Uygula</h4>
-                    <p className="text-[10px] text-gray-400">
-                      Kaynak: <strong>{selectedClass}</strong> ({classEntries.length} Saat)
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsBatchApplyModalOpen(false)}
-                  className="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 flex items-center justify-center cursor-pointer"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-
-              <div className="mt-3 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-gray-500">Hedef Sınıfları Seçin:</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (batchSelectedClasses.length === availableClasses.length) {
-                        setBatchSelectedClasses([])
-                      } else {
-                        setBatchSelectedClasses([...availableClasses])
-                      }
-                    }}
-                    className="text-[11px] font-black text-teal-600 dark:text-teal-400 hover:underline cursor-pointer"
-                  >
-                    {batchSelectedClasses.length === availableClasses.length ? 'Seçimi Kaldır' : 'Tümünü Seç'}
-                  </button>
-                </div>
-
-                {/* Sınıf Onay Kutuları */}
-                <div className="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto">
-                  {availableClasses.map((cls) => {
-                    const isChecked = batchSelectedClasses.includes(cls)
-                    return (
-                      <button
-                        key={cls}
-                        type="button"
-                        onClick={() => {
-                          if (isChecked) {
-                            setBatchSelectedClasses(batchSelectedClasses.filter((c) => c !== cls))
-                          } else {
-                            setBatchSelectedClasses([...batchSelectedClasses, cls])
-                          }
-                        }}
-                        className={`p-2.5 rounded-xl border text-left flex items-center justify-between transition-all cursor-pointer ${
-                          isChecked
-                            ? 'bg-teal-500/15 border-teal-500 text-teal-900 dark:text-teal-100 font-black'
-                            : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 font-bold'
-                        }`}
-                      >
-                        <span className="text-xs">{cls} Şubesi</span>
-                        <div
-                          className={`w-5 h-5 rounded-md flex items-center justify-center ${
-                            isChecked ? 'bg-teal-500 text-white' : 'border border-gray-300 dark:border-gray-600'
-                          }`}
-                        >
-                          {isChecked && <Check size={13} strokeWidth={3} />}
-                        </div>
-                      </button>
-                    )
-                  })}
-                </div>
-
-                <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/50 dark:border-amber-900/40 text-[10px] text-amber-800 dark:text-amber-300">
-                  ⚠️ <strong>Bilgi:</strong> Seçili hedef sınıfların mevcut ders programları silinerek {selectedClass} şubesinin programı ile güncellenecektir.
-                </div>
-
-                <div className="pt-2">
-                  <button
-                    type="button"
-                    onClick={handleBatchApplySchedule}
-                    className="w-full h-12 rounded-2xl bg-teal-600 hover:bg-teal-700 text-white font-black text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    <CheckCircle2 size={16} />
-                    <span>Seçili {batchSelectedClasses.length} Sınıfa Programı Kopyala ve Uygula</span>
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* ── MODAL 1: YENİ DERS TANIMLA MODALI ── */}
+      {/* ── MODAL 1: YENİ DERS TANIMLA (USER SPECIFIED LAYOUT) ── */}
       <AnimatePresence>
         {isNewCourseModalOpen && (
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 font-jakarta select-none">
@@ -1841,27 +1804,25 @@ export default function MAdminCurriculumClient({
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: '100%', opacity: 0.8 }}
               transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-              className={`relative w-full sm:max-w-md max-h-[92vh] rounded-t-[32px] sm:rounded-[32px] shadow-2xl flex flex-col z-10 overflow-hidden ${
+              className={`relative w-full sm:max-w-lg max-h-[92vh] rounded-t-[32px] sm:rounded-[32px] shadow-2xl flex flex-col z-10 overflow-hidden ${
                 theme === 'dark'
                   ? 'bg-[#0E131F] text-white border-t sm:border border-gray-800'
                   : 'bg-white text-gray-900 border-t sm:border border-gray-200'
               }`}
             >
-              <div className="pt-3 pb-1 flex justify-center sm:hidden">
-                <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full" />
-              </div>
-
-              {/* Title */}
-              <div className="px-5 pt-3 pb-3 flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-teal-500/20 text-teal-600 dark:text-teal-400 flex items-center justify-center">
-                    <Plus size={16} />
+              {/* Header */}
+              <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                    <Plus size={18} strokeWidth={2.5} />
                   </div>
                   <div>
                     <h3 className="text-sm font-black text-gray-900 dark:text-white">
                       Yeni Ders Tanımla
                     </h3>
-                    <p className="text-[11px] text-gray-400">Müfredat kataloğuna yeni ders ekle</p>
+                    <p className="text-[11px] text-gray-400">
+                      Sınıf, asıl/yedek öğretmen, branş ve derslik tanımları
+                    </p>
                   </div>
                 </div>
 
@@ -1880,98 +1841,292 @@ export default function MAdminCurriculumClient({
                   e.preventDefault()
                   handleCreateCourse()
                 }}
-                className="p-5 overflow-y-auto space-y-3.5 text-xs"
+                className="p-5 overflow-y-auto space-y-4 text-xs"
               >
-                <div className="grid grid-cols-2 gap-2.5">
+                {/* ── BÖLÜM 1: DERS BİLGİLERİ ── */}
+                <div className="space-y-2.5 p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200/80 dark:border-gray-700/80">
+                  <div className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <BookOpen size={13} />
+                    <span>1. Ders Bilgileri</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-500 mb-1">
+                        Ders Adı *
+                      </label>
+                      <input
+                        type="text"
+                        value={formName}
+                        onChange={(e) => {
+                          setFormName(e.target.value)
+                          if (!formCode && e.target.value.length >= 3) {
+                            setFormCode(`${e.target.value.slice(0, 3).toUpperCase()}-101`)
+                          }
+                        }}
+                        placeholder="Örn: Matematik"
+                        className="w-full h-10 px-3 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 font-bold"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-500 mb-1">
+                        Ders Kodu
+                      </label>
+                      <input
+                        type="text"
+                        value={formCode}
+                        onChange={(e) => setFormCode(e.target.value.toUpperCase())}
+                        placeholder="Örn: MAT-901"
+                        className="w-full h-10 px-3 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 font-mono font-black uppercase"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-500 mb-1">
+                        Sınıf / Şube *
+                      </label>
+                      <select
+                        value={formTargetClass}
+                        onChange={(e) => {
+                          setFormTargetClass(e.target.value)
+                          if (formRoomType === 'normal') {
+                            setFormRequiredRoom(`Derslik ${e.target.value}`)
+                          }
+                        }}
+                        className="w-full h-10 px-3 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 font-black text-emerald-600 dark:text-emerald-400"
+                      >
+                        {availableClasses.map((cls) => (
+                          <option key={cls} value={cls}>
+                            {cls}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-500 mb-1">
+                        Haftalık Ders Saati *
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={12}
+                        value={formWeeklyHours}
+                        onChange={(e) => setFormWeeklyHours(Number(e.target.value))}
+                        className="w-full h-10 px-3 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 font-black text-center"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-500 mb-1">
+                        Kategori
+                      </label>
+                      <select
+                        value={formCategory}
+                        onChange={(e) => setFormCategory(e.target.value as any)}
+                        className="w-full h-10 px-2.5 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 font-bold"
+                      >
+                        <option value="Temel Ders">Temel Ders</option>
+                        <option value="Fen & Teknoloji">Fen & Teknoloji</option>
+                        <option value="Sosyal & Beşeri">Sosyal & Beşeri</option>
+                        <option value="Sanat & Spor">Sanat & Spor</option>
+                        <option value="Yabancı Dil">Yabancı Dil</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── BÖLÜM 2: ÖĞRETMEN BİLGİLERİ ── */}
+                <div className="space-y-2.5 p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200/80 dark:border-gray-700/80">
+                  <div className="text-[11px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Users size={13} />
+                    <span>2. Öğretmen Bilgileri</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-500 mb-1">
+                        Asıl Öğretmen *
+                      </label>
+                      <select
+                        value={formBranchTeacher}
+                        onChange={(e) => handleSelectPrimaryTeacher(e.target.value)}
+                        className="w-full h-10 px-3 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 font-bold"
+                      >
+                        {teachersList.map((t) => (
+                          <option key={t.id || t.name} value={t.name}>
+                            {t.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-gray-500 mb-1">
+                        Branş (Otomatik Gelir)
+                      </label>
+                      <input
+                        type="text"
+                        value={formTeacherBranch}
+                        onChange={(e) => setFormTeacherBranch(e.target.value)}
+                        placeholder="Örn: Türk Dili ve Edebiyatı"
+                        className="w-full h-10 px-3 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 font-semibold text-indigo-600 dark:text-indigo-400"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Yedek Öğretmen Öncelik Sıralı Alanı */}
+                  <div className="pt-2 border-t border-gray-200/60 dark:border-gray-700/60">
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[11px] font-bold text-gray-600 dark:text-gray-300">
+                        Yedek Öğretmenler (Öncelik Sırası)
+                      </label>
+                      <span className="text-[10px] text-gray-400">
+                        Asıl öğretmen izinli/raporlu olduğunda devreye girer
+                      </span>
+                    </div>
+
+                    {/* Mevcut Yedekler Listesi */}
+                    <div className="space-y-1.5 mb-2">
+                      {formBackupTeachers.map((b) => (
+                        <div
+                          key={b.id}
+                          className="flex items-center justify-between px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="w-5 h-5 rounded-full bg-amber-500 text-white font-black text-[10px] flex items-center justify-center">
+                              {b.priority}
+                            </span>
+                            <span className="font-extrabold text-amber-900 dark:text-amber-200">
+                              {b.name}
+                            </span>
+                            <span className="text-[10px] text-amber-700/80 dark:text-amber-300/80">
+                              ({b.branch})
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveBackupTeacher(b.id)}
+                            className="text-rose-500 hover:text-rose-700 font-bold text-[11px] cursor-pointer"
+                          >
+                            Çıkar
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Yedek Öğretmen Ekle Seçici */}
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={newBackupTeacherSelect}
+                        onChange={(e) => setNewBackupTeacherSelect(e.target.value)}
+                        className="flex-1 h-9 px-3 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-xs font-bold"
+                      >
+                        <option value="">+ Yedek Öğretmen Seç</option>
+                        {teachersList
+                          .filter((t) => t.name !== formBranchTeacher)
+                          .map((t) => (
+                            <option key={t.id || t.name} value={t.name}>
+                              {t.name} ({t.branch ? t.branch.split('(')[0].trim() : 'Öğretmen'})
+                            </option>
+                          ))}
+                        <option value="Dr. Uğur UĞURLU">Dr. Uğur UĞURLU (Okul Müdürü)</option>
+                      </select>
+                      <button
+                        type="button"
+                        onClick={handleAddBackupTeacher}
+                        className="px-3 h-9 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs cursor-pointer"
+                      >
+                        Sıraya Ekle
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── BÖLÜM 3: DERSLİK BİLGİLERİ ── */}
+                <div className="space-y-2.5 p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200/80 dark:border-gray-700/80">
+                  <div className="text-[11px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Building2 size={13} />
+                    <span>3. Derslik Seçimi & Türü</span>
+                  </div>
+
+                  {/* 3'lü Segment: Normal Sınıf | Atölye | Laboratuvar */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-500 mb-1.5">
+                      Derslik Türü
+                    </label>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormRoomType('normal')
+                          setFormRequiredRoom(`Derslik ${formTargetClass}`)
+                        }}
+                        className={`py-2 px-2 rounded-xl text-xs font-extrabold flex flex-col items-center gap-1 border transition-all cursor-pointer ${
+                          formRoomType === 'normal'
+                            ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
+                            : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300'
+                        }`}
+                      >
+                        <School size={16} />
+                        <span>Normal Sınıf</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormRoomType('atolye')
+                          setFormRequiredRoom('Bilişim & Kodlama Atölyesi')
+                        }}
+                        className={`py-2 px-2 rounded-xl text-xs font-extrabold flex flex-col items-center gap-1 border transition-all cursor-pointer ${
+                          formRoomType === 'atolye'
+                            ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
+                            : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300'
+                        }`}
+                      >
+                        <Sparkles size={16} />
+                        <span>Atölye</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormRoomType('laboratuvar')
+                          setFormRequiredRoom('Fen & Teknoloji Laboratuvarı')
+                        }}
+                        className={`py-2 px-2 rounded-xl text-xs font-extrabold flex flex-col items-center gap-1 border transition-all cursor-pointer ${
+                          formRoomType === 'laboratuvar'
+                            ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
+                            : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300'
+                        }`}
+                      >
+                        <Layers size={16} />
+                        <span>Laboratuvar</span>
+                      </button>
+                    </div>
+                  </div>
+
                   <div>
                     <label className="block text-[11px] font-bold text-gray-500 mb-1">
-                      Ders Adı *
+                      Fiziksel Derslik Adı
                     </label>
                     <input
                       type="text"
-                      value={formName}
-                      onChange={(e) => setFormName(e.target.value)}
-                      placeholder="Örn: Beden Eğitimi"
-                      className="w-full h-11 px-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-bold"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-bold text-gray-500 mb-1">
-                      Ders Kodu
-                    </label>
-                    <input
-                      type="text"
-                      value={formCode}
-                      onChange={(e) => setFormCode(e.target.value)}
-                      placeholder="Örn: BED-101"
-                      className="w-full h-11 px-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-mono font-black uppercase"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2.5">
-                  <div>
-                    <label className="block text-[11px] font-bold text-gray-500 mb-1">
-                      Kategori
-                    </label>
-                    <select
-                      value={formCategory}
-                      onChange={(e) => setFormCategory(e.target.value as any)}
-                      className="w-full h-11 px-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-bold"
-                    >
-                      <option value="Temel Ders">Temel Ders</option>
-                      <option value="Fen & Teknoloji">Fen & Teknoloji</option>
-                      <option value="Sosyal & Beşeri">Sosyal & Beşeri</option>
-                      <option value="Sanat & Spor">Sanat & Spor</option>
-                      <option value="Yabancı Dil">Yabancı Dil</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-bold text-gray-500 mb-1">
-                      Haftalık Saat *
-                    </label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={12}
-                      value={formWeeklyHours}
-                      onChange={(e) => setFormWeeklyHours(Number(e.target.value))}
-                      className="w-full h-11 px-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-black text-center"
+                      value={formRequiredRoom}
+                      onChange={(e) => setFormRequiredRoom(e.target.value)}
+                      placeholder="Derslik adı girin..."
+                      className="w-full h-10 px-3 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 font-bold"
                       required
                     />
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-[11px] font-bold text-gray-500 mb-1">
-                    Dersi Verecek Branş / Öğretmen
-                  </label>
-                  <input
-                    type="text"
-                    value={formBranchTeacher}
-                    onChange={(e) => setFormBranchTeacher(e.target.value)}
-                    placeholder="Sınıf Öğretmeni, Beden Öğretmeni..."
-                    className="w-full h-11 px-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-medium"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-gray-500 mb-1">
-                    Fiziksel Derslik Alanı
-                  </label>
-                  <input
-                    type="text"
-                    value={formRequiredRoom}
-                    onChange={(e) => setFormRequiredRoom(e.target.value)}
-                    placeholder="Standart Derslik, Kapalı Spor Salonu..."
-                    className="w-full h-11 px-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-medium"
-                  />
-                </div>
-
-                {/* Color Selector */}
+                {/* Renk Seçimi */}
                 <div>
                   <label className="block text-[11px] font-bold text-gray-500 mb-1.5">
                     Kart Renk Teması
@@ -1986,7 +2141,7 @@ export default function MAdminCurriculumClient({
                           onClick={() => setFormColor(cKey)}
                           className={`w-7 h-7 rounded-full flex items-center justify-center transition-all cursor-pointer ${
                             cStyle.dot
-                          } ${formColor === cKey ? 'ring-2 ring-offset-2 ring-teal-500 scale-110' : 'opacity-80'}`}
+                          } ${formColor === cKey ? 'ring-2 ring-offset-2 ring-emerald-500 scale-110' : 'opacity-80'}`}
                         >
                           {formColor === cKey && <Check size={12} className="text-white" />}
                         </button>
@@ -1999,14 +2154,10 @@ export default function MAdminCurriculumClient({
                 <div className="pt-2">
                   <button
                     type="submit"
-                    onClick={(e) => {
-                      e.preventDefault()
-                      handleCreateCourse()
-                    }}
-                    className="w-full h-12 rounded-2xl bg-teal-600 hover:bg-teal-700 text-white font-black text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                    className="w-full h-12 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
                   >
                     <Plus size={16} strokeWidth={2.5} />
-                    <span>+ Dersi Oluştur ve Kataloğa Ekle</span>
+                    <span>Dersi Oluştur ve Kataloğa Kaydet</span>
                   </button>
                 </div>
               </form>
@@ -2032,21 +2183,16 @@ export default function MAdminCurriculumClient({
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: '100%', opacity: 0.8 }}
               transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-              className={`relative w-full sm:max-w-md max-h-[92vh] rounded-t-[32px] sm:rounded-[32px] shadow-2xl flex flex-col z-10 overflow-hidden ${
+              className={`relative w-full sm:max-w-lg max-h-[92vh] rounded-t-[32px] sm:rounded-[32px] shadow-2xl flex flex-col z-10 overflow-hidden ${
                 theme === 'dark'
                   ? 'bg-[#0E131F] text-white border-t sm:border border-gray-800'
                   : 'bg-white text-gray-900 border-t sm:border border-gray-200'
               }`}
             >
-              <div className="pt-3 pb-1 flex justify-center sm:hidden">
-                <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full" />
-              </div>
-
-              {/* Title */}
-              <div className="px-5 pt-3 pb-3 flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
+              <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-                    <Edit3 size={16} />
+                  <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
+                    <Edit3 size={18} />
                   </div>
                   <div>
                     <h3 className="text-sm font-black text-gray-900 dark:text-white">
@@ -2065,7 +2211,6 @@ export default function MAdminCurriculumClient({
                 </button>
               </div>
 
-              {/* Form Content */}
               <form
                 onSubmit={(e) => {
                   e.preventDefault()
@@ -2075,99 +2220,93 @@ export default function MAdminCurriculumClient({
               >
                 <div className="grid grid-cols-2 gap-2.5">
                   <div>
-                    <label className="block text-[11px] font-bold text-gray-500 mb-1">
-                      Ders Adı *
-                    </label>
+                    <label className="block text-[11px] font-bold text-gray-500 mb-1">Ders Adı</label>
                     <input
                       type="text"
                       value={formName}
                       onChange={(e) => setFormName(e.target.value)}
-                      className="w-full h-11 px-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-bold"
+                      className="w-full h-10 px-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-bold"
                       required
                     />
                   </div>
-
                   <div>
-                    <label className="block text-[11px] font-bold text-gray-500 mb-1">
-                      Ders Kodu
-                    </label>
+                    <label className="block text-[11px] font-bold text-gray-500 mb-1">Ders Kodu</label>
                     <input
                       type="text"
                       value={formCode}
-                      onChange={(e) => setFormCode(e.target.value)}
-                      className="w-full h-11 px-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-mono font-black uppercase"
+                      onChange={(e) => setFormCode(e.target.value.toUpperCase())}
+                      className="w-full h-10 px-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-mono font-bold"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2.5">
                   <div>
-                    <label className="block text-[11px] font-bold text-gray-500 mb-1">
-                      Kategori
-                    </label>
+                    <label className="block text-[11px] font-bold text-gray-500 mb-1">Sınıf</label>
                     <select
-                      value={formCategory}
-                      onChange={(e) => setFormCategory(e.target.value as any)}
-                      className="w-full h-11 px-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-bold"
+                      value={formTargetClass}
+                      onChange={(e) => setFormTargetClass(e.target.value)}
+                      className="w-full h-10 px-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-bold"
                     >
-                      <option value="Temel Ders">Temel Ders</option>
-                      <option value="Fen & Teknoloji">Fen & Teknoloji</option>
-                      <option value="Sosyal & Beşeri">Sosyal & Beşeri</option>
-                      <option value="Sanat & Spor">Sanat & Spor</option>
-                      <option value="Yabancı Dil">Yabancı Dil</option>
+                      {availableClasses.map((cls) => (
+                        <option key={cls} value={cls}>{cls}</option>
+                      ))}
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-gray-500 mb-1">
-                      Haftalık Saat
-                    </label>
+                    <label className="block text-[11px] font-bold text-gray-500 mb-1">Haftalık Saat</label>
                     <input
                       type="number"
                       min={1}
                       max={12}
                       value={formWeeklyHours}
                       onChange={(e) => setFormWeeklyHours(Number(e.target.value))}
-                      className="w-full h-11 px-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-black text-center"
-                      required
+                      className="w-full h-10 px-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-bold text-center"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-500 mb-1">Asıl Öğretmen</label>
+                    <select
+                      value={formBranchTeacher}
+                      onChange={(e) => handleSelectPrimaryTeacher(e.target.value)}
+                      className="w-full h-10 px-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-bold"
+                    >
+                      {teachersList.map((t) => (
+                        <option key={t.id || t.name} value={t.name}>{t.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-500 mb-1">Branş</label>
+                    <input
+                      type="text"
+                      value={formTeacherBranch}
+                      onChange={(e) => setFormTeacherBranch(e.target.value)}
+                      className="w-full h-10 px-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-bold"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-500 mb-1">
-                    Dersi Verecek Branş / Öğretmen
-                  </label>
-                  <input
-                    type="text"
-                    value={formBranchTeacher}
-                    onChange={(e) => setFormBranchTeacher(e.target.value)}
-                    className="w-full h-11 px-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-medium"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-gray-500 mb-1">
-                    Fiziksel Derslik Alanı
-                  </label>
+                  <label className="block text-[11px] font-bold text-gray-500 mb-1">Derslik Adı</label>
                   <input
                     type="text"
                     value={formRequiredRoom}
                     onChange={(e) => setFormRequiredRoom(e.target.value)}
-                    className="w-full h-11 px-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-medium"
+                    className="w-full h-10 px-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-bold"
                   />
                 </div>
 
                 <div className="pt-2">
                   <button
                     type="submit"
-                    onClick={(e) => {
-                      e.preventDefault()
-                      handleSaveEditCourse()
-                    }}
-                    className="w-full h-12 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                    className="w-full h-12 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
                   >
-                    <Check size={16} strokeWidth={2.5} />
+                    <Check size={16} />
                     <span>Değişiklikleri Kaydet</span>
                   </button>
                 </div>
@@ -2177,9 +2316,126 @@ export default function MAdminCurriculumClient({
         )}
       </AnimatePresence>
 
-      {/* ── MODAL 3: SLOT YÖNETİMİ / HIZLI DERS DEĞİŞTİRME ── */}
+      {/* ── MODAL 3: DERS SAATLERİNİ DÜZENLE (MÜDÜR İSTERSE SAATLERDE DEĞİŞİKLİK YAPABİLİR) ── */}
       <AnimatePresence>
-        {selectedSlotForAction && (
+        {isEditPeriodsModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 font-jakarta select-none">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsEditPeriodsModalOpen(false)}
+              className="fixed inset-0 bg-black/75 backdrop-blur-xs"
+            />
+
+            <motion.div
+              initial={{ y: '100%', opacity: 0.8 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: '100%', opacity: 0.8 }}
+              transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+              className={`relative w-full sm:max-w-md max-h-[90vh] rounded-t-[32px] sm:rounded-[32px] shadow-2xl flex flex-col z-10 overflow-hidden ${
+                theme === 'dark'
+                  ? 'bg-[#0E131F] text-white border-t sm:border border-gray-800'
+                  : 'bg-white text-gray-900 border-t sm:border border-gray-200'
+              }`}
+            >
+              <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                    <Clock size={18} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-gray-900 dark:text-white">
+                      Ders Saatlerini Özelleştir
+                    </h3>
+                    <p className="text-[11px] text-gray-400">
+                      Günün ders periyotlarını ve başlangıç-bitiş saatlerini güncelleyin
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsEditPeriodsModalOpen(false)}
+                  className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 flex items-center justify-center cursor-pointer"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+
+              <div className="p-5 overflow-y-auto space-y-3 text-xs">
+                {periods.map((p, idx) => (
+                  <div key={p.periodNumber} className="flex items-center gap-2 p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700">
+                    <span className="w-8 font-black text-gray-700 dark:text-gray-300">
+                      {p.periodNumber}. Ders
+                    </span>
+                    <input
+                      type="text"
+                      value={p.time}
+                      onChange={(e) => {
+                        const val = e.target.value
+                        const updated = periods.map((item) =>
+                          item.periodNumber === p.periodNumber ? { ...item, time: val } : item
+                        )
+                        setPeriods(updated)
+                      }}
+                      className="flex-1 h-9 px-3 rounded-lg bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 font-mono font-bold text-xs"
+                      placeholder="08:30 - 09:10"
+                    />
+                    {periods.length > 4 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = periods.filter((item) => item.periodNumber !== p.periodNumber)
+                          setPeriods(updated)
+                        }}
+                        className="w-7 h-7 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-500 flex items-center justify-center cursor-pointer"
+                        title="Ders Saatini Sil"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextNum = periods.length + 1
+                    const newPeriod: PeriodSlot = {
+                      periodNumber: nextNum,
+                      time: '15:30 - 16:10',
+                    }
+                    setPeriods([...periods, newPeriod])
+                  }}
+                  className="w-full h-10 rounded-xl border border-dashed border-emerald-500 text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Plus size={14} />
+                  <span>+ Yeni Ders Saati Ekle</span>
+                </button>
+
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      persistPeriods(periods)
+                      setIsEditPeriodsModalOpen(false)
+                      toast.success('Ders saatleri çizelgesi başarıyla kaydedildi!')
+                    }}
+                    className="w-full h-11 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-md transition-all cursor-pointer"
+                  >
+                    Kaydet ve Uygula
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── MODAL 4: SLOT AKSİYON SHEET (ASIL ÖĞRETMEN İZİNLİ BİLDİR / YEDEK DEVRAL) ── */}
+      <AnimatePresence>
+        {selectedSlotForAction && selectedSlotForAction.entry && (
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 font-jakarta select-none">
             <motion.div
               initial={{ opacity: 0 }}
@@ -2194,73 +2450,94 @@ export default function MAdminCurriculumClient({
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: '100%', opacity: 0.8 }}
               transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-              className={`relative w-full sm:max-w-sm rounded-t-[32px] sm:rounded-[32px] p-5 shadow-2xl z-10 ${
-                theme === 'dark' ? 'bg-[#121826] text-white border border-gray-800' : 'bg-white text-gray-900'
+              className={`relative w-full sm:max-w-md rounded-t-[32px] sm:rounded-[32px] p-5 shadow-2xl z-10 space-y-4 ${
+                theme === 'dark'
+                  ? 'bg-[#0E131F] text-white border-t sm:border border-gray-800'
+                  : 'bg-white text-gray-900 border-t sm:border border-gray-200'
               }`}
             >
-              <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-gray-800">
+              <div className="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-gray-800">
                 <div>
-                  <h4 className="text-sm font-black">
-                    {DAYS_LIST.find((d) => d.key === selectedSlotForAction.day)?.label} · {selectedSlotForAction.period}. Ders
-                  </h4>
+                  <h3 className="text-sm font-black text-gray-900 dark:text-white">
+                    {selectedSlotForAction.entry.subject}
+                  </h3>
                   <p className="text-[11px] text-gray-400">
-                    Mevcut: {selectedSlotForAction.entry?.subject || 'Boş'}
+                    {DAYS_LIST.find((d) => d.key === selectedSlotForAction.day)?.label} · {selectedSlotForAction.period}. Ders Saati
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setSelectedSlotForAction(null)}
-                  className="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 flex items-center justify-center"
+                  className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 flex items-center justify-center cursor-pointer"
                 >
-                  <X size={14} />
+                  <X size={15} />
                 </button>
               </div>
 
-              {/* Course Replacement Options */}
-              <div className="mt-3 space-y-2">
-                <p className="text-[11px] font-bold text-gray-500">Bu saate başka ders ata:</p>
-                <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto pr-1">
-                  {coursesList.map((c) => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => {
-                        handleAssignCourseToSlot(selectedSlotForAction.day, selectedSlotForAction.period, c)
-                        setSelectedSlotForAction(null)
-                      }}
-                      className="p-2 rounded-xl text-left bg-gray-50 dark:bg-gray-800 hover:bg-teal-50 dark:hover:bg-teal-950/60 border border-gray-200 dark:border-gray-700 text-xs font-bold transition-all cursor-pointer truncate"
-                    >
-                      {c.name}
-                    </button>
-                  ))}
+              {/* Slot Details */}
+              <div className="space-y-2 p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800/50 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Sınıf / Şube:</span>
+                  <span className="font-black text-emerald-500">{selectedSlotForAction.entry.classCode}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Asıl Öğretmen:</span>
+                  <span className="font-extrabold">{selectedSlotForAction.entry.teacherName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Tanımlı Yedek:</span>
+                  <span className="font-bold text-amber-500">{selectedSlotForAction.entry.backupTeacherName || 'Dr. Uğur UĞURLU'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Derslik:</span>
+                  <span className="font-bold">{selectedSlotForAction.entry.roomName}</span>
+                </div>
+                <div className="flex justify-between pt-1 border-t border-gray-200 dark:border-gray-700">
+                  <span className="text-gray-400">Fiilen Görevli Öğretmen:</span>
+                  <span className="font-black text-indigo-500">
+                    {selectedSlotForAction.entry.activeTeacherName || selectedSlotForAction.entry.teacherName}
+                  </span>
                 </div>
               </div>
 
-              {/* Delete Button */}
-              {selectedSlotForAction.entry && (
-                <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveSlot(selectedSlotForAction.day, selectedSlotForAction.period)}
-                    className="w-full h-10 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/60 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer hover:bg-rose-100"
-                  >
-                    <Trash2 size={13} />
-                    <span>Bu Saati Boşalt (Kaldır)</span>
-                  </button>
-                </div>
-              )}
+              {/* Actions */}
+              <div className="space-y-2 pt-1">
+                {/* Asıl öğretmen yokluğunda izin durumu toggle */}
+                <button
+                  type="button"
+                  onClick={() => handleToggleTeacherLeave(selectedSlotForAction.entry!)}
+                  className={`w-full h-11 rounded-2xl font-black text-xs flex items-center justify-center gap-2 cursor-pointer transition-all ${
+                    selectedSlotForAction.entry.isTeacherOnLeave
+                      ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                      : 'bg-amber-600 hover:bg-amber-500 text-white'
+                  }`}
+                >
+                  {selectedSlotForAction.entry.isTeacherOnLeave ? (
+                    <>
+                      <UserCheck size={16} />
+                      <span>Asıl Öğretmen Göreve Döndü (Normale Al)</span>
+                    </>
+                  ) : (
+                    <>
+                      <UserX size={16} />
+                      <span>Asıl Öğretmen İzinli / Raporlu (Yedeği Devreye Al)</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleRemoveSlot(selectedSlotForAction.day, selectedSlotForAction.period)}
+                  className="w-full h-11 rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer hover:bg-rose-100"
+                >
+                  <Trash2 size={15} />
+                  <span>Bu Saati Boşalt / Dersi Kaldır</span>
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
-
-      {/* ── 6. MORE SHEET ── */}
-      <MobileAdminMoreSheet
-        isOpen={isMoreSheetOpen}
-        onClose={() => setIsMoreSheetOpen(false)}
-        theme={theme}
-        orgSlug={orgSlug}
-      />
     </div>
   )
 }

@@ -90,7 +90,7 @@ export const PRINCIPAL_MENU_CONFIG: PrincipalMenuItem[] = [
     status: 'active',
     sortOrder: 3,
     category: 'staff',
-    badge: '18 Aktif',
+    badge: '1 Öğretmen',
     description: 'Öğretmen kadrosu, branş dağılımı, özlük dosyaları, yetkilendirme ve avans/ek ders yönetimi.',
     children: [
       { id: 'teachers-list', label: 'Öğretmen Listesi', path: '/principal/teachers', status: 'active' },

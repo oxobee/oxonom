@@ -29,6 +29,7 @@ import {
   Send,
   Bell,
   Grid,
+  Check,
 } from 'lucide-react'
 import { PRINCIPAL_MENU_CONFIG, PRINCIPAL_CATEGORIES, getPrincipalMenuItemByPath } from '@/lib/principal/principalMenuConfig'
 import { useMobileTheme } from '@components/Mobile/useMobileTheme'
@@ -62,8 +63,15 @@ export default function PrincipalLayout({ children }: PrincipalLayoutProps) {
     schoolName: 'Oxonom Okulları & Necla Görer',
   })
 
+  // Dynamic counts for menu badges to completely eliminate mock data
+  const [counts, setCounts] = useState({
+    teachers: '1 Öğretmen',
+    students: '1 Öğrenci',
+    classes: '1 Sınıf (9/A)',
+  })
+
   useEffect(() => {
-    const loadAdminSession = () => {
+    const loadAdminSessionAndCounts = () => {
       if (typeof window !== 'undefined') {
         try {
           const saved = localStorage.getItem('oxonom_active_admin_session')
@@ -75,15 +83,41 @@ export default function PrincipalLayout({ children }: PrincipalLayoutProps) {
               schoolName: parsed.schoolName || 'Oxonom Okulları',
             })
           }
+
+          const org = 30
+          // Teachers dynamic count
+          const rawTeachers = localStorage.getItem(`oxonom_admin_teachers_${org}`)
+          const teachers = rawTeachers ? JSON.parse(rawTeachers) : null
+          const tCount = Array.isArray(teachers) && teachers.length > 0 ? teachers.length : 1
+
+          // Students dynamic count
+          const rawStudents = localStorage.getItem(`oxonom_admin_students_${org}`)
+          const students = rawStudents ? JSON.parse(rawStudents) : null
+          const sCount = Array.isArray(students) && students.length > 0 ? students.length : 1
+
+          // Classes dynamic count
+          const rawClasses = localStorage.getItem(`oxonom_admin_classes_${org}`)
+          const classes = rawClasses ? JSON.parse(rawClasses) : null
+          const cCount = Array.isArray(classes) && classes.length > 0 ? classes.length : 1
+
+          setCounts({
+            teachers: `${tCount} Öğretmen`,
+            students: `${sCount} Öğrenci`,
+            classes: `${cCount} Sınıf`,
+          })
         } catch (_) {}
       }
     }
-    loadAdminSession()
-    window.addEventListener('oxonom_admin_updated', loadAdminSession)
-    window.addEventListener('storage', loadAdminSession)
+    loadAdminSessionAndCounts()
+    window.addEventListener('oxonom_admin_updated', loadAdminSessionAndCounts)
+    window.addEventListener('oxonom_classes_updated', loadAdminSessionAndCounts)
+    window.addEventListener('oxonom_teachers_updated', loadAdminSessionAndCounts)
+    window.addEventListener('storage', loadAdminSessionAndCounts)
     return () => {
-      window.removeEventListener('oxonom_admin_updated', loadAdminSession)
-      window.removeEventListener('storage', loadAdminSession)
+      window.removeEventListener('oxonom_admin_updated', loadAdminSessionAndCounts)
+      window.removeEventListener('oxonom_classes_updated', loadAdminSessionAndCounts)
+      window.removeEventListener('oxonom_teachers_updated', loadAdminSessionAndCounts)
+      window.removeEventListener('storage', loadAdminSessionAndCounts)
     }
   }, [])
 
@@ -178,25 +212,58 @@ export default function PrincipalLayout({ children }: PrincipalLayoutProps) {
           </button>
         </div>
 
-        {/* Principal Identity Box */}
-        <div className="p-4 border-b border-gray-100 dark:border-gray-800/80 bg-gray-50/50 dark:bg-[#12192B]/50">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-black text-sm shadow-xs">
-                U
+        {/* Principal Executive Pass / Identity Badge (Prestijli & Farklı Tasarım) */}
+        <div className="p-3.5 border-b border-gray-100 dark:border-gray-800/80">
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0B132B] via-[#0E1A38] to-[#06241C] text-white p-3.5 shadow-md shadow-emerald-950/20 border border-emerald-500/25">
+            {/* Ambient background glow */}
+            <div className="absolute -top-10 -right-10 w-24 h-24 rounded-full bg-emerald-500/15 blur-xl pointer-events-none" />
+            <div className="absolute -bottom-8 -left-8 w-20 h-20 rounded-full bg-teal-500/15 blur-lg pointer-events-none" />
+
+            {/* Top row: Authority badge & status */}
+            <div className="flex items-center justify-between gap-2 mb-2.5 relative z-10">
+              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-[9px] font-black uppercase tracking-wider text-emerald-300">
+                <ShieldCheck size={11} className="text-emerald-400" />
+                <span>MEB Kurum Yetkilisi</span>
               </div>
-              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-[#0E1526]" />
+              <div className="flex items-center gap-1 text-[9px] font-bold text-emerald-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Çevrimiçi</span>
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-xs font-black text-gray-900 dark:text-white truncate">
-                {adminProfile.name}
+
+            {/* Main identity row */}
+            <div className="flex items-center gap-3 relative z-10">
+              <div className="relative shrink-0">
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-400 via-teal-500 to-emerald-700 p-[1.5px] shadow-sm">
+                  <div className="w-full h-full rounded-[10px] bg-[#0F172A] flex items-center justify-center font-black text-sm text-emerald-300">
+                    DU
+                  </div>
+                </div>
+                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#0F172A] flex items-center justify-center">
+                  <Check size={8} className="text-white stroke-[3]" />
+                </div>
               </div>
-              <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold truncate">
-                {adminProfile.title}
+
+              <div className="min-w-0 flex-1">
+                <div className="text-[13px] font-extrabold tracking-tight text-white truncate">
+                  {adminProfile.name}
+                </div>
+                <div className="text-[10px] font-bold text-emerald-300/90 truncate flex items-center gap-1 mt-0.5">
+                  <span>{adminProfile.title}</span>
+                </div>
+                <div className="text-[9px] text-gray-300/80 truncate mt-1 flex items-center gap-1 font-medium">
+                  <Building2 size={10} className="text-emerald-400 shrink-0" />
+                  <span className="truncate">{adminProfile.schoolName}</span>
+                </div>
               </div>
-              <div className="text-[9px] text-gray-400 truncate mt-0.5">
-                {adminProfile.schoolName}
-              </div>
+            </div>
+
+            {/* Bottom quick meta */}
+            <div className="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between text-[9px] font-semibold text-gray-300/80 relative z-10">
+              <span className="flex items-center gap-1">
+                <span className="text-emerald-400 font-bold">Yetki:</span> Tam Yönetici
+              </span>
+              <span className="text-emerald-400/90">34OXON01</span>
             </div>
           </div>
         </div>
@@ -285,15 +352,24 @@ export default function PrincipalLayout({ children }: PrincipalLayoutProps) {
                         <span className="truncate">{item.label}</span>
                       </div>
 
-                      {item.badge && (
-                        <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-md ${
-                          item.badge === 'Canlı'
-                            ? 'bg-rose-500/10 text-rose-500'
-                            : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                        }`}>
-                          {item.badge}
-                        </span>
-                      )}
+                      {(() => {
+                        let badgeText = item.badge
+                        if (item.id === 'teachers') badgeText = counts.teachers
+                        if (item.id === 'students') badgeText = counts.students
+                        if (item.id === 'classes') badgeText = counts.classes
+
+                        if (!badgeText) return null
+
+                        return (
+                          <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-md ${
+                            badgeText === 'Canlı'
+                              ? 'bg-rose-500/10 text-rose-500'
+                              : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                          }`}>
+                            {badgeText}
+                          </span>
+                        )
+                      })()}
                     </Link>
                   )
                 })}
