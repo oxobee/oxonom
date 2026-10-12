@@ -36,6 +36,10 @@ import {
   PenTool,
   HelpCircle,
   BookOpen,
+  Upload,
+  Paperclip,
+  User,
+  FileCheck,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import MobileHeader from '@components/Mobile/MobileHeader'
@@ -56,9 +60,14 @@ export interface HomeworkItem {
   assignment_uuid?: string
   title: string
   shortTitle: string
-  subject: 'Türkçe' | 'Matematik' | 'Hayat Bilgisi' | 'Fen Bilimleri' | 'Görsel Sanatlar' | 'İngilizce' | 'Sosyal Bilgiler'
-  category: 'READING' | 'MATH' | 'SCIENCE' | 'LIFE_STUDIES' | 'ART' | 'ENGLISH' | 'WHITEBOARD' | 'WORKSHEET' | 'QUIZ'
+  subject: 'Türkçe' | 'Matematik' | 'Hayat Bilgisi' | 'Fen Bilimleri' | 'Görsel Sanatlar' | 'İngilizce' | 'Sosyal Bilgiler' | string
+  category: 'READING' | 'MATH' | 'SCIENCE' | 'LIFE_STUDIES' | 'ART' | 'ENGLISH' | 'WHITEBOARD' | 'WORKSHEET' | 'QUIZ' | string
   tool_type?: 'WHITEBOARD' | 'WORKSHEET' | 'QUIZ' | 'READING' | 'PROJECT'
+  tool_data?: Record<string, any>
+  target_type?: 'CLASS' | 'INDIVIDUAL'
+  target_student_id?: string
+  target_student_name?: string
+  attached_file_name?: string
   board_uuid?: string
   className: string
   assignedDate: string
@@ -298,12 +307,24 @@ export default function MHomeworkClient({
   // Assignment Creation Form State
   const [assignmentVersion, setAssignmentVersion] = useState(0)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [createTargetType, setCreateTargetType] = useState<'CLASS' | 'INDIVIDUAL'>('CLASS')
+  const [createTargetStudentId, setCreateTargetStudentId] = useState<string>('s-1')
   const [createTitle, setCreateTitle] = useState('')
   const [createSubject, setCreateSubject] = useState('Türk Dili ve Edebiyatı')
   const [createToolType, setCreateToolType] = useState<'WHITEBOARD' | 'WORKSHEET' | 'QUIZ' | 'READING'>('WORKSHEET')
   const [createDueDate, setCreateDueDate] = useState('2026-10-20T23:59')
   const [createMaxScore, setCreateMaxScore] = useState(100)
   const [createDescription, setCreateDescription] = useState('')
+
+  // Tool Type Specific Dynamic States
+  const [createWorksheetFileName, setCreateWorksheetFileName] = useState('')
+  const [createWhiteboardTopic, setCreateWhiteboardTopic] = useState('Teşbih & İstiare Kavram Haritası')
+  const [createWhiteboardCanvasType, setCreateWhiteboardCanvasType] = useState('İnteraktif Çizim Tuvali')
+  const [createReadingBook, setCreateReadingBook] = useState('')
+  const [createReadingPages, setCreateReadingPages] = useState('')
+  const [createReadingQuestions, setCreateReadingQuestions] = useState('')
+  const [createQuizQuestionCount, setCreateQuizQuestionCount] = useState(10)
+  const [createQuizDifficulty, setCreateQuizDifficulty] = useState<'Kolay' | 'Orta' | 'İleri'>('Orta')
 
   // Seed default authentic assignments if storage is empty
   useEffect(() => {
@@ -321,7 +342,7 @@ export default function MHomeworkClient({
               grade_category: 'Lise (9-12)',
               subject: 'Türk Dili ve Edebiyatı',
               tool_type: 'READING',
-              classes: [{ id: 101, name: '9/A Şubesi', code: '9/A' }],
+              classes: [{ id: 101, name: '9-A Şubesi', code: '9/A' }],
               due_date: '2026-10-18T23:59:00',
               max_score: 100,
               published: true,
@@ -337,7 +358,7 @@ export default function MHomeworkClient({
               grade_category: 'Lise (9-12)',
               subject: 'Türk Dili ve Edebiyatı',
               tool_type: 'WHITEBOARD',
-              classes: [{ id: 101, name: '9/A Şubesi', code: '9/A' }],
+              classes: [{ id: 101, name: '9-A Şubesi', code: '9/A' }],
               due_date: '2026-10-20T23:59:00',
               max_score: 100,
               published: true,
@@ -371,17 +392,48 @@ export default function MHomeworkClient({
       return
     }
 
+    const targetStudent = ALL_INITIAL_STUDENTS.find((s) => s.id === createTargetStudentId) || ALL_INITIAL_STUDENTS[0]
+    const isIndividual = createTargetType === 'INDIVIDUAL'
+
+    let detailedDesc = createDescription.trim()
+    if (createToolType === 'READING') {
+      const parts = []
+      if (createReadingBook) parts.push(`Kitap / Eser: ${createReadingBook}`)
+      if (createReadingPages) parts.push(`Sayfa Aralığı: ${createReadingPages}`)
+      if (createReadingQuestions) parts.push(`Tahlil Soruları: ${createReadingQuestions}`)
+      if (parts.length > 0) detailedDesc = `${parts.join(' · ')}${detailedDesc ? `\n\n${detailedDesc}` : ''}`
+    } else if (createToolType === 'QUIZ') {
+      detailedDesc = `Soru Sayısı: ${createQuizQuestionCount} · Seviye: ${createQuizDifficulty}${detailedDesc ? `\n\n${detailedDesc}` : ''}`
+    } else if (createToolType === 'WHITEBOARD') {
+      detailedDesc = `Tuval Tipi: ${createWhiteboardCanvasType} · Konu: ${createWhiteboardTopic}${detailedDesc ? `\n\n${detailedDesc}` : ''}`
+    } else if (createToolType === 'WORKSHEET' && createWorksheetFileName) {
+      detailedDesc = `Ekli Çalışma Belgesi: ${createWorksheetFileName}${detailedDesc ? `\n\n${detailedDesc}` : ''}`
+    }
+
     const newId = Date.now()
     const newAsg: SchoolAssignmentItem = {
       id: newId,
       assignment_uuid: `asg_${newId}`,
       title: createTitle.trim(),
-      description: createDescription.trim() || 'Öğretmen tarafından tanımlanan ödev görevi.',
+      description: detailedDesc.trim() || 'Öğretmen tarafından tanımlanan ödev görevi.',
       grade_level: '9. Sınıf',
       grade_category: 'Lise (9-12)',
       subject: createSubject,
       tool_type: createToolType,
-      classes: [{ id: 101, name: '9/A Şubesi', code: '9/A' }],
+      tool_data: {
+        targetType: createTargetType,
+        targetStudentId: isIndividual ? targetStudent.id : null,
+        targetStudentName: isIndividual ? targetStudent.name : null,
+        attachedFileName: createWorksheetFileName || null,
+        readingBook: createReadingBook || null,
+        readingPages: createReadingPages || null,
+        readingQuestions: createReadingQuestions || null,
+        quizQuestionCount: createQuizQuestionCount || null,
+        quizDifficulty: createQuizDifficulty || null,
+        whiteboardTopic: createWhiteboardTopic || null,
+        whiteboardCanvasType: createWhiteboardCanvasType || null,
+      },
+      classes: [{ id: 101, name: '9-A Şubesi', code: '9/A' }],
       due_date: createDueDate || '2026-10-20T23:59:00',
       max_score: Number(createMaxScore) || 100,
       published: true,
@@ -390,12 +442,33 @@ export default function MHomeworkClient({
     }
 
     saveStoredCustomAssignment(newAsg)
+
+    // Sync to student storage so student screen instantly reads it
+    if (typeof window !== 'undefined') {
+      try {
+        const studentKey = 'oxonom_student_homeworks_3001'
+        const existing = localStorage.getItem(studentKey)
+        const parsed = existing ? JSON.parse(existing) : []
+        localStorage.setItem(studentKey, JSON.stringify([newAsg, ...parsed.filter((p: any) => p.id !== newAsg.id)]))
+        window.dispatchEvent(new CustomEvent('oxonom_student_homeworks_updated', { detail: newAsg }))
+      } catch (_) {}
+    }
+
     setAssignmentVersion((v) => v + 1)
     setSelectedHomeworkId(String(newId))
     setIsCreateModalOpen(false)
     setCreateTitle('')
     setCreateDescription('')
-    toast.success('Yeni ödev başarıyla oluşturuldu ve 9/A şubesine atandı!')
+    setCreateWorksheetFileName('')
+    setCreateReadingBook('')
+    setCreateReadingPages('')
+    setCreateReadingQuestions('')
+
+    if (isIndividual) {
+      toast.success(`Yeni ödev oluşturuldu ve ${targetStudent.name} öğrencisine atandı!`, { duration: 4000, icon: '🎉' })
+    } else {
+      toast.success('Yeni ödev başarıyla oluşturuldu ve 9/A şubesine atandı!', { duration: 4000, icon: '🎉' })
+    }
   }
 
   // Real merged school assignments (Custom created only for new accounts)
@@ -426,6 +499,11 @@ export default function MHomeworkClient({
           subject: (asg.subject as any) || 'Türkçe',
           category: (asg.tool_type as any) || 'WHITEBOARD',
           tool_type: asg.tool_type,
+          tool_data: asg.tool_data,
+          target_type: (asg.tool_data?.targetType as any) || 'CLASS',
+          target_student_id: asg.tool_data?.targetStudentId || undefined,
+          target_student_name: asg.tool_data?.targetStudentName || undefined,
+          attached_file_name: asg.tool_data?.attachedFileName || undefined,
           board_uuid: asg.board_uuid,
           className,
           assignedDate: new Date(assignedMs).toLocaleDateString('tr-TR'),
@@ -819,6 +897,17 @@ export default function MHomeworkClient({
                     <span className="px-2.5 py-0.5 rounded-full bg-white/10 text-gray-300 border border-white/10 text-[10.5px] font-bold">
                       {currentHomework.category}
                     </span>
+                    {currentHomework.target_type === 'INDIVIDUAL' ? (
+                      <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10.5px] font-bold flex items-center gap-1">
+                        <User size={11} />
+                        <span>Bireysel: {currentHomework.target_student_name || 'Öğrenci'}</span>
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10.5px] font-bold flex items-center gap-1">
+                        <Users size={11} />
+                        <span>Tüm Sınıf (9/A)</span>
+                      </span>
+                    )}
                     <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10.5px] font-bold flex items-center gap-1">
                       <Clock size={11} />
                       <span>Son Teslim: {currentHomework.dueDate}</span>
@@ -1568,10 +1657,17 @@ export default function MHomeworkClient({
                                 {hw.subject}
                               </span>
 
-                              <span className="h-[22px] inline-flex items-center gap-1 px-2 rounded-full bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-300 text-[10px] font-bold">
-                                <Clock size={10} />
-                                <span>{hw.periodLabel}</span>
-                              </span>
+                              {hw.target_type === 'INDIVIDUAL' ? (
+                                <span className="h-[22px] inline-flex items-center gap-1 px-2 rounded-full bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-[10px] font-bold">
+                                  <User size={10} />
+                                  <span>Bireysel: {hw.target_student_name || 'Öğrenci'}</span>
+                                </span>
+                              ) : (
+                                <span className="h-[22px] inline-flex items-center gap-1 px-2 rounded-full bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-300 text-[10px] font-bold">
+                                  <Clock size={10} />
+                                  <span>{hw.periodLabel}</span>
+                                </span>
+                              )}
                             </div>
 
                             {isSelected ? (
@@ -1666,14 +1762,14 @@ export default function MHomeworkClient({
                 <form onSubmit={handleCreateAssignment} className="flex-1 overflow-y-auto pr-0.5 space-y-4">
                   {/* Sınıf & Ders Seçimi 2 Sütun Grid */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {/* Sınıf & Şube Bilgisi */}
+                    {/* Sınıf & Şube Bilgisi (SADECE ŞUBE ADI, İSİM YAZMAZ) */}
                     <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Users size={16} className="text-emerald-600 dark:text-emerald-400" />
                         <span className="text-xs font-bold text-gray-800 dark:text-gray-200">Hedef Şube</span>
                       </div>
                       <span className="text-xs font-black text-emerald-700 dark:text-emerald-300 bg-emerald-500/20 px-2.5 py-0.5 rounded-full">
-                        9/A Şubesi (Erçil UĞURLU)
+                        9/A Şubesi
                       </span>
                     </div>
 
@@ -1701,6 +1797,99 @@ export default function MHomeworkClient({
                     </div>
                   </div>
 
+                  {/* ── ATAMA KAPSAMI: TÜM SINIF VEYA BİREYSEL ÖĞRENCİ ── */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
+                      Ödev Atama Kapsamı
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setCreateTargetType('CLASS')}
+                        className={`p-2.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+                          createTargetType === 'CLASS'
+                            ? 'bg-indigo-500/10 border-indigo-500 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-500'
+                            : 'bg-gray-50 dark:bg-gray-800/60 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        <div
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                            createTargetType === 'CLASS'
+                              ? 'bg-indigo-500 text-white'
+                              : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                          }`}
+                        >
+                          <Users size={16} />
+                        </div>
+                        <div className="min-w-0">
+                          <span className="font-extrabold text-xs block leading-tight truncate">Tüm Sınıfa Ata</span>
+                          <span className="text-[10px] text-gray-400 block mt-0.5 truncate">9/A Şubesi genelinde</span>
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setCreateTargetType('INDIVIDUAL')}
+                        className={`p-2.5 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+                          createTargetType === 'INDIVIDUAL'
+                            ? 'bg-emerald-500/10 border-emerald-500 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500'
+                            : 'bg-gray-50 dark:bg-gray-800/60 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        <div
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                            createTargetType === 'INDIVIDUAL'
+                              ? 'bg-emerald-500 text-[#0A0D15]'
+                              : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                          }`}
+                        >
+                          <User size={16} />
+                        </div>
+                        <div className="min-w-0">
+                          <span className="font-extrabold text-xs block leading-tight truncate">Bireysel Öğrenci</span>
+                          <span className="text-[10px] text-gray-400 block mt-0.5 truncate">Özel seçilen öğrenciye</span>
+                        </div>
+                      </button>
+                    </div>
+
+                    {/* Bireysel Öğrenci Seçici (Eğer Bireysel seçildiyse) */}
+                    {createTargetType === 'INDIVIDUAL' && (
+                      <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/70 border border-gray-200 dark:border-gray-700 space-y-1.5 mt-2">
+                        <label className="text-[11px] font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                          <GraduationCap size={14} className="text-emerald-600 dark:text-emerald-400" />
+                          <span>Ödevin Atanacağı Öğrenci</span>
+                        </label>
+                        <select
+                          value={createTargetStudentId}
+                          onChange={(e) => setCreateTargetStudentId(e.target.value)}
+                          className="w-full h-10 px-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                        >
+                          {ALL_INITIAL_STUDENTS.map((st) => (
+                            <option key={st.id} value={st.id}>
+                              {st.name} (No: {st.studentNo}) — 9/A Şubesi
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ── ÖDEV BAŞLIĞI (ZORUNLU VE BELİRGİN ALAN) ── */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-extrabold text-gray-900 dark:text-white flex items-center justify-between">
+                      <span>Ödev Başlığı</span>
+                      <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">* Zorunlu</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={createTitle}
+                      onChange={(e) => setCreateTitle(e.target.value)}
+                      placeholder="Örn: Tanzimat Dönemi Şiir İncelemesi & Karşılaştırmalı Kompozisyon"
+                      className="w-full h-11 px-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 placeholder-gray-400"
+                    />
+                  </div>
+
                   {/* Ödev Türü (4 Cards) */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
@@ -1708,8 +1897,8 @@ export default function MHomeworkClient({
                     </label>
                     <div className="grid grid-cols-2 gap-2">
                       {[
-                        { id: 'WORKSHEET', label: 'Çalışma Kâğıdı', icon: FileText, desc: 'Metin & yönergeli soru' },
-                        { id: 'WHITEBOARD', label: 'Akıllı Tahta', icon: PenTool, desc: 'Çizim & interaktif çözüm' },
+                        { id: 'WORKSHEET', label: 'Çalışma Kâğıdı', icon: FileText, desc: 'Metin, föy & döküman' },
+                        { id: 'WHITEBOARD', label: 'Akıllı Tahta', icon: PenTool, desc: 'Çizim & interaktif tuval' },
                         { id: 'READING', label: 'Okuma & Tahlil', icon: BookOpen, desc: 'Metin incelemesi & analiz' },
                         { id: 'QUIZ', label: 'Test & Quiz', icon: HelpCircle, desc: 'Çoktan seçmeli sorular' },
                       ].map((type) => {
@@ -1736,6 +1925,243 @@ export default function MHomeworkClient({
                       })}
                     </div>
                   </div>
+
+                  {/* ── ÖDEV ÇALIŞMA TÜRÜNE GÖRE DİNAMİK YÜKLEME VE DETAY ALANLARI ── */}
+                  {createToolType === 'WORKSHEET' && (
+                    <div className="p-3.5 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/30 border border-indigo-200/70 dark:border-indigo-800/50 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5">
+                          <FileText size={15} className="text-indigo-600 dark:text-indigo-400" />
+                          <span>Çalışma Kâğıdı / Döküman Yükleme</span>
+                        </span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300">
+                          PDF / Word / Görsel
+                        </span>
+                      </div>
+
+                      {/* Dosya Yükleme Dropzone */}
+                      <div className="relative border-2 border-dashed border-indigo-300 dark:border-indigo-700/60 rounded-xl p-3.5 text-center bg-white/70 dark:bg-gray-900/50 hover:bg-white transition-colors">
+                        <input
+                          type="file"
+                          accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) {
+                              setCreateWorksheetFileName(file.name)
+                              toast.success(`"${file.name}" çalışma kâğıdı olarak eklendi!`)
+                            }
+                          }}
+                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                        />
+                        {createWorksheetFileName ? (
+                          <div className="flex items-center justify-between px-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <FileCheck size={18} className="text-emerald-600 shrink-0" />
+                              <span className="text-xs font-bold text-gray-900 dark:text-white truncate">
+                                {createWorksheetFileName}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setCreateWorksheetFileName('')
+                              }}
+                              className="text-xs text-rose-600 hover:text-rose-700 font-bold px-2 py-1 rounded-md bg-rose-50 dark:bg-rose-950/50"
+                            >
+                              Kaldır
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center gap-1 cursor-pointer">
+                            <Upload size={20} className="text-indigo-600 dark:text-indigo-400 mb-0.5" />
+                            <span className="text-xs font-bold text-gray-800 dark:text-gray-200">
+                              Çalışma Belgesi Yüklemek İçin Tıklayın
+                            </span>
+                            <span className="text-[10px] text-gray-400">
+                              veya sürükleyip buraya bırakın (PDF, Word, PNG)
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Hazır Hızlı Şablonlar */}
+                      <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                        <span className="text-[10px] text-gray-500 dark:text-gray-400 font-bold">Örnek Şablonlar:</span>
+                        {['Tanzimat_Siir_Tahlili.pdf', 'Paragraf_Analiz_Foyu.pdf'].map((tpl) => (
+                          <button
+                            key={tpl}
+                            type="button"
+                            onClick={() => {
+                              setCreateWorksheetFileName(tpl)
+                              toast.success(`"${tpl}" şablonu seçildi!`)
+                            }}
+                            className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-white dark:bg-gray-800 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 cursor-pointer"
+                          >
+                            + {tpl}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {createToolType === 'WHITEBOARD' && (
+                    <div className="p-3.5 rounded-2xl bg-teal-50/50 dark:bg-teal-950/30 border border-teal-200/70 dark:border-teal-800/50 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-teal-900 dark:text-teal-200 flex items-center gap-1.5">
+                          <PenTool size={15} className="text-teal-600 dark:text-teal-400" />
+                          <span>Akıllı Tahta Tuvali & Çizim Alanı</span>
+                        </span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/60 text-teal-700 dark:text-teal-300">
+                          İnteraktif Çözüm
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-gray-700 dark:text-gray-300">
+                            Tuval Şablonu
+                          </label>
+                          <select
+                            value={createWhiteboardCanvasType}
+                            onChange={(e) => setCreateWhiteboardCanvasType(e.target.value)}
+                            className="w-full h-10 px-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-bold text-gray-900 dark:text-white"
+                          >
+                            <option value="İnteraktif Çizim Tuvali">İnteraktif Çizim Tuvali</option>
+                            <option value="Kavram Haritası Şeması">Kavram Haritası Şeması</option>
+                            <option value="Kareli Problem Çözüm Izgarası">Kareli Problem Çözüm Izgarası</option>
+                            <option value="Çizgili Not ve Kompozisyon">Çizgili Not ve Kompozisyon</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-gray-700 dark:text-gray-300">
+                            Tahta Çizim Konusu
+                          </label>
+                          <input
+                            type="text"
+                            value={createWhiteboardTopic}
+                            onChange={(e) => setCreateWhiteboardTopic(e.target.value)}
+                            placeholder="Örn: Edebi Sanatlar Zihin Haritası"
+                            className="w-full h-10 px-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-bold text-gray-900 dark:text-white"
+                          />
+                        </div>
+                      </div>
+
+                      <p className="text-[11px] text-teal-800/80 dark:text-teal-300/80 leading-relaxed bg-white/70 dark:bg-gray-900/40 p-2.5 rounded-xl border border-teal-200/50 dark:border-teal-800/40">
+                        💡 <strong>Öğrenci Deneyimi:</strong> Öğrenci bu ödevi açtığında doğrudan akıllı tahta çizim tuvali açılarak kalem, şekiller ve metin araçlarıyla çözümünü yapabilecektir.
+                      </p>
+                    </div>
+                  )}
+
+                  {createToolType === 'READING' && (
+                    <div className="p-3.5 rounded-2xl bg-amber-50/50 dark:bg-amber-950/30 border border-amber-200/70 dark:border-amber-800/50 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+                          <BookOpen size={15} className="text-amber-600 dark:text-amber-400" />
+                          <span>Okuma & Metin Tahlili Detayları</span>
+                        </span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300">
+                          Edebiyat / Tahlil
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-gray-700 dark:text-gray-300">
+                            Okunacak Kitap / Eser Adı
+                          </label>
+                          <input
+                            type="text"
+                            value={createReadingBook}
+                            onChange={(e) => setCreateReadingBook(e.target.value)}
+                            placeholder="Örn: Dede Korkut Hikâyeleri"
+                            className="w-full h-10 px-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-bold text-gray-900 dark:text-white"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-gray-700 dark:text-gray-300">
+                            Sayfa / Bölüm Aralığı
+                          </label>
+                          <input
+                            type="text"
+                            value={createReadingPages}
+                            onChange={(e) => setCreateReadingPages(e.target.value)}
+                            placeholder="Örn: Sayfa 25 - 60 (Boğaç Han)"
+                            className="w-full h-10 px-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-bold text-gray-900 dark:text-white"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-gray-700 dark:text-gray-300">
+                          Tahlil ve Odak Soruları
+                        </label>
+                        <input
+                          type="text"
+                          value={createReadingQuestions}
+                          onChange={(e) => setCreateReadingQuestions(e.target.value)}
+                          placeholder="Örn: Ana çatışma, karakter motivasyonları ve kültürel motifler"
+                          className="w-full h-10 px-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-bold text-gray-900 dark:text-white"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {createToolType === 'QUIZ' && (
+                    <div className="p-3.5 rounded-2xl bg-sky-50/50 dark:bg-sky-950/30 border border-sky-200/70 dark:border-sky-800/50 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-sky-900 dark:text-sky-200 flex items-center gap-1.5">
+                          <HelpCircle size={15} className="text-sky-600 dark:text-sky-400" />
+                          <span>Test & Quiz Parametreleri</span>
+                        </span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-100 dark:bg-sky-900/60 text-sky-700 dark:text-sky-300">
+                          Çoktan Seçmeli
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2.5">
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-gray-700 dark:text-gray-300">
+                            Soru Sayısı
+                          </label>
+                          <select
+                            value={createQuizQuestionCount}
+                            onChange={(e) => setCreateQuizQuestionCount(Number(e.target.value))}
+                            className="w-full h-10 px-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-bold text-gray-900 dark:text-white"
+                          >
+                            <option value={5}>5 Soru (Hızlı Tarama)</option>
+                            <option value={10}>10 Soru (Kazanım Testi)</option>
+                            <option value={15}>15 Soru (Ünite Değerlendirme)</option>
+                            <option value={20}>20 Soru (Genel Deneme)</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-gray-700 dark:text-gray-300">
+                            Zorluk Seviyesi
+                          </label>
+                          <div className="grid grid-cols-3 gap-1">
+                            {(['Kolay', 'Orta', 'İleri'] as const).map((lvl) => (
+                              <button
+                                key={lvl}
+                                type="button"
+                                onClick={() => setCreateQuizDifficulty(lvl)}
+                                className={`h-10 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                                  createQuizDifficulty === lvl
+                                    ? 'bg-sky-500 text-white shadow-xs'
+                                    : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'
+                                }`}
+                              >
+                                {lvl}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Son Teslim Tarihi & Puan */}
                   <div className="grid grid-cols-2 gap-3">
@@ -1786,7 +2212,13 @@ export default function MHomeworkClient({
                       className="w-full h-12 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-[#0A0D15] font-black text-sm flex items-center justify-center gap-2 shadow-md shadow-emerald-500/20 active:scale-98 transition-all cursor-pointer"
                     >
                       <Plus size={18} strokeWidth={2.5} />
-                      <span>Ödevi Oluştur ve Sınıfa Ata</span>
+                      <span>
+                        {createTargetType === 'INDIVIDUAL'
+                          ? `Ödevi Oluştur ve ${
+                              ALL_INITIAL_STUDENTS.find((s) => s.id === createTargetStudentId)?.name || 'Öğrenciye'
+                            }'ya Ata`
+                          : 'Ödevi Oluştur ve 9/A Şubesine Ata'}
+                      </span>
                     </button>
                   </div>
                 </form>
