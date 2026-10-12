@@ -19,7 +19,7 @@ export const ADMIN_MODULES: AdminModuleItem[] = [
     description: 'Genel okul istatistikleri, günlük akış, devamsızlık ve sistem uyarıları.',
     icon: 'LayoutDashboard',
     isAvailable: true,
-    href: '/m-admin',
+    href: '/principal/dashboard',
     subItems: [
       'Yönetim Dashboard',
       'Okul İstatistikleri',
@@ -44,7 +44,7 @@ export const ADMIN_MODULES: AdminModuleItem[] = [
     description: 'Öğrenci künyeleri, şube dağılımı, kayıt/nakil ve yoklama yönetimi.',
     icon: 'GraduationCap',
     isAvailable: true,
-    href: '/m-admin-students',
+    href: '/principal/students',
     subItems: [
       'Öğrenci Listesi',
       'Yeni Öğrenci Ekle',
@@ -67,7 +67,7 @@ export const ADMIN_MODULES: AdminModuleItem[] = [
     description: 'Öğretmen kadrosu, branşlar, rehberlik ve şube ders görevlendirmeleri.',
     icon: 'Briefcase',
     isAvailable: true,
-    href: '/m-admin-teachers',
+    href: '/principal/teachers',
     subItems: [
       'Öğretmen Listesi',
       'Yeni Öğretmen Ekle',
@@ -91,7 +91,7 @@ export const ADMIN_MODULES: AdminModuleItem[] = [
     description: 'Haftalık program oluşturma, sürükle-bırak dağıtım ve çakışma kontrolü.',
     icon: 'Calendar',
     isAvailable: true,
-    href: '/m-admin-schedule',
+    href: '/principal/schedule',
     subItems: [
       'Haftalık Ders Programı',
       'Sınıf Bazlı Program',
@@ -117,7 +117,7 @@ export const ADMIN_MODULES: AdminModuleItem[] = [
     description: 'Kademe seviyeleri (1-8), şubeler, mevcutlar ve sınıf rehber öğretmenleri.',
     icon: 'Building2',
     isAvailable: true,
-    href: '/m-admin-classes',
+    href: '/principal/classes',
     subItems: [
       'Sınıf Listesi',
       'Yeni Sınıf / Şube Oluştur',
@@ -140,7 +140,7 @@ export const ADMIN_MODULES: AdminModuleItem[] = [
     description: 'MEB kazanımları, üniteler, haftalık ders saatleri ve ortak ders kaynakları.',
     icon: 'BookOpen',
     isAvailable: true,
-    href: '/m-admin-curriculum',
+    href: '/principal/curriculum',
     subItems: [
       'Ders Kataloğu',
       'Yeni Ders Ekle',
@@ -163,7 +163,7 @@ export const ADMIN_MODULES: AdminModuleItem[] = [
     description: 'Devamsızlık, başarı grafikleri, kazanım analizleri ve PDF/Excel çıktıları.',
     icon: 'BarChart3',
     isAvailable: true,
-    href: '/m-admin-reports',
+    href: '/principal/reports',
     subItems: [
       'Genel Akademik Raporlar',
       'Devamsızlık Raporları',
@@ -233,7 +233,7 @@ export const ADMIN_MODULES: AdminModuleItem[] = [
     description: 'Sınıf tahta eşleştirmeleri, canlı bağlantı durumu, uzaktan kilitleme.',
     icon: 'Tv',
     isAvailable: true,
-    href: '/m-admin-boards',
+    href: '/principal/smartboards',
     subItems: [
       'Tahta Listesi',
       'Yeni Tahta Ekle',

@@ -375,9 +375,26 @@ export default async function proxy(req: NextRequest) {
     return NextResponse.redirect(new URL(`/m-login${search}`, req.url), 307)
   }
 
-  // Redirect mobile users from /dash to /dashv2 and support /m-dashv2
-  if ((cleanAuthPath === '/dash' && isMobileUA) || cleanAuthPath === '/m-dashv2') {
-    return NextResponse.redirect(new URL(`/dashv2${search}`, req.url), 307)
+  // Redirect legacy admin routes to professional /principal/* tree
+  const PRINCIPAL_LEGACY_MAP: Record<string, string> = {
+    '/dashv2': '/principal/dashboard',
+    '/m-dashv2': '/principal/dashboard',
+    '/m-admin': '/principal/dashboard',
+    '/m-admin-teachers': '/principal/teachers',
+    '/m-admin-students': '/principal/students',
+    '/m-admin-classes': '/principal/classes',
+    '/m-admin-schedule': '/principal/schedule',
+    '/m-admin-boards': '/principal/smartboards',
+    '/m-admin-reports': '/principal/reports',
+    '/m-admin-curriculum': '/principal/curriculum',
+  }
+  if (PRINCIPAL_LEGACY_MAP[cleanAuthPath]) {
+    return NextResponse.redirect(new URL(`${PRINCIPAL_LEGACY_MAP[cleanAuthPath]}${search}`, req.url), 307)
+  }
+
+  // Redirect mobile users from /dash to /principal/dashboard
+  if (cleanAuthPath === '/dash' && isMobileUA) {
+    return NextResponse.redirect(new URL(`/principal/dashboard${search}`, req.url), 307)
   }
 
   const AUTH_PREFIX_MAP: Record<string, string> = {

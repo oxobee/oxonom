@@ -149,7 +149,7 @@ export default function MLoginClient({ org, orgslug }: MLoginClientProps) {
 
       let defaultNext = '/teacher/dashboard'
       if (isAdmin) {
-        defaultNext = '/dashv2'
+        defaultNext = '/principal/dashboard'
       } else if (isStudent) {
         defaultNext = activeOrgSlug ? `/orgs/${activeOrgSlug}/m-student` : '/m-student'
       } else if (isTeacher) {

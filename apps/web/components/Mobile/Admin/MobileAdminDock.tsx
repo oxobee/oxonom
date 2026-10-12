@@ -29,11 +29,11 @@ export default function MobileAdminDock({
 }: MobileAdminDockProps) {
   const getPath = (tab: 'home' | 'student' | 'teachers' | 'schedule') => {
     const prefix = orgSlug ? `/orgs/${orgSlug}` : ''
-    if (tab === 'home') return `${prefix}/m-admin`
-    if (tab === 'student') return `${prefix}/m-admin-students`
-    if (tab === 'teachers') return `${prefix}/m-admin-teachers`
-    if (tab === 'schedule') return `${prefix}/m-admin-schedule`
-    return `${prefix}/m-admin`
+    if (tab === 'home') return `${prefix}/principal/dashboard`
+    if (tab === 'student') return `${prefix}/principal/students`
+    if (tab === 'teachers') return `${prefix}/principal/teachers`
+    if (tab === 'schedule') return `${prefix}/principal/schedule`
+    return `${prefix}/principal/dashboard`
   }
 
   const showUnavailableToast = (moduleName: string) => {
