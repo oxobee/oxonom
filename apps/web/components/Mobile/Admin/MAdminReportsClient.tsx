@@ -83,10 +83,29 @@ export default function MAdminReportsClient({
 
   // ── DATA: CLASS SUCCESS RANKINGS ──
   const classData = useMemo(() => {
+    if (selectedOrgId === 30) {
+      return [
+        {
+          code: '9/A',
+          teacher: 'Ebru TEKNECİ',
+          students: 1,
+          average: 98.8,
+          attendanceRate: 100,
+          topSubject: 'Türk Dili ve Edebiyatı (99.3)',
+          riskCount: 0,
+          awardCounts: { takdir: 1, tesekkur: 0, normal: 0 },
+          subjects: [
+            { name: 'Türk Dili ve Edebiyatı', avg: 99.3 },
+            { name: 'Matematik', avg: 98.0 },
+            { name: 'Bilişim & Kodlama', avg: 99.0 },
+          ],
+        },
+      ]
+    }
     if (selectedOrgId === 10) {
       return [
         {
-          code: '4-B',
+          code: '4/B',
           teacher: 'Hivda SADAK',
           students: 29,
           average: 92.4,
@@ -103,7 +122,7 @@ export default function MAdminReportsClient({
           ],
         },
         {
-          code: '4-A',
+          code: '4/A',
           teacher: 'Özlem ZOR',
           students: 28,
           average: 90.8,
@@ -120,7 +139,7 @@ export default function MAdminReportsClient({
           ],
         },
         {
-          code: '3-B',
+          code: '3/B',
           teacher: 'Ayşe GÜL',
           students: 30,
           average: 88.6,
@@ -137,7 +156,7 @@ export default function MAdminReportsClient({
           ],
         },
         {
-          code: '2-B',
+          code: '2/B',
           teacher: 'Büşra DEMİR',
           students: 28,
           average: 88.1,
@@ -153,7 +172,7 @@ export default function MAdminReportsClient({
           ],
         },
         {
-          code: '1-A',
+          code: '1/A',
           teacher: 'Gülhan DURSUN',
           students: 26,
           average: 87.4,
@@ -168,7 +187,7 @@ export default function MAdminReportsClient({
           ],
         },
         {
-          code: '1-B',
+          code: '1/B',
           teacher: 'Fatma KAYA',
           students: 27,
           average: 86.0,
@@ -183,7 +202,7 @@ export default function MAdminReportsClient({
           ],
         },
         {
-          code: '2-A',
+          code: '2/A',
           teacher: 'Hacer YILMAZ',
           students: 29,
           average: 85.2,
@@ -199,7 +218,7 @@ export default function MAdminReportsClient({
           ],
         },
         {
-          code: '3-A',
+          code: '3/A',
           teacher: 'Mustafa KOÇ',
           students: 31,
           average: 83.5,
@@ -219,7 +238,7 @@ export default function MAdminReportsClient({
     } else {
       return [
         {
-          code: '8-A',
+          code: '8/A',
           teacher: 'Murat ARSLAN (LGS Koçu)',
           students: 28,
           average: 89.2,
@@ -236,7 +255,7 @@ export default function MAdminReportsClient({
           ],
         },
         {
-          code: '8-B',
+          code: '8/B',
           teacher: 'Sibel GÜNEŞ',
           students: 29,
           average: 87.6,
@@ -253,7 +272,7 @@ export default function MAdminReportsClient({
           ],
         },
         {
-          code: '5-A',
+          code: '5/A',
           teacher: 'Emel ŞAHİN',
           students: 30,
           average: 88.3,
@@ -270,7 +289,7 @@ export default function MAdminReportsClient({
           ],
         },
         {
-          code: '7-A',
+          code: '7/A',
           teacher: 'Deniz KILIÇ',
           students: 27,
           average: 86.4,
@@ -287,7 +306,7 @@ export default function MAdminReportsClient({
           ],
         },
         {
-          code: '6-A',
+          code: '6/A',
           teacher: 'Kerem ÖZTÜRK',
           students: 31,
           average: 85.1,
@@ -312,7 +331,7 @@ export default function MAdminReportsClient({
     {
       id: 'att-1',
       name: 'Ali KAYA',
-      className: '3-A',
+      className: '3/A',
       unexcusedDays: 6.5,
       excusedDays: 2.0,
       totalDays: 8.5,
@@ -325,7 +344,7 @@ export default function MAdminReportsClient({
     {
       id: 'att-2',
       name: 'Zeynep DEMİR',
-      className: '4-B',
+      className: '4/B',
       unexcusedDays: 5.5,
       excusedDays: 1.5,
       totalDays: 7.0,
@@ -338,7 +357,7 @@ export default function MAdminReportsClient({
     {
       id: 'att-3',
       name: 'Eren YILDIRIM',
-      className: '2-A',
+      className: '2/A',
       unexcusedDays: 5.0,
       excusedDays: 0.5,
       totalDays: 5.5,

@@ -53,7 +53,7 @@ export const PRINCIPAL_CATEGORIES: Array<{
   { id: 'management', title: 'Yönetim & Genel Bakış' },
   { id: 'staff', title: 'Öğretmenler & Kadro' },
   { id: 'students', title: 'Öğrenciler & Sınıflar' },
-  { id: 'academic', title: 'Akademik & Müfredat' },
+  { id: 'academic', title: 'Akademik & Ders Programı' },
   { id: 'hardware', title: 'Donanım & Akıllı Sistem' },
   { id: 'additional', title: 'Diğer İdari Modüller' },
 ]
@@ -99,16 +99,6 @@ export const PRINCIPAL_MENU_CONFIG: PrincipalMenuItem[] = [
       { id: 'teachers-perm', label: 'Yetkilendirme Matrisi', path: '/principal/teachers?tab=yetkiler', status: 'active' },
     ],
   },
-  {
-    id: 'schedule',
-    label: 'Haftalık Ders Dağılımı',
-    path: '/principal/schedule',
-    icon: Calendar,
-    status: 'active',
-    sortOrder: 4,
-    category: 'staff',
-    description: 'Okul geneli haftalık ders programı, boş saatler, çakışma analizi ve sınıf programları.',
-  },
 
   // ── 3. ÖĞRENCİLER & SINIFLAR ──
   {
@@ -117,7 +107,7 @@ export const PRINCIPAL_MENU_CONFIG: PrincipalMenuItem[] = [
     path: '/principal/students',
     icon: GraduationCap,
     status: 'active',
-    sortOrder: 5,
+    sortOrder: 4,
     category: 'students',
     badge: '1 Öğrenci',
     description: 'Kapsamlı öğrenci kütük kayıtları, nüfus & veli bilgileri, resmi evraklar ve nakil işlemleri.',
@@ -128,21 +118,21 @@ export const PRINCIPAL_MENU_CONFIG: PrincipalMenuItem[] = [
     path: '/principal/classes',
     icon: Users,
     status: 'active',
-    sortOrder: 6,
+    sortOrder: 5,
     category: 'students',
     description: 'Sınıf listeleri, yeni sınıf tanımlama, rehber öğretmenler ve dönem sonu terfi/nakil motoru.',
   },
 
-  // ── 4. AKADEMİK & MÜFREDAT ──
+  // ── 4. AKADEMİK & DERS PROGRAMI ──
   {
     id: 'curriculum',
-    label: 'Müfredat & Zümreler',
+    label: 'Haftalık Ders Programı',
     path: '/principal/curriculum',
-    icon: BookOpen,
+    icon: Calendar,
     status: 'active',
-    sortOrder: 7,
+    sortOrder: 6,
     category: 'academic',
-    description: 'Bakanlık müfredatı, zümre toplantı tutanakları, yıllık plan onayları ve kazanımlar.',
+    description: 'Haftalık ders programı, sınıf çizelgeleri, ders saatleri dağılımı ve zümre müfredat koordinasyonu.',
   },
   {
     id: 'reports',

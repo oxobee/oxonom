@@ -195,9 +195,9 @@ export const SYSTEM_SCREEN_PERMISSIONS: ScreenPermission[] = [
   // Kategori 6: İdari & Yönetim Yetkileri
   {
     id: 'admin_view_schedule',
-    label: 'Tüm Okul Ders Dağılımını Görme',
+    label: 'Haftalık Ders Programı (Okul Geneli)',
     category: 'İdari & Yönetim',
-    description: 'Okul genelindeki tüm öğretmenlerin ve sınıfların programı',
+    description: 'Okul genelindeki tüm öğretmenlerin ve sınıfların haftalık ders dağılımı',
     defaultForRoles: ['admin_assist'],
   },
   {
@@ -215,6 +215,25 @@ export const SYSTEM_SCREEN_PERMISSIONS: ScreenPermission[] = [
     defaultForRoles: ['admin_assist', 'head_dept'],
   },
 ]
+
+export function formatClassCode(className?: string): string {
+  if (!className) return ''
+  const trimmed = className.trim()
+  const matchGrade = trimmed.match(/\d+/)
+  const gNum = matchGrade ? matchGrade[0] : ''
+  let branch = ''
+  if (trimmed.includes('/') || trimmed.includes('-')) {
+    const parts = trimmed.split(/[\/\-]/)
+    branch = parts[parts.length - 1].replace(/Şubesi|Sınıfı/gi, '').trim().toUpperCase()
+  } else if (/^[A-Za-zÇĞİÖŞÜçğıöşü]+$/.test(trimmed)) {
+    branch = trimmed.toUpperCase()
+  } else {
+    const letterMatch = trimmed.match(/\b([A-ZÇĞİÖŞÜ])\b/)
+    branch = letterMatch ? letterMatch[1] : ''
+  }
+  if (gNum && branch) return `${gNum}/${branch}`
+  return trimmed
+}
 
 type DetailTabKey = 'ozluk' | 'gorev' | 'yetkiler' | 'izin' | 'maas' | 'bildirim' | 'belgeler'
 
@@ -1053,7 +1072,7 @@ export default function MAdminTeachersClient({
 
                     <div className="text-[11px] text-gray-600 dark:text-gray-300 font-semibold mt-0.5 truncate">
                       {teacher.branch}
-                      {teacher.mentorClass ? ` · ${teacher.mentorClass} Rehberliği` : ''}
+                      {teacher.mentorClass ? ` · ${formatClassCode(teacher.mentorClass)} Rehberliği` : ''}
                     </div>
 
                     <div className="flex items-center gap-2 text-[10.5px] text-gray-400 mt-1 flex-wrap">
@@ -1186,7 +1205,7 @@ export default function MAdminTeachersClient({
                       <p className="text-[11px] text-gray-500 dark:text-gray-400 font-semibold truncate mt-0.5">
                         {selectedTeacherForDetail.branch}
                         {selectedTeacherForDetail.mentorClass
-                          ? ` · ${selectedTeacherForDetail.mentorClass} Rehberi`
+                          ? ` · ${formatClassCode(selectedTeacherForDetail.mentorClass)} Rehberi`
                           : ''}
                       </p>
                     </div>
@@ -1371,7 +1390,7 @@ export default function MAdminTeachersClient({
                       <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/50 flex justify-between items-center">
                         <span className="text-gray-500 font-bold">Sınıf Rehberliği</span>
                         <span className="font-extrabold text-emerald-600 dark:text-emerald-400">
-                          {selectedTeacherForDetail.mentorClass || '1-A'} Şubesi
+                          {formatClassCode(selectedTeacherForDetail.mentorClass || '9/A')} Şubesi
                         </span>
                       </div>
 
@@ -1396,9 +1415,9 @@ export default function MAdminTeachersClient({
                         <span className="font-extrabold text-gray-900 dark:text-white">
                           {(
                             selectedTeacherForDetail.assignedClasses || [
-                              selectedTeacherForDetail.mentorClass || '1-A',
+                              selectedTeacherForDetail.mentorClass || '9/A',
                             ]
-                          ).join(', ')}
+                          ).map(formatClassCode).join(', ')}
                         </span>
                       </div>
 

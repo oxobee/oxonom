@@ -63,7 +63,7 @@ export const TEACHER_RAW_LIST: { grade: string; orgId: number; teachers: { class
     grade: '9. Sınıf',
     orgId: 30,
     teachers: [
-      { className: '9-A', name: 'Ebru TEKNECİ' },
+      { className: '9/A', name: 'Ebru TEKNECİ' },
     ],
   },
 ]
@@ -85,13 +85,13 @@ export interface ClassroomItem {
   boards_count: number
 }
 
-// Exactly 1 Classroom: 9-A
+// Exactly 1 Classroom: 9/A
 export const ALL_CLASSROOMS: ClassroomItem[] = [
   {
     id: 101,
     usergroup_uuid: 'usergroup_9a_oxonom',
-    name: '9-A Şubesi',
-    code: '9-A',
+    name: '9/A Şubesi',
+    code: '9/A',
     join_code: 'OKUL-9A',
     grade_level: '9. Sınıf',
     org_id: 30,
@@ -181,8 +181,8 @@ export const REAL_STUDENT = {
     { courseName: 'Bilişim & Kodlama', teacherName: 'Ebru TEKNECİ', exam1: 100, exam2: 98, performance: 100, average: 99.0 },
   ],
   classroomId: 101,
-  classroomName: '9-A Şubesi',
-  className: '9-A',
+  classroomName: '9/A Şubesi',
+  className: '9/A',
   mentorTeacher: 'Ebru TEKNECİ (Edebiyat Öğretmeni)',
   schoolName: 'Oxonom Okulları',
   is_demo: false,
@@ -199,7 +199,7 @@ export function generateClassStudents(classItem?: ClassroomItem) {
       ...REAL_STUDENT,
       classroomId: cls.id,
       classroomName: cls.name,
-      className: cls.code || '9-A',
+      className: cls.code || '9/A',
       mentorTeacher: cls.teacher_name || 'Ebru TEKNECİ',
       schoolName: cls.school_name || 'Oxonom Okulları',
       is_demo: false,
@@ -328,8 +328,8 @@ export function getOrgTeachers(orgId?: number) {
       weeklyHours: 30,
       employmentType: 'Kadrolu' as const,
       isClassMentor: true,
-      mentorClass: '9-A',
-      assignedClasses: ['9-A'],
+      mentorClass: '9/A',
+      assignedClasses: ['9/A'],
       status: 'active' as const,
       documents: [
         {
@@ -530,7 +530,7 @@ export const KNOWN_TC_REGISTRY: Record<string, TcRecord> = {
     bloodType: '0 Rh+',
     address: 'Beşiktaş / İstanbul',
     school: 'Oxonom Okulları',
-    classroom: '9-A',
+    classroom: '9/A',
     is_verified: true,
     mernis_status: 'MERNİS NVİ MEB Öğretmen Kütüğü Doğrulanmış Kayıt',
   },
@@ -549,7 +549,7 @@ export const KNOWN_TC_REGISTRY: Record<string, TcRecord> = {
     bloodType: 'A Rh+',
     address: 'Caddebostan Mah. Bağdat Cad. No: 142/5 Kadıköy / İstanbul',
     school: 'Oxonom Okulları',
-    classroom: '9-A',
+    classroom: '9/A',
     is_verified: true,
     mernis_status: 'MERNİS Nüfus ve Vatandaşlık İşleri (NVİ) Aktif Öğrenci Kütük Kaydı',
     parents: [

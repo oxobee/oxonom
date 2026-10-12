@@ -467,7 +467,7 @@ const INITIAL_OXONOM_COURSES: CurriculumCourse[] = [
     orgId: 30,
     weeklyHours: 5,
     branchTeacher: 'Ebru TEKNECİ',
-    requiredRoom: 'Derslik 9-A',
+    requiredRoom: 'Derslik 9/A',
     isSmartBoardReady: true,
     isElective: false,
     color: 'blue',
@@ -481,7 +481,7 @@ const INITIAL_OXONOM_COURSES: CurriculumCourse[] = [
     orgId: 30,
     weeklyHours: 6,
     branchTeacher: 'Ebru TEKNECİ',
-    requiredRoom: 'Derslik 9-A',
+    requiredRoom: 'Derslik 9/A',
     isSmartBoardReady: true,
     isElective: false,
     color: 'indigo',
@@ -509,7 +509,7 @@ const INITIAL_OXONOM_COURSES: CurriculumCourse[] = [
     orgId: 30,
     weeklyHours: 2,
     branchTeacher: 'Ebru TEKNECİ',
-    requiredRoom: 'Derslik 9-A',
+    requiredRoom: 'Derslik 9/A',
     isSmartBoardReady: true,
     isElective: false,
     color: 'amber',
@@ -523,7 +523,7 @@ const INITIAL_OXONOM_COURSES: CurriculumCourse[] = [
     orgId: 30,
     weeklyHours: 2,
     branchTeacher: 'Ebru TEKNECİ',
-    requiredRoom: 'Derslik 9-A',
+    requiredRoom: 'Derslik 9/A',
     isSmartBoardReady: true,
     isElective: false,
     color: 'teal',
@@ -537,7 +537,7 @@ const INITIAL_OXONOM_COURSES: CurriculumCourse[] = [
     orgId: 30,
     weeklyHours: 4,
     branchTeacher: 'Ebru TEKNECİ',
-    requiredRoom: 'Derslik 9-A',
+    requiredRoom: 'Derslik 9/A',
     isSmartBoardReady: true,
     isElective: false,
     color: 'purple',
@@ -565,7 +565,7 @@ const INITIAL_OXONOM_COURSES: CurriculumCourse[] = [
     orgId: 30,
     weeklyHours: 1,
     branchTeacher: 'Ebru TEKNECİ',
-    requiredRoom: 'Derslik 9-A',
+    requiredRoom: 'Derslik 9/A',
     isSmartBoardReady: true,
     isElective: false,
     color: 'pink',
@@ -622,7 +622,7 @@ export default function MAdminCurriculumClient({
 
   const [isMoreSheetOpen, setIsMoreSheetOpen] = useState(false)
   const [selectedOrgId, setSelectedOrgId] = useState<number>(30)
-  const [selectedClass, setSelectedClass] = useState<string>('9-A')
+  const [selectedClass, setSelectedClass] = useState<string>('9/A')
   const [activeDay, setActiveDay] = useState<DayKey>('mon')
 
   // Main View Tab: 'distribute' (Sürükle-Bırak Haftalık Çizelge) | 'catalog' (Ders Tanımları & Saatler)
@@ -751,13 +751,13 @@ export default function MAdminCurriculumClient({
     }
 
     if (selectedOrgId === 30) {
-      setSelectedClass('9-A')
+      setSelectedClass('9/A')
       setPeriods(MIDDLE_PERIODS)
     } else if (selectedOrgId === 10) {
-      setSelectedClass('1-A')
+      setSelectedClass('1/A')
       setPeriods(PRIMARY_PERIODS)
     } else {
-      setSelectedClass('7-A')
+      setSelectedClass('7/A')
       setPeriods(MIDDLE_PERIODS)
     }
     setSelectedCourseForDrop(null)
@@ -784,20 +784,50 @@ export default function MAdminCurriculumClient({
   }
 
   const activeOrg = SCHOOL_ORGS.find((o) => o.id === selectedOrgId) || SCHOOL_ORGS[0]
-  const availableClasses = selectedOrgId === 30
-    ? ['9-A']
-    : selectedOrgId === 10
-    ? ['1-A', '1-B', '1-C', '2-A', '2-B', '3-A', '4-A']
-    : ['5-A', '6-A', '7-A', '8-A']
+  const availableClasses = useMemo(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(`oxonom_admin_classes_${selectedOrgId}`)
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed.map((c: any) => {
+              const code = (c.code || '').trim()
+              const matchGrade = (c.gradeLevel || '').match(/\d+/) || code.match(/^\d+/)
+              const gNum = matchGrade ? matchGrade[0] : '1'
+              let branch = ''
+              if (code.includes('/') || code.includes('-')) {
+                const parts = code.split(/[\/\-]/)
+                branch = parts[parts.length - 1].trim().toUpperCase()
+              } else if (/^[A-Za-zÇĞİÖŞÜçğıöşü]+$/.test(code)) {
+                branch = code.toUpperCase()
+              } else {
+                branch = 'A'
+              }
+              return `${gNum}/${branch}`
+            })
+          }
+        }
+      } catch (_) {}
+    }
+    return selectedOrgId === 30
+      ? ['9/A']
+      : selectedOrgId === 10
+      ? ['1/A', '1/B', '1/C', '2/A', '2/B', '3/A', '4/A']
+      : ['5/A', '6/A', '7/A', '8/A']
+  }, [selectedOrgId])
 
   // Haftalık toplam saat kapasitesi (Dinamik: günde kaç ders saati varsa x 5 gün)
   const targetWeeklyHours = periods.length * 5
 
   // Sınıfın haftalık yerleştirilmiş saatleri
   const classEntries = useMemo(() => {
-    return scheduleList.filter(
-      (e) => e.orgId === selectedOrgId && e.classCode === selectedClass
-    )
+    return scheduleList.filter((e) => {
+      if (e.orgId !== selectedOrgId) return false
+      const eNorm = e.classCode.replace(/[\/-]/, '/').toLowerCase()
+      const selNorm = selectedClass.replace(/[\/-]/, '/').toLowerCase()
+      return eNorm === selNorm
+    })
   }, [scheduleList, selectedOrgId, selectedClass])
 
   // Ders başına yerleştirilen saat sayıları
@@ -1124,17 +1154,17 @@ export default function MAdminCurriculumClient({
             <div className="relative z-10 flex items-center justify-between pb-2.5 border-b border-white/10">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-teal-500/20 text-teal-400 flex items-center justify-center">
-                  <BookOpen size={16} />
+                  <Calendar size={16} />
                 </div>
                 <div>
                   <div className="text-xs font-black text-white flex items-center gap-1.5">
-                    <span>Haftalık MEB Ders Çizelgesi</span>
+                    <span>Haftalık Ders Programı</span>
                     <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-md bg-teal-500/20 text-teal-400 border border-teal-500/30">
                       e-Okul Uyumlu
                     </span>
                   </div>
                   <p className="text-[10px] text-gray-400 mt-0.5">
-                    {activeOrg.name} · Maarif Modeli
+                    {activeOrg.name} · Haftalık Ders Dağılımı ve Zümre Koordinasyonu
                   </p>
                 </div>
               </div>
@@ -1147,7 +1177,7 @@ export default function MAdminCurriculumClient({
                 <span className="text-xs font-black text-white">Oxonom Okulları</span>
                 <span className="text-[10px] text-emerald-400 font-bold px-1.5 py-0.5 rounded-md bg-emerald-500/10">MEB Onaylı</span>
               </div>
-              <span className="text-[11px] font-semibold text-gray-400">1 Sınıf</span>
+              <span className="text-[11px] font-semibold text-gray-400">{availableClasses.length} Şube / Sınıf</span>
             </div>
 
             {/* ── 3. SINIF SEÇİN ALANI (FERAH, SADE, YATAY KAYDIRILABİLİR & ÇOKLU UYGULAMA) ── */}

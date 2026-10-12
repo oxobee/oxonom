@@ -5,8 +5,8 @@ import MAdminCurriculumClient from '@components/Mobile/Admin/MAdminCurriculumCli
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'Müfredat & Zümreler — Oxonom EDU',
-  description: 'Bakanlık müfredatı, zümre toplantı tutanakları, yıllık plan onayları ve kazanımlar.',
+  title: 'Haftalık Ders Programı — Oxonom EDU',
+  description: 'Okul geneli haftalık ders programı, sınıf çizelgeleri, ders dağılımı ve zümre koordinasyonu.',
 }
 
 export default function PrincipalCurriculumPage() {

@@ -50,10 +50,10 @@ interface SchoolBoardConfig {
 
 // School real physical smartboard inventory
 const SCHOOL_BOARDS: SchoolBoardConfig[] = [
-  { id: 'sb-9a', code: 'PANO-9A', name: '9-A Akıllı Tahta', classroom: '9-A Şubesi', floor: '1. Kat (No: 104)', deviceModel: 'Vestel 75" Interactive 4K', macAddress: '00:1A:79:B4:C1:01' },
-  { id: 'sb-9b', code: 'PANO-9B', name: '9-B Akıllı Tahta', classroom: '9-B Şubesi', floor: '1. Kat (No: 106)', deviceModel: 'Vestel 75" Interactive 4K', macAddress: '00:1A:79:B4:C1:02' },
-  { id: 'sb-1a', code: 'PANO-1A', name: '1-A Akıllı Tahta', classroom: '1-A Şubesi', floor: 'Zemin Kat (No: 04)', deviceModel: 'Vestel 65" Interactive 4K', macAddress: '00:1A:79:B4:C1:03' },
-  { id: 'sb-2a', code: 'PANO-2A', name: '2-A Akıllı Tahta', classroom: '2-A Şubesi', floor: 'Zemin Kat (No: 08)', deviceModel: 'Vestel 65" Interactive 4K', macAddress: '00:1A:79:B4:C1:04' },
+  { id: 'sb-9a', code: 'PANO-9A', name: '9/A Akıllı Tahta', classroom: '9/A Şubesi', floor: '1. Kat (No: 104)', deviceModel: 'Vestel 75" Interactive 4K', macAddress: '00:1A:79:B4:C1:01' },
+  { id: 'sb-9b', code: 'PANO-9B', name: '9/B Akıllı Tahta', classroom: '9/B Şubesi', floor: '1. Kat (No: 106)', deviceModel: 'Vestel 75" Interactive 4K', macAddress: '00:1A:79:B4:C1:02' },
+  { id: 'sb-1a', code: 'PANO-1A', name: '1/A Akıllı Tahta', classroom: '1/A Şubesi', floor: 'Zemin Kat (No: 04)', deviceModel: 'Vestel 65" Interactive 4K', macAddress: '00:1A:79:B4:C1:03' },
+  { id: 'sb-2a', code: 'PANO-2A', name: '2/A Akıllı Tahta', classroom: '2/A Şubesi', floor: 'Zemin Kat (No: 08)', deviceModel: 'Vestel 65" Interactive 4K', macAddress: '00:1A:79:B4:C1:04' },
   { id: 'sb-fen', code: 'PANO-FEN', name: 'Fen Laboratuvarı Tahtası', classroom: 'Fen Lab', floor: 'Bodrum Kat (Lab-1)', deviceModel: 'Vestel 86" Ultra Interactive', macAddress: '00:1A:79:B4:C1:05' },
   { id: 'sb-konf', code: 'PANO-KONF', name: 'Konferans Salonu Pano', classroom: 'Konferans', floor: '2. Kat Ana Salon', deviceModel: 'Pano Display 85" LED', macAddress: '00:1A:79:B4:C1:06' },
 ]

@@ -66,6 +66,26 @@ export interface MAdminStudentsClientProps {
   hideDock?: boolean
 }
 
+export function formatClassCode(className?: string): string {
+  if (!className) return '9/A'
+  const trimmed = className.trim()
+  if (trimmed === 'ALL') return 'Tüm Şubeler'
+
+  const matchGrade = trimmed.match(/\d+/)
+  const gNum = matchGrade ? matchGrade[0] : '9'
+  let branch = ''
+  if (trimmed.includes('/') || trimmed.includes('-')) {
+    const parts = trimmed.split(/[\/\-]/)
+    branch = parts[parts.length - 1].replace(/Şubesi|Sınıfı/gi, '').trim().toUpperCase()
+  } else if (/^[A-Za-zÇĞİÖŞÜçğıöşü]+$/.test(trimmed)) {
+    branch = trimmed.toUpperCase()
+  } else {
+    const letterMatch = trimmed.match(/\b([A-ZÇĞİÖŞÜ])\b/)
+    branch = letterMatch ? letterMatch[1] : 'A'
+  }
+  return `${gNum}/${branch}`
+}
+
 export default function MAdminStudentsClient({
   orgSlug,
   hideHeader = false,
@@ -95,13 +115,13 @@ export default function MAdminStudentsClient({
   >('kimlik')
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false)
   const [studentToTransfer, setStudentToTransfer] = useState<any | null>(null)
-  const [targetTransferClass, setTargetTransferClass] = useState<string>('9-A')
+  const [targetTransferClass, setTargetTransferClass] = useState<string>('9/A')
 
   // ── FORM STATES FOR NEW STUDENT (A-Z OFFICIAL REGISTRATION) ──
   const [newTcNo, setNewTcNo] = useState('')
   const [newFirstName, setNewFirstName] = useState('')
   const [newLastName, setNewLastName] = useState('')
-  const [newClassCode, setNewClassCode] = useState('9-A')
+  const [newClassCode, setNewClassCode] = useState('9/A')
   const [newStudentNo, setNewStudentNo] = useState('102')
   const [newGender, setNewGender] = useState<'Erkek' | 'Kız'>('Erkek')
   const [newBirthDate, setNewBirthDate] = useState('15.06.2017')
@@ -259,7 +279,7 @@ export default function MAdminStudentsClient({
     setEditLastName(lName)
     setEditTcNo(student.tcNo || '10000000146')
     setEditStudentNo(student.studentNo || '101')
-    setEditClassCode(student.className || '9-A')
+    setEditClassCode(formatClassCode(student.className) || '9/A')
     setEditBirthDate(student.birthDate || '15.06.2010 (16 Yaşında)')
     setEditBirthPlace(student.birthPlace || 'Kadıköy / İstanbul')
     setEditBloodType(student.bloodType || 'A Rh+')
@@ -514,15 +534,31 @@ export default function MAdminStudentsClient({
   }, [selectedOrgId])
 
   const classList = useMemo(() => {
-    const codes = orgClassrooms.map((c) => c.code)
-    return ['ALL', ...codes]
-  }, [orgClassrooms])
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem(`oxonom_admin_classes_${selectedOrgId}`)
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const list = parsed.map((c: any) => formatClassCode(c.code))
+            return ['ALL', ...Array.from(new Set(list))]
+          }
+        }
+      } catch (_) {}
+    }
+    const codes = orgClassrooms.map((c) => formatClassCode(c.code))
+    return ['ALL', ...Array.from(new Set(codes))]
+  }, [orgClassrooms, selectedOrgId])
 
   // Filtered students by class and search
   const filteredStudents = useMemo(() => {
     return studentsList.filter((std) => {
+      const stdCode = formatClassCode(std.className)
       const matchesClass =
-        selectedClassCode === 'ALL' || std.className === selectedClassCode
+        selectedClassCode === 'ALL' ||
+        std.className === selectedClassCode ||
+        stdCode === selectedClassCode ||
+        stdCode === formatClassCode(selectedClassCode)
       if (!matchesClass) return false
 
       if (!searchQuery.trim()) return true
@@ -668,7 +704,7 @@ export default function MAdminStudentsClient({
                       : 'bg-white dark:bg-[#121826] text-gray-600 dark:text-gray-400 border border-gray-200/80 dark:border-gray-800 hover:bg-gray-50'
                   }`}
                 >
-                  {cls === 'ALL' ? 'Tüm Şubeler' : `${cls} Şubesi`}
+                  {cls === 'ALL' ? 'Tüm Şubeler' : `${formatClassCode(cls)} Şubesi`}
                 </button>
               )
             })}
@@ -712,7 +748,7 @@ export default function MAdminStudentsClient({
                         {student.name}
                       </h4>
                       <span className="text-[9.5px] font-black px-1.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                        {student.className}
+                        {formatClassCode(student.className)}
                       </span>
                     </div>
 
@@ -839,7 +875,7 @@ export default function MAdminStudentsClient({
                       </span>
                     </h3>
                     <p className="text-[11px] text-gray-400 font-medium">
-                      MEB & MERNİS Onaylı Öğrenci Sicil Kütüğü · No: {selectedStudentForDetail.studentNo} · {selectedStudentForDetail.className} Şubesi
+                      MEB & MERNİS Onaylı Öğrenci Sicil Kütüğü · No: {selectedStudentForDetail.studentNo} · {formatClassCode(selectedStudentForDetail.className)} Şubesi
                     </p>
                   </div>
                 </div>
@@ -895,7 +931,7 @@ export default function MAdminStudentsClient({
                             {selectedStudentForDetail.name}
                           </h4>
                           <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-lg bg-emerald-400 text-gray-950">
-                            {selectedStudentForDetail.className}
+                            {formatClassCode(selectedStudentForDetail.className)}
                           </span>
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-white/10 text-emerald-300">
                             {selectedStudentForDetail.enrollmentType || 'Yeni Kayıt'}
@@ -1583,7 +1619,7 @@ export default function MAdminStudentsClient({
                         <div className="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 flex justify-between items-center">
                           <span className="text-gray-500 font-bold">Sınıf & Şube</span>
                           <span className="font-extrabold text-emerald-600 dark:text-emerald-400">
-                            {selectedStudentForDetail.className} Şubesi
+                            {formatClassCode(selectedStudentForDetail.className)} Şubesi
                           </span>
                         </div>
 
@@ -2688,7 +2724,7 @@ export default function MAdminStudentsClient({
                     {studentToTransfer.name}
                   </div>
                   <div className="text-xs text-gray-400">
-                    Mevcut Şubesi: <strong className="text-[#10B981]">{studentToTransfer.className}</strong>
+                    Mevcut Şubesi: <strong className="text-[#10B981]">{formatClassCode(studentToTransfer.className)}</strong>
                   </div>
                 </div>
 
@@ -2702,7 +2738,7 @@ export default function MAdminStudentsClient({
                     className="w-full h-11 px-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-extrabold text-xs"
                   >
                     {classList.filter(c => c !== 'ALL').map((c) => (
-                      <option key={c} value={c}>{c} Şubesi</option>
+                      <option key={c} value={c}>{formatClassCode(c)} Şubesi</option>
                     ))}
                   </select>
                 </div>

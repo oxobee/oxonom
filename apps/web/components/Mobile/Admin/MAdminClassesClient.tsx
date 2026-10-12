@@ -632,16 +632,44 @@ const DEFAULT_MIDDLE_CLASSES: AdminClassroom[] = [
   },
 ]
 
-// Default Oxonom classroom (9-A with Ebru TEKNECİ, 1 student Erçil UĞURLU)
+export function normalizeClassroom(c: AdminClassroom): AdminClassroom {
+  const codeRaw = (c.code || '').trim()
+  const gradeLevelRaw = (c.gradeLevel || '').trim()
+
+  const matchGrade = gradeLevelRaw.match(/\d+/) || codeRaw.match(/^\d+/)
+  const gradeNum = matchGrade ? matchGrade[0] : (c.gradeNumber ? String(c.gradeNumber) : '1')
+
+  let branchLetter = ''
+  if (codeRaw.includes('/') || codeRaw.includes('-')) {
+    const parts = codeRaw.split(/[\/\-]/)
+    branchLetter = parts[parts.length - 1].trim().toUpperCase()
+  } else if (/^[A-Za-zÇĞİÖŞÜçğıöşü]+$/.test(codeRaw)) {
+    branchLetter = codeRaw.toUpperCase()
+  } else {
+    const letterMatch = (c.name || '').match(/\b([A-ZÇĞİÖŞÜ])\b/)
+    branchLetter = letterMatch ? letterMatch[1] : 'A'
+  }
+
+  const cleanCode = `${gradeNum}/${branchLetter}`
+  return {
+    ...c,
+    code: cleanCode,
+    name: `${cleanCode} Şubesi`,
+    roomName: c.roomName ? c.roomName.replace(/Derslik\s*(\d+)[\/-]([A-Za-z])/g, 'Derslik $1/$2') : `Derslik ${cleanCode}`,
+    boardName: `${cleanCode} Akıllı Tahta`,
+  }
+}
+
+// Default Oxonom classroom (9/A with Ebru TEKNECİ, 1 student Erçil UĞURLU)
 export const DEFAULT_OXONOM_CLASSES: AdminClassroom[] = [
   {
     id: 301,
-    code: '9-A',
-    name: '9-A Şubesi',
+    code: '9/A',
+    name: '9/A Şubesi',
     gradeLevel: '9. Sınıf',
     gradeNumber: 9,
     orgId: 30,
-    roomName: 'Derslik 9-A (1. Kat)',
+    roomName: 'Derslik 9/A (1. Kat)',
     teacherName: 'Ebru TEKNECİ',
     teacherBranch: 'Türk Dili ve Edebiyatı (Edebiyat Öğretmeni)',
     teacherPhone: '+90 532 999 2803',
@@ -661,7 +689,7 @@ export const DEFAULT_OXONOM_CLASSES: AdminClassroom[] = [
       { course: 'Bilişim & Kodlama', average: 99.0, highest: 100, lowest: 98 },
     ],
     boardStatus: 'online',
-    boardName: '9-A Akıllı Etkileşimli Tahta',
+    boardName: '9/A Akıllı Etkileşimli Tahta',
     scheduleSummary: 'Haftalık 35 Saat (MEB Anadolu Lisesi)',
     classPresident: 'Erçil UĞURLU',
     parentRepresentative: 'Uğur UĞURLU (Müdür & Veli)',
@@ -838,7 +866,7 @@ export default function MAdminClassesClient({
 
   // Synchronize when school org changes or load from localStorage
   useEffect(() => {
-    const defaultClasses = DEFAULT_OXONOM_CLASSES
+    const defaultClasses = DEFAULT_OXONOM_CLASSES.map(normalizeClassroom)
     if (typeof window !== 'undefined') {
       try {
         const saved = localStorage.getItem(
@@ -847,7 +875,8 @@ export default function MAdminClassesClient({
         if (saved) {
           const parsed = JSON.parse(saved)
           if (Array.isArray(parsed) && parsed.length > 0) {
-            setClassesList(parsed)
+            const normalized = parsed.map(normalizeClassroom)
+            setClassesList(normalized)
             setSelectedGradeFilter('ALL')
             return
           }
@@ -860,12 +889,13 @@ export default function MAdminClassesClient({
 
   // Save changes to localStorage helper
   const persistClasses = (updatedList: AdminClassroom[]) => {
-    setClassesList(updatedList)
+    const normalized = updatedList.map(normalizeClassroom)
+    setClassesList(normalized)
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem(
           `oxonom_admin_classes_${selectedOrgId}`,
-          JSON.stringify(updatedList)
+          JSON.stringify(normalized)
         )
       } catch (_) {}
     }
@@ -1130,8 +1160,8 @@ export default function MAdminClassesClient({
         }
 
         const nextNum = currentNum + 1
-        const letterPart = c.code.replace(/^\d+[-_]?/, '') || 'A'
-        const nextCode = `${nextNum}-${letterPart}`
+        const letterPart = c.code.replace(/^.*[\/-]/, '').trim().toUpperCase() || 'A'
+        const nextCode = `${nextNum}/${letterPart}`
         const nextGradeLevel = `${nextNum}. Sınıf`
 
         return {
@@ -1258,21 +1288,27 @@ export default function MAdminClassesClient({
         ? Number(((formPresentToday / totalAtt) * 100).toFixed(1))
         : 100
 
+    const matchGrade = formGradeLevel.match(/\d+/)
+    const gradeNum = matchGrade ? matchGrade[0] : (classToEdit.gradeNumber ? String(classToEdit.gradeNumber) : '1')
+    const branchLetter = formCode.replace(/^.*[\/-]/, '').trim().toUpperCase() || 'A'
+    const finalCode = `${gradeNum}/${branchLetter}`
+    const finalName = `${finalCode} Şubesi`
+
     const updated = classesList.map((c) => {
       if (c.id === classToEdit.id) {
         return {
           ...c,
-          code: formCode,
-          name: `${formCode} Şubesi`,
-          gradeLevel: formGradeLevel,
-          gradeNumber: parseInt(formGradeLevel) || c.gradeNumber,
+          code: finalCode,
+          name: finalName,
+          gradeLevel: formGradeLevel.includes('Sınıf') || formGradeLevel.includes('/') ? formGradeLevel : `${formGradeLevel}. Sınıf`,
+          gradeNumber: parseInt(gradeNum) || c.gradeNumber,
           roomName: formRoomName,
           teacherName: formTeacherName,
           teacherBranch: matchedTeacher?.branch || c.teacherBranch,
           teacherPhone: matchedTeacher?.phone || c.teacherPhone,
           teacherEmail: matchedTeacher?.email || c.teacherEmail,
           capacity: formCapacity,
-          boardName: formBoardName,
+          boardName: formBoardName || `${finalCode} Akıllı Tahta`,
           boardStatus: formBoardStatus,
           scheduleSummary: formScheduleSummary,
           classPresident: formClassPresident,
@@ -1321,7 +1357,7 @@ export default function MAdminClassesClient({
     })
 
     persistClasses(updated)
-    toast.success(`${formCode} şubesinin tüm bilgileri başarıyla güncellendi!`)
+    toast.success(`${finalCode} şubesinin tüm bilgileri başarıyla güncellendi!`)
     setClassToEdit(null)
 
     if (selectedClassForDetail?.id === classToEdit.id) {
@@ -1334,7 +1370,7 @@ export default function MAdminClassesClient({
   const handleOpenNewClass = () => {
     const defaultGrade = selectedOrgId === 30 ? '9. Sınıf' : selectedOrgId === 10 ? '1. Sınıf' : '5. Sınıf'
     setFormGradeLevel(defaultGrade)
-    setFormCode(selectedOrgId === 30 ? '9-B' : selectedOrgId === 10 ? '1-D' : '5-B')
+    setFormCode(selectedOrgId === 30 ? '9/B' : selectedOrgId === 10 ? '1/B' : '5/B')
     setFormRoomName(selectedOrgId === 30 ? '1. Kat · Derslik 102' : '1. Kat · Derslik 107')
     setFormTeacherName(availableTeachers[0]?.name || (selectedOrgId === 30 ? 'Ebru TEKNECİ' : 'Özlem ZOR'))
     setFormCapacity(32)
@@ -1347,13 +1383,19 @@ export default function MAdminClassesClient({
     const matchedTeacher = availableTeachers.find(
       (t) => t.name === formTeacherName
     )
+    const matchGrade = formGradeLevel.match(/\d+/)
+    const gradeNum = matchGrade ? matchGrade[0] : (selectedOrgId === 30 ? '9' : selectedOrgId === 10 ? '1' : '5')
+    const branchLetter = formCode.replace(/^.*[\/-]/, '').trim().toUpperCase() || 'A'
+    const finalCode = `${gradeNum}/${branchLetter}`
+    const finalName = `${finalCode} Şubesi`
+
     const newId = Date.now()
     const newClassItem: AdminClassroom = {
       id: newId,
-      code: formCode,
-      name: `${formCode} Şubesi`,
-      gradeLevel: formGradeLevel,
-      gradeNumber: parseInt(formGradeLevel) || (selectedOrgId === 30 ? 9 : selectedOrgId === 10 ? 1 : 5),
+      code: finalCode,
+      name: finalName,
+      gradeLevel: formGradeLevel.includes('Sınıf') || formGradeLevel.includes('/') ? formGradeLevel : `${formGradeLevel}. Sınıf`,
+      gradeNumber: parseInt(gradeNum) || (selectedOrgId === 30 ? 9 : selectedOrgId === 10 ? 1 : 5),
       orgId: selectedOrgId,
       roomName: formRoomName,
       teacherName: formTeacherName,
@@ -1385,7 +1427,7 @@ export default function MAdminClassesClient({
         },
       ],
       boardStatus: 'online',
-      boardName: `${formCode} Akıllı Tahta`,
+      boardName: `${finalCode} Akıllı Tahta`,
       scheduleSummary: selectedOrgId === 30 ? 'Haftalık 35 Saat' : selectedOrgId === 10 ? 'Haftalık 30 Saat' : 'Haftalık 35 Saat',
       classPresident: selectedOrgId === 30 ? 'Erçil UĞURLU' : 'Sınıf Temsilcisi',
       parentRepresentative: selectedOrgId === 30 ? 'Uğur UĞURLU' : 'Veli Temsilcisi',
@@ -1393,7 +1435,7 @@ export default function MAdminClassesClient({
 
     const updated = [newClassItem, ...classesList]
     persistClasses(updated)
-    toast.success(`${formCode} şubesi başarıyla oluşturuldu ve sisteme eklendi!`)
+    toast.success(`${finalCode} şubesi başarıyla oluşturuldu ve sisteme eklendi!`)
     setIsNewClassModalOpen(false)
   }
 
@@ -1412,8 +1454,14 @@ export default function MAdminClassesClient({
   // Filtered classes list
   const filteredClasses = useMemo(() => {
     return classesList.filter((c) => {
-      if (selectedGradeFilter !== 'ALL' && c.gradeLevel !== selectedGradeFilter) {
-        return false
+      if (selectedGradeFilter !== 'ALL') {
+        const matchesExact = c.gradeLevel === selectedGradeFilter
+        const filterDigits = selectedGradeFilter.match(/\d+/)
+        const classDigits = c.gradeLevel.match(/\d+/) || c.code.match(/^\d+/)
+        const matchesDigits = Boolean(filterDigits && classDigits && filterDigits[0] === classDigits[0])
+        if (!matchesExact && !matchesDigits) {
+          return false
+        }
       }
       if (!searchQuery.trim()) return true
       const q = searchQuery.toLowerCase()
@@ -1675,10 +1723,14 @@ export default function MAdminClassesClient({
                 </button>
 
                 {gradeLevels.map((grade) => {
-                  const count = classesList.filter(
-                    (c) => c.gradeLevel === grade
-                  ).length
+                  const count = classesList.filter((c) => {
+                    if (c.gradeLevel === grade) return true
+                    const gNum = grade.match(/\d+/)
+                    const cNum = c.gradeLevel.match(/\d+/) || c.code.match(/^\d+/)
+                    return Boolean(gNum && cNum && gNum[0] === cNum[0])
+                  }).length
                   const isSelected = selectedGradeFilter === grade
+                  const labelText = grade.includes('Sınıf') || grade.includes('/') ? grade : `${grade}. Sınıf`
                   return (
                     <button
                       key={grade}
@@ -1690,7 +1742,7 @@ export default function MAdminClassesClient({
                           : 'bg-white dark:bg-[#121826] text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-800'
                       }`}
                     >
-                      {grade} ({count})
+                      {labelText} ({count})
                     </button>
                   )
                 })}
@@ -2346,7 +2398,7 @@ export default function MAdminClassesClient({
                   onChange={(e) => setPreserveSectionCodes(e.target.checked)}
                   className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500"
                 />
-                <span>Şube Kodlarını Koru (1-A ➔ 2-A)</span>
+                <span>Şube Kodlarını Koru (1/A ➔ 2/A)</span>
               </label>
 
               <label className="flex items-center gap-2 cursor-pointer font-bold text-gray-800 dark:text-gray-200">
@@ -2421,9 +2473,10 @@ export default function MAdminClassesClient({
                   const isGraduating = (selectedOrgId === 10 && currentNum >= 4) ||
                     (selectedOrgId === 20 && currentNum >= 8) ||
                     (selectedOrgId === 30 && currentNum >= 12)
+                  const branchLetter = c.code.replace(/^.*[\/-]/, '').trim().toUpperCase() || 'A'
                   const nextCode = isGraduating
                     ? '🎓 Mezunlar Kütüğü'
-                    : `${currentNum + 1}-${c.code.replace(/^\d+[-_]?/, '')}`
+                    : `${currentNum + 1}/${branchLetter}`
 
                   return (
                     <div
@@ -3346,7 +3399,7 @@ export default function MAdminClassesClient({
                       type="text"
                       value={formCode}
                       onChange={(e) => setFormCode(e.target.value)}
-                      placeholder="Örn: 1-A veya 3-B"
+                      placeholder="Örn: 10/G veya 9/A"
                       className="w-full h-11 px-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-black uppercase text-sm tracking-wider"
                       required
                     />
@@ -3354,10 +3407,10 @@ export default function MAdminClassesClient({
                     {/* Quick Select Letter Pills */}
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-[10px] font-bold text-gray-400 mr-1">Hızlı Şube:</span>
-                      {['A', 'B', 'C', 'D', 'E', 'F'].map((letter) => {
+                      {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].map((letter) => {
                         const match = formGradeLevel.match(/\d+/)
-                        const targetCode = match ? `${match[0]}-${letter}` : letter
-                        const isSelected = formCode === targetCode || formCode.endsWith(`-${letter}`)
+                        const targetCode = match ? `${match[0]}/${letter}` : letter
+                        const isSelected = formCode === targetCode || formCode === letter || formCode.endsWith(`/${letter}`) || formCode.endsWith(`-${letter}`)
                         return (
                           <button
                             key={letter}
@@ -3365,7 +3418,7 @@ export default function MAdminClassesClient({
                             onClick={() => setFormCode(targetCode)}
                             className={`w-8 h-7 rounded-lg text-xs font-black cursor-pointer transition-all ${
                               isSelected
-                                ? 'bg-emerald-600 text-white shadow-xs scale-105'
+                                ? 'bg-purple-600 text-white shadow-xs scale-105'
                                 : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300'
                             }`}
                           >
