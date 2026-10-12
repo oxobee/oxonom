@@ -467,7 +467,16 @@ export default async function proxy(req: NextRequest) {
   if (pathname.match(/^\/course\/[^/]+\/activity\/[^/]+\/edit$/)) {
     return NextResponse.rewrite(new URL(`/editor${pathname}`, req.url))
   }
-  if (pathname.startsWith('/board/') || pathname.startsWith('/b/') || pathname === '/remote' || pathname.startsWith('/remote/') || pathname === '/pano' || pathname.startsWith('/pano/')) {
+  if (
+    pathname === '/teacher' ||
+    pathname.startsWith('/teacher/') ||
+    pathname.startsWith('/board/') ||
+    pathname.startsWith('/b/') ||
+    pathname === '/remote' ||
+    pathname.startsWith('/remote/') ||
+    pathname === '/pano' ||
+    pathname.startsWith('/pano/')
+  ) {
     const response = NextResponse.rewrite(new URL(pathname + search, req.url))
     setInstanceCookies(response, instance)
     return response

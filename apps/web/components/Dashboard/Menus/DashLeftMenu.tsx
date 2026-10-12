@@ -508,6 +508,15 @@ function DashLeftMenu() {
               /* Sınıflar | Panolar | Modüller                       */
               /* =================================================== */
               <>
+                {/* Öğretmen Çalışma Merkezi */}
+                <MenuLink
+                  href="/teacher/dashboard"
+                  icon={<ChalkboardTeacher size={20} weight="fill" />}
+                  label="Öğretmen Merkezi"
+                  isCollapsed={isCollapsed}
+                  active={isActivePath('/teacher')}
+                />
+
                 {/* Ana Sayfa */}
                 <MenuLink
                   href="/dash"

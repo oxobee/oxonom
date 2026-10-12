@@ -1,0 +1,253 @@
+import {
+  LayoutDashboard,
+  Calendar,
+  Users,
+  CheckSquare,
+  BookOpen,
+  Award,
+  Tv,
+  Sparkles,
+  FolderOpen,
+  MessageSquare,
+  TrendingUp,
+  FileText,
+  BarChart3,
+  Settings,
+  LucideIcon,
+} from 'lucide-react'
+
+export type FeatureStatus = 'active' | 'passive' | 'restricted'
+
+export interface TeacherSubMenuItem {
+  id: string
+  label: string
+  path: string
+  status: FeatureStatus
+  description?: string
+  missingDependency?: string
+}
+
+export interface TeacherMenuItem {
+  id: string
+  label: string
+  path: string
+  icon: LucideIcon
+  status: FeatureStatus
+  sortOrder: number
+  description: string
+  missingDependency?: string
+  children?: TeacherSubMenuItem[]
+}
+
+export const TEACHER_MENU_CONFIG: TeacherMenuItem[] = [
+  {
+    id: 'dashboard',
+    label: 'Ana Sayfa',
+    path: '/teacher/dashboard',
+    icon: LayoutDashboard,
+    status: 'active',
+    sortOrder: 1,
+    description: 'Günlük ders akışı, sıradaki ders, akıllı tahta bağlantısı ve hızlı öğretmen işlemleri.',
+  },
+  {
+    id: 'schedule',
+    label: 'Derslerim ve Programım',
+    path: '/teacher/schedule',
+    icon: Calendar,
+    status: 'active',
+    sortOrder: 2,
+    description: 'Haftalık ve günlük ders programı, sınıf saatleri, ders kazanımları ve tahtayla başlatma.',
+    children: [
+      { id: 'schedule-daily', label: 'Günlük Program', path: '/teacher/schedule/daily', status: 'active', description: 'Bugünün ders saatleri ve sınıfları' },
+      { id: 'schedule-weekly', label: 'Haftalık Program', path: '/teacher/schedule/weekly', status: 'active', description: 'Tüm haftanın ders dağılımı' },
+      { id: 'schedule-lesson-plans', label: 'Ders Planları', path: '/teacher/schedule/lesson-plans', status: 'active', description: 'Kazanım ve günlük ders planları' },
+    ],
+  },
+  {
+    id: 'classes',
+    label: 'Sınıflarım ve Öğrencilerim',
+    path: '/teacher/classes',
+    icon: Users,
+    status: 'active',
+    sortOrder: 3,
+    description: 'Atanmış şubeler, sınıf listeleri, detaylı öğrenci profilleri ve veli iletişim bilgileri.',
+    children: [
+      { id: 'classes-list', label: 'Sınıf Listeleri', path: '/teacher/classes', status: 'active' },
+      { id: 'classes-groups', label: 'Çalışma Grupları', path: '/teacher/classes/groups', status: 'passive', description: 'Sınıf içi proje ve etkinlik çalışma grupları', missingDependency: 'Grup yönetimi ve dinamik kümeleme veri modeli' },
+    ],
+  },
+  {
+    id: 'attendance',
+    label: 'Yoklama ve Devam',
+    path: '/teacher/attendance',
+    icon: CheckSquare,
+    status: 'active',
+    sortOrder: 4,
+    description: 'Ders bazlı pratik dokunmatik yoklama, devam takibi ve sınıf mevcudu kaydı.',
+    children: [
+      { id: 'attendance-take', label: 'Yoklama Al', path: '/teacher/attendance/take', status: 'active', description: 'Aktif ders için yoklama girişi' },
+      { id: 'attendance-history', label: 'Geçmiş Yoklamalar', path: '/teacher/attendance/history', status: 'active', description: 'Kaydedilmiş geçmiş yoklama kayıtları' },
+      { id: 'attendance-reports', label: 'e-Okul / Devam Raporları', path: '/teacher/attendance/reports', status: 'passive', description: 'Resmi MEB e-Okul devamsızlık aktarımı', missingDependency: 'MEB e-Okul resmi API entegrasyonu' },
+    ],
+  },
+  {
+    id: 'assignments',
+    label: 'Ödev ve Çalışmalar',
+    path: '/teacher/assignments',
+    icon: BookOpen,
+    status: 'active',
+    sortOrder: 5,
+    description: 'Ödev oluşturma, yayınlama, öğrenci teslimlerini inceleme ve puanlama/geri bildirim.',
+    children: [
+      { id: 'assignments-list', label: 'Ödev Listesi', path: '/teacher/assignments', status: 'active' },
+      { id: 'assignments-create', label: 'Yeni Ödev Oluştur', path: '/teacher/assignments/create', status: 'active' },
+      { id: 'assignments-submissions', label: 'Teslimler & Değerlendirme', path: '/teacher/assignments/submissions', status: 'active' },
+    ],
+  },
+  {
+    id: 'assessments',
+    label: 'Sınavlar ve Notlar',
+    path: '/teacher/assessments',
+    icon: Award,
+    status: 'active',
+    sortOrder: 6,
+    description: 'Soru bankası, sınıf içi quizler, sınav takvimi ve başarı değerlendirme kriterleri.',
+    children: [
+      { id: 'assessments-quizzes', label: 'Sınıf Quizleri', path: '/teacher/assessments/quizzes', status: 'active' },
+      { id: 'assessments-question-bank', label: 'Soru Bankası', path: '/teacher/assessments/question-bank', status: 'active' },
+      { id: 'assessments-exams', label: 'Yazılı Sınavlar', path: '/teacher/assessments/exams', status: 'passive', description: 'Okul geneli ortak sınav modülü', missingDependency: 'Ortak sınav takvimi ve optik form okuma altyapısı' },
+      { id: 'assessments-grades', label: 'Not Girişi & e-Okul Aktarımı', path: '/teacher/assessments/grades', status: 'passive', description: 'Dönemlik resmi not defteri', missingDependency: 'e-Okul resmi not aktarım servisi' },
+    ],
+  },
+  {
+    id: 'smartboard',
+    label: 'Akıllı Tahta ve Ders Araçları',
+    path: '/teacher/smartboard',
+    icon: Tv,
+    status: 'active',
+    sortOrder: 7,
+    description: 'Sınıf akıllı tahtasına QR ile anında bağlanma, beyaz tahtalar, telefon kumandası ve canlı oturum.',
+    children: [
+      { id: 'smartboard-connect', label: 'Tahtaya Bağlan (QR)', path: '/teacher/smartboard/connect', status: 'active' },
+      { id: 'smartboard-whiteboard', label: 'Akıllı Tahtalarım', path: '/teacher/smartboard/whiteboard', status: 'active' },
+      { id: 'smartboard-remote', label: 'Telefon Kumandası', path: '/teacher/smartboard/remote', status: 'active' },
+    ],
+  },
+  {
+    id: 'ai-assistant',
+    label: 'Yapay Zekâ Öğretmen Asistanı',
+    path: '/teacher/ai-assistant',
+    icon: Sparkles,
+    status: 'active',
+    sortOrder: 8,
+    description: 'MEB müfredatına uyumlu ders planı, çoktan seçmeli soru, çalışma kâğıdı ve materyal üretimi.',
+    children: [
+      { id: 'ai-lesson-planner', label: 'Ders Planı Hazırlayıcı', path: '/teacher/ai-assistant/lesson-planner', status: 'active' },
+      { id: 'ai-question-generator', label: 'Soru & Quiz Üretici', path: '/teacher/ai-assistant/question-generator', status: 'active' },
+      { id: 'ai-worksheet-generator', label: 'Çalışma Kâğıdı Üretici', path: '/teacher/ai-assistant/worksheet-generator', status: 'active' },
+      { id: 'ai-rubric-generator', label: 'Rubrik & Değerlendirme Ölçeği', path: '/teacher/ai-assistant/rubric-generator', status: 'passive', description: 'Otomatik rubrik matrisi üretimi', missingDependency: 'Rubrik veri tablosu ve dışa aktarım API' },
+      { id: 'ai-parent-messages', label: 'Veli Bilgilendirme Taslağı', path: '/teacher/ai-assistant/parent-messages', status: 'passive', description: 'Kişiselleştirilmiş gelişim mesajları', missingDependency: 'SMS / Mesajlaşma entegrasyonu' },
+    ],
+  },
+  {
+    id: 'library',
+    label: 'Eğitim Kütüphanesi',
+    path: '/teacher/library',
+    icon: FolderOpen,
+    status: 'active',
+    sortOrder: 9,
+    description: 'Müfredat dokümanları, PDF ders notları, etkileşimli simülasyonlar ve branş materyalleri.',
+    children: [
+      { id: 'library-curriculum', label: 'Kazanım & Müfredat', path: '/teacher/library/curriculum', status: 'active' },
+      { id: 'library-documents', label: 'Dokümanlar & PDF', path: '/teacher/library/documents', status: 'active' },
+      { id: 'library-interactive-games', label: 'Eğitsel Oyunlar & Simülasyon', path: '/teacher/library/interactive-games', status: 'active' },
+    ],
+  },
+  {
+    id: 'communication',
+    label: 'İletişim ve Duyurular',
+    path: '/teacher/communication',
+    icon: MessageSquare,
+    status: 'passive',
+    sortOrder: 10,
+    description: 'Sınıf duyuruları, veli bilgilendirme mesajları ve toplantı planlama merkezi.',
+    missingDependency: 'SMS Ağ Geçidi, E-posta Sunucusu ve Anlık Mesajlaşma Servisi',
+    children: [
+      { id: 'communication-announcements', label: 'Sınıf Duyuruları', path: '/teacher/communication/announcements', status: 'passive', missingDependency: 'Push Bildirim Servisi' },
+      { id: 'communication-parent-meetings', label: 'Veli Toplantı Planı', path: '/teacher/communication/parent-meetings', status: 'passive', missingDependency: 'Randevu & Takvim Entegrasyonu' },
+      { id: 'communication-messages', label: 'Mesajlar', path: '/teacher/communication/messages', status: 'passive', missingDependency: 'Canlı Sohbet Sunucusu' },
+    ],
+  },
+  {
+    id: 'student-progress',
+    label: 'Öğrenci Gelişimi ve Rehberlik',
+    path: '/teacher/student-progress',
+    icon: TrendingUp,
+    status: 'active',
+    sortOrder: 11,
+    description: 'Öğrenci akademik gidişatı, ödev teslim oranları, devam durumu ve rehberlik görüşme kayıtları.',
+    children: [
+      { id: 'progress-overview', label: 'Sınıf Başarı Özeti', path: '/teacher/student-progress/overview', status: 'active' },
+      { id: 'progress-guidance', label: 'Rehberlik Servisi Kayıtları', path: '/teacher/student-progress/guidance', status: 'active' },
+      { id: 'progress-learning-gaps', label: 'Kazanım Eksiği Tespiti', path: '/teacher/student-progress/learning-gaps', status: 'passive', missingDependency: 'Kazanım bazlı otomatik analiz algoritması' },
+    ],
+  },
+  {
+    id: 'files',
+    label: 'Dosyalarım ve Paylaşımlar',
+    path: '/teacher/files',
+    icon: FileText,
+    status: 'active',
+    sortOrder: 12,
+    description: 'Kişisel ders dosyaları, tahta çıktıları, paylaşılan çalışma kağıtları ve arşiv.',
+  },
+  {
+    id: 'reports',
+    label: 'Raporlarım',
+    path: '/teacher/reports',
+    icon: BarChart3,
+    status: 'active',
+    sortOrder: 13,
+    description: 'Yoklama istatistikleri, ödev teslim analizleri ve sınıf başarı karneleri.',
+    children: [
+      { id: 'reports-attendance', label: 'Yoklama Raporları', path: '/teacher/reports/attendance', status: 'active' },
+      { id: 'reports-assignments', label: 'Ödev Teslim Raporları', path: '/teacher/reports/assignments', status: 'active' },
+      { id: 'reports-official', label: 'Resmi Dönem Sonu Raporları', path: '/teacher/reports/official', status: 'passive', missingDependency: 'MEB Resmi Raporlama Formatı Entegrasyonu' },
+    ],
+  },
+  {
+    id: 'settings',
+    label: 'Profil ve Ayarlar',
+    path: '/teacher/settings',
+    icon: Settings,
+    status: 'active',
+    sortOrder: 14,
+    description: 'Öğretmen kimlik bilgileri, branş ayarları, eşleştirilmiş akıllı tahtalar ve güvenlik.',
+    children: [
+      { id: 'settings-profile', label: 'Öğretmen Profili', path: '/teacher/settings/profile', status: 'active' },
+      { id: 'settings-devices', label: 'Eşleştirilmiş Cihazlar', path: '/teacher/settings/devices', status: 'active' },
+      { id: 'settings-security', label: 'Şifre & Güvenlik', path: '/teacher/settings/security', status: 'active' },
+    ],
+  },
+]
+
+export function getMenuItemByPath(pathname: string): TeacherMenuItem | undefined {
+  const clean = pathname.split('?')[0]
+  // Exact match
+  const exact = TEACHER_MENU_CONFIG.find((m) => m.path === clean)
+  if (exact) return exact
+
+  // Prefix match
+  return TEACHER_MENU_CONFIG.find((m) => clean.startsWith(m.path))
+}
+
+export function getSubMenuItemByPath(pathname: string): TeacherSubMenuItem | undefined {
+  const clean = pathname.split('?')[0]
+  for (const item of TEACHER_MENU_CONFIG) {
+    if (item.children) {
+      const sub = item.children.find((c) => c.path === clean || clean.startsWith(c.path))
+      if (sub) return sub
+    }
+  }
+  return undefined
+}

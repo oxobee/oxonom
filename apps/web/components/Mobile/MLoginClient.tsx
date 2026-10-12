@@ -147,13 +147,13 @@ export default function MLoginClient({ org, orgslug }: MLoginClientProps) {
         Boolean(registeredTeacher) ||
         (!isAdmin && !isStudent && lowerIdent.endsWith('@oxonom.com'))
 
-      let defaultNext = '/dashv2'
+      let defaultNext = '/teacher/dashboard'
       if (isAdmin) {
         defaultNext = activeOrgSlug ? `/orgs/${activeOrgSlug}/m-admin?openAccount=true` : '/m-admin?openAccount=true'
       } else if (isStudent) {
         defaultNext = activeOrgSlug ? `/orgs/${activeOrgSlug}/m-student` : '/m-student'
       } else if (isTeacher) {
-        defaultNext = '/dashv2'
+        defaultNext = '/teacher/dashboard'
       }
 
       const next = searchParams.get('next') || searchParams.get('redirect') || defaultNext
