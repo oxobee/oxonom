@@ -125,7 +125,7 @@ interface QuoteItem {
   author?: string
 }
 
-interface PanoSettings {
+export interface PanoSettings {
   pin: string
   idleTimeout: number // seconds: 0 = never, 30, 60, 120, 300, 600
   unlockType: 'pin' | 'slide'

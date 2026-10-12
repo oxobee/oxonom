@@ -17,8 +17,6 @@ import {
   Phone,
   CheckCircle2,
   PauseCircle,
-  PlayCircle,
-  ArrowRightLeft,
   Eye,
   X,
   Award,
@@ -239,7 +237,6 @@ export default function MStudentClient({
   const [isAttendanceModalOpen, setIsAttendanceModalOpen] = useState(false)
   const [selectedStudentForProfile, setSelectedStudentForProfile] = useState<MStudentItem | null>(null)
   const [activeProfileTab, setActiveProfileTab] = useState<'identity' | 'academic' | 'attendance' | 'parent'>('identity')
-  const [transferTargetStudent, setTransferTargetStudent] = useState<MStudentItem | null>(null)
 
   // Filtered Students
   const filteredStudents = useMemo(() => {
@@ -345,40 +342,6 @@ export default function MStudentClient({
     })
     setAttendanceRecords(newRecords)
     toast.success('Tüm sınıf "Burada" olarak işaretlendi.')
-  }
-
-  // Handle Toggle Status (Active / Frozen)
-  const handleToggleStatus = (student: MStudentItem) => {
-    const nextStatus: 'active' | 'frozen' = student.status === 'active' ? 'frozen' : 'active'
-    const updated: MStudentItem[] = students.map((s) => (s.id === student.id ? { ...s, status: nextStatus } : s))
-    saveStudents(updated)
-    toast.success(
-      nextStatus === 'frozen'
-        ? `${student.name} kaydı donduruldu.`
-        : `${student.name} kaydı tekrar aktifleştirildi.`
-    )
-  }
-
-  // Handle Transfer Class
-  const handleTransfer = (newClassName: string) => {
-    if (!transferTargetStudent) return
-    const updated = students.map((s) =>
-      s.id === transferTargetStudent.id
-        ? {
-            ...s,
-            className: newClassName,
-            mentorTeacher:
-              newClassName === '1-A Şubesi'
-                ? 'Özlem ZOR'
-                : newClassName === '1-B Şubesi'
-                ? 'Beyzanur SALMANLI'
-                : 'Sınıf Öğretmeni',
-          }
-        : s
-    )
-    saveStudents(updated)
-    toast.success(`${transferTargetStudent.name} ${newClassName} şubesine nakledildi.`)
-    setTransferTargetStudent(null)
   }
 
   // Staggered macro animations configuration (Rapid fluid entrance from Left)
@@ -716,36 +679,8 @@ export default function MStudentClient({
                       </div>
                     </div>
 
-                    {/* Action Buttons Row (NO EDIT BUTTON - restricted to School Principal) */}
-                    <div className="flex items-center gap-2 pt-0.5">
-                      {/* Nakil / Sınıf Değiştir */}
-                      <motion.button
-                        whileTap={{ scale: 0.92 }}
-                        type="button"
-                        onClick={() => setTransferTargetStudent(student)}
-                        aria-label="Nakil / sınıf değiştir"
-                        title="Nakil / Sınıf Değiştir"
-                        className="w-[44px] h-[44px] rounded-[14px] bg-[#F1F4F9] dark:bg-[#161D2E] hover:bg-[#E5EAF3] dark:hover:bg-gray-700 text-[#334155] dark:text-gray-300 flex items-center justify-center shrink-0 cursor-pointer transition-colors"
-                      >
-                        <ArrowRightLeft size={19} strokeWidth={1.9} />
-                      </motion.button>
-
-                      {/* Kaydı Dondur / Aktifleştir */}
-                      <motion.button
-                        whileTap={{ scale: 0.92 }}
-                        type="button"
-                        onClick={() => handleToggleStatus(student)}
-                        aria-label="Kaydı dondur"
-                        title={student.status === 'active' ? 'Kaydı Dondur' : 'Kaydı Aktifleştir'}
-                        className="w-[44px] h-[44px] rounded-[14px] bg-[#F1F4F9] dark:bg-[#161D2E] hover:bg-[#E5EAF3] dark:hover:bg-gray-700 text-[#334155] dark:text-gray-300 flex items-center justify-center shrink-0 cursor-pointer transition-colors"
-                      >
-                        {student.status === 'active' ? (
-                          <PauseCircle size={19} strokeWidth={1.9} />
-                        ) : (
-                          <PlayCircle size={19} strokeWidth={1.9} className="text-[#34D399]" />
-                        )}
-                      </motion.button>
-
+                    {/* Action Button Row */}
+                    <div className="pt-0.5">
                       {/* Profil Button (Full Details with Micro Spring) */}
                       <motion.button
                         whileTap={{ scale: 0.96 }}
@@ -754,7 +689,7 @@ export default function MStudentClient({
                           setSelectedStudentForProfile(student)
                           setActiveProfileTab('identity')
                         }}
-                        className="flex-1 h-[44px] rounded-[14px] bg-[#ECEBFD] dark:bg-indigo-950/70 hover:bg-[#DFDCFC] dark:hover:bg-indigo-900/80 text-[#4338CA] dark:text-indigo-300 text-[13px] font-extrabold flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-xs"
+                        className="w-full h-[44px] rounded-[14px] bg-[#ECEBFD] dark:bg-indigo-950/70 hover:bg-[#DFDCFC] dark:hover:bg-indigo-900/80 text-[#4338CA] dark:text-indigo-300 text-[13px] font-extrabold flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-xs"
                       >
                         <Eye size={18} strokeWidth={1.9} />
                         <span>Profil</span>

@@ -354,11 +354,11 @@ export function getOrgClassrooms(orgId?: number): ClassroomItem[] {
 }
 
 // Return classroom boards: empty by default so fresh teacher accounts start clean
-export function generateClassroomBoards(classItem?: ClassroomItem) {
+export function generateClassroomBoards(classItem?: ClassroomItem): any[] {
   return []
 }
 
-export const ALL_CLASSROOM_BOARDS = generateClassroomBoards(ALL_CLASSROOMS[0])
+export const ALL_CLASSROOM_BOARDS: any[] = generateClassroomBoards(ALL_CLASSROOMS[0])
 
 // Generate classroom homework for 9-A
 export function generateClassroomAssignments(classItem?: ClassroomItem) {
