@@ -41,6 +41,8 @@ import {
   ShieldCheck,
   FileCheck,
   X,
+  BarChart3,
+  BookOpen,
 } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
@@ -706,7 +708,7 @@ export default function DashV2Client({
           variants={containerVariants}
           initial="hidden"
           animate="show"
-          className="flex flex-col gap-4 p-4 w-full"
+          className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full"
         >
           {/* ── HERO ALANI (Dark #0A0D15 Rounded Card matching screenshot) ── */}
           <motion.section
@@ -841,587 +843,618 @@ export default function DashV2Client({
             </div>
           </motion.section>
 
-          {/* ── CARD 1: ÖĞRENCİ, AKILLI TAHTA & YOKLAMA ── */}
-          <motion.section
-            variants={itemVariants}
-            className="w-full bg-white dark:bg-[#121826] rounded-[28px] p-5 sm:p-6 border border-gray-100 dark:border-gray-800 shadow-sm space-y-4"
-          >
-            {/* Top Row: 2 Metrics */}
-            <div className="grid grid-cols-2 divide-x divide-gray-100 dark:divide-gray-800">
-              {/* Metric 1: Öğrenci */}
-              <Link
-                href={`/teacher/classes?class=${encodeURIComponent(selectedClass.code)}`}
-                className="pr-4 flex flex-col active:scale-98 transition-transform group"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-3xl font-black text-gray-900 dark:text-white tracking-tight group-hover:text-purple-600 transition-colors">
-                    {selectedClass.student_count || 30}
-                  </span>
-                  <div className="w-9 h-9 rounded-xl bg-[#EEF0FF] dark:bg-purple-950/60 text-[#6366F1] dark:text-purple-300 flex items-center justify-center">
-                    <Users size={17} />
-                  </div>
-                </div>
-                <span className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white mt-1">
-                  Öğrenci
-                </span>
-                <span className="text-[11px] text-gray-400 font-normal">
-                  Kayıtlı ve aktif
-                </span>
-              </Link>
-
-              {/* Metric 2: Akıllı Tahta (Links to /teacher/smartboard) */}
-              <Link
-                href="/teacher/smartboard"
-                className="pl-4 flex flex-col active:scale-98 transition-transform group"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-3xl font-black text-gray-900 dark:text-white tracking-tight group-hover:text-teal-600 transition-colors">
-                    {classBoards.length}
-                  </span>
-                  <div className="w-9 h-9 rounded-xl bg-[#E6F9F5] dark:bg-teal-950/60 text-[#0D9488] dark:text-teal-300 flex items-center justify-center">
-                    <Tv size={17} />
-                  </div>
-                </div>
-                <span className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white mt-1">
-                  Akıllı Tahta
-                </span>
-                <span className="text-[11px] text-gray-400 font-normal flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] inline-block animate-pulse" />
-                  {isBoardConnected ? 'Bağlantı Aktif' : 'Kullanıma hazır'}
-                </span>
-              </Link>
+          {/* ══════════════════════════════════════════════════════════════════════════
+              KATEGORİ 1: GÜNLÜK SINIF VE DEVAM YÖNETİMİ
+          ══════════════════════════════════════════════════════════════════════════ */}
+          <motion.div variants={itemVariants} className="space-y-3.5">
+            <div className="flex items-center gap-2.5">
+              <span className="px-2.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-black text-[11px] tracking-wider uppercase border border-indigo-500/20">
+                KATEGORİ 1
+              </span>
+              <h2 className="text-sm sm:text-base font-extrabold text-gray-900 dark:text-white tracking-tight">
+                Günlük Sınıf ve Devam Yönetimi
+              </h2>
+              <div className="flex-1 h-[1px] bg-gray-200/80 dark:bg-gray-800" />
             </div>
 
-            {/* Yoklama Divider: Dinamik Canlı Veri veya "YOKLAMA YAPILMADI" Uyarısı */}
-            <div className="border-t border-gray-100 dark:border-gray-800/80 pt-3.5 space-y-3">
-              <div className="flex items-center justify-between text-xs sm:text-sm">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-gray-900 dark:text-white">Yoklama</span>
-                  {attendanceData?.taken ? (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
-                      Tamamlandı • {attendanceData.updatedAt}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Kart 1A: Sınıf Rehberliği & Genel Durum */}
+              <div className="bg-white dark:bg-[#121826] rounded-2xl p-5 border border-gray-100 dark:border-gray-800 shadow-xs flex flex-col justify-between gap-4 group hover:border-indigo-500/30 transition-all">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                      <Users size={19} />
+                    </div>
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/50">
+                      Rehberlik Sınıfı
                     </span>
-                  ) : (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300">
-                      Bekliyor
-                    </span>
-                  )}
+                  </div>
+                  <div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl font-black text-gray-900 dark:text-white">
+                        {selectedClass.student_count || 1}
+                      </span>
+                      <span className="text-sm font-bold text-gray-500 dark:text-gray-400">
+                        Aktif Öğrenci
+                      </span>
+                    </div>
+                    <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mt-1">
+                      {selectedClass.code} Şubesi · Türk Dili ve Edebiyatı
+                    </p>
+                    <p className="text-[11px] text-gray-400 mt-0.5 truncate">
+                      Erçil UĞURLU (No: 101)
+                    </p>
+                  </div>
                 </div>
-                <span className="text-gray-400 text-xs">
-                  Toplam {attendanceData?.totalCount || selectedClass.student_count || 30} öğrenci
-                </span>
+
+                <Link
+                  href={`/teacher/classes?class=${encodeURIComponent(selectedClass.code)}`}
+                  className="w-full py-2 px-3 rounded-xl bg-gray-50 hover:bg-indigo-50 dark:bg-gray-800/60 dark:hover:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-xs font-bold flex items-center justify-between transition-colors cursor-pointer"
+                >
+                  <span>Sınıf Listesini Görüntüle</span>
+                  <ChevronRight size={14} />
+                </Link>
               </div>
 
-              {!attendanceData || !attendanceData.taken ? (
-                /* ── YOKLAMA YAPILMADI UYARI KARTI (Temayla Uyumlu, Tıklanınca Yoklamaya Gider) ── */
-                <Link
-                  href={`/teacher/attendance?class=${encodeURIComponent(selectedClass.code)}`}
-                  className="w-full p-3.5 rounded-2xl bg-amber-500/10 dark:bg-amber-950/40 border border-amber-300/80 dark:border-amber-700/60 flex items-center justify-between gap-3 active:scale-[0.98] transition-all group cursor-pointer hover:bg-amber-500/15"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                      <AlertCircle size={20} className="animate-pulse" />
+              {/* Kart 1B: Canlı Günlük Yoklama Takibi */}
+              <div className="bg-white dark:bg-[#121826] rounded-2xl p-5 border border-gray-100 dark:border-gray-800 shadow-xs flex flex-col justify-between gap-4 group hover:border-emerald-500/30 transition-all">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                      <CheckSquare size={19} />
                     </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-black tracking-wide text-amber-700 dark:text-amber-300 uppercase">
-                          YOKLAMA YAPILMADI
-                        </span>
-                        <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                    {attendanceData?.taken ? (
+                      <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 flex items-center gap-1 border border-emerald-200/60 dark:border-emerald-800/60">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                        Tamamlandı • {attendanceData.updatedAt}
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 flex items-center gap-1 border border-amber-200/60 dark:border-amber-800/60">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping inline-block" />
+                        Yoklama Bekliyor
+                      </span>
+                    )}
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-900 dark:text-white">
+                      Günlük Sınıf Yoklaması
+                    </h3>
+                    <p className="text-[11px] text-gray-400 mt-0.5">
+                      {selectedClass.code} Şubesi için bugünkü devam kaydı
+                    </p>
+                  </div>
+
+                  {attendanceData?.taken ? (
+                    <div className="space-y-2 pt-1">
+                      <div className="w-full h-2.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden flex">
+                        <div
+                          style={{
+                            width: `${
+                              ((attendanceData.presentCount || 0) /
+                                (attendanceData.totalCount || selectedClass.student_count || 1)) *
+                              100
+                            }%`,
+                          }}
+                          className="h-full bg-emerald-500 rounded-l-full"
+                        />
+                        <div
+                          style={{
+                            width: `${
+                              ((attendanceData.absentCount || 0) /
+                                (attendanceData.totalCount || selectedClass.student_count || 1)) *
+                              100
+                            }%`,
+                          }}
+                          className="h-full bg-rose-500 rounded-r-full"
+                        />
                       </div>
-                      <p className="text-[11px] text-amber-800/80 dark:text-amber-300/80 font-medium truncate mt-0.5">
-                        Bugünkü yoklamayı başlatmak için dokunun
+                      <div className="grid grid-cols-2 gap-2 text-xs font-bold">
+                        <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/50 text-center">
+                          {attendanceData.presentCount} Mevcut
+                        </div>
+                        <div className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200/50 dark:border-rose-800/50 text-center">
+                          {attendanceData.absentCount} Eksik
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-300/60 dark:border-amber-700/60 text-xs space-y-1">
+                      <div className="font-extrabold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                        <AlertCircle size={14} className="animate-pulse" />
+                        <span>Bugünkü yoklama henüz alınmadı</span>
+                      </div>
+                      <p className="text-[11px] text-amber-700/80 dark:text-amber-400/80">
+                        Dersi başlatmadan önce lütfen yoklamayı tamamlayınız.
                       </p>
                     </div>
-                  </div>
-                  <div className="h-8 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-[#0A0D15] font-black text-xs flex items-center gap-1 shrink-0 shadow-sm transition-colors">
-                    <span>Yoklama Al</span>
-                    <ChevronRight size={13} strokeWidth={2.5} />
-                  </div>
-                </Link>
-              ) : (
-                /* ── CANLI YOKLAMA ÇUBUĞU & KUTULARI (Görsel Tasarıma Birebir Uygun) ── */
-                <div className="space-y-3">
-                  {/* Split Continuous Progress Bar */}
-                  <div className="w-full h-3 bg-gray-100 dark:bg-[#1E293B] rounded-full overflow-hidden flex">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{
-                        width: `${
-                          ((attendanceData.presentCount || 0) /
-                            (attendanceData.totalCount || selectedClass.student_count || 30)) *
-                          100
-                        }%`,
-                      }}
-                      transition={{ duration: 0.8, ease: 'easeOut' }}
-                      className="h-full bg-[#10B981] dark:bg-[#34D399] rounded-l-full"
-                      title={`${attendanceData.presentCount} Mevcut`}
-                    />
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{
-                        width: `${
-                          ((attendanceData.absentCount || 0) /
-                            (attendanceData.totalCount || selectedClass.student_count || 30)) *
-                          100
-                        }%`,
-                      }}
-                      transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }}
-                      className="h-full bg-[#EF4444] rounded-r-full"
-                      title={`${attendanceData.absentCount} Eksik`}
-                    />
-                  </div>
-
-                  {/* Dual Badges: [X Mevcut] / [Y Eksik] */}
-                  <div className="grid grid-cols-2 gap-2.5 pt-0.5">
-                    <Link
-                      href={`/teacher/attendance?class=${encodeURIComponent(selectedClass.code)}`}
-                      className="bg-[#E8F8F0] dark:bg-[#06241D] text-[#059669] dark:text-[#34D399] font-bold text-xs py-2.5 sm:py-3 px-3.5 sm:px-4 rounded-2xl flex items-center gap-2 border border-emerald-200/60 dark:border-emerald-600/30 active:scale-98 transition-all hover:border-emerald-500"
-                    >
-                      <span className="text-lg sm:text-xl font-black text-[#059669] dark:text-[#34D399]">
-                        {attendanceData.presentCount}
-                      </span>
-                      <span className="text-xs sm:text-sm font-bold text-[#059669] dark:text-[#34D399]">
-                        Mevcut
-                      </span>
-                    </Link>
-                    <Link
-                      href={`/teacher/attendance?class=${encodeURIComponent(selectedClass.code)}`}
-                      className="bg-[#FDECEC] dark:bg-[#250F16] text-[#DC2626] dark:text-[#F87171] font-bold text-xs py-2.5 sm:py-3 px-3.5 sm:px-4 rounded-2xl flex items-center gap-2 border border-rose-200/60 dark:border-rose-600/30 active:scale-98 transition-all hover:border-rose-500"
-                    >
-                      <span className="text-lg sm:text-xl font-black text-[#DC2626] dark:text-[#F87171]">
-                        {attendanceData.absentCount}
-                      </span>
-                      <span className="text-xs sm:text-sm font-bold text-[#DC2626] dark:text-[#F87171]">
-                        Eksik
-                      </span>
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </div>
-          </motion.section>
-
-          {/* ── SECTION DIVIDER: HIZLI ERİŞİM & ÇALIŞMA ALANI ── */}
-          <motion.div variants={itemVariants} className="pt-2 pb-0.5 px-1 flex items-center gap-2.5">
-            <div className="w-4 h-1 bg-[#34D399] rounded-full" />
-            <span className="text-[11px] uppercase tracking-wider font-extrabold text-gray-500 dark:text-gray-400">
-              HIZLI ERİŞİM & ÇALIŞMA ALANI
-            </span>
-            <div className="flex-1 h-[1px] bg-gray-200/80 dark:bg-gray-800" />
-          </motion.div>
-
-          {/* ── CARD 2: AKILLI TAHTALAR ── */}
-          <motion.section
-            variants={itemVariants}
-            className="w-full bg-white dark:bg-[#121826] rounded-[26px] p-5 border border-gray-100 dark:border-gray-800 shadow-sm space-y-3.5"
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-[#E6F9F5] dark:bg-teal-950/60 text-[#0D9488] dark:text-teal-400 flex items-center justify-center shrink-0">
-                  <Tv size={18} />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-gray-900 dark:text-white leading-tight">
-                    Akıllı Tahtalar
-                  </h3>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {selectedClass.code} Sınıf Tahtası · Hazır
-                  </p>
-                </div>
-              </div>
-
-              <span className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold text-xs px-2.5 py-1 rounded-full">
-                {classBoards.length} tahta
-              </span>
-            </div>
-
-            {/* Featured Subcard (Shows the latest created board for the selected class with Date & Time, or Empty State) */}
-            {latestClassBoard ? (
-              <div className="bg-[#F8FAFC] dark:bg-[#0A0D15] p-4 rounded-2xl border border-gray-200/60 dark:border-gray-800/80 space-y-3">
-                <div>
-                  <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-gray-900 dark:text-white leading-snug">
-                    <span className="w-2 h-2 rounded-full bg-[#10B981] shrink-0 animate-pulse" />
-                    <span className="truncate">{latestClassBoard.title}</span>
-                  </div>
-
-                  {/* Date & Time clearly displayed as requested */}
-                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                    <span className="inline-flex items-center gap-1 font-bold text-[11px] text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200/60 dark:border-emerald-800/60">
-                      <Clock size={11} />
-                      <span>{latestClassBoard.time}</span>
-                    </span>
-                    <span className="inline-flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400 font-medium">
-                      <Calendar size={11} />
-                      <span>{latestClassBoard.date}</span>
-                    </span>
-                  </div>
-
-                  <p className="text-[11px] text-gray-400 mt-1 leading-relaxed">
-                    {latestClassBoard.description || 'İnteraktif çizim ve ders sunumu için hazır'}
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    const url = latestClassBoard.url || `/board/${latestClassBoard.id}`
-                    window.open(url, '_blank')
-                  }}
-                  className="w-full py-3 px-4 bg-[#111827] dark:bg-[#1E293B] hover:bg-black text-white font-bold text-xs sm:text-sm rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-sm active:scale-98 transition-all"
-                >
-                  <span>Tahtayı Aç</span>
-                  <ArrowUpRight size={15} />
-                </button>
-              </div>
-            ) : (
-              <div className="bg-[#F8FAFC] dark:bg-[#0A0D15] p-5 rounded-2xl border border-dashed border-gray-200 dark:border-gray-800/80 text-center flex flex-col items-center justify-center gap-2.5">
-                <div className="w-11 h-11 rounded-2xl bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400 flex items-center justify-center">
-                  <Tv size={20} />
-                </div>
-                <div className="space-y-0.5">
-                  <h4 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white">
-                    Henüz Ders Tahtası Oluşturulmadı
-                  </h4>
-                  <p className="text-[11px] text-gray-400 max-w-xs">
-                    Sınıfınız için ilk akıllı ders tahtasını oluşturup derse hemen başlayabilirsiniz.
-                  </p>
-                </div>
-                <Link
-                  href="/teacher/smartboard"
-                  className="mt-1 px-3.5 py-2 rounded-xl bg-[#34D399] hover:bg-[#2ee59d] text-[#0A0D15] font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
-                >
-                  <Plus size={14} strokeWidth={2.5} />
-                  <span>+ İlk Tahtayı Oluştur</span>
-                </Link>
-              </div>
-            )}
-
-            {/* Bottom Links */}
-            <div className="flex items-center justify-between pt-1 px-1 text-xs">
-              <Link
-                href="/teacher/smartboard"
-                className="text-[#0D9488] dark:text-teal-400 font-bold hover:underline"
-              >
-                + Yeni Tahta Oluştur
-              </Link>
-              <Link
-                href="/teacher/smartboard"
-                className="text-gray-600 dark:text-gray-400 font-semibold hover:underline flex items-center gap-1"
-              >
-                <span>Tüm Tahtaları Gör</span>
-                <ChevronRight size={14} />
-              </Link>
-            </div>
-          </motion.section>
-
-          {/* ── CARD 3: VERİLEN ÖDEVLER ── */}
-          <motion.section
-            variants={itemVariants}
-            className="w-full bg-white dark:bg-[#121826] rounded-[24px] p-4.5 sm:p-5 border border-gray-100 dark:border-gray-800 shadow-sm flex items-center justify-between gap-3.5"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-2xl bg-[#EEF0FF] dark:bg-purple-950/60 text-[#6366F1] dark:text-purple-300 flex items-center justify-center shrink-0">
-                <CheckSquare size={18} />
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-sm font-bold text-gray-900 dark:text-white leading-tight">
-                  Verilen Ödevler
-                </h3>
-                <p className="text-xs text-gray-400 truncate mt-0.5">
-                  {assignments.length > 0 ? `${assignments.length} aktif · Teslimler sürüyor` : 'Henüz ödev verilmedi'}
-                </p>
-              </div>
-            </div>
-
-            <Link
-              href="/teacher/assignments"
-              className="bg-[#EEF0FF] dark:bg-indigo-950/50 text-[#4338CA] dark:text-indigo-300 font-bold text-xs px-4 py-2 rounded-full flex items-center gap-1 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition-colors shrink-0"
-            >
-              <span>Ödevlere Git</span>
-              <ChevronRight size={13} />
-            </Link>
-          </motion.section>
-
-          {/* ── CARD 4: SINIFLAR & ŞUBELER ── */}
-          <motion.section
-            variants={itemVariants}
-            className="w-full bg-white dark:bg-[#121826] rounded-[24px] p-4.5 sm:p-5 border border-gray-100 dark:border-gray-800 shadow-sm flex items-center justify-between gap-3.5"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-2xl bg-[#FFF4ED] dark:bg-orange-950/60 text-[#EA580C] dark:text-orange-300 flex items-center justify-center shrink-0">
-                <Users size={18} />
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-sm font-bold text-gray-900 dark:text-white leading-tight">
-                  Sınıflar & Şubeler
-                </h3>
-                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                  {siblingClassrooms.map((cls) => (
-                    <button
-                      key={cls.id}
-                      type="button"
-                      onClick={() => handleSelectClass(cls)}
-                      className={`text-xs font-bold px-2.5 py-1 rounded-md cursor-pointer transition-colors ${
-                        cls.code === selectedClass.code
-                          ? 'bg-[#FFF4ED] dark:bg-orange-950/50 border border-[#FDBA74] dark:border-orange-700 text-[#C2410C] dark:text-orange-200'
-                          : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 font-medium'
-                      }`}
-                    >
-                      {cls.code} (30)
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setIsClassSheetOpen(true)}
-              className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors shrink-0 cursor-pointer"
-              title="Tüm Sınıfları Gör"
-            >
-              <ChevronRight size={15} />
-            </button>
-          </motion.section>
-
-          {/* ── CARD 5: DOSYALARIM & PAYLAŞIMLAR ── */}
-          <motion.section
-            variants={itemVariants}
-            className="w-full bg-white dark:bg-[#121826] rounded-[24px] p-4.5 sm:p-5 border border-gray-100 dark:border-gray-800 shadow-sm flex items-center justify-between gap-3.5"
-          >
-            <Link href="/teacher/files" className="flex items-center gap-3 min-w-0 flex-1">
-              <div className="w-10 h-10 rounded-2xl bg-[#EFF6FF] dark:bg-sky-950/60 text-[#2563EB] dark:text-sky-300 flex items-center justify-center shrink-0">
-                <FileText size={18} />
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-sm font-bold text-gray-900 dark:text-white leading-tight">
-                  Dosyalarım ve Paylaşımlar
-                </h3>
-                <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">
-                  Kişisel ders dosyaları, tahta çıktıları ve arşiv
-                </p>
-              </div>
-            </Link>
-
-            <span className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold text-xs px-3 py-1 rounded-full shrink-0">
-              18 dosya
-            </span>
-          </motion.section>
-
-          {/* ── SECTION: AÇIK AKILLI TAHTALARIM (QR İLE BAĞLANILAN OTURUMLAR) ── */}
-          <motion.section variants={itemVariants} className="pt-2 space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
-                    <QrCode size={16} className="text-emerald-500" />
-                    <span>Açık Akıllı Tahtalarım</span>
-                  </h2>
-                  {activeQrBoards.length > 0 ? (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      {activeQrBoards.length} QR Oturumu Açık
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-                      0 Açık Oturum
-                    </span>
                   )}
                 </div>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  QR kod ile bağlandığınız ve açık kalan akıllı tahta oturumları
-                </p>
+
+                <Link
+                  href={`/teacher/attendance?class=${encodeURIComponent(selectedClass.code)}`}
+                  className={`w-full py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-between transition-all cursor-pointer ${
+                    attendanceData?.taken
+                      ? 'bg-gray-50 hover:bg-emerald-50 dark:bg-gray-800/60 dark:hover:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400'
+                      : 'bg-amber-500 hover:bg-amber-600 text-black shadow-xs'
+                  }`}
+                >
+                  <span>{attendanceData?.taken ? 'Yoklama Detaylarını Aç' : 'Yoklama Al'}</span>
+                  <ChevronRight size={14} />
+                </Link>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setIsConnectModalOpen(true)}
-                className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 flex items-center gap-1 shrink-0 cursor-pointer"
-              >
-                <Plus size={13} />
-                <span>Tahtaya Bağlan</span>
-              </button>
+              {/* Kart 1C: Bugünkü Canlı Ders Akışı */}
+              <div className="bg-white dark:bg-[#121826] rounded-2xl p-5 border border-gray-100 dark:border-gray-800 shadow-xs flex flex-col justify-between gap-4 group hover:border-sky-500/30 transition-all md:col-span-2 lg:col-span-1">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 flex items-center justify-center">
+                      <Calendar size={19} />
+                    </div>
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border border-sky-200/50 dark:border-sky-800/50">
+                      Bugünkü Dersler
+                    </span>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-900 dark:text-white">
+                      Ders Programı Akışı
+                    </h3>
+                    <p className="text-[11px] text-gray-400 mt-0.5">
+                      Haftalık ders dağılımına göre planlanan saatler
+                    </p>
+                  </div>
+
+                  <div className="space-y-2 pt-0.5">
+                    <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 flex items-center justify-between text-xs">
+                      <div className="space-y-0.5 min-w-0">
+                        <div className="font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                          <span>1. Ders · Türk Dili ve Edebiyatı</span>
+                        </div>
+                        <span className="text-[11px] text-gray-500 dark:text-gray-400 block truncate">
+                          9/A Şubesi · Derslik: 9-A
+                        </span>
+                      </div>
+                      <span className="font-mono text-[11px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md shrink-0">
+                        09:00 - 09:40
+                      </span>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 flex items-center justify-between text-xs">
+                      <div className="space-y-0.5 min-w-0">
+                        <div className="font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-indigo-400" />
+                          <span>2. Ders · Türk Dili ve Edebiyatı</span>
+                        </div>
+                        <span className="text-[11px] text-gray-500 dark:text-gray-400 block truncate">
+                          9/A Şubesi · Derslik: 9-A
+                        </span>
+                      </div>
+                      <span className="font-mono text-[11px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-md shrink-0">
+                        09:50 - 10:30
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <Link
+                  href="/teacher/schedule"
+                  className="w-full py-2 px-3 rounded-xl bg-gray-50 hover:bg-sky-50 dark:bg-gray-800/60 dark:hover:bg-sky-950/40 text-sky-600 dark:text-sky-400 text-xs font-bold flex items-center justify-between transition-colors cursor-pointer"
+                >
+                  <span>Haftalık Programın Tamamı</span>
+                  <ChevronRight size={14} />
+                </Link>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* ══════════════════════════════════════════════════════════════════════════
+              KATEGORİ 2: AKILLI TAHTA & İNTERAKTİF DERSLİK
+          ══════════════════════════════════════════════════════════════════════════ */}
+          <motion.div variants={itemVariants} className="space-y-3.5">
+            <div className="flex items-center gap-2.5">
+              <span className="px-2.5 py-0.5 rounded-md bg-teal-500/10 text-teal-600 dark:text-teal-400 font-black text-[11px] tracking-wider uppercase border border-teal-500/20">
+                KATEGORİ 2
+              </span>
+              <h2 className="text-sm sm:text-base font-extrabold text-gray-900 dark:text-white tracking-tight">
+                Akıllı Tahta & İnteraktif Derslik
+              </h2>
+              <div className="flex-1 h-[1px] bg-gray-200/80 dark:bg-gray-800" />
             </div>
 
-            {/* Content: Active QR Sessions or Connect Prompt */}
-            {activeQrBoards.length > 0 ? (
-              <div className="space-y-2.5">
-                {activeQrBoards.map((board) => {
-                  const isCurrentLocking = lockingSessionId === board.sessionId
-                  const isCurrentLoggingOut = loggingOutSessionId === board.sessionId
-                  const remoteUrl = `/remote?session=${encodeURIComponent(board.sessionId)}`
-
-                  return (
-                    <div
-                      key={board.sessionId}
-                      className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-[#121826] border border-emerald-500/30 dark:border-emerald-500/20 shadow-xs hover:border-emerald-500/50 transition-all flex flex-col gap-3 group"
-                    >
-                      {/* Top Row: Board Identity & Live Badge */}
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                            <Tv size={17} />
-                          </div>
-                          <div className="min-w-0">
-                            <h3 className="text-xs sm:text-[13px] font-bold text-gray-900 dark:text-white truncate">
-                              {board.boardName || 'Oxonom Akıllı Tahta'}
-                            </h3>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
-                                Kod: {board.code}
-                              </span>
-                              <span className="text-[10px] text-gray-400">
-                                • {board.className || selectedClass?.name || '1-A Şubesi'}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full shrink-0 border border-emerald-200/50 dark:border-emerald-800/50">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                          QR ile Açık
-                        </span>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Kart 2A: Ders Tahtaları Tuvali */}
+              <div className="bg-white dark:bg-[#121826] rounded-2xl p-5 border border-gray-100 dark:border-gray-800 shadow-xs flex flex-col justify-between gap-4">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
+                        <Tv size={19} />
                       </div>
-
-                      {/* Info Row: Teacher & Status */}
-                      <div className="px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400">
-                        <div className="flex items-center gap-1.5 truncate">
-                          <GraduationCap size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-                          <span className="font-medium text-gray-900 dark:text-gray-200 truncate">
-                            {board.teacherName || teacherName}
-                          </span>
-                        </div>
-                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold shrink-0">
-                          Oturum Aktif
-                        </span>
-                      </div>
-
-                      {/* Action Buttons: Remote Control, Lock Board, Logout */}
-                      <div className="grid grid-cols-3 gap-2 pt-1">
-                        {/* 1. Kumandayı Aç */}
-                        <a
-                          href={remoteUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="py-2 px-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-[11px] font-bold flex items-center justify-center gap-1 transition-all shadow-xs"
-                          title="Telefon Kumandasını Aç"
-                        >
-                          <Smartphone size={13} />
-                          <span>Kumanda</span>
-                        </a>
-
-                        {/* 2. Tahtayı Kilitle */}
-                        <button
-                          type="button"
-                          onClick={() => handleLockBoard(board.sessionId)}
-                          disabled={isCurrentLocking}
-                          className="py-2 px-2 rounded-xl bg-amber-50 hover:bg-amber-100 active:scale-95 dark:bg-amber-950/40 dark:hover:bg-amber-900/40 text-amber-800 dark:text-amber-200 border border-amber-200/80 dark:border-amber-800/50 text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer disabled:opacity-50"
-                          title="Akıllı Tahtayı Kilitle"
-                        >
-                          {isCurrentLocking ? (
-                            <RotateCw size={13} className="animate-spin text-amber-600" />
-                          ) : (
-                            <Lock size={13} />
-                          )}
-                          <span>Kilitle</span>
-                        </button>
-
-                        {/* 3. Oturumu Kapat */}
-                        <button
-                          type="button"
-                          onClick={() => handleLogoutBoard(board.sessionId)}
-                          disabled={isCurrentLoggingOut}
-                          className="py-2 px-2 rounded-xl bg-rose-50 hover:bg-rose-100 active:scale-95 dark:bg-rose-950/40 dark:hover:bg-rose-900/40 text-rose-700 dark:text-rose-300 border border-rose-200/80 dark:border-rose-800/50 text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer disabled:opacity-50"
-                          title="Tahtadaki Oturumu Kapat"
-                        >
-                          {isCurrentLoggingOut ? (
-                            <RotateCw size={13} className="animate-spin text-rose-600" />
-                          ) : (
-                            <LogOut size={13} />
-                          )}
-                          <span>Çıkış</span>
-                        </button>
+                      <div>
+                        <h3 className="text-sm font-bold text-gray-900 dark:text-white leading-tight">
+                          Ders Tahtaları
+                        </h3>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {selectedClass.code} Sınıfı için interaktif ders panoları
+                        </p>
                       </div>
                     </div>
-                  )
-                })}
+                    <span className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold text-xs px-2.5 py-1 rounded-full">
+                      {classBoards.length} tahta
+                    </span>
+                  </div>
+
+                  {latestClassBoard ? (
+                    <div className="bg-gray-50 dark:bg-[#0A0D15] p-4 rounded-xl border border-gray-200/60 dark:border-gray-800/80 space-y-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-gray-900 dark:text-white truncate">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 animate-pulse" />
+                          <span className="truncate">{latestClassBoard.title}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span className="inline-flex items-center gap-1 font-bold text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200/60 dark:border-emerald-800/60">
+                            <Clock size={10} />
+                            <span>{latestClassBoard.time}</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1 text-[10px] text-gray-500 dark:text-gray-400 font-medium">
+                            <Calendar size={10} />
+                            <span>{latestClassBoard.date}</span>
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
+                        {latestClassBoard.description || 'İnteraktif çizim ve ders sunumu için hazır tahta.'}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const url = latestClassBoard.url || `/board/${latestClassBoard.id}`
+                          window.open(url, '_blank')
+                        }}
+                        className="w-full py-2.5 px-4 bg-gray-900 hover:bg-black dark:bg-[#1E293B] dark:hover:bg-gray-700 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-sm active:scale-98 transition-all"
+                      >
+                        <span>Tahtayı Aç</span>
+                        <ArrowUpRight size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="bg-gray-50 dark:bg-[#0A0D15] p-6 rounded-xl border border-dashed border-gray-200 dark:border-gray-800 text-center flex flex-col items-center justify-center gap-2">
+                      <Tv size={24} className="text-teal-500/70" />
+                      <p className="text-xs font-bold text-gray-800 dark:text-gray-200">
+                        Henüz Ders Tahtası Oluşturulmadı
+                      </p>
+                      <p className="text-[11px] text-gray-400 max-w-xs">
+                        Sınıfınız için ilk ders tahtasını oluşturup çizim yapmaya hemen başlayabilirsiniz.
+                      </p>
+                      <Link
+                        href="/teacher/smartboard"
+                        className="mt-1 px-3.5 py-1.5 rounded-xl bg-teal-500 hover:bg-teal-600 text-white font-bold text-xs flex items-center gap-1 shadow-sm active:scale-95 transition-all cursor-pointer"
+                      >
+                        <Plus size={13} />
+                        <span>İlk Tahtayı Oluştur</span>
+                      </Link>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between pt-1 border-t border-gray-100 dark:border-gray-800 text-xs">
+                  <Link
+                    href="/teacher/smartboard"
+                    className="text-teal-600 dark:text-teal-400 font-bold hover:underline"
+                  >
+                    + Yeni Tahta Oluştur
+                  </Link>
+                  <Link
+                    href="/teacher/smartboard"
+                    className="text-gray-500 dark:text-gray-400 font-semibold hover:underline flex items-center gap-1"
+                  >
+                    <span>Tüm Tahtalar</span>
+                    <ChevronRight size={13} />
+                  </Link>
+                </div>
               </div>
-            ) : (
-              /* Empty State: Interactive QR Connect Prompt */
-              <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#121826] border border-gray-100 dark:border-gray-800 text-center flex flex-col items-center justify-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/60 dark:border-emerald-800/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                  <QrCode size={24} />
+
+              {/* Kart 2B: Açık Akıllı Tahtalarım & QR Oturum Merkezi */}
+              <div className="bg-white dark:bg-[#121826] rounded-2xl p-5 border border-gray-100 dark:border-gray-800 shadow-xs flex flex-col justify-between gap-4">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                        <QrCode size={19} />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-gray-900 dark:text-white leading-tight">
+                          Açık Akıllı Tahtalarım
+                        </h3>
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          QR kod ile bağlanılan aktif tahta oturumları
+                        </p>
+                      </div>
+                    </div>
+                    {activeQrBoards.length > 0 ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        {activeQrBoards.length} Aktif
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                        0 Oturum
+                      </span>
+                    )}
+                  </div>
+
+                  {activeQrBoards.length > 0 ? (
+                    <div className="space-y-2.5 max-h-56 overflow-y-auto">
+                      {activeQrBoards.map((board) => {
+                        const isCurrentLocking = lockingSessionId === board.sessionId
+                        const isCurrentLoggingOut = loggingOutSessionId === board.sessionId
+                        const remoteUrl = `/remote?session=${encodeURIComponent(board.sessionId)}`
+
+                        return (
+                          <div
+                            key={board.sessionId}
+                            className="p-3 rounded-xl bg-gray-50 dark:bg-[#0A0D15] border border-emerald-500/30 dark:border-emerald-500/20 space-y-2.5"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="min-w-0">
+                                <h4 className="text-xs font-bold text-gray-900 dark:text-white truncate">
+                                  {board.boardName || 'Oxonom Akıllı Tahta'}
+                                </h4>
+                                <span className="font-mono text-[10px] text-gray-500 dark:text-gray-400">
+                                  Kod: {board.code} · {board.className || selectedClass.code}
+                                </span>
+                              </div>
+                              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md">
+                                Oturum Aktif
+                              </span>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-2">
+                              <a
+                                href={remoteUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="py-1.5 px-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold flex items-center justify-center gap-1 transition-all"
+                              >
+                                <Smartphone size={12} />
+                                <span>Kumanda</span>
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => handleLockBoard(board.sessionId)}
+                                disabled={isCurrentLocking}
+                                className="py-1.5 px-2 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 border border-amber-200/80 dark:border-amber-800/50 text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer disabled:opacity-50"
+                              >
+                                {isCurrentLocking ? (
+                                  <RotateCw size={12} className="animate-spin text-amber-600" />
+                                ) : (
+                                  <Lock size={12} />
+                                )}
+                                <span>Kilitle</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleLogoutBoard(board.sessionId)}
+                                disabled={isCurrentLoggingOut}
+                                className="py-1.5 px-2 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200/80 dark:border-rose-800/50 text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer disabled:opacity-50"
+                              >
+                                {isCurrentLoggingOut ? (
+                                  <RotateCw size={12} className="animate-spin text-rose-600" />
+                                ) : (
+                                  <LogOut size={12} />
+                                )}
+                                <span>Çıkış</span>
+                              </button>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <div className="p-4 rounded-xl bg-gray-50 dark:bg-[#0A0D15] border border-dashed border-gray-200 dark:border-gray-800 text-center flex flex-col items-center justify-center gap-2">
+                      <QrCode size={24} className="text-emerald-500/70" />
+                      <p className="text-xs font-bold text-gray-800 dark:text-gray-200">
+                        Açık QR Oturumu Bulunmuyor
+                      </p>
+                      <p className="text-[11px] text-gray-400 max-w-xs">
+                        Tahtadaki QR kodu okutarak veya PIN kodunu girerek cep telefonunuzdan kumanda edebilirsiniz.
+                      </p>
+                    </div>
+                  )}
                 </div>
 
-                <div className="max-w-xs space-y-1">
-                  <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white">
-                    Açık QR Oturumu Bulunmuyor
-                  </h3>
-                  <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed">
-                    Sınıftaki akıllı tahtayı telefonunuzdan yönetmek için tahta ekranında gösterilen QR kodu okutun veya 6 haneli kodu girin.
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2 pt-1 w-full sm:w-auto">
+                <div className="flex items-center gap-2 pt-1 border-t border-gray-100 dark:border-gray-800">
                   <button
                     type="button"
                     onClick={() => setIsConnectModalOpen(true)}
-                    className="flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="flex-1 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs"
                   >
                     <QrCode size={14} />
                     <span>QR ile Tahtaya Bağlan</span>
                   </button>
-
                   <a
                     href="/pano"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-semibold transition-all flex items-center justify-center gap-1"
-                    title="Yeni bir akıllı tahta (Pano) sekmesi aç"
+                    className="py-2 px-3 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold text-xs flex items-center justify-center gap-1 transition-all"
                   >
                     <span>Tahta Aç</span>
                     <ArrowUpRight size={13} />
                   </a>
                 </div>
               </div>
-            )}
-          </motion.section>
+            </div>
+          </motion.div>
 
-          {/* ── SECTION: TAHTAYA BAĞLAN CTA BUTONU ── */}
-          <motion.section variants={itemVariants} className="pt-2">
-            <button
-              type="button"
-              onClick={() => setIsConnectModalOpen(true)}
-              className="w-full p-4 rounded-2xl bg-[#0A0D15] dark:bg-[#131C31] hover:bg-black text-white flex items-center justify-between gap-3.5 shadow-md active:scale-98 transition-all cursor-pointer group border border-gray-800/80"
-            >
-              <div className="flex items-center gap-3.5 min-w-0 text-left">
-                <div className="w-11 h-11 rounded-xl bg-white/10 flex items-center justify-center text-[#34D399] shrink-0 group-hover:scale-105 transition-transform">
-                  <QrCode size={22} />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-sm sm:text-base text-white tracking-tight">
-                      Tahtaya Bağlan
+          {/* ══════════════════════════════════════════════════════════════════════════
+              KATEGORİ 3: ÖDEVLER, DOSYALAR VE HIZLI ARAÇLAR
+          ══════════════════════════════════════════════════════════════════════════ */}
+          <motion.div variants={itemVariants} className="space-y-3.5">
+            <div className="flex items-center gap-2.5">
+              <span className="px-2.5 py-0.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 font-black text-[11px] tracking-wider uppercase border border-purple-500/20">
+                KATEGORİ 3
+              </span>
+              <h2 className="text-sm sm:text-base font-extrabold text-gray-900 dark:text-white tracking-tight">
+                Ödevler, Dosyalar ve Hızlı Araçlar
+              </h2>
+              <div className="flex-1 h-[1px] bg-gray-200/80 dark:bg-gray-800" />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Kart 3A: Verilen Ödevler */}
+              <div className="bg-white dark:bg-[#121826] rounded-2xl p-5 border border-gray-100 dark:border-gray-800 shadow-xs flex flex-col justify-between gap-4 group hover:border-purple-500/30 transition-all">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                      <BookOpen size={19} />
+                    </div>
+                    <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200/50 dark:border-purple-800/50">
+                      {assignments.length > 0 ? `${assignments.length} Aktif Ödev` : 'Ödev Havuzu'}
                     </span>
-                    {isBoardConnected && (
-                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#10B981] text-white">
-                        Aktif
-                      </span>
-                    )}
                   </div>
-                  <p className="text-xs text-gray-400 truncate mt-0.5">
-                    QR kod veya 6 haneli kod ile bağlanın
-                  </p>
+
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-900 dark:text-white">
+                      Verilen Ödevler ve Değerlendirme
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      {selectedClass.code} Şubesi · Erçil UĞURLU için verilen ödevler, teslim durumları ve puanlama ekranı.
+                    </p>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 flex items-center justify-between text-xs">
+                    <span className="text-gray-500 dark:text-gray-400">Son Durum:</span>
+                    <span className="font-bold text-gray-900 dark:text-white">
+                      {assignments.length > 0 ? `${assignments.length} ödev yayında` : 'Yeni ödev oluşturmaya hazır'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 pt-1">
+                  <Link
+                    href="/teacher/assignments"
+                    className="flex-1 py-2 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                  >
+                    <CheckSquare size={14} />
+                    <span>Ödevlere Git</span>
+                  </Link>
                 </div>
               </div>
 
-              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0 group-hover:bg-white/20 transition-colors">
-                <ArrowUpRight size={16} className="text-white" />
+              {/* Kart 3B: Dosyalarım ve Paylaşımlar */}
+              <div className="bg-white dark:bg-[#121826] rounded-2xl p-5 border border-gray-100 dark:border-gray-800 shadow-xs flex flex-col justify-between gap-4 group hover:border-sky-500/30 transition-all">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 flex items-center justify-center">
+                      <FolderOpen size={19} />
+                    </div>
+                    <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border border-sky-200/50 dark:border-sky-800/50">
+                      Materyal Havuzu
+                    </span>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-900 dark:text-white">
+                      Dosyalarım ve Paylaşımlar
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      Ders sunumları, PDF çalışma föyleri, tahta çizim çıktıları ve ders arşivi.
+                    </p>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 flex items-center justify-between text-xs">
+                    <span className="text-gray-500 dark:text-gray-400">Bulut Depolama:</span>
+                    <span className="font-bold text-gray-900 dark:text-white">
+                      Aktif ve Erişilebilir
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 pt-1">
+                  <Link
+                    href="/teacher/files"
+                    className="flex-1 py-2 px-3 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <FolderOpen size={14} />
+                    <span>Dosyaları Görüntüle</span>
+                  </Link>
+                </div>
               </div>
-            </button>
-          </motion.section>
+            </div>
+
+            {/* 4'lü Hızlı Araç ve Kısayol Kartları */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+              <Link
+                href="/teacher/schedule"
+                className="p-3.5 rounded-2xl bg-white dark:bg-[#121826] border border-gray-100 dark:border-gray-800 shadow-xs hover:border-indigo-400 dark:hover:border-indigo-600 transition-all flex flex-col items-center text-center gap-2 group active:scale-95"
+              >
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <Calendar size={18} />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-gray-900 dark:text-white block">
+                    Ders Programı
+                  </span>
+                  <span className="text-[10px] text-gray-400 block mt-0.5">
+                    Haftalık Saatler
+                  </span>
+                </div>
+              </Link>
+
+              <Link
+                href="/teacher/reports"
+                className="p-3.5 rounded-2xl bg-white dark:bg-[#121826] border border-gray-100 dark:border-gray-800 shadow-xs hover:border-emerald-400 dark:hover:border-emerald-600 transition-all flex flex-col items-center text-center gap-2 group active:scale-95"
+              >
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <BarChart3 size={18} />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-gray-900 dark:text-white block">
+                    Sınıf Raporları
+                  </span>
+                  <span className="text-[10px] text-gray-400 block mt-0.5">
+                    Devam & Başarı
+                  </span>
+                </div>
+              </Link>
+
+              <Link
+                href="/teacher/smartboard"
+                className="p-3.5 rounded-2xl bg-white dark:bg-[#121826] border border-gray-100 dark:border-gray-800 shadow-xs hover:border-teal-400 dark:hover:border-teal-600 transition-all flex flex-col items-center text-center gap-2 group active:scale-95"
+              >
+                <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <Tv size={18} />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-gray-900 dark:text-white block">
+                    Akıllı Tahta
+                  </span>
+                  <span className="text-[10px] text-gray-400 block mt-0.5">
+                    Ders Çizimleri
+                  </span>
+                </div>
+              </Link>
+
+              <Link
+                href="/teacher/settings"
+                className="p-3.5 rounded-2xl bg-white dark:bg-[#121826] border border-gray-100 dark:border-gray-800 shadow-xs hover:border-amber-400 dark:hover:border-amber-600 transition-all flex flex-col items-center text-center gap-2 group active:scale-95"
+              >
+                <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <Settings size={18} />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-gray-900 dark:text-white block">
+                    Profil & Ayarlar
+                  </span>
+                  <span className="text-[10px] text-gray-400 block mt-0.5">
+                    MEB Özlük & Hesap
+                  </span>
+                </div>
+              </Link>
+            </div>
+          </motion.div>
 
           {/* ── FOOTER: OTURUMU KAPAT ── */}
           <footer className="pt-1 pb-1 flex flex-col items-center justify-center text-center">

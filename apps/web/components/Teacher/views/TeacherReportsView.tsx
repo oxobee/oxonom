@@ -21,17 +21,14 @@ import {
   Search,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import PassiveModuleNotice from '../PassiveModuleNotice'
 
 const CLASSES = [
-  { id: '9-A', name: '9-A Şubesi', course: 'Türk Dili ve Edebiyatı', studentCount: 24, avgGrade: 88.5, attendanceRate: 94.2, homeworkRate: 96 },
-  { id: '9-B', name: '9-B Şubesi', course: 'Türk Dili ve Edebiyatı', studentCount: 22, avgGrade: 82.4, attendanceRate: 91.8, homeworkRate: 88 },
-  { id: '1-A', name: '1-A Şubesi', course: 'Okuma & Yazma', studentCount: 18, avgGrade: 94.0, attendanceRate: 96.5, homeworkRate: 98 },
+  { id: '9-A', name: '9-A Şubesi', course: 'Türk Dili ve Edebiyatı', studentCount: 1, avgGrade: 95.5, attendanceRate: 100, homeworkRate: 100 },
 ]
 
 export default function TeacherReportsView() {
   const [selectedClassId, setSelectedClassId] = useState<string>('9-A')
-  const [categoryTab, setCategoryTab] = useState<'academic' | 'attendance' | 'homework' | 'official'>('academic')
+  const [categoryTab, setCategoryTab] = useState<'academic' | 'attendance' | 'homework'>('academic')
   const [searchStudent, setSearchStudent] = useState<string>('')
 
   const activeClass = CLASSES.find((c) => c.id === selectedClassId) || CLASSES[0]
@@ -39,11 +36,7 @@ export default function TeacherReportsView() {
   const handleExportCSV = () => {
     const csvContent =
       `data:text/csv;charset=utf-8,Ogrenci No,Ad Soyad,Sube,Akademik Not Ortalamasi,Devam Orani,Odev Tamamlama\n` +
-      `101,Erçil UĞURLU,${activeClass.name},94,%96,%100\n` +
-      `102,Zeynep YILMAZ,${activeClass.name},96,%98,%95\n` +
-      `103,Ahmet KAYA,${activeClass.name},82,%90,%85\n` +
-      `104,Mehmet DEMİR,${activeClass.name},78,%88,%80\n` +
-      `105,Ayşe KILIÇ,${activeClass.name},91,%95,%92`
+      `101,Erçil UĞURLU,${activeClass.name},95.5,%100,%100\n`
 
     const encodedUri = encodeURI(csvContent)
     const link = document.createElement('a')
@@ -84,14 +77,9 @@ export default function TeacherReportsView() {
     { label: 'Devamsızlık Takibinde (<%85)', count: 1, pct: '4%', color: 'text-rose-600 bg-rose-500' },
   ]
 
-  // Student summary roster
+  // Student summary roster (1 authentic student)
   const sampleStudents = [
-    { no: '101', name: 'Erçil UĞURLU', avg: 95.5, attendance: '%98', hwRate: '%100', trend: '+4.5' },
-    { no: '102', name: 'Zeynep YILMAZ', avg: 94.0, attendance: '%96', hwRate: '%95', trend: '+2.0' },
-    { no: '103', name: 'Ahmet KAYA', avg: 82.5, attendance: '%91', hwRate: '%88', trend: '-1.5' },
-    { no: '104', name: 'Mehmet DEMİR', avg: 78.0, attendance: '%88', hwRate: '%80', trend: '+1.0' },
-    { no: '105', name: 'Ayşe KILIÇ', avg: 91.0, attendance: '%95', hwRate: '%92', trend: '+3.5' },
-    { no: '106', name: 'Canberk YILDIZ', avg: 85.5, attendance: '%93', hwRate: '%85', trend: '0.0' },
+    { no: '101', name: 'Erçil UĞURLU', avg: 95.5, attendance: '%100', hwRate: '%100', trend: '+4.5' },
   ].filter((s) => s.name.toLowerCase().includes(searchStudent.toLowerCase()) || s.no.includes(searchStudent))
 
   return (
@@ -194,7 +182,6 @@ export default function TeacherReportsView() {
           { key: 'academic', label: 'Akademik Başarı & Sınavlar', icon: TrendingUp },
           { key: 'attendance', label: 'Sınıf Devam & Yoklama', icon: CheckSquare },
           { key: 'homework', label: 'Ödev & Görev Takibi', icon: BookOpen },
-          { key: 'official', label: 'Resmi e-Okul Raporları', icon: FileCheck },
         ].map((tab) => {
           const Icon = tab.icon
           const isActive = categoryTab === tab.key
@@ -410,88 +397,70 @@ export default function TeacherReportsView() {
         </div>
       )}
 
-      {/* ── TAB 4: OFFICIAL (PASSIVE) ── */}
-      {categoryTab === 'official' && (
-        <PassiveModuleNotice
-          moduleName="Resmi Dönem Sonu Raporlama & MEB e-Okul Karne Çıktıları"
-          description="Bakanlık standartlarında resmi gelişim raporları, karne basımı ve dönem sonu başarı değerlendirme cetvelleri."
-          missingDependency="MEB Resmi Raporlama Formatı & Elektronik İmza (e-İmza) Entegrasyonu"
-          plannedFeatures={[
-            'e-Okul uyumlu resmi karne cetveli',
-            'Öğretmen kanaat notu ve davranış değerlendirme formu',
-            'Elektronik imzalı dönem sonu not çizelgesi',
-          ]}
-          relatedActivePath="/teacher/reports"
-          relatedActiveLabel="Raporlar Ana Sayfasına Dön"
-        />
-      )}
-
       {/* ── DETAILED STUDENT PERFORMANCE ROSTER (AŞAĞIDAKİ LİSTE) ── */}
-      {categoryTab !== 'official' && (
-        <div className="bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 rounded-3xl p-5 shadow-xs space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-gray-100 dark:border-gray-800">
-            <div>
-              <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
-                {activeClass.name} Öğrenci Başarı ve Devam Çizelgesi
-              </h3>
-              <p className="text-[11px] text-gray-400">
-                Seçili şubedeki öğrencilerin karne ve istatistik özetleri
-              </p>
-            </div>
-
-            <div className="relative w-full sm:w-64">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Öğrenci veya numara ara..."
-                value={searchStudent}
-                onChange={(e) => setSearchStudent(e.target.value)}
-                className="w-full h-9 pl-9 pr-3 text-xs bg-gray-50 dark:bg-[#161D2E] border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:border-indigo-500"
-              />
-            </div>
+      <div className="bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 rounded-3xl p-5 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-gray-100 dark:border-gray-800">
+          <div>
+            <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
+              {activeClass.name} Öğrenci Başarı ve Devam Çizelgesi
+            </h3>
+            <p className="text-[11px] text-gray-400">
+              Seçili şubedeki öğrencilerin karne ve istatistik özetleri
+            </p>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead>
-                <tr className="border-b border-gray-100 dark:border-gray-800 text-[10px] font-extrabold text-gray-400 uppercase tracking-wider">
-                  <th className="py-2.5 px-3">No</th>
-                  <th className="py-2.5 px-3">Öğrenci Adı Soyadı</th>
-                  <th className="py-2.5 px-3 text-center">Akademik Not</th>
-                  <th className="py-2.5 px-3 text-center">Devam Oranı</th>
-                  <th className="py-2.5 px-3 text-center">Ödev Başarısı</th>
-                  <th className="py-2.5 px-3 text-right">Gelişim</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800/60 font-medium">
-                {sampleStudents.map((st) => (
-                  <tr key={st.no} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
-                    <td className="py-3 px-3 font-mono font-bold text-gray-500">{st.no}</td>
-                    <td className="py-3 px-3 font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-[10px] font-extrabold">
-                        {st.name.charAt(0)}
-                      </div>
-                      {st.name}
-                    </td>
-                    <td className="py-3 px-3 text-center font-bold text-indigo-600 dark:text-indigo-400">
-                      {st.avg}
-                    </td>
-                    <td className="py-3 px-3 text-center font-bold text-emerald-600 dark:text-emerald-400">
-                      {st.attendance}
-                    </td>
-                    <td className="py-3 px-3 text-center font-bold text-gray-700 dark:text-gray-300">
-                      {st.hwRate}
-                    </td>
-                    <td className="py-3 px-3 text-right font-bold text-emerald-600 dark:text-emerald-400">
-                      {st.trend}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="relative w-full sm:w-64">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Öğrenci veya numara ara..."
+              value={searchStudent}
+              onChange={(e) => setSearchStudent(e.target.value)}
+              className="w-full h-9 pl-9 pr-3 text-xs bg-gray-50 dark:bg-[#161D2E] border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:border-indigo-500"
+            />
           </div>
         </div>
-      )}
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="border-b border-gray-100 dark:border-gray-800 text-[10px] font-extrabold text-gray-400 uppercase tracking-wider">
+                <th className="py-2.5 px-3">No</th>
+                <th className="py-2.5 px-3">Öğrenci Adı Soyadı</th>
+                <th className="py-2.5 px-3 text-center">Akademik Not</th>
+                <th className="py-2.5 px-3 text-center">Devam Oranı</th>
+                <th className="py-2.5 px-3 text-center">Ödev Başarısı</th>
+                <th className="py-2.5 px-3 text-right">Gelişim</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800/60 font-medium">
+              {sampleStudents.map((st) => (
+                <tr key={st.no} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
+                  <td className="py-3 px-3 font-mono font-bold text-gray-500">{st.no}</td>
+                  <td className="py-3 px-3 font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-[10px] font-extrabold">
+                      {st.name.charAt(0)}
+                    </div>
+                    {st.name}
+                  </td>
+                  <td className="py-3 px-3 text-center font-bold text-indigo-600 dark:text-indigo-400">
+                    {st.avg}
+                  </td>
+                  <td className="py-3 px-3 text-center font-bold text-emerald-600 dark:text-emerald-400">
+                    {st.attendance}
+                  </td>
+                  <td className="py-3 px-3 text-center font-bold text-gray-700 dark:text-gray-300">
+                    {st.hwRate}
+                  </td>
+                  <td className="py-3 px-3 text-right font-bold text-emerald-600 dark:text-emerald-400">
+                    {st.trend}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   )
 }

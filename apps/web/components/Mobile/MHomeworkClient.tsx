@@ -49,6 +49,7 @@ import {
   saveStoredCustomAssignment,
   type SchoolAssignmentItem,
 } from '@services/school_assignments/school_assignments'
+import { normalizeClassCode } from '@services/demo/attendanceService'
 
 export interface HomeworkItem {
   id: string
@@ -440,7 +441,21 @@ export default function MHomeworkClient({
         }
       })
 
-    return convertedCustom
+    const combined: HomeworkItem[] = [...convertedCustom]
+    INITIAL_HOMEWORKS.forEach((initHw) => {
+      if (
+        !combined.some(
+          (c) =>
+            c.id === initHw.id ||
+            c.assignment_uuid === initHw.assignment_uuid ||
+            c.title === initHw.title
+        )
+      ) {
+        combined.push(initHw)
+      }
+    })
+
+    return combined
   }, [assignmentVersion])
 
   // Branch-specific students roster
@@ -606,10 +621,11 @@ export default function MHomeworkClient({
 
   // Filtered and Sorted Homework Items for the Homework Selection Modal
   const classHomeworks = useMemo(() => {
-    // 1. Branch filter
+    // 1. Branch filter with normalized code comparison
     let list = allSchoolHomeworks
     if (selectedBranch !== 'Tüm Şubeler' && selectedBranch !== 'all' && selectedBranch !== 'Tüm Sınıflar ve Şubeler') {
-      list = list.filter((hw) => hw.className === selectedBranch)
+      const normSelected = normalizeClassCode(selectedBranch)
+      list = list.filter((hw) => normalizeClassCode(hw.className) === normSelected)
     }
 
     // 2. Chronological/period filter
@@ -643,10 +659,11 @@ export default function MHomeworkClient({
 
   // Homework count metrics for tabs
   const homeworkMetrics = useMemo(() => {
+    const normSelected = normalizeClassCode(selectedBranch)
     const list =
       selectedBranch === 'Tüm Şubeler' || selectedBranch === 'all' || selectedBranch === 'Tüm Sınıflar ve Şubeler'
         ? allSchoolHomeworks
-        : allSchoolHomeworks.filter((hw) => hw.className === selectedBranch)
+        : allSchoolHomeworks.filter((hw) => normalizeClassCode(hw.className) === normSelected)
 
     return {
       all: list.length,
@@ -712,83 +729,118 @@ export default function MHomeworkClient({
           </div>
         ) : (
           <>
+            {/* ── TOP PROMINENT ACTION BAR / WEB TOOLBAR (IMAGE 1 GÖRÜNÜR & WEB UYUMLU ALAN) ── */}
+            <div className="mx-4 mt-3 bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800 rounded-2xl sm:rounded-3xl p-3.5 sm:p-4.5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+              {/* Sol: Başlık ve Bilgi */}
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                  <BookOpenCheck size={22} strokeWidth={2.2} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                      Ödev & Değerlendirme Portalı
+                    </span>
+                    <span className="text-gray-300 dark:text-gray-700">•</span>
+                    <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400">
+                      {currentHomework.subject}
+                    </span>
+                  </div>
+                  <h2 className="text-sm sm:text-base font-black text-gray-900 dark:text-white leading-tight">
+                    {selectedBranch} Ödev ve Çalışma Görevleri
+                  </h2>
+                </div>
+              </div>
+
+              {/* Sağ: İstenen 3 Belirgin Kontrol (Sınıf Seçici, Ödev Seçici, Yeni Ödev Ver) */}
+              <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap sm:flex-nowrap">
+                {/* 1. Sınıf Seçimi Butonu */}
+                <button
+                  type="button"
+                  onClick={() => setIsBranchModalOpen(true)}
+                  className="flex-1 sm:flex-none h-11 px-3.5 sm:px-4 rounded-xl bg-gray-100 hover:bg-gray-200/80 dark:bg-gray-800 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs active:scale-95 group"
+                  title="Sınıf / Şube Değiştir"
+                >
+                  <Users size={16} className="text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
+                  <span>{selectedBranch}</span>
+                  <ChevronDown size={14} className="text-gray-400 group-hover:text-gray-700 dark:group-hover:text-white transition-colors" />
+                </button>
+
+                {/* 2. Ödev Seç Butonu */}
+                <button
+                  type="button"
+                  onClick={() => setIsHomeworkModalOpen(true)}
+                  className="flex-1 sm:flex-none h-11 px-3.5 sm:px-4 rounded-xl bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs active:scale-95 group"
+                  title="Bu sınıfa ait ödevleri seç ve tarihsel filtrele"
+                >
+                  <BookOpenCheck size={16} className="text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform" />
+                  <span>Ödev Seç</span>
+                  <span className="px-1.5 py-0.5 rounded-full bg-indigo-200/70 dark:bg-indigo-900/80 text-[10px] font-black text-indigo-800 dark:text-indigo-200">
+                    {classHomeworks.length}
+                  </span>
+                  <ChevronDown size={14} className="text-indigo-400 group-hover:text-indigo-700 dark:group-hover:text-indigo-200 transition-colors" />
+                </button>
+
+                {/* 3. Yeni Ödev Ver Butonu (Geniş, Yüksek Görünürlüklü Yeşil Buton) */}
+                <button
+                  type="button"
+                  onClick={() => setIsCreateModalOpen(true)}
+                  className="w-full sm:w-auto h-11 px-4 sm:px-5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-[#0A0D15] text-xs sm:text-sm font-black flex items-center justify-center gap-2 shadow-md shadow-emerald-500/25 active:scale-95 transition-all cursor-pointer border border-emerald-400 group"
+                  title="9/A Şubesine Yeni Ödev Tanımla"
+                >
+                  <Plus size={16} strokeWidth={2.5} className="group-hover:rotate-90 transition-transform duration-200" />
+                  <span>+ Yeni Ödev Ver</span>
+                </button>
+              </div>
+            </div>
+
+            {/* ── HERO / AKTİF ÖDEV KARTI ── */}
             <motion.section
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
-              className="mx-4 mt-3 bg-[#0A0D15] text-white rounded-[22px] p-4 flex flex-col gap-3.5 shadow-xl border border-white/5 relative overflow-hidden"
+              className="mx-4 mt-3 bg-[#0A0D15] text-white rounded-[24px] sm:rounded-[28px] p-5 sm:p-6 flex flex-col gap-4 shadow-xl border border-white/10 relative overflow-hidden"
               style={{
                 backgroundImage:
                   'radial-gradient(circle at 100% 0%,rgba(255,255,255,.12) 0%,rgba(255,255,255,0) 55%),linear-gradient(45deg,rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(-45deg,rgba(255,255,255,.04) 1px,transparent 1px)',
                 backgroundSize: 'auto,26px 26px,26px 26px',
               }}
             >
-          {/* Title Row & Selectors */}
-          <div className="flex items-start gap-3">
-            <div className="w-[42px] h-[42px] rounded-[13px] bg-[#34D399]/15 border border-[#34D399]/35 text-[#34D399] flex items-center justify-center shrink-0 mt-0.5">
-              <FileText size={22} strokeWidth={1.9} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {/* Şube Seçimi Butonu */}
-                  <button
-                    type="button"
-                    onClick={() => setIsBranchModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/15 border border-white/15 text-[10.5px] font-bold text-[#34D399] transition-colors cursor-pointer"
-                    title="Sınıf / Şube Değiştir"
-                  >
-                    <Users size={11} />
-                    <span>{selectedBranch}</span>
-                    <ChevronDown size={11} className="text-white/70" />
-                  </button>
+              {/* Header: Title & Meta Badges */}
+              <div className="flex items-start gap-3.5">
+                <div className="w-11 h-11 rounded-2xl bg-[#34D399]/15 border border-[#34D399]/35 text-[#34D399] flex items-center justify-center shrink-0 mt-0.5">
+                  <FileText size={22} strokeWidth={1.9} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10.5px] font-extrabold uppercase tracking-wide">
+                      {currentHomework.subject}
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-white/10 text-gray-300 border border-white/10 text-[10.5px] font-bold">
+                      {currentHomework.category}
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10.5px] font-bold flex items-center gap-1">
+                      <Clock size={11} />
+                      <span>Son Teslim: {currentHomework.dueDate}</span>
+                    </span>
+                  </div>
 
-                  {/* Ödev Seç Butonu */}
                   <button
                     type="button"
                     onClick={() => setIsHomeworkModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#4338CA]/35 hover:bg-[#4338CA]/55 border border-[#4338CA]/60 text-[10.5px] font-extrabold text-indigo-200 transition-all cursor-pointer shadow-xs active:scale-95 group"
-                    title="Bu sınıfa ait ödevleri seç ve tarihsel filtrele"
+                    className="text-left group flex items-start gap-1 w-full cursor-pointer"
+                    title="Ödevi değiştirmek için tıklayın"
                   >
-                    <BookOpenCheck size={12} className="text-[#34D399] group-hover:scale-110 transition-transform" />
-                    <span>Ödev Seç</span>
-                    <ChevronDown size={11} className="text-indigo-300" />
-                  </button>
-
-                  {/* Yeni Ödev Ver Butonu */}
-                  <button
-                    type="button"
-                    onClick={() => setIsCreateModalOpen(true)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500 hover:bg-emerald-400 text-[10.5px] font-extrabold text-[#0A0D15] transition-all cursor-pointer shadow-xs active:scale-95 group"
-                    title="9/A Şubesine Yeni Ödev Tanımla"
-                  >
-                    <Plus size={12} strokeWidth={2.5} />
-                    <span>Yeni Ödev Ver</span>
+                    <h1 className="text-base sm:text-xl leading-snug font-extrabold tracking-tight text-white m-0 group-hover:text-emerald-300 transition-colors">
+                      {currentHomework.title} — Teslim ve Değerlendirme
+                    </h1>
                   </button>
                 </div>
-
-                <span className="text-[10px] font-bold text-gray-400 shrink-0">
-                  Ders: {currentHomework.subject}
-                </span>
               </div>
 
-              {/* Tıklanabilir Ödev Başlığı */}
-              <button
-                type="button"
-                onClick={() => setIsHomeworkModalOpen(true)}
-                className="text-left group flex items-start gap-1 w-full cursor-pointer"
-                title="Ödevi değiştirmek için tıklayın"
-              >
-                <h1 className="text-[15px] leading-[1.3] font-extrabold tracking-tight text-white m-0 group-hover:text-emerald-300 transition-colors">
-                  {currentHomework.title} — Teslim ve Değerlendirme
-                </h1>
-              </button>
-            </div>
-          </div>
-
-          <p className="text-[12px] leading-[1.5] text-[#B4BDCC] m-0">
-            {currentHomework.description}
-          </p>
+              <p className="text-xs sm:text-[13px] leading-relaxed text-[#B4BDCC] m-0">
+                {currentHomework.description}
+              </p>
 
           {/* 4 Stat Boxes */}
           <div className="grid grid-cols-4 gap-2 pt-1">
@@ -830,8 +882,11 @@ export default function MHomeworkClient({
           </div>
         </motion.section>
 
-        {/* ── MAIN CONTENT SECTIONS ── */}
-        <main className="flex-1 px-4 py-4 flex flex-col gap-4">
+        {/* ── MAIN CONTENT SECTIONS (RESPONSIVE WEB 2-COLUMN GRID) ── */}
+        <main className="flex-1 px-4 py-4">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 w-full items-start">
+            {/* SOL SÜTUN (5/12): ÖĞRENCİ SEÇİMİ, LİSTESİ & KÜNYESİ */}
+            <div className="lg:col-span-5 space-y-4">
 
           {/* ── 3. SECTION: ÖĞRENCİ SEÇ (CAROUSEL & COLLAPSIBLE LIST) ── */}
           <div className="flex items-center gap-2.5 text-[11px] font-bold tracking-wider text-[#5B6577] dark:text-gray-400 mt-1">
@@ -1144,7 +1199,10 @@ export default function MHomeworkClient({
               </div>
             )}
           </motion.section>
+        </div>
 
+        {/* SAĞ SÜTUN (7/12): ÖĞRENCİ YANITI, AKILLI TAHTA ÇÖZÜMÜ & DEĞERLENDİRME */}
+        <div className="lg:col-span-7 space-y-4">
           {/* ── 5. SECTION: ÖĞRENCİ YANITI & ÇÖZÜM ── */}
           <section className="bg-white dark:bg-[#111624] border border-[#E7EBF2] dark:border-white/10 rounded-[22px] p-4 shadow-sm flex flex-col gap-3.5">
             <div className="flex items-center justify-between gap-2">
@@ -1314,16 +1372,17 @@ export default function MHomeworkClient({
               <span>Puanı ve Geri Bildirimi Kaydet</span>
             </motion.button>
           </section>
-
-        </main>
+        </div>
+      </div>
+    </main>
       </>
     )}
   </motion.div>
 
-        {/* ── 8. MODAL: ÖDEV SEÇİMİ VE TARİHSEL FİLTRELEME (İSTENEN YENİ MODAL) ── */}
+        {/* ── 8. MODAL: ÖDEV SEÇİMİ VE TARİHSEL FİLTRELEME (WEB VE MOBİL UYUMLU) ── */}
         <AnimatePresence>
           {isHomeworkModalOpen && (
-            <div className="fixed inset-0 z-50 flex flex-col justify-end">
+            <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
               {/* Backdrop */}
               <motion.div
                 initial={{ opacity: 0 }}
@@ -1333,16 +1392,16 @@ export default function MHomeworkClient({
                 className="fixed inset-0 bg-black/65 backdrop-blur-xs"
               />
 
-              {/* Bottom Sheet Drawer */}
+              {/* Responsive Web / Mobile Modal Dialog */}
               <motion.div
-                initial={{ y: '100%' }}
-                animate={{ y: 0 }}
-                exit={{ y: '100%' }}
+                initial={{ y: '100%', opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: '100%', opacity: 0 }}
                 transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-                className="relative w-full max-w-[410px] mx-auto bg-white dark:bg-[#111624] text-[#0F172A] dark:text-white rounded-t-[30px] p-5 shadow-2xl z-10 flex flex-col max-h-[88vh] overflow-hidden pb-8"
+                className="relative w-full max-w-[440px] sm:max-w-xl mx-auto bg-white dark:bg-[#111624] text-[#0F172A] dark:text-white rounded-t-[30px] sm:rounded-3xl p-5 sm:p-6 shadow-2xl z-10 flex flex-col max-h-[88vh] sm:max-h-[85vh] overflow-hidden pb-8 sm:pb-6"
               >
-                {/* Drag Handle */}
-                <div className="w-12 h-1 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-2 shrink-0" />
+                {/* Drag Handle (Mobile Only) */}
+                <div className="w-12 h-1 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-2 shrink-0 sm:hidden" />
 
                 {/* Modal Header */}
                 <div className="flex items-start justify-between gap-3 shrink-0 mb-3">
@@ -1554,10 +1613,10 @@ export default function MHomeworkClient({
           )}
         </AnimatePresence>
 
-        {/* ── 9. MODAL: YENİ ÖDEV TANIMLA VE YAYINLA ── */}
+        {/* ── 9. MODAL: YENİ ÖDEV TANIMLA VE YAYINLA (WEB VE MOBİL UYUMLU) ── */}
         <AnimatePresence>
           {isCreateModalOpen && (
-            <div className="fixed inset-0 z-50 flex flex-col justify-end">
+            <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
               {/* Backdrop */}
               <motion.div
                 initial={{ opacity: 0 }}
@@ -1567,16 +1626,16 @@ export default function MHomeworkClient({
                 className="fixed inset-0 bg-black/65 backdrop-blur-xs"
               />
 
-              {/* Bottom Sheet Drawer */}
+              {/* Responsive Modal Dialog */}
               <motion.div
-                initial={{ y: '100%' }}
-                animate={{ y: 0 }}
-                exit={{ y: '100%' }}
+                initial={{ y: '100%', opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: '100%', opacity: 0 }}
                 transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-                className="relative w-full max-w-[460px] mx-auto bg-white dark:bg-[#111624] text-[#0F172A] dark:text-white rounded-t-[30px] p-5 shadow-2xl z-10 flex flex-col max-h-[92vh] overflow-hidden pb-8"
+                className="relative w-full max-w-[480px] sm:max-w-2xl mx-auto bg-white dark:bg-[#111624] text-[#0F172A] dark:text-white rounded-t-[30px] sm:rounded-3xl p-5 sm:p-7 shadow-2xl z-10 flex flex-col max-h-[92vh] sm:max-h-[88vh] overflow-hidden pb-8 sm:pb-6"
               >
-                {/* Drag Handle */}
-                <div className="w-12 h-1 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-2 shrink-0" />
+                {/* Drag Handle (Mobile Only) */}
+                <div className="w-12 h-1 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-2 shrink-0 sm:hidden" />
 
                 {/* Header */}
                 <div className="flex items-start justify-between gap-3 shrink-0 mb-4 pb-3 border-b border-gray-100 dark:border-white/10">
@@ -1585,7 +1644,7 @@ export default function MHomeworkClient({
                       <Plus size={22} strokeWidth={2.5} />
                     </div>
                     <div>
-                      <h3 className="text-[16px] font-extrabold text-gray-900 dark:text-white leading-tight m-0">
+                      <h3 className="text-[17px] font-extrabold text-gray-900 dark:text-white leading-tight m-0">
                         Yeni Ödev Oluştur
                       </h3>
                       <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-0.5 m-0">
@@ -1605,53 +1664,41 @@ export default function MHomeworkClient({
 
                 {/* Scrollable Form */}
                 <form onSubmit={handleCreateAssignment} className="flex-1 overflow-y-auto pr-0.5 space-y-4">
-                  {/* Sınıf & Şube Bilgisi */}
-                  <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Users size={16} className="text-emerald-600 dark:text-emerald-400" />
-                      <span className="text-xs font-bold text-gray-800 dark:text-gray-200">Hedef Şube</span>
+                  {/* Sınıf & Ders Seçimi 2 Sütun Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Sınıf & Şube Bilgisi */}
+                    <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Users size={16} className="text-emerald-600 dark:text-emerald-400" />
+                        <span className="text-xs font-bold text-gray-800 dark:text-gray-200">Hedef Şube</span>
+                      </div>
+                      <span className="text-xs font-black text-emerald-700 dark:text-emerald-300 bg-emerald-500/20 px-2.5 py-0.5 rounded-full">
+                        9/A Şubesi (Erçil UĞURLU)
+                      </span>
                     </div>
-                    <span className="text-xs font-black text-emerald-700 dark:text-emerald-300 bg-emerald-500/20 px-2.5 py-0.5 rounded-full">
-                      9/A Şubesi (Erçil UĞURLU)
-                    </span>
-                  </div>
 
-                  {/* Ödev Başlığı */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
-                      Ödev Başlığı *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={createTitle}
-                      onChange={(e) => setCreateTitle(e.target.value)}
-                      placeholder="Örn: Tanzimat Edebiyatı Şiir Tahlili..."
-                      className="w-full h-11 px-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    />
-                  </div>
-
-                  {/* Ders Seçimi */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
-                      Ders / Zümre
-                    </label>
-                    <select
-                      value={createSubject}
-                      onChange={(e) => setCreateSubject(e.target.value)}
-                      className="w-full h-11 px-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-                    >
-                      <option value="Türk Dili ve Edebiyatı">Türk Dili ve Edebiyatı</option>
-                      <option value="Matematik">Matematik</option>
-                      <option value="Tarih">Tarih</option>
-                      <option value="Fizik">Fizik</option>
-                      <option value="Kimya">Kimya</option>
-                      <option value="Biyoloji">Biyoloji</option>
-                      <option value="İngilizce">İngilizce</option>
-                      <option value="Coğrafya">Coğrafya</option>
-                      <option value="Felsefe">Felsefe</option>
-                      <option value="Bilişim & Kodlama">Bilişim & Kodlama</option>
-                    </select>
+                    {/* Ders Seçimi */}
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
+                        Ders / Zümre
+                      </label>
+                      <select
+                        value={createSubject}
+                        onChange={(e) => setCreateSubject(e.target.value)}
+                        className="w-full h-11 px-3.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-xs font-bold text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                      >
+                        <option value="Türk Dili ve Edebiyatı">Türk Dili ve Edebiyatı</option>
+                        <option value="Matematik">Matematik</option>
+                        <option value="Tarih">Tarih</option>
+                        <option value="Fizik">Fizik</option>
+                        <option value="Kimya">Kimya</option>
+                        <option value="Biyoloji">Biyoloji</option>
+                        <option value="İngilizce">İngilizce</option>
+                        <option value="Coğrafya">Coğrafya</option>
+                        <option value="Felsefe">Felsefe</option>
+                        <option value="Bilişim & Kodlama">Bilişim & Kodlama</option>
+                      </select>
+                    </div>
                   </div>
 
                   {/* Ödev Türü (4 Cards) */}
@@ -1748,10 +1795,10 @@ export default function MHomeworkClient({
           )}
         </AnimatePresence>
 
-        {/* ── 10. MODAL: SINIFSAL KATEGORİLER & ŞUBELER ── */}
+        {/* ── 10. MODAL: SINIFSAL KATEGORİLER & ŞUBELER (WEB VE MOBİL UYUMLU) ── */}
         <AnimatePresence>
           {isBranchModalOpen && (
-            <div className="fixed inset-0 z-50 flex flex-col justify-end">
+            <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
               {/* Backdrop */}
               <motion.div
                 initial={{ opacity: 0 }}
@@ -1761,16 +1808,16 @@ export default function MHomeworkClient({
                 className="fixed inset-0 bg-black/60 backdrop-blur-xs"
               />
 
-              {/* Bottom Sheet Drawer */}
+              {/* Responsive Modal Dialog */}
               <motion.div
-                initial={{ y: '100%' }}
-                animate={{ y: 0 }}
-                exit={{ y: '100%' }}
+                initial={{ y: '100%', opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: '100%', opacity: 0 }}
                 transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-                className="relative w-full max-w-[410px] mx-auto bg-white dark:bg-[#111624] text-[#0F172A] dark:text-white rounded-t-[30px] p-5 shadow-2xl z-10 flex flex-col gap-3.5 pb-8 max-h-[85vh] overflow-y-auto"
+                className="relative w-full max-w-[440px] sm:max-w-md mx-auto bg-white dark:bg-[#111624] text-[#0F172A] dark:text-white rounded-t-[30px] sm:rounded-3xl p-5 sm:p-6 shadow-2xl z-10 flex flex-col gap-3.5 pb-8 sm:pb-6 max-h-[85vh] overflow-y-auto"
               >
-                {/* Drag Handle Pill */}
-                <div className="w-12 h-1 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-1" />
+                {/* Drag Handle Pill (Mobile Only) */}
+                <div className="w-12 h-1 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-1 sm:hidden" />
 
                 {/* Modal Header */}
                 <div className="flex items-start justify-between gap-3">
