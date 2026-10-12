@@ -30,7 +30,7 @@ import {
   Bell,
   Grid,
 } from 'lucide-react'
-import { PRINCIPAL_MENU_CONFIG, getPrincipalMenuItemByPath } from '@/lib/principal/principalMenuConfig'
+import { PRINCIPAL_MENU_CONFIG, PRINCIPAL_CATEGORIES, getPrincipalMenuItemByPath } from '@/lib/principal/principalMenuConfig'
 import { useMobileTheme } from '@components/Mobile/useMobileTheme'
 import { useLHSession } from '@components/Contexts/LHSessionContext'
 import { signOut } from '@components/Contexts/AuthContext'
@@ -201,40 +201,103 @@ export default function PrincipalLayout({ children }: PrincipalLayoutProps) {
           </div>
         </div>
 
-        {/* Navigation Menu */}
-        <nav className="flex-1 overflow-y-auto p-3 space-y-1 custom-scrollbar">
-          {PRINCIPAL_MENU_CONFIG.filter((m) => !m.hidden).map((item) => {
-            const Icon = item.icon
-            const active = isCurrentPathActive(item.path)
-            return (
-              <Link
-                key={item.id}
-                href={item.path}
-                className={`flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition-all ${
-                  active
-                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-xs'
-                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-gray-800/60 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className={`w-7 h-7 rounded-xl flex items-center justify-center transition-colors ${
-                    active ? 'bg-emerald-600 text-white' : 'text-gray-400 group-hover:text-gray-600'
-                  }`}>
-                    <Icon size={15} />
-                  </div>
-                  <span className="truncate">{item.label}</span>
-                </div>
+        {/* Navigation Menu (Categorized) */}
+        <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-4 custom-scrollbar">
+          {PRINCIPAL_CATEGORIES.map((cat) => {
+            const catItems = PRINCIPAL_MENU_CONFIG.filter((m) => !m.hidden && m.category === cat.id)
+            if (catItems.length === 0) return null
 
-                {item.badge && (
-                  <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded-md ${
-                    item.badge === 'Canlı'
-                      ? 'bg-rose-500/10 text-rose-500'
-                      : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                  }`}>
-                    {item.badge}
-                  </span>
-                )}
-              </Link>
+            return (
+              <div key={cat.id} className="space-y-1">
+                <div className="px-3 pt-1 text-[10px] font-black uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                  {cat.title}
+                </div>
+                {catItems.map((item) => {
+                  const Icon = item.icon
+                  const active = isCurrentPathActive(item.path)
+                  const isPassive = item.status === 'passive'
+
+                  if (isPassive) {
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => {
+                          toast(
+                            (t) => (
+                              <div className="space-y-1">
+                                <div className="font-extrabold text-xs text-amber-500 flex items-center gap-1.5">
+                                  <Sparkles size={14} />
+                                  <span>{item.label} (Geliştirme Aşamasında)</span>
+                                </div>
+                                <div className="text-[11px] text-gray-600 dark:text-gray-300">
+                                  {item.description}
+                                </div>
+                                {item.missingDependency && (
+                                  <div className="text-[10px] text-gray-400 italic">
+                                    Bağımlılık: {item.missingDependency}
+                                  </div>
+                                )}
+                              </div>
+                            ),
+                            {
+                              duration: 4000,
+                              style: {
+                                borderRadius: '16px',
+                                background: theme === 'dark' ? '#121826' : '#ffffff',
+                                color: theme === 'dark' ? '#ffffff' : '#0F172A',
+                                border: theme === 'dark' ? '1px solid rgba(255,255,255,0.1)' : '1px solid #E2E8F0',
+                              },
+                            }
+                          )
+                        }}
+                        className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-gray-400 dark:text-gray-500 hover:bg-gray-100/50 dark:hover:bg-gray-800/40 transition-all cursor-pointer opacity-75 hover:opacity-100 text-left"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-6 h-6 rounded-lg flex items-center justify-center text-gray-400 dark:text-gray-500">
+                            <Icon size={14} />
+                          </div>
+                          <span className="truncate">{item.label}</span>
+                        </div>
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-400">
+                          {item.badge || 'Pasif'}
+                        </span>
+                      </button>
+                    )
+                  }
+
+                  return (
+                    <Link
+                      key={item.id}
+                      href={item.path}
+                      className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                        active
+                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-xs'
+                          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-gray-800/60 hover:text-gray-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center transition-colors ${
+                          active ? 'bg-emerald-600 text-white' : 'text-gray-400 group-hover:text-gray-600'
+                        }`}>
+                          <Icon size={14} />
+                        </div>
+                        <span className="truncate">{item.label}</span>
+                      </div>
+
+                      {item.badge && (
+                        <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-md ${
+                          item.badge === 'Canlı'
+                            ? 'bg-rose-500/10 text-rose-500'
+                            : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                        }`}>
+                          {item.badge}
+                        </span>
+                      )}
+                    </Link>
+                  )
+                })}
+              </div>
             )
           })}
         </nav>

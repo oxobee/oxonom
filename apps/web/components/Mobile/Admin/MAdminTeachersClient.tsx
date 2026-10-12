@@ -70,89 +70,149 @@ export interface ScreenPermission {
 }
 
 export const SYSTEM_SCREEN_PERMISSIONS: ScreenPermission[] = [
+  // Kategori 1: Temel Öğretmen & Program
   {
     id: 'teacher_dashboard',
     label: 'Dashboard & Günlük Akış',
-    category: 'Temel Öğretmen Paneli',
-    description: 'Bugünün dersleri, duyurular ve hızlı istatistikler',
+    category: 'Temel & Program',
+    description: 'Günün dersleri, hızlı duyurular ve şube istatistikleri',
     defaultForRoles: ['admin_assist', 'head_dept', 'guidance', 'teacher'],
   },
   {
     id: 'teacher_schedule',
-    label: 'Derslerim & Haftalık Program',
-    category: 'Temel Öğretmen Paneli',
-    description: 'Haftalık ders çizelgesi ve derslik yerleşimleri',
+    label: 'Haftalık Ders Programı',
+    category: 'Temel & Program',
+    description: 'Kendi haftalık ders çizelgesi ve derslik yerleşimleri',
     defaultForRoles: ['admin_assist', 'head_dept', 'guidance', 'teacher'],
   },
   {
     id: 'teacher_classes',
-    label: 'Sınıf & Öğrenci Listeleri',
-    category: 'Öğrenci Yönetimi',
-    description: 'Öğrenci dosyaları, künyeler ve iletişim bilgileri',
+    label: 'Sınıf & Şube Listeleri',
+    category: 'Temel & Program',
+    description: 'Girdiği şubelerin mevcudu ve öğrenci listeleri',
     defaultForRoles: ['admin_assist', 'head_dept', 'guidance', 'teacher'],
   },
   {
+    id: 'teacher_curriculum',
+    label: 'MEB Müfredat & Yıllık Planlar',
+    category: 'Temel & Program',
+    description: 'Bakanlık kazanımları, ünite içerikleri ve yıllık planlar',
+    defaultForRoles: ['admin_assist', 'head_dept', 'teacher'],
+  },
+
+  // Kategori 2: Ölçme, Değerlendirme & Yoklama
+  {
     id: 'teacher_attendance',
-    label: 'Yoklama Alma & Devamsızlık Takibi',
-    category: 'Öğrenci Yönetimi',
-    description: 'Ders bazlı yoklama alma ve tarihsel arşiv',
+    label: 'Günlük Yoklama Alma',
+    category: 'Ölçme & Yoklama',
+    description: 'Ders saati bazlı yoklama alma ve devamsızlık işleme',
+    defaultForRoles: ['admin_assist', 'head_dept', 'teacher'],
+  },
+  {
+    id: 'teacher_attendance_history',
+    label: 'Geçmiş Yoklama Arşivi',
+    category: 'Ölçme & Yoklama',
+    description: 'Tarihsel devamsızlık filtreleme ve sınıf raporları',
+    defaultForRoles: ['admin_assist', 'head_dept', 'teacher'],
+  },
+  {
+    id: 'teacher_exams',
+    label: 'Sınav Tanımlama & Not Girişi',
+    category: 'Ölçme & Yoklama',
+    description: 'MEB e-Okul formatında 1. ve 2. yazılı notlarını kaydetme',
     defaultForRoles: ['admin_assist', 'head_dept', 'teacher'],
   },
   {
     id: 'teacher_assignments',
     label: 'Ödev & Proje Yönetimi',
-    category: 'Akademik Değerlendirme',
-    description: 'Ödev oluşturma, teslim alma ve puanlama',
+    category: 'Ölçme & Yoklama',
+    description: 'Ödev oluşturma, teslim kontrolü ve değerlendirme',
     defaultForRoles: ['admin_assist', 'head_dept', 'teacher'],
   },
-  {
-    id: 'teacher_exams',
-    label: 'Sınavlar & Not Girişi',
-    category: 'Akademik Değerlendirme',
-    description: 'MEB e-Okul formatında hızlı sınav notu girişi ve istatistik',
-    defaultForRoles: ['admin_assist', 'head_dept', 'teacher'],
-  },
+
+  // Kategori 3: Rehberlik & Öğrenci Dosyaları
   {
     id: 'teacher_guidance',
-    label: 'Öğrenci Gelişimi & Rehberlik',
-    category: 'Rehberlik & Takip',
-    description: 'Gözlem notları, rehberlik raporları ve bireysel takip',
+    label: 'Rehberlik Görüşme Notları',
+    category: 'Rehberlik & Dosyalar',
+    description: 'Öğrenci rehberlik, gelişim ve aile görüşme kayıtları',
     defaultForRoles: ['admin_assist', 'guidance'],
   },
   {
+    id: 'teacher_student_dossier',
+    label: 'Öğrenci Kütük Dosyası',
+    category: 'Rehberlik & Dosyalar',
+    description: 'Öğrencinin sağlık, veli, iletişim ve özlük detayları',
+    defaultForRoles: ['admin_assist', 'guidance', 'head_dept'],
+  },
+  {
+    id: 'teacher_academic_records',
+    label: 'Akademik Başarı Karnesi',
+    category: 'Rehberlik & Dosyalar',
+    description: 'Ders bazlı başarı grafikleri ve gelişim istatistikleri',
+    defaultForRoles: ['admin_assist', 'guidance', 'head_dept', 'teacher'],
+  },
+
+  // Kategori 4: Donanım & Akıllı Tahtalar
+  {
     id: 'teacher_smartboard',
-    label: 'Akıllı Tahta & Canlı Oturum',
-    category: 'Donanım & Tahta',
-    description: 'Sınıf içi akıllı tahtaları görüntüleme ve oturum yönetimi',
+    label: 'Akıllı Tahta Canlı İzleme',
+    category: 'Akıllı Tahta & Donanım',
+    description: 'Aktif sınıf tahtalarının durumunu ve oturumlarını görme',
     defaultForRoles: ['admin_assist', 'head_dept', 'teacher'],
   },
   {
-    id: 'teacher_library',
-    label: 'Dosyalarım & Eğitim Kütüphanesi',
-    category: 'İçerik Yönetimi',
-    description: 'Ders notları, materyaller ve çalışma yaprakları',
-    defaultForRoles: ['admin_assist', 'head_dept', 'guidance', 'teacher'],
+    id: 'teacher_smartboard_lock',
+    label: 'Tahta Oturumunu Kapatma',
+    category: 'Akıllı Tahta & Donanım',
+    description: 'Akıllı tahtayı uzaktan kapatabilme ve kilitleme yetkisi',
+    defaultForRoles: ['admin_assist', 'head_dept'],
   },
+
+  // Kategori 5: Dosya, Rapor ve İletişim
   {
     id: 'teacher_reports',
-    label: 'Raporlarım & Başarı Analizleri',
-    category: 'Raporlama',
-    description: 'Şube bazlı akademik grafikler ve devamsızlık özetleri',
+    label: 'Raporlarım & Şube İstatistikleri',
+    category: 'Raporlar & Dosyalar',
+    description: 'Şube bazlı başarı, ödev ve devamsızlık analiz grafikleri',
     defaultForRoles: ['admin_assist', 'head_dept', 'guidance'],
   },
   {
+    id: 'teacher_library',
+    label: 'Eğitim Kütüphanesi & Dosyalar',
+    category: 'Raporlar & Dosyalar',
+    description: 'Kişisel ders materyalleri ve ortak zümre arşivi',
+    defaultForRoles: ['admin_assist', 'head_dept', 'guidance', 'teacher'],
+  },
+  {
+    id: 'teacher_notifications',
+    label: 'Veliye / Öğrenciye Bildirim Gönderme',
+    category: 'Raporlar & Dosyalar',
+    description: 'Öğrenci veya veliye anlık bildirim ve SMS iletme',
+    defaultForRoles: ['admin_assist', 'guidance', 'head_dept'],
+  },
+
+  // Kategori 6: İdari & Yönetim Yetkileri
+  {
     id: 'admin_view_schedule',
-    label: 'Tüm Okul Ders Programı Görüntüleme',
-    category: 'İdari Yetkiler',
-    description: 'Tüm öğretmenlerin ve sınıfların haftalık programı',
+    label: 'Tüm Okul Ders Dağılımını Görme',
+    category: 'İdari & Yönetim',
+    description: 'Okul genelindeki tüm öğretmenlerin ve sınıfların programı',
     defaultForRoles: ['admin_assist'],
   },
   {
     id: 'admin_view_teachers',
-    label: 'Öğretmenler Listesini Görüntüleme',
-    category: 'İdari Yetkiler',
-    description: 'Kurum öğretmen rehberi ve nöbet çizelgeleri',
+    label: 'Öğretmen Kadrosu & Nöbet Çizelgesi',
+    category: 'İdari & Yönetim',
+    description: 'Kurum personeli, nöbet günleri ve boş saat çizelgeleri',
     defaultForRoles: ['admin_assist'],
+  },
+  {
+    id: 'admin_branch_head',
+    label: 'Zümre Onayları & Tutanaklar',
+    category: 'İdari & Yönetim',
+    description: 'Zümre kararlarını onaylama ve resmi tutanak tutma',
+    defaultForRoles: ['admin_assist', 'head_dept'],
   },
 ]
 
@@ -1090,7 +1150,7 @@ export default function MAdminTeachersClient({
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: '100%', opacity: 0.8 }}
               transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-              className={`relative w-full sm:max-w-md max-h-[90vh] rounded-t-[32px] sm:rounded-[32px] shadow-2xl flex flex-col z-10 overflow-hidden ${
+              className={`relative w-full sm:max-w-4xl lg:max-w-5xl max-h-[90vh] rounded-t-[32px] sm:rounded-[32px] shadow-2xl flex flex-col z-10 overflow-hidden ${
                 theme === 'dark'
                   ? 'bg-[#0E131F] text-white border-t sm:border border-gray-800'
                   : 'bg-white text-gray-900 border-t sm:border border-gray-200'
@@ -1416,64 +1476,92 @@ export default function MAdminTeachersClient({
                       </div>
                     </div>
 
-                    {/* Granular Screen Toggles List */}
-                    <div className="space-y-2">
+                    {/* Granular Screen Toggles List Grouped by Category */}
+                    <div className="space-y-3">
                       <div className="flex items-center justify-between text-xs font-bold text-gray-500">
-                        <span>Erişilebilir Ekranlar & İşlevler</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (customPermissions.length === SYSTEM_SCREEN_PERMISSIONS.length) {
-                              setCustomPermissions([])
-                            } else {
-                              setCustomPermissions(SYSTEM_SCREEN_PERMISSIONS.map((p) => p.id))
-                            }
-                          }}
-                          className="text-purple-600 dark:text-purple-400 hover:underline cursor-pointer"
-                        >
-                          {customPermissions.length === SYSTEM_SCREEN_PERMISSIONS.length
-                            ? 'Tümünü Kaldır'
-                            : 'Tümünü Seç'}
-                        </button>
+                        <span>Erişilebilir Ekranlar & Yetki Alanları</span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setCustomPermissions(SYSTEM_SCREEN_PERMISSIONS.map((p) => p.id))}
+                            className="text-purple-600 dark:text-purple-400 hover:underline cursor-pointer text-xs"
+                          >
+                            Tümünü Aç
+                          </button>
+                          <span>·</span>
+                          <button
+                            type="button"
+                            onClick={() => setCustomPermissions([])}
+                            className="text-gray-400 hover:underline cursor-pointer text-xs"
+                          >
+                            Tümünü Kapat
+                          </button>
+                        </div>
                       </div>
 
-                      <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
-                        {SYSTEM_SCREEN_PERMISSIONS.map((perm) => {
-                          const isAllowed = customPermissions.includes(perm.id)
+                      <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+                        {Array.from(new Set(SYSTEM_SCREEN_PERMISSIONS.map((p) => p.category))).map((catName) => {
+                          const catPerms = SYSTEM_SCREEN_PERMISSIONS.filter((p) => p.category === catName)
+                          const allCatAllowed = catPerms.every((p) => customPermissions.includes(p.id))
+
                           return (
-                            <div
-                              key={perm.id}
-                              onClick={() => handleTogglePermission(perm.id)}
-                              className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
-                                isAllowed
-                                  ? 'bg-purple-50/60 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800'
-                                  : 'bg-gray-50 dark:bg-gray-800/40 border-gray-200/60 dark:border-gray-800 opacity-60'
-                              }`}
-                            >
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-extrabold text-xs text-gray-900 dark:text-white">
-                                    {perm.label}
-                                  </span>
-                                  <span className="text-[9.5px] font-bold px-1.5 py-0.2 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
-                                    {perm.category}
-                                  </span>
-                                </div>
-                                <div className="text-[10.5px] text-gray-500 dark:text-gray-400 truncate mt-0.5">
-                                  {perm.description}
-                                </div>
+                            <div key={catName} className="p-3 rounded-2xl bg-gray-50/70 dark:bg-gray-800/40 border border-gray-200/80 dark:border-gray-800 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[11px] font-black uppercase tracking-wider text-purple-700 dark:text-purple-400">
+                                  {catName}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (allCatAllowed) {
+                                      setCustomPermissions((prev) => prev.filter((id) => !catPerms.some((p) => p.id === id)))
+                                    } else {
+                                      const toAdd = catPerms.map((p) => p.id)
+                                      setCustomPermissions((prev) => Array.from(new Set([...prev, ...toAdd])))
+                                    }
+                                  }}
+                                  className="text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer"
+                                >
+                                  {allCatAllowed ? 'Kategoriyi Kapat' : 'Kategoriyi Aç'}
+                                </button>
                               </div>
 
-                              <div className="shrink-0">
-                                {isAllowed ? (
-                                  <div className="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center">
-                                    <Check size={14} strokeWidth={3} />
-                                  </div>
-                                ) : (
-                                  <div className="w-6 h-6 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-400 flex items-center justify-center">
-                                    <X size={13} strokeWidth={2} />
-                                  </div>
-                                )}
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {catPerms.map((perm) => {
+                                  const isAllowed = customPermissions.includes(perm.id)
+                                  return (
+                                    <div
+                                      key={perm.id}
+                                      onClick={() => handleTogglePermission(perm.id)}
+                                      className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2.5 ${
+                                        isAllowed
+                                          ? 'bg-purple-50/80 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800'
+                                          : 'bg-white dark:bg-[#121826] border-gray-200/60 dark:border-gray-800 opacity-60'
+                                      }`}
+                                    >
+                                      <div className="min-w-0 flex-1">
+                                        <div className="font-extrabold text-xs text-gray-900 dark:text-white truncate">
+                                          {perm.label}
+                                        </div>
+                                        <div className="text-[10px] text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                                          {perm.description}
+                                        </div>
+                                      </div>
+
+                                      <div className="shrink-0">
+                                        {isAllowed ? (
+                                          <div className="w-5 h-5 rounded-md bg-emerald-600 text-white flex items-center justify-center">
+                                            <Check size={12} strokeWidth={3} />
+                                          </div>
+                                        ) : (
+                                          <div className="w-5 h-5 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-400 flex items-center justify-center">
+                                            <X size={11} strokeWidth={2} />
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )
+                                })}
                               </div>
                             </div>
                           )
@@ -2092,7 +2180,7 @@ export default function MAdminTeachersClient({
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: '100%', opacity: 0.8 }}
               transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-              className={`relative w-full sm:max-w-md max-h-[90vh] rounded-t-[32px] sm:rounded-[32px] shadow-2xl flex flex-col z-10 overflow-hidden ${
+              className={`relative w-full sm:max-w-3xl lg:max-w-4xl max-h-[90vh] rounded-t-[32px] sm:rounded-[32px] shadow-2xl flex flex-col z-10 overflow-hidden ${
                 theme === 'dark'
                   ? 'bg-[#0E131F] text-white border-t sm:border border-gray-800'
                   : 'bg-white text-gray-900 border-t sm:border border-gray-200'

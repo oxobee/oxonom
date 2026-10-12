@@ -786,7 +786,7 @@ export default function MAdminClient({
                 </span>
               </div>
               <div className="text-xl font-black text-gray-900 dark:text-white">
-                {selectedOrgId === 30 ? '1' : selectedOrgId === 10 ? '348' : '412'}
+                1
               </div>
               <div className="text-[11px] font-bold text-gray-500 dark:text-gray-400 mt-0.5 truncate">
                 Toplam Öğrenci
@@ -1448,18 +1448,6 @@ export default function MAdminClient({
             </div>
           </div>
         </section>
-
-        {/* ── 9. ALT BİLGİ DOCK BUTONU ── */}
-        <div className="px-4 mt-4">
-          <button
-            type="button"
-            onClick={() => setIsMoreSheetOpen(true)}
-            className="w-full h-12 rounded-2xl bg-gradient-to-r from-gray-900 to-gray-800 dark:from-[#131C31] dark:to-[#1E293B] text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer active:scale-98 border border-white/10"
-          >
-            <Layers size={15} className="text-[#34D399]" />
-            <span>Tüm İdare Menülerini Aç (01 — 14)</span>
-          </button>
-        </div>
       </motion.div>
 
       {/* ── DİĞER MODÜLLER AÇILIR ÇEKMECESİ ── */}
