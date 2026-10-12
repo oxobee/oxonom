@@ -51,7 +51,7 @@ export interface MAdminReportsClientProps {
   hideDock?: boolean
 }
 
-type ReportTab = 'overview' | 'success' | 'attendance' | 'curriculum' | 'export'
+type ReportTab = 'overview' | 'success' | 'attendance' | 'export'
 type TermFilter = 'term1' | 'term2' | 'all'
 
 export default function MAdminReportsClient({
@@ -375,51 +375,10 @@ export default function MAdminReportsClient({
     ]
   }, [])
 
-  // ── DATA: MEB KAZANIM KAVRAMA & MÜFREDAT TABLOSU ──
-  const curriculumCompetencies = useMemo(() => {
-    return [
-      {
-        code: 'T.4.3.1',
-        subject: 'Türkçe',
-        title: 'Okuduğu metnin ana fikrini ve yardımcı fikirlerini belirler.',
-        masteryRate: 94,
-        status: 'strong',
-        recommendation: 'Kazanım tam pekişti; zenginleştirilmiş okuma metinlerine geçilebilir.',
-      },
-      {
-        code: 'M.4.1.2',
-        subject: 'Matematik',
-        title: 'Dört basamaklı doğal sayılarla eldesiz ve eldeli toplama işlemini yapar.',
-        masteryRate: 91,
-        status: 'strong',
-        recommendation: 'Problem kurma ve günlük hayat uygulamalarıyla sürdürülüyor.',
-      },
-      {
-        code: 'F.4.2.1',
-        subject: 'Fen Bilimleri',
-        title: 'Besin maddelerini ve dengeli beslenmenin önemini kavrar.',
-        masteryRate: 93,
-        status: 'strong',
-        recommendation: 'Grup deneyleri ve sunumlarla başarı %90 üzerine çıktı.',
-      },
-      {
-        code: 'M.4.1.4',
-        subject: 'Matematik',
-        title: 'Doğal sayılarla bölme işleminde kalanlı bölme ve tahmin stratejileri.',
-        masteryRate: 72,
-        status: 'needs_review',
-        recommendation: 'Akıllı Tahtada görselleştirilmiş basamak bölme etkinlikleri ve etüt tavsiye edilir.',
-      },
-      {
-        code: 'T.4.2.3',
-        subject: 'Türkçe',
-        title: 'Metindeki sebep-sonuç ve amaç-sonuç cümlelerini ayırt eder.',
-        masteryRate: 74,
-        status: 'needs_review',
-        recommendation: 'Soru havuzundaki interaktif çalışma kağıtları ile 1 hafta tekrar önerilir.',
-      },
-    ]
-  }, [])
+  // ── DATA: DYNAMIC STUDENT ATTENDANCE STATS ──
+  const totalEnrolledStudents = useMemo(() => {
+    return classData.reduce((acc, c) => acc + (c.students || 0), 0)
+  }, [classData])
 
   // ── ACTIONS ──
   const handleSendSmsAlert = (student: any) => {
@@ -674,13 +633,12 @@ export default function MAdminReportsClient({
           </button>
         </div>
 
-        {/* 5 Main Sub-Modules Tab Navigation Bar */}
+        {/* 4 Main Sub-Modules Tab Navigation Bar */}
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
           {[
             { id: 'overview', label: 'Genel Özet', icon: BarChart3 },
             { id: 'success', label: 'Sınav & Dersler', icon: Award },
             { id: 'attendance', label: 'Devamsızlık (Yoklama)', icon: UserCheck },
-            { id: 'curriculum', label: 'MEB Kazanımları', icon: BookOpen },
             { id: 'export', label: 'Resmi Çıktılar', icon: Download },
           ].map((tab) => {
             const Icon = tab.icon
@@ -971,34 +929,34 @@ export default function MAdminReportsClient({
         {activeTab === 'attendance' && (
           <div className="space-y-3.5">
             {/* Günlük Yoklama Özeti Kartı */}
-            <div className="p-4 rounded-3xl bg-gradient-to-br from-emerald-900/30 via-teal-900/20 to-gray-900/40 text-white border border-emerald-500/30 shadow-sm">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-emerald-500 text-gray-950 flex items-center justify-center">
-                    <CheckCircle2 size={16} />
+            <div className="p-5 rounded-3xl bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800/80 shadow-xs">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+                    <CheckCircle2 size={18} />
                   </div>
                   <div>
-                    <h3 className="text-xs font-black text-white">Günlük Yoklama Tamamlama</h3>
-                    <p className="text-[10px] text-emerald-300">Tüm Şubeler Çevrimiçi Giriş Yaptı</p>
+                    <h3 className="text-xs font-black text-gray-900 dark:text-white">Günlük Yoklama Tamamlama</h3>
+                    <p className="text-[10.5px] text-emerald-600 dark:text-emerald-400 font-semibold">Tüm Şubeler Çevrimiçi Giriş Yaptı</p>
                   </div>
                 </div>
-                <span className="text-xs font-black text-emerald-400 bg-emerald-950/80 border border-emerald-800/80 px-2 py-0.5 rounded-full">
+                <span className="text-xs font-black text-emerald-700 dark:text-emerald-400 bg-emerald-100/80 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800/80 px-2.5 py-1 rounded-full">
                   %100 Eksiksiz
                 </span>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-white/10 text-center">
+              <div className="grid grid-cols-3 gap-2 pt-3 border-t border-gray-100 dark:border-gray-800/80 text-center">
                 <div>
-                  <div className="text-base font-black text-white">336</div>
-                  <div className="text-[9.5px] text-gray-400 font-medium">Mevcut Öğrenci</div>
+                  <div className="text-base font-black text-gray-900 dark:text-white">{totalEnrolledStudents}</div>
+                  <div className="text-[9.5px] text-gray-500 dark:text-gray-400 font-medium">Mevcut Öğrenci</div>
                 </div>
                 <div>
-                  <div className="text-base font-black text-amber-400">8</div>
-                  <div className="text-[9.5px] text-gray-400 font-medium">İzinli / Raporlu</div>
+                  <div className="text-base font-black text-amber-600 dark:text-amber-400">8</div>
+                  <div className="text-[9.5px] text-gray-500 dark:text-gray-400 font-medium">İzinli / Raporlu</div>
                 </div>
                 <div>
-                  <div className="text-base font-black text-rose-400">4</div>
-                  <div className="text-[9.5px] text-gray-400 font-medium">Özürsüz Devamsız</div>
+                  <div className="text-base font-black text-rose-600 dark:text-rose-400">4</div>
+                  <div className="text-[9.5px] text-gray-500 dark:text-gray-400 font-medium">Özürsüz Devamsız</div>
                 </div>
               </div>
             </div>
@@ -1087,76 +1045,7 @@ export default function MAdminReportsClient({
           </div>
         )}
 
-        {/* ──────────────── TAB 4: CURRICULUM (MEB KAZANIMLARI) ──────────────── */}
-        {activeTab === 'curriculum' && (
-          <div className="space-y-3.5">
-            {/* Müfredat İlerleme Durumu */}
-            <div className="p-4 rounded-3xl bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800/80 shadow-sm">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-wider">
-                  Müfredat İlerleme & Ders İşleme
-                </h3>
-                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                  %93.3 Senkronize
-                </span>
-              </div>
-              <p className="text-[10.5px] text-gray-500 dark:text-gray-400 mb-3">
-                Öğretmenlerin yıllık plana göre işlediği toplam ders saati
-              </p>
-
-              <div className="h-2.5 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden mb-2">
-                <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full" style={{ width: '93.3%' }} />
-              </div>
-              <div className="flex justify-between text-[10px] text-gray-400 font-semibold">
-                <span>504 Saat İşlendi</span>
-                <span>Planlanan: 540 Saat</span>
-              </div>
-            </div>
-
-            {/* Kazanım Listesi */}
-            <div className="space-y-2">
-              <div className="text-xs font-black text-gray-900 dark:text-white px-1">
-                Kazanım Kavrama Analizi ({curriculumCompetencies.length})
-              </div>
-
-              {curriculumCompetencies.map((comp) => (
-                <div
-                  key={comp.code}
-                  className="p-3.5 rounded-2xl bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800/80 shadow-xs space-y-2"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-mono">
-                        {comp.code}
-                      </span>
-                      <span className="text-[10px] font-bold text-gray-400">{comp.subject}</span>
-                    </div>
-
-                    <span
-                      className={`text-[9.5px] font-black uppercase px-2 py-0.5 rounded-md ${
-                        comp.status === 'strong'
-                          ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
-                          : 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300'
-                      }`}
-                    >
-                      %{comp.masteryRate} Kavrandı
-                    </span>
-                  </div>
-
-                  <div className="text-xs font-bold text-gray-900 dark:text-white leading-snug">
-                    {comp.title}
-                  </div>
-
-                  <div className="p-2 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-800 text-[10.5px] text-gray-600 dark:text-gray-300">
-                    💡 <strong>Öneri:</strong> {comp.recommendation}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ──────────────── TAB 5: EXPORT (RESMİ ÇIKTILAR & RAPORLAR) ──────────────── */}
+        {/* ──────────────── TAB 4: EXPORT (RESMİ ÇIKTILAR & RAPORLAR) ──────────────── */}
         {activeTab === 'export' && (
           <div className="space-y-3.5">
             <div className="p-4 rounded-3xl bg-gradient-to-br from-gray-900 via-[#0D1829] to-[#0B2117] text-white border border-emerald-500/30 shadow-lg">

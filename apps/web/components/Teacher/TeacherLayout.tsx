@@ -227,7 +227,17 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
           </button>
           <button
             type="button"
-            onClick={() => signOut()}
+            onClick={async () => {
+              if (typeof window !== 'undefined') {
+                try {
+                  localStorage.removeItem('oxonom_teacher_profile')
+                  localStorage.removeItem('oxonom_teacher_profile_completed')
+                  localStorage.removeItem('oxonom_current_role')
+                } catch (_) {}
+              }
+              await signOut()
+              window.location.href = '/loginv2'
+            }}
             className="w-full h-9 px-3 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/30 text-gray-500 hover:text-rose-600 dark:hover:text-rose-400 font-semibold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
           >
             <LogOut size={14} />
@@ -430,9 +440,17 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
               <div className="p-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={async () => {
                     setIsMoreSheetOpen(false)
-                    signOut()
+                    if (typeof window !== 'undefined') {
+                      try {
+                        localStorage.removeItem('oxonom_teacher_profile')
+                        localStorage.removeItem('oxonom_teacher_profile_completed')
+                        localStorage.removeItem('oxonom_current_role')
+                      } catch (_) {}
+                    }
+                    await signOut()
+                    window.location.href = '/loginv2'
                   }}
                   className="text-xs font-bold text-rose-500 flex items-center gap-1.5 cursor-pointer"
                 >

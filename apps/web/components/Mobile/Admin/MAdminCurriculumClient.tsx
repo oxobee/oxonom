@@ -1103,7 +1103,7 @@ export default function MAdminCurriculumClient({
         />
       )}
 
-      <main className="max-w-[430px] sm:max-w-[460px] mx-auto min-h-screen">
+      <main className={`w-full ${hideHeader ? 'max-w-7xl mx-auto p-2 sm:p-4 lg:p-6' : 'max-w-[430px] sm:max-w-[460px] mx-auto'} min-h-screen`}>
         {/* ── 2. HERO CARD & OKUL / ŞUBE SEÇİCİ ── */}
         <section className="px-4 pt-3">
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0E131F] via-[#121826] to-[#0A0D15] border border-gray-800 p-4 shadow-xl">
@@ -1421,7 +1421,7 @@ export default function MAdminCurriculumClient({
                 </span>
               </div>
 
-              <div className="space-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {periods.map((slot) => {
                   const entry = activeDayEntries.find((e) => e.period === slot.periodNumber)
                   const style = entry ? getColorStyle(entry.color) : null

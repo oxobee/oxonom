@@ -63,18 +63,27 @@ export default function PrincipalLayout({ children }: PrincipalLayoutProps) {
   })
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('oxonom_active_admin_session')
-        if (saved) {
-          const parsed = JSON.parse(saved)
-          setAdminProfile({
-            name: parsed.name || (parsed.first_name ? `${parsed.first_name} ${parsed.last_name || ''}`.trim() : 'Dr. Uğur UĞURLU'),
-            title: parsed.title || 'Okul Müdürü · Kurum Yetkilisi',
-            schoolName: parsed.schoolName || 'Oxonom Okulları',
-          })
-        }
-      } catch (_) {}
+    const loadAdminSession = () => {
+      if (typeof window !== 'undefined') {
+        try {
+          const saved = localStorage.getItem('oxonom_active_admin_session')
+          if (saved) {
+            const parsed = JSON.parse(saved)
+            setAdminProfile({
+              name: parsed.name || (parsed.first_name ? `${parsed.first_name} ${parsed.last_name || ''}`.trim() : 'Dr. Uğur UĞURLU'),
+              title: parsed.title || 'Okul Müdürü · Kurum Yetkilisi',
+              schoolName: parsed.schoolName || 'Oxonom Okulları',
+            })
+          }
+        } catch (_) {}
+      }
+    }
+    loadAdminSession()
+    window.addEventListener('oxonom_admin_updated', loadAdminSession)
+    window.addEventListener('storage', loadAdminSession)
+    return () => {
+      window.removeEventListener('oxonom_admin_updated', loadAdminSession)
+      window.removeEventListener('storage', loadAdminSession)
     }
   }, [])
 

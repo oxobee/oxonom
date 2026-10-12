@@ -43,6 +43,10 @@ import {
   Lock,
   Key,
   Shield,
+  Trash2,
+  CheckSquare,
+  Square,
+  DollarSign,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import MobileHeader from '@components/Mobile/MobileHeader'
@@ -57,7 +61,102 @@ export interface MAdminTeachersClientProps {
   hideDock?: boolean
 }
 
-type DetailTabKey = 'ozluk' | 'gorev' | 'izin' | 'maas' | 'bildirim' | 'belgeler'
+export interface ScreenPermission {
+  id: string
+  label: string
+  category: string
+  description: string
+  defaultForRoles: string[]
+}
+
+export const SYSTEM_SCREEN_PERMISSIONS: ScreenPermission[] = [
+  {
+    id: 'teacher_dashboard',
+    label: 'Dashboard & Günlük Akış',
+    category: 'Temel Öğretmen Paneli',
+    description: 'Bugünün dersleri, duyurular ve hızlı istatistikler',
+    defaultForRoles: ['admin_assist', 'head_dept', 'guidance', 'teacher'],
+  },
+  {
+    id: 'teacher_schedule',
+    label: 'Derslerim & Haftalık Program',
+    category: 'Temel Öğretmen Paneli',
+    description: 'Haftalık ders çizelgesi ve derslik yerleşimleri',
+    defaultForRoles: ['admin_assist', 'head_dept', 'guidance', 'teacher'],
+  },
+  {
+    id: 'teacher_classes',
+    label: 'Sınıf & Öğrenci Listeleri',
+    category: 'Öğrenci Yönetimi',
+    description: 'Öğrenci dosyaları, künyeler ve iletişim bilgileri',
+    defaultForRoles: ['admin_assist', 'head_dept', 'guidance', 'teacher'],
+  },
+  {
+    id: 'teacher_attendance',
+    label: 'Yoklama Alma & Devamsızlık Takibi',
+    category: 'Öğrenci Yönetimi',
+    description: 'Ders bazlı yoklama alma ve tarihsel arşiv',
+    defaultForRoles: ['admin_assist', 'head_dept', 'teacher'],
+  },
+  {
+    id: 'teacher_assignments',
+    label: 'Ödev & Proje Yönetimi',
+    category: 'Akademik Değerlendirme',
+    description: 'Ödev oluşturma, teslim alma ve puanlama',
+    defaultForRoles: ['admin_assist', 'head_dept', 'teacher'],
+  },
+  {
+    id: 'teacher_exams',
+    label: 'Sınavlar & Not Girişi',
+    category: 'Akademik Değerlendirme',
+    description: 'MEB e-Okul formatında hızlı sınav notu girişi ve istatistik',
+    defaultForRoles: ['admin_assist', 'head_dept', 'teacher'],
+  },
+  {
+    id: 'teacher_guidance',
+    label: 'Öğrenci Gelişimi & Rehberlik',
+    category: 'Rehberlik & Takip',
+    description: 'Gözlem notları, rehberlik raporları ve bireysel takip',
+    defaultForRoles: ['admin_assist', 'guidance'],
+  },
+  {
+    id: 'teacher_smartboard',
+    label: 'Akıllı Tahta & Canlı Oturum',
+    category: 'Donanım & Tahta',
+    description: 'Sınıf içi akıllı tahtaları görüntüleme ve oturum yönetimi',
+    defaultForRoles: ['admin_assist', 'head_dept', 'teacher'],
+  },
+  {
+    id: 'teacher_library',
+    label: 'Dosyalarım & Eğitim Kütüphanesi',
+    category: 'İçerik Yönetimi',
+    description: 'Ders notları, materyaller ve çalışma yaprakları',
+    defaultForRoles: ['admin_assist', 'head_dept', 'guidance', 'teacher'],
+  },
+  {
+    id: 'teacher_reports',
+    label: 'Raporlarım & Başarı Analizleri',
+    category: 'Raporlama',
+    description: 'Şube bazlı akademik grafikler ve devamsızlık özetleri',
+    defaultForRoles: ['admin_assist', 'head_dept', 'guidance'],
+  },
+  {
+    id: 'admin_view_schedule',
+    label: 'Tüm Okul Ders Programı Görüntüleme',
+    category: 'İdari Yetkiler',
+    description: 'Tüm öğretmenlerin ve sınıfların haftalık programı',
+    defaultForRoles: ['admin_assist'],
+  },
+  {
+    id: 'admin_view_teachers',
+    label: 'Öğretmenler Listesini Görüntüleme',
+    category: 'İdari Yetkiler',
+    description: 'Kurum öğretmen rehberi ve nöbet çizelgeleri',
+    defaultForRoles: ['admin_assist'],
+  },
+]
+
+type DetailTabKey = 'ozluk' | 'gorev' | 'yetkiler' | 'izin' | 'maas' | 'bildirim' | 'belgeler'
 
 export default function MAdminTeachersClient({
   orgSlug,
@@ -74,7 +173,25 @@ export default function MAdminTeachersClient({
   const [selectedTeacherForDetail, setSelectedTeacherForDetail] = useState<any | null>(null)
   const [activeDetailTab, setActiveDetailTab] = useState<DetailTabKey>('ozluk')
   const [teacherToEdit, setTeacherToEdit] = useState<any | null>(null)
+  const [teacherToDelete, setTeacherToDelete] = useState<any | null>(null)
   const [isNewTeacherModalOpen, setIsNewTeacherModalOpen] = useState(false)
+
+  // Granular Screen Permission Matrix states
+  const [selectedRoleTemplate, setSelectedRoleTemplate] = useState<string>('teacher')
+  const [customPermissions, setCustomPermissions] = useState<string[]>([])
+
+  // Advance Payment (Avans) state
+  const [isAddingAdvance, setIsAddingAdvance] = useState(false)
+  const [newAdvanceAmount, setNewAdvanceAmount] = useState<number>(5000)
+  const [newAdvanceReason, setNewAdvanceReason] = useState('Acil Ailevi Masraf')
+  const [teacherAdvancesMap, setTeacherAdvancesMap] = useState<
+    Record<number, Array<{ id: string; amount: number; date: string; status: string; reason: string }>>
+  >({
+    1: [
+      { id: 'adv-1', amount: 12000, date: '01 Ekim 2026', status: 'Onaylandı', reason: 'Taşınma ve Kira Avansı' },
+      { id: 'adv-2', amount: 5000, date: '09 Ekim 2026', status: 'Onaylandı', reason: 'Kongre Katılımı Masrafı' },
+    ],
+  })
 
   // Notification tab state
   const [notifChannel, setNotifChannel] = useState<'app_sms' | 'app_only' | 'official'>('app_sms')
@@ -520,6 +637,11 @@ export default function MAdminTeachersClient({
     toast.success(`${month} e-bordrosu PDF olarak indiriliyor...`)
   }
 
+  // Handle upload document
+  const handleUploadDocument = () => {
+    toast.success('Özlük belgesi yükleme arayüzü hazır. PDF veya taranmış belge eklenebilir.')
+  }
+
   // Handle create leave
   const handleCreateLeave = (e: React.FormEvent) => {
     e.preventDefault()
@@ -563,9 +685,138 @@ export default function MAdminTeachersClient({
     setNewLeaveReason('')
   }
 
-  // Handle upload document
-  const handleUploadDocument = () => {
-    toast.success('Özlük belgesi sisteme başarıyla yüklendi ve arşivlendi!')
+  // Freeze / Unfreeze Teacher Account
+  const handleToggleFreezeTeacher = (teacher: any) => {
+    const newStatus = !teacher.isFrozen
+    const updated = teachersList.map((t) => {
+      if (t.id === teacher.id) {
+        return { ...t, isFrozen: newStatus }
+      }
+      return t
+    })
+    setTeachersList(updated)
+    if (selectedTeacherForDetail?.id === teacher.id) {
+      setSelectedTeacherForDetail({ ...selectedTeacherForDetail, isFrozen: newStatus })
+    }
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(`oxonom_admin_teachers_${selectedOrgId}`, JSON.stringify(updated))
+      } catch (_) {}
+    }
+    toast.success(
+      newStatus
+        ? `${teacher.name} hesabı donduruldu (Giriş yetkisi durduruldu).`
+        : `${teacher.name} hesabı aktife alındı.`
+    )
+  }
+
+  // Confirm Delete Teacher
+  const handleConfirmDeleteTeacher = () => {
+    if (!teacherToDelete) return
+    const updated = teachersList.filter((t) => t.id !== teacherToDelete.id)
+    setTeachersList(updated)
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(`oxonom_admin_teachers_${selectedOrgId}`, JSON.stringify(updated))
+      } catch (_) {}
+    }
+    toast.success(`${teacherToDelete.name} öğretmen sistemden başarıyla silindi.`)
+    setTeacherToDelete(null)
+  }
+
+  // Open Teacher Detail Modal with pre-loaded permissions
+  const handleOpenTeacherDetail = (teacher: any) => {
+    setSelectedTeacherForDetail(teacher)
+    setActiveDetailTab('ozluk')
+    const template = teacher.roleTemplate || 'teacher'
+    setSelectedRoleTemplate(template)
+    let perms = teacher.permissions
+    if (!perms && typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem(`oxonom_teacher_permissions_${teacher.id || teacher.email}`)
+        if (raw) perms = JSON.parse(raw)
+      } catch (_) {}
+    }
+    if (!perms) {
+      perms = SYSTEM_SCREEN_PERMISSIONS
+        .filter((p) => p.defaultForRoles.includes(template))
+        .map((p) => p.id)
+    }
+    setCustomPermissions(perms)
+  }
+
+  // Apply Role Template for screen permissions
+  const handleApplyRoleTemplate = (roleKey: string) => {
+    setSelectedRoleTemplate(roleKey)
+    if (roleKey === 'custom') return
+    const matched = SYSTEM_SCREEN_PERMISSIONS
+      .filter((p) => p.defaultForRoles.includes(roleKey))
+      .map((p) => p.id)
+    setCustomPermissions(matched)
+  }
+
+  // Toggle individual screen permission
+  const handleTogglePermission = (permId: string) => {
+    setSelectedRoleTemplate('custom')
+    if (customPermissions.includes(permId)) {
+      setCustomPermissions(customPermissions.filter((id) => id !== permId))
+    } else {
+      setCustomPermissions([...customPermissions, permId])
+    }
+  }
+
+  // Save Permissions Matrix
+  const handleSavePermissions = () => {
+    if (!selectedTeacherForDetail) return
+    const updated = teachersList.map((t) => {
+      if (t.id === selectedTeacherForDetail.id) {
+        return {
+          ...t,
+          roleTemplate: selectedRoleTemplate,
+          permissions: customPermissions,
+        }
+      }
+      return t
+    })
+    setTeachersList(updated)
+    setSelectedTeacherForDetail({
+      ...selectedTeacherForDetail,
+      roleTemplate: selectedRoleTemplate,
+      permissions: customPermissions,
+    })
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(`oxonom_admin_teachers_${selectedOrgId}`, JSON.stringify(updated))
+        localStorage.setItem(
+          `oxonom_teacher_permissions_${selectedTeacherForDetail.id || selectedTeacherForDetail.email}`,
+          JSON.stringify(customPermissions)
+        )
+      } catch (_) {}
+    }
+    toast.success(`${selectedTeacherForDetail.name} yetkilendirmesi başarıyla kaydedildi ve uygulandı!`)
+  }
+
+  // Create Advance Payment (Avans Talebi)
+  const handleCreateAdvance = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedTeacherForDetail) return
+    const newRecord = {
+      id: `adv-${Date.now()}`,
+      amount: newAdvanceAmount,
+      date: 'Bugün',
+      status: 'Onaylandı',
+      reason: newAdvanceReason || 'Kurum İçi Avans Talebi',
+    }
+    setTeacherAdvancesMap((prev) => ({
+      ...prev,
+      [selectedTeacherForDetail.id]: [
+        newRecord,
+        ...(prev[selectedTeacherForDetail.id] || []),
+      ],
+    }))
+    toast.success(`₺${newAdvanceAmount.toLocaleString('tr-TR')} avans talebi onaylandı ve kayıtlara işlendi!`)
+    setIsAddingAdvance(false)
+    setNewAdvanceReason('')
   }
 
   // Filtered teachers
@@ -689,8 +940,8 @@ export default function MAdminTeachersClient({
         </section>
 
         {/* ── 4. TEACHER CARDS LIST ── */}
-        <section className="px-4 mt-3.5 space-y-2.5">
-          <div className="flex items-center justify-between text-xs text-gray-500 font-bold px-1">
+        <section className={`px-4 mt-3.5 ${hideHeader ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 space-y-0' : 'space-y-2.5'}`}>
+          <div className={`flex items-center justify-between text-xs text-gray-500 font-bold px-1 ${hideHeader ? 'col-span-full' : ''}`}>
             <span>Kayıtlı Öğretmen Kadrosu ({filteredTeachers.length})</span>
             <span>{activeOrg.name}</span>
           </div>
@@ -699,8 +950,12 @@ export default function MAdminTeachersClient({
             <motion.div
               key={teacher.id}
               whileTap={{ scale: 0.99 }}
-              onClick={() => setSelectedTeacherForDetail(teacher)}
-              className="bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800/80 rounded-2xl p-3.5 shadow-xs transition-all hover:border-[#34D399]/40 cursor-pointer"
+              onClick={() => handleOpenTeacherDetail(teacher)}
+              className={`border rounded-2xl p-3.5 shadow-xs transition-all hover:border-[#34D399]/40 cursor-pointer ${
+                teacher.isFrozen
+                  ? 'bg-slate-50 dark:bg-slate-900/30 border-slate-300 dark:border-slate-800 opacity-80'
+                  : 'bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800/80'
+              }`}
             >
               <div className="flex items-start justify-between gap-3">
                 {/* Avatar & Main Info */}
@@ -713,7 +968,11 @@ export default function MAdminTeachersClient({
                         .join('')
                         .slice(0, 2)}
                     </div>
-                    <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-[#121826]" />
+                    <span
+                      className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white dark:border-[#121826] ${
+                        teacher.isFrozen ? 'bg-slate-400' : 'bg-emerald-500'
+                      }`}
+                    />
                   </div>
 
                   <div className="min-w-0 flex-1">
@@ -721,9 +980,15 @@ export default function MAdminTeachersClient({
                       <h4 className="text-xs font-black text-gray-900 dark:text-white truncate">
                         {teacher.name}
                       </h4>
-                      <span className="text-[10px] font-black px-1.5 py-0.2 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/40">
-                        {teacher.employmentType || 'Kadrolu'}
-                      </span>
+                      {teacher.isFrozen ? (
+                        <span className="text-[10px] font-black px-1.5 py-0.2 rounded-md bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                          ❄️ Donduruldu
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-black px-1.5 py-0.2 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/40">
+                          {teacher.employmentType || 'Kadrolu'}
+                        </span>
+                      )}
                     </div>
 
                     <div className="text-[11px] text-gray-600 dark:text-gray-300 font-semibold mt-0.5 truncate">
@@ -742,8 +1007,36 @@ export default function MAdminTeachersClient({
                   </div>
                 </div>
 
-                {/* Edit & Detail Buttons */}
+                {/* Edit & Action Buttons */}
                 <div className="shrink-0 flex items-center gap-1.5 pt-1">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleToggleFreezeTeacher(teacher)
+                    }}
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors cursor-pointer ${
+                      teacher.isFrozen
+                        ? 'bg-emerald-100 hover:bg-emerald-200 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+                    }`}
+                    title={teacher.isFrozen ? 'Hesabı Aktife Al' : 'Hesabı Dondur'}
+                  >
+                    <Lock size={12} />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setTeacherToDelete(teacher)
+                    }}
+                    className="w-8 h-8 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/60 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 flex items-center justify-center transition-colors cursor-pointer"
+                    title="Öğretmeni Sil"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+
                   <button
                     type="button"
                     onClick={(e) => {
@@ -760,7 +1053,7 @@ export default function MAdminTeachersClient({
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation()
-                      setSelectedTeacherForDetail(teacher)
+                      handleOpenTeacherDetail(teacher)
                     }}
                     className="w-8 h-8 rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-600 dark:text-blue-400 flex items-center justify-center transition-colors cursor-pointer"
                     title="Detayları İncele"
@@ -773,7 +1066,7 @@ export default function MAdminTeachersClient({
           ))}
 
           {filteredTeachers.length === 0 && (
-            <div className="py-12 text-center text-xs text-gray-400 bg-white dark:bg-[#121826] rounded-2xl border border-gray-200 dark:border-gray-800 p-6">
+            <div className={`py-12 text-center text-xs text-gray-400 bg-white dark:bg-[#121826] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 ${hideHeader ? 'col-span-full' : ''}`}>
               Arama kriterlerine uygun öğretmen bulunamadı.
             </div>
           )}
@@ -867,8 +1160,9 @@ export default function MAdminTeachersClient({
                   {[
                     { id: 'ozluk', label: 'Özlük & Künye', icon: User },
                     { id: 'gorev', label: 'Görev & Dersler', icon: Briefcase },
-                    { id: 'izin', label: 'İzin Talepleri', icon: CalendarClock },
-                    { id: 'maas', label: 'Maaş & Bordro', icon: CreditCard },
+                    { id: 'yetkiler', label: 'Yetkilendirme & Ekranlar', icon: ShieldCheck },
+                    { id: 'izin', label: 'İzin Talepleri & Mesai', icon: CalendarClock },
+                    { id: 'maas', label: 'Maaş, Avans & Ek Ders', icon: CreditCard },
                     { id: 'bildirim', label: 'Bildirim Gönder', icon: Bell },
                     { id: 'belgeler', label: 'Özlük Belgeleri', icon: FileCheck },
                   ].map((tab) => {
@@ -1069,6 +1363,134 @@ export default function MAdminTeachersClient({
                             '08:30 - 15:30 (Pazartesi - Cuma)'}
                         </span>
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ── SEKME 2.5: YETKİLENDİRME & EKRAN ERİŞİM MATRİSİ ── */}
+                {activeDetailTab === 'yetkiler' && (
+                  <div className="space-y-4">
+                    {/* Header Banner */}
+                    <div className="p-4 rounded-2xl bg-gradient-to-tr from-purple-500/10 via-indigo-500/10 to-transparent border border-purple-500/20 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <ShieldCheck size={18} className="text-purple-600 dark:text-purple-400" />
+                          <h4 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-wider">
+                            Akademik Rol & Modül Yetkilendirme
+                          </h4>
+                        </div>
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300">
+                          {customPermissions.length} Ekran Açık
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                        Öğretmenin sisteme giriş yaptığında erişebileceği ekranları ve yönetim panellerini belirleyin.
+                      </p>
+                    </div>
+
+                    {/* Rol Şablonları */}
+                    <div className="space-y-1.5">
+                      <label className="block text-[11px] font-black text-gray-600 dark:text-gray-300 uppercase">
+                        Hızlı Rol Şablonu Seçimi
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {[
+                          { id: 'admin_assist', label: 'Müdür Yardımcısı' },
+                          { id: 'head_dept', label: 'Zümre Başkanı' },
+                          { id: 'guidance', label: 'Rehber Öğretmen' },
+                          { id: 'teacher', label: 'Sınıf / Branş Öğrt.' },
+                        ].map((rt) => (
+                          <button
+                            key={rt.id}
+                            type="button"
+                            onClick={() => handleApplyRoleTemplate(rt.id)}
+                            className={`p-2 rounded-xl text-[11px] font-bold border transition-all cursor-pointer text-center ${
+                              selectedRoleTemplate === rt.id
+                                ? 'bg-purple-600 text-white border-purple-600 shadow-xs'
+                                : 'bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100'
+                            }`}
+                          >
+                            {rt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Granular Screen Toggles List */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs font-bold text-gray-500">
+                        <span>Erişilebilir Ekranlar & İşlevler</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (customPermissions.length === SYSTEM_SCREEN_PERMISSIONS.length) {
+                              setCustomPermissions([])
+                            } else {
+                              setCustomPermissions(SYSTEM_SCREEN_PERMISSIONS.map((p) => p.id))
+                            }
+                          }}
+                          className="text-purple-600 dark:text-purple-400 hover:underline cursor-pointer"
+                        >
+                          {customPermissions.length === SYSTEM_SCREEN_PERMISSIONS.length
+                            ? 'Tümünü Kaldır'
+                            : 'Tümünü Seç'}
+                        </button>
+                      </div>
+
+                      <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+                        {SYSTEM_SCREEN_PERMISSIONS.map((perm) => {
+                          const isAllowed = customPermissions.includes(perm.id)
+                          return (
+                            <div
+                              key={perm.id}
+                              onClick={() => handleTogglePermission(perm.id)}
+                              className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                                isAllowed
+                                  ? 'bg-purple-50/60 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800'
+                                  : 'bg-gray-50 dark:bg-gray-800/40 border-gray-200/60 dark:border-gray-800 opacity-60'
+                              }`}
+                            >
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-extrabold text-xs text-gray-900 dark:text-white">
+                                    {perm.label}
+                                  </span>
+                                  <span className="text-[9.5px] font-bold px-1.5 py-0.2 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                                    {perm.category}
+                                  </span>
+                                </div>
+                                <div className="text-[10.5px] text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                                  {perm.description}
+                                </div>
+                              </div>
+
+                              <div className="shrink-0">
+                                {isAllowed ? (
+                                  <div className="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center">
+                                    <Check size={14} strokeWidth={3} />
+                                  </div>
+                                ) : (
+                                  <div className="w-6 h-6 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-400 flex items-center justify-center">
+                                    <X size={13} strokeWidth={2} />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Kaydet Butonu */}
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={handleSavePermissions}
+                        className="w-full h-11 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-black text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
+                      >
+                        <Save size={15} />
+                        <span>Yetki Matrisini Kaydet ve Uygula</span>
+                      </button>
                     </div>
                   </div>
                 )}
@@ -1319,6 +1741,109 @@ export default function MAdminTeachersClient({
                             </button>
                           </div>
                         ))}
+                      </div>
+                    </div>
+
+                    {/* Avans Talepleri & Yönetimi */}
+                    <div className="pt-2 border-t border-gray-100 dark:border-gray-800 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="text-[11px] font-black text-gray-500 uppercase tracking-wider">
+                          Avans Talepleri & Ödemeler
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setIsAddingAdvance(!isAddingAdvance)}
+                          className="px-2 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-[10px] flex items-center gap-1 transition-colors cursor-pointer"
+                        >
+                          <Plus size={11} />
+                          <span>{isAddingAdvance ? 'Kapat' : 'Yeni Avans Tanımla'}</span>
+                        </button>
+                      </div>
+
+                      {isAddingAdvance && (
+                        <form onSubmit={handleCreateAdvance} className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 space-y-2.5">
+                          <div className="text-xs font-black text-emerald-800 dark:text-emerald-300">
+                            Yeni Avans Kaydı Oluştur
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="block text-[10px] font-bold text-gray-500 mb-1">Tutar (₺)</label>
+                              <input
+                                type="number"
+                                value={newAdvanceAmount}
+                                onChange={(e) => setNewAdvanceAmount(Number(e.target.value))}
+                                className="w-full h-8 px-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-bold text-xs"
+                                min={500}
+                                step={500}
+                                required
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-gray-500 mb-1">Gerekçe / Talep Nedeni</label>
+                              <input
+                                type="text"
+                                value={newAdvanceReason}
+                                onChange={(e) => setNewAdvanceReason(e.target.value)}
+                                placeholder="Örn: Acil İhtiyaç"
+                                className="w-full h-8 px-2.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-medium text-xs"
+                                required
+                              />
+                            </div>
+                          </div>
+                          <button
+                            type="submit"
+                            className="w-full h-8 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors cursor-pointer"
+                          >
+                            Avansı Onayla ve Kaydet
+                          </button>
+                        </form>
+                      )}
+
+                      <div className="space-y-1.5">
+                        {(teacherAdvancesMap[selectedTeacherForDetail.id] || []).length === 0 ? (
+                          <div className="p-3 text-center text-xs text-gray-400 border border-dashed border-gray-200 dark:border-gray-800 rounded-xl">
+                            Bu personele ait kayıtlı avans bulunmamaktadır.
+                          </div>
+                        ) : (
+                          (teacherAdvancesMap[selectedTeacherForDetail.id] || []).map((adv) => (
+                            <div
+                              key={adv.id}
+                              className="p-2.5 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#121826] flex items-center justify-between text-xs"
+                            >
+                              <div className="flex items-center gap-2">
+                                <Wallet size={14} className="text-emerald-500" />
+                                <div>
+                                  <div className="font-extrabold text-gray-900 dark:text-white">
+                                    ₺{adv.amount.toLocaleString('tr-TR')} · {adv.reason}
+                                  </div>
+                                  <div className="text-[10px] text-gray-400">{adv.date}</div>
+                                </div>
+                              </div>
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+                                {adv.status}
+                              </span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Ek Ders & Nöbet Mesaisi Dökümü */}
+                    <div className="pt-2 border-t border-gray-100 dark:border-gray-800 space-y-2">
+                      <div className="text-[11px] font-black text-gray-500 uppercase tracking-wider">
+                        Ek Ders, Nöbet & Mesai Dökümü (Aylık)
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="p-2.5 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/40 space-y-1">
+                          <div className="text-[10px] text-gray-400 font-bold">Haftalık Ek Ders</div>
+                          <div className="font-black text-gray-900 dark:text-white">6 Saat / Hafta</div>
+                          <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">~₺4.800 / Ay</div>
+                        </div>
+                        <div className="p-2.5 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/40 space-y-1">
+                          <div className="text-[10px] text-gray-400 font-bold">Nöbet Görevi</div>
+                          <div className="font-black text-gray-900 dark:text-white">1 Gün / Hafta</div>
+                          <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">~₺1.800 / Ay</div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -2628,6 +3153,55 @@ export default function MAdminTeachersClient({
                   </div>
                 </div>
               )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── MODAL: ÖĞRETMEN SİLME ONAYI ── */}
+      <AnimatePresence>
+        {teacherToDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 font-jakarta select-none">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setTeacherToDelete(null)}
+              className="fixed inset-0 bg-black/75 backdrop-blur-xs"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative w-full max-w-sm rounded-3xl bg-white dark:bg-[#121826] border border-gray-200 dark:border-gray-800 p-5 shadow-2xl z-10 space-y-4"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto">
+                <Trash2 size={24} />
+              </div>
+              <div className="text-center space-y-1">
+                <h3 className="text-base font-black text-gray-900 dark:text-white">
+                  Öğretmeni Sistemden Sil?
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <span className="font-bold text-gray-800 dark:text-gray-200">{teacherToDelete.name}</span> isimli personelin sistem kaydı, ders atamaları ve erişim izinleri kalıcı olarak silinecektir. Bu işlem geri alınamaz.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setTeacherToDelete(null)}
+                  className="flex-1 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-xs font-bold text-gray-700 dark:text-gray-300 transition-colors cursor-pointer"
+                >
+                  Vazgeç
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmDeleteTeacher}
+                  className="flex-1 h-10 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black transition-colors shadow-md shadow-rose-600/20 cursor-pointer"
+                >
+                  Evet, Sil
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

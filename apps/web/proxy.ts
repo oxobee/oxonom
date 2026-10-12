@@ -370,9 +370,14 @@ export default async function proxy(req: NextRequest) {
   const isMobileUA = /mobile|iphone|ipod|android|blackberry|opera mini|iemobile|wpdesktop/i.test(userAgent)
   const cleanAuthPath = pathname.toLowerCase().replace(/\/+$/, '')
 
-  // Redirect mobile users to /m-login on login routes
-  if ((cleanAuthPath === '/login' || cleanAuthPath === '/auth/login' || cleanAuthPath === '/auth') && isMobileUA) {
-    return NextResponse.redirect(new URL(`/m-login${search}`, req.url), 307)
+  // Redirect all login routes and legacy /m-login to universal /loginv2
+  if (
+    cleanAuthPath === '/login' ||
+    cleanAuthPath === '/auth/login' ||
+    cleanAuthPath === '/auth' ||
+    cleanAuthPath === '/m-login'
+  ) {
+    return NextResponse.redirect(new URL(`/loginv2${search}`, req.url), 307)
   }
 
   // Redirect legacy admin routes to professional /principal/* tree

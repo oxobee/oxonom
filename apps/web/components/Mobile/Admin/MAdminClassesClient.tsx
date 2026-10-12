@@ -40,6 +40,9 @@ import {
   Layers,
   HeartHandshake,
   AlertCircle,
+  ArrowRight,
+  RotateCcw,
+  Archive,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import MobileHeader from '@components/Mobile/MobileHeader'
@@ -731,6 +734,65 @@ export default function MAdminClassesClient({
   // Student search within class detail
   const [detailStudentSearch, setDetailStudentSearch] = useState('')
 
+  // ── SUB-VIEW NAVIGATION: ŞUBELER & SINIFLAR | DÖNEM SONU ATLATMA & NAKİL ──
+  type ClassesSubView = 'classes' | 'promotion'
+  const [activeSubView, setActiveSubView] = useState<ClassesSubView>('classes')
+
+  // ── DİNAMİK KADEME YÖNETİMİ STATES ──
+  const [gradeLevels, setGradeLevels] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('oxonom_school_grade_levels')
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed
+        }
+      } catch (_) {}
+    }
+    return ['1. Sınıf', '2. Sınıf', '3. Sınıf', '4. Sınıf', '5. Sınıf', '6. Sınıf', '7. Sınıf', '8. Sınıf', '9. Sınıf']
+  })
+  const [isGradeModalOpen, setIsGradeModalOpen] = useState(false)
+  const [newGradeName, setNewGradeName] = useState('')
+  const [editingGradeIndex, setEditingGradeIndex] = useState<number | null>(null)
+  const [editingGradeName, setEditingGradeName] = useState('')
+
+  // ── ŞUBE NAKİL & DÖNEM SONU SINIF ATLATMA STATES ──
+  const [transferSourceClassId, setTransferSourceClassId] = useState<number>(0)
+  const [transferTargetClassId, setTransferTargetClassId] = useState<number>(0)
+  const [transferStudentName, setTransferStudentName] = useState<string>('')
+  const [transferReason, setTransferReason] = useState<string>('Veli Talebi & İkametgah Değişikliği')
+  const [transferHistory, setTransferHistory] = useState<Array<{ id: string; student: string; from: string; to: string; date: string; reason: string }>>([
+    {
+      id: 'tr-1',
+      student: 'Can AKSOY',
+      from: '3-A',
+      to: '3-B',
+      date: '08 Ekim 2026',
+      reason: 'Rehberlik Servisi Şube Dengeleme Önerisi',
+    },
+    {
+      id: 'tr-2',
+      student: 'Elif YILDIZ',
+      from: '2-B',
+      to: '2-A',
+      date: '02 Ekim 2026',
+      reason: 'İkiz Kardeş Ayrımı Talebi',
+    },
+  ])
+
+  // Promotion parameters
+  const [currentAcademicTerm, setCurrentAcademicTerm] = useState('2025-2026 Bahar')
+  const [targetAcademicTerm, setTargetAcademicTerm] = useState('2026-2027 Güz')
+  const [carryTeachersWithClass, setCarryTeachersWithClass] = useState(true)
+  const [preserveSectionCodes, setPreserveSectionCodes] = useState(true)
+  const [archiveGraduates, setArchiveGraduates] = useState(true)
+  const [repeatingStudents, setRepeatingStudents] = useState<string[]>([
+    'Murat YILMAZ (3-A · ŞÖK Kararı & Devamsızlık)',
+  ])
+  const [newRepeatingInput, setNewRepeatingInput] = useState('')
+  const [isConfirmPromotionOpen, setIsConfirmPromotionOpen] = useState(false)
+  const [backupClassesList, setBackupClassesList] = useState<AdminClassroom[] | null>(null)
+
   // Teachers for selector
   const availableTeachers = useMemo(() => {
     return getOrgTeachers(selectedOrgId)
@@ -783,6 +845,233 @@ export default function MAdminClassesClient({
           JSON.stringify(updatedList)
         )
       } catch (_) {}
+    }
+  }
+
+  // ── DİNAMİK KADEME İŞLEMLERİ ──
+  const persistGradeLevels = (newList: string[]) => {
+    setGradeLevels(newList)
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('oxonom_school_grade_levels', JSON.stringify(newList))
+      } catch (_) {}
+    }
+  }
+
+  const handleAddGrade = (name: string) => {
+    const trimmed = name.trim()
+    if (!trimmed) {
+      toast.error('Lütfen bir kademe adı yazınız.')
+      return
+    }
+    if (gradeLevels.includes(trimmed)) {
+      toast.error('Bu kademe zaten tanımlı.')
+      return
+    }
+    const updated = [...gradeLevels, trimmed]
+    persistGradeLevels(updated)
+    setFormGradeLevel(trimmed)
+    setNewGradeName('')
+    setIsGradeModalOpen(false)
+    toast.success(`"${trimmed}" kademesi başarıyla eklendi!`)
+  }
+
+  const handleDeleteGrade = (gradeToDelete: string) => {
+    const isUsed = classesList.some((c) => c.gradeLevel === gradeToDelete)
+    if (isUsed) {
+      toast.error(`"${gradeToDelete}" kademesine bağlı kayıtlı şubeler var. Önce şubeleri silmeli veya taşımalısınız.`)
+      return
+    }
+    const updated = gradeLevels.filter((g) => g !== gradeToDelete)
+    persistGradeLevels(updated)
+    if (formGradeLevel === gradeToDelete) {
+      setFormGradeLevel(updated[0] || '1. Sınıf')
+    }
+    toast.success(`"${gradeToDelete}" kademesi kaldırıldı.`)
+  }
+
+  const handleSaveEditGrade = (index: number) => {
+    const trimmed = editingGradeName.trim()
+    if (!trimmed) return
+    const oldName = gradeLevels[index]
+    const updated = [...gradeLevels]
+    updated[index] = trimmed
+    persistGradeLevels(updated)
+
+    // Update classes that used oldName
+    const updatedClasses = classesList.map((c) =>
+      c.gradeLevel === oldName ? { ...c, gradeLevel: trimmed } : c
+    )
+    persistClasses(updatedClasses)
+
+    setEditingGradeIndex(null)
+    setEditingGradeName('')
+    toast.success(`Kademe "${trimmed}" olarak güncellendi.`)
+  }
+
+  // ── ŞUBE NAKİL İŞLEMİ ──
+  const handleExecuteStudentTransfer = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!transferSourceClassId || !transferTargetClassId) {
+      toast.error('Lütfen kaynak ve hedef şubeleri seçiniz.')
+      return
+    }
+    if (transferSourceClassId === transferTargetClassId) {
+      toast.error('Kaynak ve hedef şube aynı olamaz.')
+      return
+    }
+    if (!transferStudentName.trim()) {
+      toast.error('Lütfen nakil edilecek öğrenci adını giriniz.')
+      return
+    }
+
+    const sourceCls = classesList.find((c) => c.id === transferSourceClassId)
+    const targetCls = classesList.find((c) => c.id === transferTargetClassId)
+
+    if (!sourceCls || !targetCls) {
+      toast.error('Şube bilgileri doğrulanamadı.')
+      return
+    }
+
+    if (targetCls.studentCount >= targetCls.capacity) {
+      toast.error(`Hedef şubenin (${targetCls.code}) kontenjanı dolu (${targetCls.capacity} öğrenci).`)
+      return
+    }
+
+    const updatedClasses = classesList.map((c) => {
+      if (c.id === transferSourceClassId) {
+        return {
+          ...c,
+          studentCount: Math.max(0, c.studentCount - 1),
+          presentToday: Math.max(0, (c.presentToday || 0) - 1),
+        }
+      }
+      if (c.id === transferTargetClassId) {
+        return {
+          ...c,
+          studentCount: c.studentCount + 1,
+          presentToday: (c.presentToday || 0) + 1,
+        }
+      }
+      return c
+    })
+
+    persistClasses(updatedClasses)
+
+    const newRecord = {
+      id: `tr-${Date.now()}`,
+      student: transferStudentName.trim(),
+      from: sourceCls.code,
+      to: targetCls.code,
+      date: 'Bugün',
+      reason: transferReason,
+    }
+    setTransferHistory((prev) => [newRecord, ...prev])
+
+    toast.success(
+      `${transferStudentName} öğrencisi ${sourceCls.code} şubesinden ${targetCls.code} şubesine başarıyla nakledildi!`
+    )
+    setTransferStudentName('')
+  }
+
+  // ── DÖNEM SONU OTOMATİK SINIF ATLATMA (BULK PROMOTION) ──
+  const handleExecuteBulkPromotion = () => {
+    // 1. Save current backup
+    setBackupClassesList([...classesList])
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(`oxonom_classes_backup_${selectedOrgId}`, JSON.stringify(classesList))
+      } catch (_) {}
+    }
+
+    // 2. Advance classes
+    const updated = classesList
+      .map((c) => {
+        const numMatch = c.code.match(/^(\d+)/)
+        const currentNum = numMatch ? parseInt(numMatch[1], 10) : c.gradeNumber || 1
+
+        const isGraduating = (selectedOrgId === 10 && currentNum >= 4) ||
+          (selectedOrgId === 20 && currentNum >= 8) ||
+          (selectedOrgId === 30 && currentNum >= 12)
+
+        if (isGraduating) {
+          if (archiveGraduates) {
+            return null // Graduated & archived
+          }
+          return c
+        }
+
+        const nextNum = currentNum + 1
+        const letterPart = c.code.replace(/^\d+[-_]?/, '') || 'A'
+        const nextCode = `${nextNum}-${letterPart}`
+        const nextGradeLevel = `${nextNum}. Sınıf`
+
+        return {
+          ...c,
+          code: preserveSectionCodes ? nextCode : c.code,
+          name: `${preserveSectionCodes ? nextCode : c.code} Şubesi`,
+          gradeNumber: nextNum,
+          gradeLevel: nextGradeLevel,
+          academicAverage: 85.0,
+        }
+      })
+      .filter(Boolean) as AdminClassroom[]
+
+    // Add fresh Grade 1 branch if none exists
+    const hasGrade1 = updated.some((c) => c.gradeNumber === 1 || c.code.startsWith('1-'))
+    if (!hasGrade1 && selectedOrgId === 10) {
+      updated.unshift({
+        id: Date.now(),
+        code: '1-A',
+        name: '1-A Şubesi (Yeni Kayıt)',
+        gradeLevel: '1. Sınıf',
+        gradeNumber: 1,
+        orgId: selectedOrgId,
+        roomName: '1. Kat · Derslik 101',
+        teacherName: 'Atanacak',
+        teacherBranch: 'Sınıf Öğretmeni',
+        teacherPhone: '+90 532 000 0000',
+        teacherEmail: 'bilgi@oxonom.com',
+        studentCount: 28,
+        capacity: 32,
+        boysCount: 14,
+        girlsCount: 14,
+        presentToday: 28,
+        leaveToday: 0,
+        absentToday: 0,
+        attendanceRate: 100,
+        academicAverage: 90.0,
+        courseAverages: [],
+        boardStatus: 'online',
+        boardName: '1-A Akıllı Tahta',
+        scheduleSummary: 'Haftalık 30 Saat',
+        classPresident: 'Seçilecek',
+        parentRepresentative: 'Seçilecek',
+      })
+    }
+
+    persistClasses(updated)
+    setIsConfirmPromotionOpen(false)
+    toast.success(
+      `${currentAcademicTerm} dönemi başarıyla kapatıldı! Tüm sınıflar ${targetAcademicTerm} dönemine terfi ettirildi ve mezunlar kütüğe arşivlendi.`
+    )
+  }
+
+  // Rollback promotion
+  const handleRollbackPromotion = () => {
+    let backup = backupClassesList
+    if (!backup && typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem(`oxonom_classes_backup_${selectedOrgId}`)
+        if (raw) backup = JSON.parse(raw)
+      } catch (_) {}
+    }
+    if (backup && backup.length > 0) {
+      persistClasses(backup)
+      setBackupClassesList(null)
+      toast.success('Dönem sonu sınıf atlatma işlemi geri alındı (Rollback tamamlandı).')
+    } else {
+      toast.error('Geri alınacak yedek bulunamadı.')
     }
   }
 
@@ -1138,116 +1427,165 @@ export default function MAdminClassesClient({
           </div>
         </section>
 
-        {/* ── 3. ÖZET İSTATİSTİK ŞERİDİ ── */}
+        {/* ── 2.5 SUB-VIEW SWITCHER: ŞUBELER & SINIFLAR | DÖNEM SONU ATLATMA & NAKİL ── */}
         <section className="px-4 mt-3">
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="p-2.5 rounded-2xl bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800 shadow-xs">
-              <div className="text-sm font-black text-purple-600 dark:text-purple-400">
-                {classesList.length} Şube
-              </div>
-              <div className="text-[10px] font-bold text-gray-500 mt-0.5 truncate">
-                Toplam Şube
-              </div>
-            </div>
-            <div className="p-2.5 rounded-2xl bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800 shadow-xs">
-              <div className="text-sm font-black text-emerald-600 dark:text-emerald-400">
-                {totalStudentsCount}
-              </div>
-              <div className="text-[10px] font-bold text-gray-500 mt-0.5 truncate">
-                Kayıtlı Öğrenci
-              </div>
-            </div>
-            <div className="p-2.5 rounded-2xl bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800 shadow-xs">
-              <div className="text-sm font-black text-amber-600 dark:text-amber-400">
-                {overallAverage}
-              </div>
-              <div className="text-[10px] font-bold text-gray-500 mt-0.5 truncate">
-                Okul Başarısı
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── 4. ARAMA & YENİ SINIF EKLE BUTONU ── */}
-        <section className="px-4 mt-3 flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search
-              size={15}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
-            />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Şube (örn. 3-B), öğretmen veya derslik ara..."
-              className={`w-full h-11 pl-9 pr-3.5 rounded-2xl text-xs font-medium outline-hidden transition-all ${
-                theme === 'dark'
-                  ? 'bg-[#121826] text-white placeholder-gray-500 border border-gray-800 focus:border-purple-500/60'
-                  : 'bg-white text-gray-900 placeholder-gray-400 border border-gray-200/90 focus:border-purple-600 shadow-xs'
-              }`}
-            />
-          </div>
-
-          <button
-            type="button"
-            onClick={handleOpenNewClass}
-            className="h-11 px-3.5 rounded-2xl bg-[#10B981] hover:bg-[#059669] text-white font-black text-xs flex items-center gap-1.5 shrink-0 shadow-md transition-all cursor-pointer"
-          >
-            <Plus size={16} strokeWidth={2.5} />
-            <span className="hidden sm:inline">Yeni Şube</span>
-            <span className="sm:hidden">Ekle</span>
-          </button>
-        </section>
-
-        {/* ── 5. KADEME SEVİYESİ FİLTRELEME PİLLERİ ── */}
-        <section className="px-4 mt-2.5">
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+          <div className="flex items-center gap-1.5 p-1.5 bg-white dark:bg-[#121826] rounded-2xl border border-gray-200/80 dark:border-gray-800 shadow-xs">
             <button
               type="button"
-              onClick={() => setSelectedGradeFilter('ALL')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-black shrink-0 transition-all cursor-pointer ${
-                selectedGradeFilter === 'ALL'
-                  ? 'bg-purple-600 text-white shadow-sm'
-                  : 'bg-white dark:bg-[#121826] text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-800'
+              onClick={() => setActiveSubView('classes')}
+              className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                activeSubView === 'classes'
+                  ? 'bg-purple-600 text-white shadow-xs'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
-              Tüm Kademeler ({classesList.length})
+              <Building2 size={14} />
+              <span>Şubeler & Sınıflar</span>
             </button>
 
-            {(selectedOrgId === 30
-              ? ['9. Sınıf']
-              : selectedOrgId === 10
-              ? ['1. Sınıf', '2. Sınıf', '3. Sınıf', '4. Sınıf']
-              : ['5. Sınıf', '6. Sınıf', '7. Sınıf', '8. Sınıf']
-            ).map((grade) => {
-              const count = classesList.filter(
-                (c) => c.gradeLevel === grade
-              ).length
-              const isSelected = selectedGradeFilter === grade
-              return (
+            <button
+              type="button"
+              onClick={() => setActiveSubView('promotion')}
+              className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                activeSubView === 'promotion'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              <Sparkles size={14} />
+              <span>Dönem Sonu Sınıf Atlatma & Nakil</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsGradeModalOpen(true)}
+              className="py-2 px-3 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+              title="Kademe Ekle / Düzenle / Sil"
+            >
+              <Layers size={14} className="text-indigo-500" />
+              <span className="hidden sm:inline">Kademeler</span>
+            </button>
+          </div>
+        </section>
+
+        {/* ── 3. CLASSES VIEW WRAPPER ── */}
+        {activeSubView === 'classes' && (
+          <>
+            {/* ── 3. ÖZET İSTATİSTİK ŞERİDİ ── */}
+            <section className="px-4 mt-3">
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="p-2.5 rounded-2xl bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800 shadow-xs">
+                  <div className="text-sm font-black text-purple-600 dark:text-purple-400">
+                    {classesList.length} Şube
+                  </div>
+                  <div className="text-[10px] font-bold text-gray-500 mt-0.5 truncate">
+                    Toplam Şube
+                  </div>
+                </div>
+                <div className="p-2.5 rounded-2xl bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800 shadow-xs">
+                  <div className="text-sm font-black text-emerald-600 dark:text-emerald-400">
+                    {totalStudentsCount}
+                  </div>
+                  <div className="text-[10px] font-bold text-gray-500 mt-0.5 truncate">
+                    Kayıtlı Öğrenci
+                  </div>
+                </div>
+                <div className="p-2.5 rounded-2xl bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800 shadow-xs">
+                  <div className="text-sm font-black text-amber-600 dark:text-amber-400">
+                    {overallAverage}
+                  </div>
+                  <div className="text-[10px] font-bold text-gray-500 mt-0.5 truncate">
+                    Okul Başarısı
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* ── 4. ARAMA & YENİ SINIF EKLE BUTONU ── */}
+            <section className="px-4 mt-3 flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search
+                  size={15}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+                />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Şube (örn. 3-B), öğretmen veya derslik ara..."
+                  className={`w-full h-11 pl-9 pr-3.5 rounded-2xl text-xs font-medium outline-hidden transition-all ${
+                    theme === 'dark'
+                      ? 'bg-[#121826] text-white placeholder-gray-500 border border-gray-800 focus:border-purple-500/60'
+                      : 'bg-white text-gray-900 placeholder-gray-400 border border-gray-200/90 focus:border-purple-600 shadow-xs'
+                  }`}
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleOpenNewClass}
+                className="h-11 px-3.5 rounded-2xl bg-[#10B981] hover:bg-[#059669] text-white font-black text-xs flex items-center gap-1.5 shrink-0 shadow-md transition-all cursor-pointer"
+              >
+                <Plus size={16} strokeWidth={2.5} />
+                <span className="hidden sm:inline">Yeni Şube</span>
+                <span className="sm:hidden">Ekle</span>
+              </button>
+            </section>
+
+            {/* ── 5. KADEME SEVİYESİ FİLTRELEME PİLLERİ ── */}
+            <section className="px-4 mt-2.5">
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
                 <button
-                  key={grade}
                   type="button"
-                  onClick={() => setSelectedGradeFilter(grade)}
+                  onClick={() => setSelectedGradeFilter('ALL')}
                   className={`px-3 py-1.5 rounded-xl text-xs font-black shrink-0 transition-all cursor-pointer ${
-                    isSelected
+                    selectedGradeFilter === 'ALL'
                       ? 'bg-purple-600 text-white shadow-sm'
                       : 'bg-white dark:bg-[#121826] text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-800'
                   }`}
                 >
-                  {grade} ({count})
+                  Tüm Kademeler ({classesList.length})
                 </button>
-              )
-            })}
-          </div>
-        </section>
 
-        {/* ── 6. SINIF KARTLARI LİSTESİ ── */}
-        <section className="px-4 mt-3 space-y-2.5">
-          <div className="flex items-center justify-between text-xs text-gray-500 font-bold px-1">
-            <span>Mevcut Şubeler ({filteredClasses.length})</span>
-            <span>{activeOrg.name}</span>
-          </div>
+                {gradeLevels.map((grade) => {
+                  const count = classesList.filter(
+                    (c) => c.gradeLevel === grade
+                  ).length
+                  const isSelected = selectedGradeFilter === grade
+                  return (
+                    <button
+                      key={grade}
+                      type="button"
+                      onClick={() => setSelectedGradeFilter(grade)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-black shrink-0 transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-purple-600 text-white shadow-sm'
+                          : 'bg-white dark:bg-[#121826] text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-800'
+                      }`}
+                    >
+                      {grade} ({count})
+                    </button>
+                  )
+                })}
+
+                <button
+                  type="button"
+                  onClick={() => setIsGradeModalOpen(true)}
+                  className="px-2.5 py-1.5 rounded-xl text-xs font-bold shrink-0 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/80 hover:bg-emerald-100 flex items-center gap-1 cursor-pointer"
+                  title="Yeni Kademe Ekle veya Yönet"
+                >
+                  <Plus size={13} />
+                  <span>Kademe Yönetimi</span>
+                </button>
+              </div>
+            </section>
+
+            {/* ── 6. SINIF KARTLARI LİSTESİ ── */}
+            <section className={`px-4 mt-3 ${hideHeader ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 space-y-0' : 'space-y-2.5'}`}>
+              <div className={`flex items-center justify-between text-xs text-gray-500 font-bold px-1 ${hideHeader ? 'col-span-full' : ''}`}>
+                <span>Mevcut Şubeler ({filteredClasses.length})</span>
+                <span>{activeOrg.name}</span>
+              </div>
 
           {filteredClasses.map((cls) => (
             <motion.div
@@ -1359,12 +1697,337 @@ export default function MAdminClassesClient({
             </motion.div>
           ))}
 
-          {filteredClasses.length === 0 && (
-            <div className="py-12 text-center text-xs text-gray-400 bg-white dark:bg-[#121826] rounded-2xl border border-gray-200 dark:border-gray-800 p-6">
-              Arama kriterlerine uygun sınıf veya şube bulunamadı.
+            {filteredClasses.length === 0 && (
+              <div className={`py-12 text-center text-xs text-gray-400 bg-white dark:bg-[#121826] rounded-2xl border border-gray-200 dark:border-gray-800 p-6 ${hideHeader ? 'col-span-full' : ''}`}>
+                Arama kriterlerine uygun sınıf veya şube bulunamadı.
+              </div>
+            )}
+          </section>
+        </>
+      )}
+
+      {/* ── 7. SUB-VIEW: DÖNEM SONU SINIF ATLATMA & ŞUBE NAKİL ── */}
+      {activeSubView === 'promotion' && (
+        <div className="px-4 mt-3 space-y-4">
+          {/* Dönem Bilgisi & Durum Kartı */}
+          <div className="p-5 rounded-3xl bg-gradient-to-br from-emerald-900/30 via-teal-900/20 to-gray-900/40 border border-emerald-500/30 shadow-md">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-500 text-gray-950 flex items-center justify-center font-black">
+                  <Sparkles size={20} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-gray-900 dark:text-white">Dönem Sonu Sınıf Kütüğü & Terfi Yönetimi</h3>
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">MEB Kurum Kütük Devir Protokolü</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                  {currentAcademicTerm} ➔ {targetAcademicTerm}
+                </span>
+              </div>
             </div>
-          )}
-        </section>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mt-4 pt-4 border-t border-emerald-500/20 text-xs">
+              <div>
+                <label className="block text-[11px] font-bold text-gray-500 dark:text-gray-400 mb-1">Mevcut Eğitim Dönemi</label>
+                <input
+                  type="text"
+                  value={currentAcademicTerm}
+                  onChange={(e) => setCurrentAcademicTerm(e.target.value)}
+                  className="w-full h-9 px-3 rounded-xl bg-white dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700 font-bold"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-gray-500 dark:text-gray-400 mb-1">Hedef Yeni Eğitim Dönemi</label>
+                <input
+                  type="text"
+                  value={targetAcademicTerm}
+                  onChange={(e) => setTargetAcademicTerm(e.target.value)}
+                  className="w-full h-9 px-3 rounded-xl bg-white dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700 font-bold text-emerald-600 dark:text-emerald-400"
+                />
+              </div>
+              <div className="flex items-end">
+                <div className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">
+                  Kütük aktarımı onaylandığında tüm şube seviyeleri otomatik 1 kademe yükseltilir.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* BÖLÜM 1: BİREYSEL ŞUBE NAKİL ARACI */}
+          <div className="p-5 rounded-3xl bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800/80 shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <HeartHandshake className="text-purple-600" size={18} />
+                <h3 className="text-xs font-black uppercase tracking-wider text-gray-900 dark:text-white">
+                  Öğrenci Şube Nakil İşlemleri
+                </h3>
+              </div>
+              <span className="text-[10px] font-bold text-gray-400">Şubeler Arası Transfer</span>
+            </div>
+
+            <form onSubmit={handleExecuteStudentTransfer} className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-gray-500 mb-1">Kaynak Şube</label>
+                  <select
+                    value={transferSourceClassId}
+                    onChange={(e) => setTransferSourceClassId(Number(e.target.value))}
+                    className="w-full h-10 px-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-bold text-xs"
+                    required
+                  >
+                    <option value={0}>Kaynak Şube Seçiniz</option>
+                    {classesList.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.code} ({c.studentCount} Öğrenci)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-gray-500 mb-1">Nakil Edilecek Öğrenci Adı</label>
+                  <input
+                    type="text"
+                    value={transferStudentName}
+                    onChange={(e) => setTransferStudentName(e.target.value)}
+                    placeholder="Öğrenci Adı Soyadı"
+                    className="w-full h-10 px-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-bold text-xs"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-gray-500 mb-1">Hedef Şube</label>
+                  <select
+                    value={transferTargetClassId}
+                    onChange={(e) => setTransferTargetClassId(Number(e.target.value))}
+                    className="w-full h-10 px-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-bold text-xs"
+                    required
+                  >
+                    <option value={0}>Hedef Şube Seçiniz</option>
+                    {classesList
+                      .filter((c) => c.id !== transferSourceClassId)
+                      .map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.code} ({c.studentCount} / {c.capacity})
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="block text-[11px] font-bold text-gray-500 mb-1">Resmi Nakil Gerekçesi</label>
+                  <select
+                    value={transferReason}
+                    onChange={(e) => setTransferReason(e.target.value)}
+                    className="w-full h-10 px-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-medium text-xs"
+                  >
+                    <option value="Veli Talebi & İkametgah Değişikliği">Veli Talebi & İkametgah Değişikliği</option>
+                    <option value="Rehberlik Servisi Şube Dengeleme Önerisi">Rehberlik Servisi Şube Dengeleme Önerisi</option>
+                    <option value="İkiz Kardeş Ayrımı Talebi">İkiz Kardeş Ayrımı Talebi</option>
+                    <option value="Sınıf Kontenjan Dengelemesi">Sınıf Kontenjan Dengelemesi</option>
+                    <option value="Özel Eğitim & Kaynaştırma Uyarlaması">Özel Eğitim & Kaynaştırma Uyarlaması</option>
+                  </select>
+                </div>
+
+                <div className="flex items-end">
+                  <button
+                    type="submit"
+                    className="w-full h-10 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-black text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-sm"
+                  >
+                    <HeartHandshake size={15} />
+                    <span>Nakli Gerçekleştir</span>
+                  </button>
+                </div>
+              </div>
+            </form>
+
+            {/* Son Nakil Geçmişi */}
+            <div className="pt-3 border-t border-gray-100 dark:border-gray-800 space-y-2">
+              <div className="text-[11px] font-black text-gray-500 uppercase">Son Şube Nakil İşlem Kayıtları</div>
+              <div className="space-y-1.5 max-h-36 overflow-y-auto">
+                {transferHistory.map((tr) => (
+                  <div
+                    key={tr.id}
+                    className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200/60 dark:border-gray-700/60 flex items-center justify-between text-xs"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-gray-900 dark:text-white">{tr.student}</span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300">
+                        {tr.from} ➔ {tr.to}
+                      </span>
+                    </div>
+                    <div className="text-[10.5px] text-gray-400">
+                      {tr.reason} ({tr.date})
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* BÖLÜM 2: DÖNEM SONU OTOMATİK TOPLU SINIF ATLATMA */}
+          <div className="p-5 rounded-3xl bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800/80 shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles className="text-emerald-600" size={18} />
+                <h3 className="text-xs font-black uppercase tracking-wider text-gray-900 dark:text-white">
+                  Toplu Sınıf Atlatma & Mezuniyet Matrisi
+                </h3>
+              </div>
+              <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                Otomatik Terfi
+              </span>
+            </div>
+
+            {/* Kurallar ve Seçenekler */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200/70 dark:border-gray-700/60 text-xs">
+              <label className="flex items-center gap-2 cursor-pointer font-bold text-gray-800 dark:text-gray-200">
+                <input
+                  type="checkbox"
+                  checked={carryTeachersWithClass}
+                  onChange={(e) => setCarryTeachersWithClass(e.target.checked)}
+                  className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500"
+                />
+                <span>Rehber Öğretmenleri Sınıfla Taşı</span>
+              </label>
+
+              <label className="flex items-center gap-2 cursor-pointer font-bold text-gray-800 dark:text-gray-200">
+                <input
+                  type="checkbox"
+                  checked={preserveSectionCodes}
+                  onChange={(e) => setPreserveSectionCodes(e.target.checked)}
+                  className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500"
+                />
+                <span>Şube Kodlarını Koru (1-A ➔ 2-A)</span>
+              </label>
+
+              <label className="flex items-center gap-2 cursor-pointer font-bold text-gray-800 dark:text-gray-200">
+                <input
+                  type="checkbox"
+                  checked={archiveGraduates}
+                  onChange={(e) => setArchiveGraduates(e.target.checked)}
+                  className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500"
+                />
+                <span>Son Kademeyi Mezunlara Arşivle</span>
+              </label>
+            </div>
+
+            {/* İstisna / Sınıf Tekrarı Listesi */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold text-gray-700 dark:text-gray-300">
+                  Sınıf Tekrarına Kalan Öğrenciler (ŞÖK İstisnaları)
+                </span>
+                <span className="text-[10px] text-gray-400">Bu öğrenciler üst kademeye geçmez</span>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newRepeatingInput}
+                  onChange={(e) => setNewRepeatingInput(e.target.value)}
+                  placeholder="Öğrenci Adı ve Şube (Örn: Can AKSOY - 2-B)"
+                  className="flex-1 h-9 px-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-medium"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (newRepeatingInput.trim()) {
+                      setRepeatingStudents([...repeatingStudents, newRepeatingInput.trim()])
+                      setNewRepeatingInput('')
+                    }
+                  }}
+                  className="h-9 px-3 rounded-xl bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 text-gray-800 dark:text-gray-200 font-bold text-xs"
+                >
+                  İstisna Ekle
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {repeatingStudents.map((st, idx) => (
+                  <span
+                    key={idx}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/60 border border-amber-200/80 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-[11px] font-bold"
+                  >
+                    <span>{st}</span>
+                    <button
+                      type="button"
+                      onClick={() => setRepeatingStudents(repeatingStudents.filter((_, i) => i !== idx))}
+                      className="hover:text-rose-500 cursor-pointer"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Simülasyon / Önizleme Listesi */}
+            <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+              <div className="text-xs font-black text-gray-900 dark:text-white">
+                Dönem Sonu Terfi Simülasyonu & Dağılımı ({classesList.length} Şube)
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                {classesList.map((c) => {
+                  const numMatch = c.code.match(/^(\d+)/)
+                  const currentNum = numMatch ? parseInt(numMatch[1], 10) : c.gradeNumber || 1
+                  const isGraduating = (selectedOrgId === 10 && currentNum >= 4) ||
+                    (selectedOrgId === 20 && currentNum >= 8) ||
+                    (selectedOrgId === 30 && currentNum >= 12)
+                  const nextCode = isGraduating
+                    ? '🎓 Mezunlar Kütüğü'
+                    : `${currentNum + 1}-${c.code.replace(/^\d+[-_]?/, '')}`
+
+                  return (
+                    <div
+                      key={c.id}
+                      className="p-3 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200/70 dark:border-gray-700/60 space-y-1.5"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-black text-xs text-purple-600 dark:text-purple-400">{c.code}</span>
+                        <ArrowRight size={13} className="text-gray-400" />
+                        <span className={`font-black text-xs ${isGraduating ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                          {nextCode}
+                        </span>
+                      </div>
+                      <div className="text-[10.5px] text-gray-500 flex justify-between">
+                        <span>{c.studentCount} Öğrenci</span>
+                        <span>{carryTeachersWithClass ? c.teacherName : 'Yeni Öğretmen'}</span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Aksiyon Butonları */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+              <button
+                type="button"
+                onClick={handleRollbackPromotion}
+                className="px-4 h-11 rounded-2xl border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 font-bold text-xs flex items-center gap-2 cursor-pointer w-full sm:w-auto justify-center"
+              >
+                <RotateCcw size={15} />
+                <span>Önceki Döneme Geri Al (Rollback)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsConfirmPromotionOpen(true)}
+                className="px-6 h-11 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center gap-2 cursor-pointer shadow-lg shadow-emerald-600/20 w-full sm:w-auto justify-center"
+              >
+                <Sparkles size={16} />
+                <span>Dönem Sonu Sınıf Atlatmayı Başlat ve Onayla</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       </motion.div>
 
       {/* ── MODAL 1: SINIF TÜM DETAYLARI MODALI (KATEGORİK VE SEKME BAZLI) ── */}
@@ -2063,31 +2726,29 @@ export default function MAdminClassesClient({
               <form onSubmit={handleCreateNewClass} className="p-5 overflow-y-auto space-y-3.5 text-xs">
                 <div className="grid grid-cols-2 gap-2.5">
                   <div>
-                    <label className="block text-[11px] font-bold text-gray-500 mb-1">
-                      Kademe Seviyesi
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[11px] font-bold text-gray-500">
+                        Kademe Seviyesi
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setIsGradeModalOpen(true)}
+                        className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-0.5 cursor-pointer"
+                      >
+                        <Plus size={11} />
+                        <span>Yeni Kademe</span>
+                      </button>
+                    </div>
                     <select
                       value={formGradeLevel}
                       onChange={(e) => setFormGradeLevel(e.target.value)}
                       className="w-full h-11 px-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-bold"
                     >
-                      {selectedOrgId === 30 ? (
-                        <option value="9. Sınıf">9. Sınıf (Anadolu Lisesi)</option>
-                      ) : selectedOrgId === 10 ? (
-                        <>
-                          <option value="1. Sınıf">1. Sınıf</option>
-                          <option value="2. Sınıf">2. Sınıf</option>
-                          <option value="3. Sınıf">3. Sınıf</option>
-                          <option value="4. Sınıf">4. Sınıf</option>
-                        </>
-                      ) : (
-                        <>
-                          <option value="5. Sınıf">5. Sınıf</option>
-                          <option value="6. Sınıf">6. Sınıf</option>
-                          <option value="7. Sınıf">7. Sınıf</option>
-                          <option value="8. Sınıf">8. Sınıf</option>
-                        </>
-                      )}
+                      {gradeLevels.map((lvl) => (
+                        <option key={lvl} value={lvl}>
+                          {lvl}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
@@ -2248,31 +2909,29 @@ export default function MAdminClassesClient({
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-2.5">
                       <div>
-                        <label className="block text-[11px] font-bold text-gray-500 mb-1">
-                          Kademe Seviyesi
-                        </label>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block text-[11px] font-bold text-gray-500">
+                            Kademe Seviyesi
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => setIsGradeModalOpen(true)}
+                            className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-0.5 cursor-pointer"
+                          >
+                            <Plus size={11} />
+                            <span>Yeni Kademe</span>
+                          </button>
+                        </div>
                         <select
                           value={formGradeLevel}
                           onChange={(e) => setFormGradeLevel(e.target.value)}
                           className="w-full h-11 px-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-bold"
                         >
-                          {selectedOrgId === 30 ? (
-                            <option value="9. Sınıf">9. Sınıf (Anadolu Lisesi)</option>
-                          ) : selectedOrgId === 10 ? (
-                            <>
-                              <option value="1. Sınıf">1. Sınıf</option>
-                              <option value="2. Sınıf">2. Sınıf</option>
-                              <option value="3. Sınıf">3. Sınıf</option>
-                              <option value="4. Sınıf">4. Sınıf</option>
-                            </>
-                          ) : (
-                            <>
-                              <option value="5. Sınıf">5. Sınıf</option>
-                              <option value="6. Sınıf">6. Sınıf</option>
-                              <option value="7. Sınıf">7. Sınıf</option>
-                              <option value="8. Sınıf">8. Sınıf</option>
-                            </>
-                          )}
+                          {gradeLevels.map((lvl) => (
+                            <option key={lvl} value={lvl}>
+                              {lvl}
+                            </option>
+                          ))}
                         </select>
                       </div>
 
@@ -2661,6 +3320,193 @@ export default function MAdminClassesClient({
                   className="h-10 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black text-xs transition-colors cursor-pointer"
                 >
                   Evet, Sil
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── MODAL 5: KADEME YÖNETİMİ MODALI (EKLE / DÜZENLE / SİL) ── */}
+      <AnimatePresence>
+        {isGradeModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 font-jakarta select-none">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsGradeModalOpen(false)}
+              className="fixed inset-0 bg-black/75 backdrop-blur-xs"
+            />
+
+            <motion.div
+              initial={{ scale: 0.92, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.92, opacity: 0 }}
+              className="relative w-full max-w-md rounded-3xl bg-white dark:bg-[#121826] p-5 shadow-2xl z-10 border border-gray-200 dark:border-gray-800 space-y-4 max-h-[85vh] flex flex-col"
+            >
+              <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                    <Layers size={18} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-gray-900 dark:text-white">Sınıf Kademeleri Yönetimi</h3>
+                    <p className="text-[11px] text-gray-400">Yeni kademe ekleyin, mevcut kademeleri düzenleyin veya silin</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsGradeModalOpen(false)}
+                  className="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500 flex items-center justify-center cursor-pointer"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+
+              {/* Add New Grade Form */}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newGradeName}
+                  onChange={(e) => setNewGradeName(e.target.value)}
+                  placeholder="Yeni Kademe Adı (Örn: Anaokulu veya 10. Sınıf)"
+                  className="flex-1 h-10 px-3.5 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs font-bold"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleAddGrade(newGradeName)}
+                  className="px-4 h-10 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-xs shrink-0"
+                >
+                  <Plus size={14} />
+                  <span>Ekle</span>
+                </button>
+              </div>
+
+              {/* Existing Grades List */}
+              <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+                <div className="text-[11px] font-black text-gray-500 uppercase tracking-wider">
+                  Mevcut Kademeler ({gradeLevels.length})
+                </div>
+
+                {gradeLevels.map((lvl, idx) => {
+                  const classCount = classesList.filter((c) => c.gradeLevel === lvl).length
+                  const isEditing = editingGradeIndex === idx
+
+                  return (
+                    <div
+                      key={idx}
+                      className="p-3 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-700/60 flex items-center justify-between gap-2"
+                    >
+                      {isEditing ? (
+                        <div className="flex items-center gap-2 flex-1">
+                          <input
+                            type="text"
+                            value={editingGradeName}
+                            onChange={(e) => setEditingGradeName(e.target.value)}
+                            className="flex-1 h-8 px-2 rounded-lg bg-white dark:bg-gray-900 border border-purple-500 text-xs font-bold"
+                            autoFocus
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleSaveEditGrade(idx)}
+                            className="px-2.5 h-8 rounded-lg bg-emerald-600 text-white font-bold text-xs cursor-pointer"
+                          >
+                            Kaydet
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditingGradeIndex(null)}
+                            className="px-2 h-8 rounded-lg bg-gray-200 dark:bg-gray-700 text-xs cursor-pointer"
+                          >
+                            İptal
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-2">
+                            <span className="font-extrabold text-xs text-gray-900 dark:text-white">{lvl}</span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300">
+                              {classCount} Şube
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingGradeIndex(idx)
+                                setEditingGradeName(lvl)
+                              }}
+                              className="w-7 h-7 rounded-lg bg-gray-200/80 dark:bg-gray-700 text-gray-700 dark:text-gray-300 flex items-center justify-center hover:bg-gray-300 cursor-pointer"
+                              title="Düzenle"
+                            >
+                              <Edit3 size={12} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteGrade(lvl)}
+                              className="w-7 h-7 rounded-lg bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 flex items-center justify-center hover:bg-rose-200 cursor-pointer"
+                              title="Sil"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── MODAL 6: DÖNEM SONU TERFİ ONAY MODALI ── */}
+      <AnimatePresence>
+        {isConfirmPromotionOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 font-jakarta select-none">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsConfirmPromotionOpen(false)}
+              className="fixed inset-0 bg-black/75 backdrop-blur-xs"
+            />
+
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative w-full max-w-sm rounded-3xl bg-white dark:bg-[#121826] p-5 shadow-2xl z-10 border border-gray-200 dark:border-gray-800 space-y-3"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-2">
+                <Sparkles size={24} />
+              </div>
+
+              <h3 className="text-center font-black text-sm text-gray-900 dark:text-white">
+                Dönem Sonu Sınıf Atlatmayı Onaylıyor Musunuz?
+              </h3>
+
+              <p className="text-center text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                Bu işlemle tüm sınıflar <strong className="text-emerald-600 dark:text-emerald-400">{targetAcademicTerm}</strong> dönemine devredilecek, son kademe öğrencileri mezun kütüğe aktarılacaktır. Mevcut durum otomatik yedeklenecektir.
+              </p>
+
+              <div className="grid grid-cols-2 gap-2 mt-4 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsConfirmPromotionOpen(false)}
+                  className="h-10 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 font-bold text-xs text-gray-700 dark:text-gray-300 transition-colors cursor-pointer"
+                >
+                  Vazgeç
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExecuteBulkPromotion}
+                  className="h-10 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs transition-colors cursor-pointer shadow-sm"
+                >
+                  Evet, Terfiyi Başlat
                 </button>
               </div>
             </motion.div>
