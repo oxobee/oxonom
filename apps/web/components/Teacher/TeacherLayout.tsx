@@ -5,13 +5,14 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  LayoutDashboard,
-  Calendar,
+  Home,
   Users,
+  Tv,
   CheckSquare,
+  LayoutGrid,
+  Calendar,
   BookOpen,
   Award,
-  Tv,
   Sparkles,
   FolderOpen,
   MessageSquare,
@@ -19,15 +20,12 @@ import {
   FileText,
   BarChart3,
   Settings,
-  MoreHorizontal,
   X,
   QrCode,
   Sun,
   Moon,
   LogOut,
   ChevronRight,
-  School,
-  ExternalLink,
 } from 'lucide-react'
 import { TEACHER_MENU_CONFIG, getMenuItemByPath } from '@/lib/teacher/teacherMenuConfig'
 import { useMobileTheme } from '@components/Mobile/useMobileTheme'
@@ -52,21 +50,55 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
   const teacherName = user?.first_name ? `${user.first_name} ${user.last_name || ''}` : 'Ebru TEKNECİ'
   const teacherBranch = 'Sınıf Öğretmeni & Rehberlik'
 
-  // Mobile Bottom Dock: exactly 5 items per Section 4
-  const MOBILE_DOCK_ITEMS = [
-    { label: 'Ana Sayfa', path: '/teacher/dashboard', icon: LayoutDashboard },
-    { label: 'Derslerim', path: '/teacher/schedule', icon: Calendar },
-    { label: 'Tahta', path: '/teacher/smartboard', icon: Tv, isCenter: true },
-    { label: 'Yapay Zekâ', path: '/teacher/ai-assistant', icon: Sparkles },
-    { label: 'Daha Fazla', path: '#more', icon: MoreHorizontal, isMore: true },
-  ]
-
   const isCurrentPathActive = (targetPath: string) => {
     if (targetPath === '/teacher/dashboard') {
       return pathname === '/teacher/dashboard' || pathname === '/teacher'
     }
     return pathname.startsWith(targetPath)
   }
+
+  // Visual definition matching the requested mobile dock design
+  const DOCK_NAV_ITEMS = [
+    {
+      id: 'dashboard',
+      label: 'Ana Sayfa',
+      path: '/teacher/dashboard',
+      icon: Home,
+      activeIconBg: 'bg-[#162920] dark:bg-emerald-100 text-[#10B981] dark:text-emerald-700',
+      inactiveBg: 'bg-[#F3F4F6] dark:bg-gray-800',
+      inactiveText: 'text-gray-700 dark:text-gray-300',
+    },
+    {
+      id: 'classes',
+      label: 'Sınıflarım',
+      path: '/teacher/classes',
+      icon: Users,
+      activeIconBg: 'bg-[#201A38] dark:bg-purple-100 text-[#818CF8] dark:text-purple-700',
+      inactiveBg: 'bg-[#F0EEFF] dark:bg-indigo-950/60',
+      inactiveText: 'text-[#6366F1] dark:text-indigo-300',
+    },
+    {
+      id: 'smartboard',
+      label: 'Tahta',
+      path: '/teacher/smartboard',
+      icon: Tv,
+      activeIconBg: 'bg-[#112926] dark:bg-teal-100 text-[#2DD4BF] dark:text-teal-700',
+      inactiveBg: 'bg-[#E6F9F5] dark:bg-teal-950/60',
+      inactiveText: 'text-[#0D9488] dark:text-teal-300',
+    },
+    {
+      id: 'attendance',
+      label: 'Yoklama',
+      path: '/teacher/attendance',
+      icon: CheckSquare,
+      activeIconBg: 'bg-[#1E2342] dark:bg-blue-100 text-[#6366F1] dark:text-blue-700',
+      inactiveBg: 'bg-[#EEF2FF] dark:bg-blue-950/60',
+      inactiveText: 'text-[#4F46E5] dark:text-blue-300',
+    },
+  ]
+
+  // Filter out hidden modules (e.g. AI Assistant for now)
+  const visibleMenuItems = TEACHER_MENU_CONFIG.filter((item) => !item.hidden)
 
   return (
     <div className={`${theme} min-h-screen bg-[#F8FAFC] dark:bg-[#0A0D15] text-gray-900 dark:text-white font-jakarta flex flex-col lg:flex-row transition-colors duration-200`}>
@@ -112,9 +144,9 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
           </div>
         </div>
 
-        {/* 14 Navigation Categories (Ordered) */}
+        {/* Ordered Navigation Categories */}
         <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-1 custom-scrollbar">
-          {TEACHER_MENU_CONFIG.map((item) => {
+          {visibleMenuItems.map((item) => {
             const Icon = item.icon
             const active = isCurrentPathActive(item.path)
             const isPassive = item.status === 'passive'
@@ -217,66 +249,67 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
         {children}
       </main>
 
-      {/* ── MOBILE FLOATING BOTTOM DOCK (5 Items) ── */}
+      {/* ── MOBILE FLOATING BOTTOM DOCK (Visual Matched to Design Mockup) ── */}
       <nav
-        className="lg:hidden fixed safe-dock-bottom left-1/2 -translate-x-1/2 w-[95%] max-w-[390px] bg-white/95 dark:bg-[#0E131F]/95 backdrop-blur-md border border-gray-200/90 dark:border-gray-800/90 rounded-[28px] p-1.5 flex items-center justify-between shadow-2xl z-40 select-none"
+        className="lg:hidden fixed safe-dock-bottom left-1/2 -translate-x-1/2 w-[95%] max-w-[400px] bg-white/95 dark:bg-[#0E131F]/95 backdrop-blur-xl border border-gray-200/90 dark:border-gray-800/90 rounded-full px-2 py-1.5 flex items-center justify-between gap-1 shadow-2xl z-40 select-none"
         style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 0.75rem)' }}
         aria-label="Öğretmen alt menü"
       >
-        {MOBILE_DOCK_ITEMS.map((item, idx) => {
+        {/* Navigation Items (Ana Sayfa, Sınıflarım, Akıllı Tahta, Yoklama) */}
+        {DOCK_NAV_ITEMS.map((item) => {
           const Icon = item.icon
-          const isActive = !item.isMore && isCurrentPathActive(item.path)
+          const isActive = isCurrentPathActive(item.path)
 
-          if (item.isMore) {
-            return (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => setIsMoreSheetOpen(true)}
-                className={`relative flex flex-col items-center justify-center w-[52px] h-[48px] rounded-[18px] transition-all cursor-pointer ${
-                  isMoreSheetOpen
-                    ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 font-bold'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-                }`}
-              >
-                <Icon size={20} strokeWidth={2} />
-                <span className="text-[10px] mt-0.5 tracking-tight font-medium">Daha Fazla</span>
-              </button>
-            )
-          }
-
-          if (item.isCenter) {
+          if (isActive) {
             return (
               <Link
-                key={idx}
+                key={item.id}
                 href={item.path}
-                className={`relative flex flex-col items-center justify-center w-[54px] h-[50px] rounded-[18px] transition-all ${
-                  isActive
-                    ? 'bg-emerald-500 text-[#0A0D15] shadow-lg shadow-emerald-500/25 font-black'
-                    : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold'
-                }`}
+                className="h-11 px-3.5 rounded-full bg-black dark:bg-white text-white dark:text-black flex items-center gap-2 font-bold text-xs shadow-md shrink-0 transition-all"
               >
-                <Icon size={21} strokeWidth={2.2} />
-                <span className="text-[10px] mt-0.5 tracking-tight">{item.label}</span>
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center ${item.activeIconBg}`}>
+                  <Icon size={15} strokeWidth={2.4} />
+                </div>
+                <span className="whitespace-nowrap">{item.label}</span>
               </Link>
             )
           }
 
           return (
             <Link
-              key={idx}
+              key={item.id}
               href={item.path}
-              className={`relative flex flex-col items-center justify-center w-[52px] h-[48px] rounded-[18px] transition-all ${
-                isActive
-                  ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 font-bold'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-              }`}
+              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 cursor-pointer hover:scale-105 active:scale-95 ${item.inactiveBg} ${item.inactiveText}`}
+              title={item.label}
             >
-              <Icon size={20} strokeWidth={isActive ? 2.3 : 1.9} />
-              <span className="text-[10px] mt-0.5 tracking-tight font-medium">{item.label}</span>
+              <Icon size={19} strokeWidth={2.2} />
             </Link>
           )
         })}
+
+        {/* 5th Item: "Daha Fazla" (replaces profile, opens drawer) */}
+        <button
+          type="button"
+          onClick={() => setIsMoreSheetOpen(true)}
+          className={`w-10 h-10 rounded-full flex items-center justify-center transition-all shrink-0 cursor-pointer hover:scale-105 active:scale-95 ${
+            isMoreSheetOpen
+              ? 'bg-[#FDE68A] text-[#B45309] font-bold'
+              : 'bg-[#FFF4E5] dark:bg-amber-950/60 text-[#D97706] dark:text-amber-300'
+          }`}
+          title="Daha Fazla Modül"
+        >
+          <LayoutGrid size={19} strokeWidth={2.2} />
+        </button>
+
+        {/* 6th Item: QR Code Button on the Far Right (Rounded Square) */}
+        <button
+          type="button"
+          onClick={() => setIsConnectBoardModalOpen(true)}
+          className="w-11 h-11 rounded-[16px] bg-gradient-to-br from-[#10B981] to-[#059669] hover:from-[#059669] hover:to-[#047857] text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 active:scale-95 transition-all cursor-pointer shrink-0 ml-0.5"
+          title="Akıllı Tahtaya Bağlan (QR)"
+        >
+          <QrCode size={20} strokeWidth={2.4} />
+        </button>
       </nav>
 
       {/* ── MOBILE "DAHA FAZLA" BOTTOM SHEET ── */}
@@ -289,7 +322,7 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsMoreSheetOpen(false)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-xs"
+              className="absolute inset-0 bg-black/60 backdrop-blur-xs"
             />
 
             {/* Sheet Card */}
@@ -307,7 +340,7 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
                     Tüm Öğretmen Modülleri
                   </h3>
                   <p className="text-[11px] text-gray-400 mt-0.5">
-                    14 kapsamlı çalışma alanı ve araçlar
+                    Kapsamlı çalışma alanları ve araçlar
                   </p>
                 </div>
                 <button
@@ -321,7 +354,7 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
 
               {/* Modules Grid */}
               <div className="flex-1 overflow-y-auto p-4 grid grid-cols-2 gap-2.5 custom-scrollbar">
-                {TEACHER_MENU_CONFIG.map((item) => {
+                {visibleMenuItems.map((item) => {
                   const Icon = item.icon
                   const active = isCurrentPathActive(item.path)
                   const isPassive = item.status === 'passive'
@@ -373,21 +406,18 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
                     setIsMoreSheetOpen(false)
                     signOut()
                   }}
-                  className="text-xs font-bold text-rose-500 flex items-center gap-1.5"
+                  className="text-xs font-bold text-rose-500 flex items-center gap-1.5 cursor-pointer"
                 >
                   <LogOut size={14} />
                   <span>Oturumu Kapat</span>
                 </button>
-                <div className="text-[10px] text-gray-400">
-                  Oxonom Edu v2
-                </div>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
-      {/* Global QR Smartboard Pairing Modal */}
+      {/* QR Connect Board Modal */}
       <ConnectBoardModal
         isOpen={isConnectBoardModalOpen}
         onClose={() => setIsConnectBoardModalOpen(false)}

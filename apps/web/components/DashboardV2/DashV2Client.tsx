@@ -745,7 +745,7 @@ export default function DashV2Client({
 
               {/* Prominent, Clearly Noticeable & Clickable Account / Profile Button */}
               <Link
-                href="/m-profile"
+                href="/teacher/settings"
                 className="group flex items-center gap-2.5 p-2 sm:p-2.5 rounded-2xl bg-white/10 hover:bg-white/15 active:scale-95 border border-white/15 backdrop-blur-md transition-all shadow-md shrink-0 cursor-pointer"
                 title="Hesap ve Profil Ayarları"
               >
@@ -847,7 +847,7 @@ export default function DashV2Client({
             <div className="grid grid-cols-2 divide-x divide-gray-100 dark:divide-gray-800">
               {/* Metric 1: Öğrenci */}
               <Link
-                href="/m-student"
+                href={`/teacher/classes?class=${encodeURIComponent(selectedClass.code)}`}
                 className="pr-4 flex flex-col active:scale-98 transition-transform group"
               >
                 <div className="flex items-center justify-between">
@@ -866,9 +866,9 @@ export default function DashV2Client({
                 </span>
               </Link>
 
-              {/* Metric 2: Akıllı Tahta (Links to /m-boards) */}
+              {/* Metric 2: Akıllı Tahta (Links to /teacher/smartboard) */}
               <Link
-                href="/m-boards"
+                href="/teacher/smartboard"
                 className="pl-4 flex flex-col active:scale-98 transition-transform group"
               >
                 <div className="flex items-center justify-between">
@@ -912,7 +912,7 @@ export default function DashV2Client({
               {!attendanceData || !attendanceData.taken ? (
                 /* ── YOKLAMA YAPILMADI UYARI KARTI (Temayla Uyumlu, Tıklanınca Yoklamaya Gider) ── */
                 <Link
-                  href={`/m-student?openAttendance=true&class=${selectedClass.code}`}
+                  href={`/teacher/attendance?class=${encodeURIComponent(selectedClass.code)}`}
                   className="w-full p-3.5 rounded-2xl bg-amber-500/10 dark:bg-amber-950/40 border border-amber-300/80 dark:border-amber-700/60 flex items-center justify-between gap-3 active:scale-[0.98] transition-all group cursor-pointer hover:bg-amber-500/15"
                 >
                   <div className="flex items-center gap-3 min-w-0">
@@ -972,7 +972,7 @@ export default function DashV2Client({
                   {/* Dual Badges: [X Mevcut] / [Y Eksik] */}
                   <div className="grid grid-cols-2 gap-2.5 pt-0.5">
                     <Link
-                      href={`/m-student?openAttendance=true&class=${selectedClass.code}`}
+                      href={`/teacher/attendance?class=${encodeURIComponent(selectedClass.code)}`}
                       className="bg-[#E8F8F0] dark:bg-[#06241D] text-[#059669] dark:text-[#34D399] font-bold text-xs py-2.5 sm:py-3 px-3.5 sm:px-4 rounded-2xl flex items-center gap-2 border border-emerald-200/60 dark:border-emerald-600/30 active:scale-98 transition-all hover:border-emerald-500"
                     >
                       <span className="text-lg sm:text-xl font-black text-[#059669] dark:text-[#34D399]">
@@ -983,7 +983,7 @@ export default function DashV2Client({
                       </span>
                     </Link>
                     <Link
-                      href={`/m-student?openAttendance=true&class=${selectedClass.code}`}
+                      href={`/teacher/attendance?class=${encodeURIComponent(selectedClass.code)}`}
                       className="bg-[#FDECEC] dark:bg-[#250F16] text-[#DC2626] dark:text-[#F87171] font-bold text-xs py-2.5 sm:py-3 px-3.5 sm:px-4 rounded-2xl flex items-center gap-2 border border-rose-200/60 dark:border-rose-600/30 active:scale-98 transition-all hover:border-rose-500"
                     >
                       <span className="text-lg sm:text-xl font-black text-[#DC2626] dark:text-[#F87171]">
@@ -1086,7 +1086,7 @@ export default function DashV2Client({
                   </p>
                 </div>
                 <Link
-                  href="/m-boards?new=true"
+                  href="/teacher/smartboard"
                   className="mt-1 px-3.5 py-2 rounded-xl bg-[#34D399] hover:bg-[#2ee59d] text-[#0A0D15] font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
                 >
                   <Plus size={14} strokeWidth={2.5} />
@@ -1098,13 +1098,13 @@ export default function DashV2Client({
             {/* Bottom Links */}
             <div className="flex items-center justify-between pt-1 px-1 text-xs">
               <Link
-                href="/m-boards?new=true"
+                href="/teacher/smartboard"
                 className="text-[#0D9488] dark:text-teal-400 font-bold hover:underline"
               >
                 + Yeni Tahta Oluştur
               </Link>
               <Link
-                href="/m-boards"
+                href="/teacher/smartboard"
                 className="text-gray-600 dark:text-gray-400 font-semibold hover:underline flex items-center gap-1"
               >
                 <span>Tüm Tahtaları Gör</span>
@@ -1133,7 +1133,7 @@ export default function DashV2Client({
             </div>
 
             <Link
-              href="/m-homework"
+              href="/teacher/assignments"
               className="bg-[#EEF0FF] dark:bg-indigo-950/50 text-[#4338CA] dark:text-indigo-300 font-bold text-xs px-4 py-2 rounded-full flex items-center gap-1 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 transition-colors shrink-0"
             >
               <span>Ödevlere Git</span>
@@ -1188,7 +1188,7 @@ export default function DashV2Client({
             variants={itemVariants}
             className="w-full bg-white dark:bg-[#121826] rounded-[24px] p-4.5 sm:p-5 border border-gray-100 dark:border-gray-800 shadow-sm flex items-center justify-between gap-3.5"
           >
-            <Link href="/dash/library" className="flex items-center gap-3 min-w-0 flex-1">
+            <Link href="/teacher/library" className="flex items-center gap-3 min-w-0 flex-1">
               <div className="w-10 h-10 rounded-2xl bg-[#EFF6FF] dark:bg-sky-950/60 text-[#2563EB] dark:text-sky-300 flex items-center justify-center shrink-0">
                 <FolderOpen size={18} />
               </div>

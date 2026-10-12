@@ -228,7 +228,7 @@ export default function MStudentClient({
         return classParam.includes('Şubesi') ? classParam : `${classParam} Şubesi`
       }
     }
-    return '1-A Şubesi'
+    return '9-A Şubesi'
   })
 
   // Modals state

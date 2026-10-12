@@ -36,6 +36,7 @@ export interface TeacherMenuItem {
   sortOrder: number
   description: string
   missingDependency?: string
+  hidden?: boolean
   children?: TeacherSubMenuItem[]
 }
 
@@ -140,6 +141,7 @@ export const TEACHER_MENU_CONFIG: TeacherMenuItem[] = [
     icon: Sparkles,
     status: 'active',
     sortOrder: 8,
+    hidden: true,
     description: 'MEB müfredatına uyumlu ders planı, çoktan seçmeli soru, çalışma kâğıdı ve materyal üretimi.',
     children: [
       { id: 'ai-lesson-planner', label: 'Ders Planı Hazırlayıcı', path: '/teacher/ai-assistant/lesson-planner', status: 'active' },
