@@ -11,23 +11,48 @@ import {
   CheckSquare,
   FileCheck,
   TrendingUp,
+  Award,
+  ChevronDown,
+  BookOpen,
+  Filter,
+  AlertCircle,
+  Clock,
+  Sparkles,
+  Search,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import PassiveModuleNotice from '../PassiveModuleNotice'
 
+const CLASSES = [
+  { id: '9-A', name: '9-A Şubesi', course: 'Türk Dili ve Edebiyatı', studentCount: 24, avgGrade: 88.5, attendanceRate: 94.2, homeworkRate: 96 },
+  { id: '9-B', name: '9-B Şubesi', course: 'Türk Dili ve Edebiyatı', studentCount: 22, avgGrade: 82.4, attendanceRate: 91.8, homeworkRate: 88 },
+  { id: '1-A', name: '1-A Şubesi', course: 'Okuma & Yazma', studentCount: 18, avgGrade: 94.0, attendanceRate: 96.5, homeworkRate: 98 },
+]
+
 export default function TeacherReportsView() {
-  const [reportTab, setReportTab] = useState<'attendance' | 'assignments' | 'official'>('attendance')
+  const [selectedClassId, setSelectedClassId] = useState<string>('9-A')
+  const [categoryTab, setCategoryTab] = useState<'academic' | 'attendance' | 'homework' | 'official'>('academic')
+  const [searchStudent, setSearchStudent] = useState<string>('')
+
+  const activeClass = CLASSES.find((c) => c.id === selectedClassId) || CLASSES[0]
 
   const handleExportCSV = () => {
-    const csvContent = "data:text/csv;charset=utf-8,Ogrenci No,Ad Soyad,Sube,Devam Orani,Odev Basarisi\n101,Erçil UĞURLU,9-A,%94,%88\n102,Zeynep YILMAZ,9-A,%98,%95\n103,Ahmet KAYA,9-A,%91,%82"
+    const csvContent =
+      `data:text/csv;charset=utf-8,Ogrenci No,Ad Soyad,Sube,Akademik Not Ortalamasi,Devam Orani,Odev Tamamlama\n` +
+      `101,Erçil UĞURLU,${activeClass.name},94,%96,%100\n` +
+      `102,Zeynep YILMAZ,${activeClass.name},96,%98,%95\n` +
+      `103,Ahmet KAYA,${activeClass.name},82,%90,%85\n` +
+      `104,Mehmet DEMİR,${activeClass.name},78,%88,%80\n` +
+      `105,Ayşe KILIÇ,${activeClass.name},91,%95,%92`
+
     const encodedUri = encodeURI(csvContent)
-    const link = document.createElement("a")
-    link.setAttribute("href", encodedUri)
-    link.setAttribute("download", "9-A_Sinif_Gelisim_Raporu.csv")
+    const link = document.createElement('a')
+    link.setAttribute('href', encodedUri)
+    link.setAttribute('download', `${activeClass.id}_Sinif_Kapsamli_Rapor.csv`)
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
-    toast.success('Rapor CSV formatında dışa aktarıldı.')
+    toast.success(`${activeClass.name} sınıf raporu CSV olarak indirildi.`)
   }
 
   const handlePrint = () => {
@@ -36,20 +61,53 @@ export default function TeacherReportsView() {
     }
   }
 
+  // Class specific academic mock records
+  const academicCategories = [
+    { title: 'Şiir & Metin Tahlili', avg: selectedClassId === '9-A' ? 92 : selectedClassId === '9-B' ? 84 : 95, icon: BookOpen, color: 'indigo' },
+    { title: 'Kompozisyon & İfade', avg: selectedClassId === '9-A' ? 95 : selectedClassId === '9-B' ? 80 : 92, icon: Award, color: 'emerald' },
+    { title: 'Dil Bilgisi & İmla', avg: selectedClassId === '9-A' ? 84 : selectedClassId === '9-B' ? 79 : 96, icon: TrendingUp, color: 'sky' },
+    { title: 'Sözlü & Performans', avg: selectedClassId === '9-A' ? 96 : selectedClassId === '9-B' ? 88 : 98, icon: Sparkles, color: 'purple' },
+  ]
+
+  // Grade score distribution (Percentage of class)
+  const gradeDistribution = [
+    { range: '85 - 100 (Pekiyi)', percent: selectedClassId === '9-A' ? 62 : 45, count: selectedClassId === '9-A' ? 15 : 10, color: 'bg-emerald-500' },
+    { range: '70 - 84 (İyi)', percent: selectedClassId === '9-A' ? 25 : 35, count: selectedClassId === '9-A' ? 6 : 8, color: 'bg-indigo-500' },
+    { range: '55 - 69 (Orta)', percent: selectedClassId === '9-A' ? 10 : 15, count: selectedClassId === '9-A' ? 2 : 3, color: 'bg-amber-500' },
+    { range: '0 - 54 (Geliştirilmeli)', percent: selectedClassId === '9-A' ? 3 : 5, count: 1, color: 'bg-rose-500' },
+  ]
+
+  // Attendance breakdown
+  const attendanceBreakdown = [
+    { label: 'Düzenli Katılanlar (%95+)', count: selectedClassId === '9-A' ? 20 : 16, pct: selectedClassId === '9-A' ? '83%' : '73%', color: 'text-emerald-600 bg-emerald-500' },
+    { label: 'Normal Katılım (%85 - %94)', count: selectedClassId === '9-A' ? 3 : 4, pct: selectedClassId === '9-A' ? '13%' : '18%', color: 'text-indigo-600 bg-indigo-500' },
+    { label: 'Devamsızlık Takibinde (<%85)', count: 1, pct: '4%', color: 'text-rose-600 bg-rose-500' },
+  ]
+
+  // Student summary roster
+  const sampleStudents = [
+    { no: '101', name: 'Erçil UĞURLU', avg: 95.5, attendance: '%98', hwRate: '%100', trend: '+4.5' },
+    { no: '102', name: 'Zeynep YILMAZ', avg: 94.0, attendance: '%96', hwRate: '%95', trend: '+2.0' },
+    { no: '103', name: 'Ahmet KAYA', avg: 82.5, attendance: '%91', hwRate: '%88', trend: '-1.5' },
+    { no: '104', name: 'Mehmet DEMİR', avg: 78.0, attendance: '%88', hwRate: '%80', trend: '+1.0' },
+    { no: '105', name: 'Ayşe KILIÇ', avg: 91.0, attendance: '%95', hwRate: '%92', trend: '+3.5' },
+    { no: '106', name: 'Canberk YILDIZ', avg: 85.5, attendance: '%93', hwRate: '%85', trend: '0.0' },
+  ].filter((s) => s.name.toLowerCase().includes(searchStudent.toLowerCase()) || s.no.includes(searchStudent))
+
   return (
     <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 font-jakarta space-y-6">
-      {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 rounded-3xl p-6 shadow-sm">
+      {/* ── HEADER BANNER ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 rounded-3xl p-6 shadow-xs">
         <div>
           <div className="flex items-center gap-2 text-xs text-indigo-600 dark:text-indigo-400 font-bold uppercase tracking-wider mb-1">
             <BarChart3 size={15} />
-            <span>Akademik İstatistik & Performans Analizi</span>
+            <span>Sınıf Bazlı İstatistik ve Grafik Raporları</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
             Raporlarım
           </h1>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-            Sınıf devam çizelgeleri, ödev tamamlama oranları ve çıktı alma
+            Sınıf seçerek detaylı akademik performans, yoklama istatistikleri ve ödev raporlarını inceleyin
           </p>
         </div>
 
@@ -57,7 +115,7 @@ export default function TeacherReportsView() {
           <button
             type="button"
             onClick={handleExportCSV}
-            className="h-10 px-3.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 text-gray-700 dark:text-gray-300 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="h-10 px-3.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <Download size={14} />
             <span>CSV İndir</span>
@@ -65,110 +123,295 @@ export default function TeacherReportsView() {
           <button
             type="button"
             onClick={handlePrint}
-            className="h-10 px-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="h-10 px-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs shadow-indigo-500/20"
           >
             <Printer size={14} />
-            <span>Yazdır</span>
+            <span>Yazdır / PDF</span>
           </button>
         </div>
       </div>
 
-      {/* Tab Controls */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
-        <button
-          type="button"
-          onClick={() => setReportTab('attendance')}
-          className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
-            reportTab === 'attendance'
-              ? 'bg-indigo-600 text-white shadow-xs'
-              : 'bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 text-gray-600 dark:text-gray-300'
-          }`}
-        >
-          Devam & Yoklama Raporu
-        </button>
-        <button
-          type="button"
-          onClick={() => setReportTab('assignments')}
-          className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
-            reportTab === 'assignments'
-              ? 'bg-indigo-600 text-white shadow-xs'
-              : 'bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 text-gray-600 dark:text-gray-300'
-          }`}
-        >
-          Ödev Tamamlama Analizi
-        </button>
-        <button
-          type="button"
-          onClick={() => setReportTab('official')}
-          className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
-            reportTab === 'official'
-              ? 'bg-indigo-600 text-white shadow-xs'
-              : 'bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 text-gray-600 dark:text-gray-300'
-          }`}
-        >
-          Resmi Dönem Raporları
-        </button>
+      {/* ── STEP 1: CLASS SELECTOR (ÜST KISIMDA ÖNCE SINIF SEÇİMİ) ── */}
+      <div className="bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 rounded-3xl p-5 shadow-xs space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-xs">
+              1
+            </div>
+            <div>
+              <span className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider block">
+                Raporlanacak Sınıfı Seçin
+              </span>
+              <span className="text-[11px] text-gray-400">
+                Seçilen şubenin tüm istatistik ve grafikleri dinamik olarak yüklenir
+              </span>
+            </div>
+          </div>
+          <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 px-3 py-1 rounded-xl">
+            Aktif Sınıf: {activeClass.name}
+          </span>
+        </div>
+
+        {/* Class Selection Buttons */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+          {CLASSES.map((cls) => {
+            const isSelected = cls.id === selectedClassId
+            return (
+              <button
+                key={cls.id}
+                type="button"
+                onClick={() => setSelectedClassId(cls.id)}
+                className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                  isSelected
+                    ? 'bg-indigo-50/70 dark:bg-indigo-950/40 border-indigo-500 text-gray-900 dark:text-white shadow-xs'
+                    : 'bg-gray-50/50 dark:bg-[#161D2E] border-gray-200/70 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-extrabold">{cls.name}</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                    isSelected ? 'bg-indigo-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                  }`}>
+                    {cls.studentCount} Öğrenci
+                  </span>
+                </div>
+                <div className="text-[11px] text-gray-500 dark:text-gray-400 truncate mb-2">
+                  {cls.course}
+                </div>
+                <div className="flex items-center justify-between text-[11px] pt-2 border-t border-gray-200/60 dark:border-gray-800 font-bold">
+                  <span className="text-emerald-600 dark:text-emerald-400">Not Ort: {cls.avgGrade}</span>
+                  <span className="text-indigo-600 dark:text-indigo-400">Devam: %{cls.attendanceRate}</span>
+                </div>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
-      {/* Attendance Analytics */}
-      {reportTab === 'attendance' && (
-        <div className="bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 rounded-3xl p-6 shadow-sm space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-4 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40">
-              <div className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase">
-                9-A Genel Devam Oranı
-              </div>
-              <div className="text-2xl font-black text-gray-900 dark:text-white mt-1">
-                %94.2
-              </div>
-              <div className="text-[11px] text-gray-500 mt-0.5">Son 30 gün verisi</div>
-            </div>
+      {/* ── STEP 2: CATEGORY TABS ── */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
+        {[
+          { key: 'academic', label: 'Akademik Başarı & Sınavlar', icon: TrendingUp },
+          { key: 'attendance', label: 'Sınıf Devam & Yoklama', icon: CheckSquare },
+          { key: 'homework', label: 'Ödev & Görev Takibi', icon: BookOpen },
+          { key: 'official', label: 'Resmi e-Okul Raporları', icon: FileCheck },
+        ].map((tab) => {
+          const Icon = tab.icon
+          const isActive = categoryTab === tab.key
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setCategoryTab(tab.key as any)}
+              className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
+                isActive
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 text-gray-600 dark:text-gray-300 hover:border-gray-300'
+              }`}
+            >
+              <Icon size={14} />
+              <span>{tab.label}</span>
+            </button>
+          )
+        })}
+      </div>
 
-            <div className="p-4 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40">
-              <div className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase">
-                Ortalama Katılım
-              </div>
-              <div className="text-2xl font-black text-gray-900 dark:text-white mt-1">
-                22.8 / 24
-              </div>
-              <div className="text-[11px] text-gray-500 mt-0.5">Ders başına ortalama öğrenci</div>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/40">
-              <div className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase">
-                Raporlu / İzinli Günler
-              </div>
-              <div className="text-2xl font-black text-gray-900 dark:text-white mt-1">
-                8 Gün
-              </div>
-              <div className="text-[11px] text-gray-500 mt-0.5">Bu ay toplam izinli kayıt</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Assignments Analytics */}
-      {reportTab === 'assignments' && (
-        <div className="bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 rounded-3xl p-6 shadow-sm space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="p-4 rounded-2xl bg-gray-50 dark:bg-[#161D2E] border border-gray-100 dark:border-gray-800">
-              <div className="text-xs font-bold text-gray-500">Zamanında Teslim Oranı</div>
-              <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
-                %89.5
-              </div>
-            </div>
-            <div className="p-4 rounded-2xl bg-gray-50 dark:bg-[#161D2E] border border-gray-100 dark:border-gray-800">
-              <div className="text-xs font-bold text-gray-500">Sınıf Ödev Başarı Ortalaması</div>
+      {/* ── TAB 1: AKADEMİK BAŞARI & GRAFİKLER ── */}
+      {categoryTab === 'academic' && (
+        <div className="space-y-6">
+          {/* Quick Metrics Bar */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="p-4 rounded-2xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 shadow-xs">
+              <div className="text-[10px] font-bold text-gray-400 uppercase">Sınıf Not Ortalaması</div>
               <div className="text-2xl font-black text-indigo-600 dark:text-indigo-400 mt-1">
-                86 / 100
+                {activeClass.avgGrade} <span className="text-xs font-bold text-gray-400">/ 100</span>
+              </div>
+              <div className="text-[10px] text-emerald-500 font-bold mt-0.5 flex items-center gap-1">
+                <TrendingUp size={11} /> Okul ortalamasının üzerinde
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 shadow-xs">
+              <div className="text-[10px] font-bold text-gray-400 uppercase">En Yüksek Not</div>
+              <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
+                98.5 <span className="text-xs font-bold text-gray-400">/ 100</span>
+              </div>
+              <div className="text-[10px] text-gray-400 mt-0.5">Erçil UĞURLU</div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 shadow-xs">
+              <div className="text-[10px] font-bold text-gray-400 uppercase">Tamamlanan Sınavlar</div>
+              <div className="text-2xl font-black text-gray-900 dark:text-white mt-1">
+                4 Adet
+              </div>
+              <div className="text-[10px] text-gray-400 mt-0.5">2 Yazılı + 2 Quiz</div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 shadow-xs">
+              <div className="text-[10px] font-bold text-gray-400 uppercase">Başarı Değişimi</div>
+              <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
+                +%4.2
+              </div>
+              <div className="text-[10px] text-gray-400 mt-0.5">Önceki aya göre artış</div>
+            </div>
+          </div>
+
+          {/* Categorical Breakdown & Distribution Graphs */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Subject Categories */}
+            <div className="bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 rounded-3xl p-5 shadow-xs space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
+                    Kategori Bazlı Başarı Analizi
+                  </h3>
+                  <p className="text-[11px] text-gray-400">Müfredat alanlarına göre ortalama başarı</p>
+                </div>
+                <Award size={18} className="text-indigo-600" />
+              </div>
+
+              <div className="space-y-3.5 pt-1">
+                {academicCategories.map((cat, idx) => (
+                  <div key={idx} className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs font-bold">
+                      <span className="text-gray-700 dark:text-gray-200">{cat.title}</span>
+                      <span className="text-indigo-600 dark:text-indigo-400">{cat.avg} / 100</span>
+                    </div>
+                    <div className="w-full h-2.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-full transition-all duration-500"
+                        style={{ width: `${cat.avg}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Score Distribution */}
+            <div className="bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 rounded-3xl p-5 shadow-xs space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
+                    Not Dağılımı ve Başarı Kümeleri
+                  </h3>
+                  <p className="text-[11px] text-gray-400">{activeClass.name} genel başarı yüzdeleri</p>
+                </div>
+                <BarChart3 size={18} className="text-emerald-600" />
+              </div>
+
+              <div className="space-y-3.5 pt-1">
+                {gradeDistribution.map((dist, idx) => (
+                  <div key={idx} className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs font-bold">
+                      <span className="text-gray-700 dark:text-gray-200">{dist.range}</span>
+                      <span className="text-gray-900 dark:text-white">%{dist.percent} ({dist.count} Öğrenci)</span>
+                    </div>
+                    <div className="w-full h-2.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${dist.color} rounded-full transition-all duration-500`}
+                        style={{ width: `${dist.percent}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Official MEB reports (Passive) */}
-      {reportTab === 'official' && (
+      {/* ── TAB 2: DEVAM & YOKLAMA İSTATİSTİKLERİ ── */}
+      {categoryTab === 'attendance' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-5 rounded-3xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 shadow-xs">
+              <div className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
+                {activeClass.name} Devam Oranı
+              </div>
+              <div className="text-3xl font-black text-gray-900 dark:text-white mt-1">
+                %{activeClass.attendanceRate}
+              </div>
+              <div className="text-[11px] text-gray-400 mt-1">Son 30 günlük ders ortalaması</div>
+            </div>
+
+            <div className="p-5 rounded-3xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 shadow-xs">
+              <div className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+                Ortalama Derse Katılım
+              </div>
+              <div className="text-3xl font-black text-gray-900 dark:text-white mt-1">
+                {selectedClassId === '9-A' ? '22.8' : '20.2'} / {activeClass.studentCount}
+              </div>
+              <div className="text-[11px] text-gray-400 mt-1">Ders başına ortalama mevcut</div>
+            </div>
+
+            <div className="p-5 rounded-3xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 shadow-xs">
+              <div className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                Raporlu / İzinli Gün Sayısı
+              </div>
+              <div className="text-3xl font-black text-gray-900 dark:text-white mt-1">
+                {selectedClassId === '9-A' ? '8' : '12'} Gün
+              </div>
+              <div className="text-[11px] text-gray-400 mt-1">Bu ay toplam izinli kayıt</div>
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 rounded-3xl p-6 shadow-xs space-y-4">
+            <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
+              Sınıf Katılım Dağılımı ve Risk Durumu
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {attendanceBreakdown.map((item, i) => (
+                <div key={i} className="p-4 rounded-2xl bg-gray-50 dark:bg-[#161D2E] border border-gray-100 dark:border-gray-800">
+                  <div className="text-xs font-bold text-gray-700 dark:text-gray-300">{item.label}</div>
+                  <div className="text-2xl font-black text-gray-900 dark:text-white mt-1">{item.count} Öğrenci</div>
+                  <div className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 mt-0.5">Sınıfın {item.pct}'ü</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 3: ÖDEV & GÖREV TAKİBİ ── */}
+      {categoryTab === 'homework' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-5 rounded-3xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 shadow-xs">
+              <div className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+                Zamanında Teslim Oranı
+              </div>
+              <div className="text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
+                %{activeClass.homeworkRate}
+              </div>
+              <div className="text-[11px] text-gray-400 mt-1">Tüm ödevlerin teslim ortalaması</div>
+            </div>
+
+            <div className="p-5 rounded-3xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 shadow-xs">
+              <div className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
+                Verilen Toplam Ödev
+              </div>
+              <div className="text-3xl font-black text-gray-900 dark:text-white mt-1">
+                12 Görev
+              </div>
+              <div className="text-[11px] text-gray-400 mt-1">Okuma, Tahta, Quiz, Kompozisyon</div>
+            </div>
+
+            <div className="p-5 rounded-3xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 shadow-xs">
+              <div className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider">
+                Ortalama Ödev Puanı
+              </div>
+              <div className="text-3xl font-black text-gray-900 dark:text-white mt-1">
+                89.4 / 100
+              </div>
+              <div className="text-[11px] text-gray-400 mt-1">Öğretmen değerlendirmesi ortalaması</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 4: OFFICIAL (PASSIVE) ── */}
+      {categoryTab === 'official' && (
         <PassiveModuleNotice
           moduleName="Resmi Dönem Sonu Raporlama & MEB e-Okul Karne Çıktıları"
           description="Bakanlık standartlarında resmi gelişim raporları, karne basımı ve dönem sonu başarı değerlendirme cetvelleri."
@@ -181,6 +424,73 @@ export default function TeacherReportsView() {
           relatedActivePath="/teacher/reports"
           relatedActiveLabel="Raporlar Ana Sayfasına Dön"
         />
+      )}
+
+      {/* ── DETAILED STUDENT PERFORMANCE ROSTER (AŞAĞIDAKİ LİSTE) ── */}
+      {categoryTab !== 'official' && (
+        <div className="bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 rounded-3xl p-5 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-gray-100 dark:border-gray-800">
+            <div>
+              <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
+                {activeClass.name} Öğrenci Başarı ve Devam Çizelgesi
+              </h3>
+              <p className="text-[11px] text-gray-400">
+                Seçili şubedeki öğrencilerin karne ve istatistik özetleri
+              </p>
+            </div>
+
+            <div className="relative w-full sm:w-64">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Öğrenci veya numara ara..."
+                value={searchStudent}
+                onChange={(e) => setSearchStudent(e.target.value)}
+                className="w-full h-9 pl-9 pr-3 text-xs bg-gray-50 dark:bg-[#161D2E] border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-gray-100 dark:border-gray-800 text-[10px] font-extrabold text-gray-400 uppercase tracking-wider">
+                  <th className="py-2.5 px-3">No</th>
+                  <th className="py-2.5 px-3">Öğrenci Adı Soyadı</th>
+                  <th className="py-2.5 px-3 text-center">Akademik Not</th>
+                  <th className="py-2.5 px-3 text-center">Devam Oranı</th>
+                  <th className="py-2.5 px-3 text-center">Ödev Başarısı</th>
+                  <th className="py-2.5 px-3 text-right">Gelişim</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800/60 font-medium">
+                {sampleStudents.map((st) => (
+                  <tr key={st.no} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors">
+                    <td className="py-3 px-3 font-mono font-bold text-gray-500">{st.no}</td>
+                    <td className="py-3 px-3 font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-[10px] font-extrabold">
+                        {st.name.charAt(0)}
+                      </div>
+                      {st.name}
+                    </td>
+                    <td className="py-3 px-3 text-center font-bold text-indigo-600 dark:text-indigo-400">
+                      {st.avg}
+                    </td>
+                    <td className="py-3 px-3 text-center font-bold text-emerald-600 dark:text-emerald-400">
+                      {st.attendance}
+                    </td>
+                    <td className="py-3 px-3 text-center font-bold text-gray-700 dark:text-gray-300">
+                      {st.hwRate}
+                    </td>
+                    <td className="py-3 px-3 text-right font-bold text-emerald-600 dark:text-emerald-400">
+                      {st.trend}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
     </div>
   )

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -46,9 +46,37 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
   const [isMoreSheetOpen, setIsMoreSheetOpen] = useState(false)
   const [isConnectBoardModalOpen, setIsConnectBoardModalOpen] = useState(false)
 
-  // Teacher identity details
-  const teacherName = user?.first_name ? `${user.first_name} ${user.last_name || ''}` : 'Ebru TEKNECİ'
-  const teacherBranch = 'Sınıf Öğretmeni & Rehberlik'
+  // Teacher identity details (Authentic teacher profile, never mixes with principal)
+  const [teacherProfile, setTeacherProfile] = useState<{ name: string; branch: string }>({
+    name: 'Ebru TEKNECİ',
+    branch: 'Türk Dili ve Edebiyatı · Rehberlik',
+  })
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('oxonom_teacher_profile')
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          setTeacherProfile({
+            name: `${parsed.firstName || parsed.name || 'Ebru'} ${parsed.lastName || 'TEKNECİ'}`.trim(),
+            branch: parsed.branch || 'Türk Dili ve Edebiyatı · Rehberlik',
+          })
+          return
+        }
+      } catch (_) {}
+      const isPrincipal = (user?.email || '').includes('mudur') || user?.role === 'admin'
+      if (user?.first_name && !isPrincipal) {
+        setTeacherProfile({
+          name: `${user.first_name} ${user.last_name || ''}`.trim(),
+          branch: 'Türk Dili ve Edebiyatı · Rehberlik',
+        })
+      }
+    }
+  }, [user])
+
+  const teacherName = teacherProfile.name
+  const teacherBranch = teacherProfile.branch
 
   const isCurrentPathActive = (targetPath: string) => {
     if (targetPath === '/teacher/dashboard') {

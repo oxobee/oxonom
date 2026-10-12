@@ -158,6 +158,7 @@ export const TEACHER_MENU_CONFIG: TeacherMenuItem[] = [
     icon: FolderOpen,
     status: 'active',
     sortOrder: 9,
+    hidden: true,
     description: 'Müfredat dokümanları, PDF ders notları, etkileşimli simülasyonlar ve branş materyalleri.',
     children: [
       { id: 'library-curriculum', label: 'Kazanım & Müfredat', path: '/teacher/library/curriculum', status: 'active' },

@@ -375,8 +375,8 @@ export default async function proxy(req: NextRequest) {
     return NextResponse.redirect(new URL(`/m-login${search}`, req.url), 307)
   }
 
-  // Redirect mobile users from /dash to /dashv2
-  if (cleanAuthPath === '/dash' && isMobileUA) {
+  // Redirect mobile users from /dash to /dashv2 and support /m-dashv2
+  if ((cleanAuthPath === '/dash' && isMobileUA) || cleanAuthPath === '/m-dashv2') {
     return NextResponse.redirect(new URL(`/dashv2${search}`, req.url), 307)
   }
 

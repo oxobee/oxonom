@@ -149,7 +149,7 @@ export default function MLoginClient({ org, orgslug }: MLoginClientProps) {
 
       let defaultNext = '/teacher/dashboard'
       if (isAdmin) {
-        defaultNext = activeOrgSlug ? `/orgs/${activeOrgSlug}/m-admin?openAccount=true` : '/m-admin?openAccount=true'
+        defaultNext = '/dashv2'
       } else if (isStudent) {
         defaultNext = activeOrgSlug ? `/orgs/${activeOrgSlug}/m-student` : '/m-student'
       } else if (isTeacher) {
@@ -158,9 +158,14 @@ export default function MLoginClient({ org, orgslug }: MLoginClientProps) {
 
       const next = searchParams.get('next') || searchParams.get('redirect') || defaultNext
 
-      // Pre-persist active admin session locally for immediate UI reactivity
+      // Clean session isolation: never allow 2 different active roles on the same device
       if (isAdmin && typeof window !== 'undefined') {
         try {
+          // Clear any previous teacher session
+          localStorage.removeItem('oxonom_teacher_profile')
+          localStorage.removeItem('oxonom_teacher_profile_completed')
+          localStorage.setItem('oxonom_current_role', 'admin')
+
           localStorage.setItem(
             'oxonom_active_admin_session',
             JSON.stringify({
@@ -185,58 +190,31 @@ export default function MLoginClient({ org, orgslug }: MLoginClientProps) {
       // Pre-persist teacher session
       if (isTeacher && typeof window !== 'undefined') {
         try {
-          if (registeredTeacher) {
-            // Newly created teacher by Principal
-            const nameParts = (registeredTeacher.name || '').trim().split(' ')
-            const fName = nameParts[0] || 'Öğretmen'
-            const lName = nameParts.slice(1).join(' ') || ''
-            const teacherProfileData = {
-              id: registeredTeacher.id,
-              email: registeredTeacher.email || rawIdent,
-              username: registeredTeacher.username || rawIdent.split('@')[0],
-              firstName: fName,
-              lastName: lName,
-              tcNo: registeredTeacher.tcNo || '',
-              phone: registeredTeacher.phone || '',
-              branch: registeredTeacher.branch || 'Öğretmen',
-              bio: `${registeredTeacher.branch || 'Öğretmen'} · Oxonom Okulları`,
-              extraDetails: [
-                registeredTeacher.branch || 'Öğretmen',
-                'Oxonom Okulları Kadrosu',
-              ],
-              isFirstLogin: registeredTeacher.isFirstLogin ?? true,
-              profileCompleted: registeredTeacher.profileCompleted ?? false,
-            }
-            localStorage.setItem('oxonom_teacher_profile', JSON.stringify(teacherProfileData))
-            if (registeredTeacher.profileCompleted === false) {
-              localStorage.setItem('oxonom_teacher_profile_completed', 'false')
-            } else {
-              localStorage.setItem('oxonom_teacher_profile_completed', 'true')
-            }
-          } else {
-            // Default teacher or existing profile
-            const existingProfile = localStorage.getItem('oxonom_teacher_profile')
-            if (!existingProfile) {
-              localStorage.setItem(
-                'oxonom_teacher_profile',
-                JSON.stringify({
-                  email: lowerIdent.includes('@') ? lowerIdent : 'ogretmen@oxonom.com',
-                  username: lowerIdent.includes('@') ? lowerIdent.split('@')[0] : lowerIdent,
-                  firstName: 'Ebru',
-                  lastName: 'TEKNECİ',
-                  bio: 'Türk Dili ve Edebiyatı Öğretmeni · 9-A Sınıf Rehber Öğretmeni · Oxonom Okulları',
-                  extraDetails: [
-                    'Edebiyat Zümre Başkanı',
-                    '9-A Rehber Öğretmeni',
-                    'Akıllı Tahta & Kütüphane Koordinatörü',
-                  ],
-                  isFirstLogin: false,
-                  profileCompleted: true,
-                })
-              )
-              localStorage.setItem('oxonom_teacher_profile_completed', 'true')
-            }
+          // Clear any previous admin session
+          localStorage.removeItem('oxonom_active_admin_session')
+          localStorage.setItem('oxonom_current_role', 'teacher')
+
+          const teacherProfileData = {
+            id: registeredTeacher?.id || 2,
+            email: registeredTeacher?.email || (lowerIdent.includes('@') ? lowerIdent : 'ogretmen@oxonom.com'),
+            username: registeredTeacher?.username || 'ogretmen',
+            firstName: registeredTeacher?.name?.split(' ')[0] || 'Ebru',
+            lastName: registeredTeacher?.name?.split(' ').slice(1).join(' ') || 'TEKNECİ',
+            name: registeredTeacher?.name || 'Ebru TEKNECİ',
+            tcNo: registeredTeacher?.tcNo || '10000000204',
+            phone: registeredTeacher?.phone || '+90 532 999 3300',
+            branch: registeredTeacher?.branch || 'Türk Dili ve Edebiyatı · Rehberlik',
+            bio: 'Türk Dili ve Edebiyatı Öğretmeni · 9-A Sınıf Rehber Öğretmeni · Oxonom Okulları',
+            extraDetails: [
+              'Edebiyat Zümre Başkanı',
+              '9-A Rehber Öğretmeni',
+              'Akıllı Tahta & Kütüphane Koordinatörü',
+            ],
+            isFirstLogin: false,
+            profileCompleted: true,
           }
+          localStorage.setItem('oxonom_teacher_profile', JSON.stringify(teacherProfileData))
+          localStorage.setItem('oxonom_teacher_profile_completed', 'true')
         } catch (_) {}
       }
 

@@ -29,12 +29,10 @@ import {
   formatDateTurkish,
   AttendanceRecord,
 } from '@services/demo/attendanceService'
-import PassiveModuleNotice from '../PassiveModuleNotice'
-
 export default function TeacherAttendanceView() {
   const [selectedClass, setSelectedClass] = useState('9-A Şubesi')
   const [selectedDate, setSelectedDate] = useState<string>(getTodayDateString())
-  const [activeTab, setActiveTab] = useState<'take' | 'history' | 'reports'>('take')
+  const [activeTab, setActiveTab] = useState<'take' | 'history'>('take')
 
   // History Tab Filters
   const [historyFilterDate, setHistoryFilterDate] = useState<string>('')
@@ -158,17 +156,6 @@ export default function TeacherAttendanceView() {
             }`}
           >
             Geçmiş Yoklamalar ({historyList.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('reports')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeTab === 'reports'
-                ? 'bg-white dark:bg-[#1A2338] text-gray-900 dark:text-white shadow-xs'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-            }`}
-          >
-            e-Okul Raporları
           </button>
         </div>
       </div>
@@ -448,23 +435,6 @@ export default function TeacherAttendanceView() {
             </div>
           )}
         </div>
-      )}
-
-      {/* ── TAB 3: E-OKUL RAPORLARI (PASSIVE) ── */}
-      {activeTab === 'reports' && (
-        <PassiveModuleNotice
-          moduleName="MEB e-Okul Devamsızlık Entegrasyonu & Resmi Raporlar"
-          description="Yoklama kayıtlarının otomatik olarak MEB e-Okul sistemine ve resmi devamsızlık defterlerine aktarılması modülü."
-          missingDependency="MEB e-Okul Resmi Web Servis / API Entegrasyonu & Yetkili Bakanlık Doğrulaması"
-          plannedFeatures={[
-            'e-Okul otomatik devamsızlık fişi aktarımı',
-            'Resmi yoklama çizelgesi PDF çıktısı',
-            'Veliye anlık SMS devamsızlık bildirimi',
-            'Kazanım bazlı ders devamsızlık istatistiği',
-          ]}
-          relatedActivePath="/teacher/attendance"
-          relatedActiveLabel="Yoklama Ekranına Dön"
-        />
       )}
     </div>
   )

@@ -89,8 +89,158 @@ const BRANCH_OPTIONS = [
   { id: '9-A', title: '9-A Şubesi', desc: 'Sınıf Rehber Öğretmeni: Ebru TEKNECİ', isAll: false },
 ]
 
-// Real school assignments across classes with authentic board UUIDs
-const INITIAL_HOMEWORKS: HomeworkItem[] = []
+// Real school assignments across classes covering all assignment combinations
+const INITIAL_HOMEWORKS: HomeworkItem[] = [
+  {
+    id: 'hw-reading-1',
+    assignment_uuid: 'asg_dede_korkut_okuma',
+    title: 'Dede Korkut Hikâyeleri Metin Tahlili & Karakter İncelemesi',
+    shortTitle: 'Dede Korkut Tahlili',
+    subject: 'Türkçe',
+    category: 'READING',
+    tool_type: 'READING',
+    className: '9-A Şubesi',
+    assignedDate: '06.10.2026',
+    dueDate: '11.10.2026',
+    assignedTimestamp: Date.now() - 6 * 86400000,
+    dueTimestamp: Date.now() - 1 * 86400000,
+    description: 'Dede Korkut destanlarından "Dirse Han Oğlu Boğaç Han" boyunun ana fikri, olay örgüsü ve kültürel motiflerinin tahlili.',
+    period: 'past',
+    periodLabel: 'Geçen Hafta',
+    accentColor: 'emerald',
+    max_score: 100,
+    teacher_name: 'Ebru TEKNECİ',
+  },
+  {
+    id: 'hw-whiteboard-1',
+    assignment_uuid: 'asg_edebi_sanatlar_tahta',
+    title: 'Edebi Sanatlar & Teşbih-Mecaz Kavram Haritası Çizimi',
+    shortTitle: 'Edebi Sanatlar Çizimi',
+    subject: 'Türkçe',
+    category: 'WHITEBOARD',
+    tool_type: 'WHITEBOARD',
+    board_uuid: 'board_edebi_sanatlar_9a',
+    className: '9-A Şubesi',
+    assignedDate: '08.10.2026',
+    dueDate: '13.10.2026',
+    assignedTimestamp: Date.now() - 4 * 86400000,
+    dueTimestamp: Date.now() + 1 * 86400000,
+    description: 'Akıllı tahta üzerinde teşbih, istiare, teşhis ve tezat sanatlarını örnekleyen görsel kavram haritasının tamamlanması.',
+    period: 'this_week',
+    periodLabel: 'Bu Hafta',
+    accentColor: 'purple',
+    max_score: 100,
+    teacher_name: 'Ebru TEKNECİ',
+  },
+  {
+    id: 'hw-quiz-1',
+    assignment_uuid: 'asg_paragraf_anlam_test',
+    title: 'Sözcükte Anlam & Paragrafta Ana Düşünce Değerlendirme Quiz',
+    shortTitle: 'Paragraf Anlam Testi',
+    subject: 'Türkçe',
+    category: 'QUIZ',
+    tool_type: 'QUIZ',
+    className: '9-A Şubesi',
+    assignedDate: '09.10.2026',
+    dueDate: '14.10.2026',
+    assignedTimestamp: Date.now() - 3 * 86400000,
+    dueTimestamp: Date.now() + 2 * 86400000,
+    description: '15 soruluk çoktan seçmeli paragraf analiz ve akıl yürütme tarama testi.',
+    period: 'this_week',
+    periodLabel: 'Bu Hafta',
+    accentColor: 'blue',
+    max_score: 100,
+    teacher_name: 'Ebru TEKNECİ',
+  },
+  {
+    id: 'hw-worksheet-1',
+    assignment_uuid: 'asg_tanzimat_siir_inceleme',
+    title: 'Tanzimat Dönemi Şiir İncelemesi & Karşılaştırmalı Kompozisyon',
+    shortTitle: 'Şiir İnceleme & Kompozisyon',
+    subject: 'Türkçe',
+    category: 'WORKSHEET',
+    tool_type: 'WORKSHEET',
+    className: '9-A Şubesi',
+    assignedDate: '05.10.2026',
+    dueDate: '12.10.2026',
+    assignedTimestamp: Date.now() - 7 * 86400000,
+    dueTimestamp: Date.now(),
+    description: 'Namık Kemal ve Şinasi şiirlerinin biçim, tema ve dil özellikleri açısından karşılaştırmalı analizi.',
+    period: 'this_week',
+    periodLabel: 'Bu Hafta',
+    accentColor: 'amber',
+    max_score: 100,
+    teacher_name: 'Ebru TEKNECİ',
+  },
+  {
+    id: 'hw-math-1',
+    assignment_uuid: 'asg_kumeler_mantik_calisma',
+    title: 'Kümeler, Önermeler ve Bileşik Önermeler Problem Çalışması',
+    shortTitle: 'Kümeler & Mantık Problemleri',
+    subject: 'Matematik',
+    category: 'MATH',
+    tool_type: 'WORKSHEET',
+    className: '9-A Şubesi',
+    assignedDate: '07.10.2026',
+    dueDate: '13.10.2026',
+    assignedTimestamp: Date.now() - 5 * 86400000,
+    dueTimestamp: Date.now() + 1 * 86400000,
+    description: 'Doğruluk tabloları ve küme işlemleri içeren 10 adet analitik matematik problemi.',
+    period: 'this_week',
+    periodLabel: 'Bu Hafta',
+    accentColor: 'rose',
+    max_score: 100,
+    teacher_name: 'Ebru TEKNECİ',
+  },
+]
+
+const DEFAULT_INITIAL_SUBMISSIONS: Record<string, Record<string, SubmissionRecord>> = {
+  'hw-reading-1': {
+    's-1': {
+      studentId: 's-1',
+      score: 100,
+      feedback: 'Harika bir metin tahlili! Kültürel motifleri ve karakter çatışmalarını çok derinlikli analiz etmişsin. Tebrik ederim.',
+      submittedAt: '10.10.2026 16:30',
+      status: 'submitted',
+    },
+  },
+  'hw-whiteboard-1': {
+    's-1': {
+      studentId: 's-1',
+      score: 98,
+      feedback: 'Kavram haritası tasarımı ve edebi sanat örnekleri kusursuz düzeyde. Çok özenli bir çalışma.',
+      submittedAt: '11.10.2026 14:15',
+      status: 'submitted',
+    },
+  },
+  'hw-quiz-1': {
+    's-1': {
+      studentId: 's-1',
+      score: 95,
+      feedback: '15 soruda 14 doğru ile üstün başarı. Paragrafta yardımcı düşünceler konusu pekiştirildi.',
+      submittedAt: '11.10.2026 19:40',
+      status: 'submitted',
+    },
+  },
+  'hw-worksheet-1': {
+    's-1': {
+      studentId: 's-1',
+      score: 100,
+      feedback: 'Tanzimat dönemi tahlili ve kompozisyon dili oldukça akıcı ve edebi. Eline sağlık.',
+      submittedAt: '12.10.2026 11:20',
+      status: 'submitted',
+    },
+  },
+  'hw-math-1': {
+    's-1': {
+      studentId: 's-1',
+      score: 96,
+      feedback: 'Mantık kuralları ve küme kesişim işlemleri adım adım doğru çözülmüş.',
+      submittedAt: '11.10.2026 17:05',
+      status: 'submitted',
+    },
+  },
+}
 
 export interface MHomeworkClientProps {
   hideDock?: boolean
@@ -204,12 +354,15 @@ export default function MHomeworkClient({
     if (typeof window !== 'undefined') {
       try {
         const saved = localStorage.getItem('m_homework_submissions_v2')
-        if (saved) return JSON.parse(saved)
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          if (Object.keys(parsed).length > 0) return parsed
+        }
       } catch (err) {
         console.warn('Could not restore submissions from localStorage:', err)
       }
     }
-    return {}
+    return DEFAULT_INITIAL_SUBMISSIONS
   })
 
   // Sync active homework when selectedHomeworkId changes (returns null if empty)
@@ -432,7 +585,7 @@ export default function MHomeworkClient({
               </p>
             </div>
             <Link
-              href="/m-student"
+              href="/teacher/classes?class=9-A"
               className="mt-1 px-4 py-2.5 rounded-xl bg-[#34D399] hover:bg-[#2ee59d] text-[#0A0D15] font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
             >
               <span>Öğrenci Listesine Git</span>
