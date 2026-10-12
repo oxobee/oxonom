@@ -487,6 +487,10 @@ export default async function proxy(req: NextRequest) {
   if (
     pathname === '/teacher' ||
     pathname.startsWith('/teacher/') ||
+    pathname === '/principal' ||
+    pathname.startsWith('/principal/') ||
+    pathname === '/loginv2' ||
+    pathname.startsWith('/loginv2/') ||
     pathname.startsWith('/board/') ||
     pathname.startsWith('/b/') ||
     pathname === '/remote' ||
