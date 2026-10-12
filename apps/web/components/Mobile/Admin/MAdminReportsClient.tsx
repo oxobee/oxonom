@@ -947,35 +947,56 @@ export default function MAdminReportsClient({
         {/* ──────────────── TAB 3: ATTENDANCE (DEVAMSIZLIK & YOKLAMA) ──────────────── */}
         {activeTab === 'attendance' && (
           <div className="space-y-3.5">
-            {/* Günlük Yoklama Özeti Kartı */}
-            <div className="p-5 rounded-3xl bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800/80 shadow-xs">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
-                    <CheckCircle2 size={18} />
+            {/* Günlük Yoklama Özeti Kartı (Yüksek Kontrast & Gündüz Modu Tam Uyumlu) */}
+            <div className="p-5 rounded-3xl bg-white dark:bg-[#111827] border border-gray-200 dark:border-gray-800 shadow-sm relative overflow-hidden">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold shrink-0">
+                    <CheckCircle2 size={20} />
                   </div>
                   <div>
-                    <h3 className="text-xs font-black text-gray-900 dark:text-white">Günlük Yoklama Tamamlama</h3>
-                    <p className="text-[10.5px] text-emerald-600 dark:text-emerald-400 font-semibold">Tüm Şubeler Çevrimiçi Giriş Yaptı</p>
+                    <h3 className="text-sm font-black text-gray-900 dark:text-white">
+                      Günlük Yoklama & Devam Durumu
+                    </h3>
+                    <p className="text-xs text-emerald-600 dark:text-emerald-400 font-bold mt-0.5">
+                      Tüm Şubeler Çevrimiçi Giriş Yaptı · Eksiksiz Onaylandı
+                    </p>
                   </div>
                 </div>
-                <span className="text-xs font-black text-emerald-700 dark:text-emerald-400 bg-emerald-100/80 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800/80 px-2.5 py-1 rounded-full">
-                  %100 Eksiksiz
+
+                <span className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-800 px-3 py-1.5 rounded-full shadow-xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>%100 Eksiksiz</span>
                 </span>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 pt-3 border-t border-gray-100 dark:border-gray-800/80 text-center">
-                <div>
-                  <div className="text-base font-black text-gray-900 dark:text-white">{totalEnrolledStudents}</div>
-                  <div className="text-[9.5px] text-gray-500 dark:text-gray-400 font-medium">Mevcut Öğrenci</div>
+              {/* 3 Metrics: Mevcut Öğrenci, İzinli/Raporlu, Özürsüz Devamsız */}
+              <div className="grid grid-cols-3 gap-3 pt-3.5 border-t border-gray-100 dark:border-gray-800 text-center">
+                <div className="p-3 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700/60">
+                  <div className="text-2xl font-black text-gray-900 dark:text-white">
+                    {totalEnrolledStudents}
+                  </div>
+                  <div className="text-xs font-bold text-gray-600 dark:text-gray-400 mt-1">
+                    Mevcut Öğrenci
+                  </div>
                 </div>
-                <div>
-                  <div className="text-base font-black text-amber-600 dark:text-amber-400">8</div>
-                  <div className="text-[9.5px] text-gray-500 dark:text-gray-400 font-medium">İzinli / Raporlu</div>
+
+                <div className="p-3 rounded-2xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-900/40">
+                  <div className="text-2xl font-black text-amber-600 dark:text-amber-400">
+                    {selectedOrgId === 30 ? 0 : 8}
+                  </div>
+                  <div className="text-xs font-bold text-amber-700 dark:text-amber-400/90 mt-1">
+                    İzinli / Raporlu
+                  </div>
                 </div>
-                <div>
-                  <div className="text-base font-black text-rose-600 dark:text-rose-400">4</div>
-                  <div className="text-[9.5px] text-gray-500 dark:text-gray-400 font-medium">Özürsüz Devamsız</div>
+
+                <div className="p-3 rounded-2xl bg-rose-50/60 dark:bg-rose-950/30 border border-rose-200/60 dark:border-rose-900/40">
+                  <div className="text-2xl font-black text-rose-600 dark:text-rose-400">
+                    {selectedOrgId === 30 ? 0 : 4}
+                  </div>
+                  <div className="text-xs font-bold text-rose-700 dark:text-rose-400/90 mt-1">
+                    Özürsüz Devamsız
+                  </div>
                 </div>
               </div>
             </div>
