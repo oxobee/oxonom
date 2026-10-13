@@ -23,6 +23,9 @@ import {
   BookOpen,
   TrendingUp,
   Cpu,
+  Key,
+  Copy,
+  Check,
 } from 'lucide-react'
 import { useAuth } from '@components/Contexts/AuthContext'
 import toast, { Toaster } from 'react-hot-toast'
@@ -41,6 +44,8 @@ interface RoleConfig {
   defaultPass: string
   defaultName: string
   targetRoute: string
+  classInfo?: string
+  altEmail?: string
 }
 
 const ROLES: RoleConfig[] = [
@@ -55,6 +60,7 @@ const ROLES: RoleConfig[] = [
     defaultPass: 'mudur123',
     defaultName: 'Dr. Uğur UĞURLU',
     targetRoute: '/principal/dashboard',
+    altEmail: 'mudur@oxonom.com',
   },
   {
     id: 'teacher',
@@ -67,18 +73,21 @@ const ROLES: RoleConfig[] = [
     defaultPass: 'ogretmen123',
     defaultName: 'Ebru TEKNECİ',
     targetRoute: '/teacher/dashboard',
+    altEmail: 'ogretmen@oxonom.com',
   },
   {
     id: 'student',
     label: 'Öğrenci',
-    subtitle: 'Derslerim & Ödevler',
+    subtitle: '9-A Şubesi · No: 101',
     icon: User,
-    badge: 'Öğrenci',
+    badge: '9-A · No: 101',
     accentColor: 'from-fuchsia-500 to-purple-700',
     defaultEmail: '101',
     defaultPass: 'ogrenci123',
     defaultName: 'Erçil UĞURLU',
     targetRoute: '/student/dashboard',
+    classInfo: '9-A Şubesi',
+    altEmail: 'ogrenci@oxonom.com',
   },
   {
     id: 'parent',
@@ -91,6 +100,7 @@ const ROLES: RoleConfig[] = [
     defaultPass: 'veli123',
     defaultName: 'Ayşe UĞURLU',
     targetRoute: '/m-student',
+    altEmail: 'veli@oxonom.com',
   },
 ]
 
@@ -109,14 +119,31 @@ export default function GlobalLoginClient() {
   const activeRoleConfig = ROLES.find((r) => r.id === selectedRole) || ROLES[0]
 
   // Smart role switcher handler
-  const handleRoleSelect = (roleId: RoleType) => {
+  const handleRoleSelect = (roleId: RoleType, showFeedback = false) => {
     setSelectedRole(roleId)
     const conf = ROLES.find((r) => r.id === roleId)
     if (conf) {
       setIdentifier(conf.defaultEmail)
       setPassword(conf.defaultPass)
+      if (showFeedback) {
+        toast.success(
+          `${conf.label} (${conf.defaultName}) giriş bilgileri dolduruldu: ${conf.defaultEmail} / ${conf.defaultPass}`,
+          {
+            icon: conf.id === 'student' ? '🎒' : conf.id === 'principal' ? '👔' : '🎓',
+            duration: 3000,
+          }
+        )
+      }
     }
   }
+
+  // Handle URL query param: e.g. /loginv2?role=student
+  useEffect(() => {
+    const roleParam = searchParams.get('role') as RoleType | null
+    if (roleParam && ROLES.some((r) => r.id === roleParam)) {
+      handleRoleSelect(roleParam)
+    }
+  }, [searchParams])
 
   // Auto-detect role as user types
   const handleIdentifierChange = (val: string) => {
@@ -417,6 +444,114 @@ export default function GlobalLoginClient() {
                 </div>
               </div>
             </div>
+
+            {/* ── LEFT COLUMN: SYSTEM CREDENTIALS CARD ── */}
+            <div className="pt-2 max-w-lg space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-black uppercase tracking-wider text-gray-300 flex items-center gap-2">
+                  <Key size={14} className="text-amber-400" />
+                  <span>Sistem Giriş Hesapları & Şifreleri</span>
+                </div>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  Tek Tıkla Seç
+                </span>
+              </div>
+
+              {/* Student Card - Prominently Featured */}
+              <div
+                onClick={() => handleRoleSelect('student', true)}
+                className={`p-3.5 rounded-2xl border transition-all cursor-pointer relative overflow-hidden group ${
+                  selectedRole === 'student'
+                    ? 'bg-purple-950/40 border-purple-500/70 shadow-lg shadow-purple-900/30 ring-1 ring-purple-500/50'
+                    : 'bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.06] hover:border-purple-500/40'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-300 flex items-center justify-center shrink-0 border border-purple-500/30 group-hover:scale-105 transition-transform">
+                      <User size={20} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black text-white">🎒 Öğrenci: Erçil UĞURLU</span>
+                        <span className="text-[10px] font-extrabold px-1.5 py-0.2 rounded bg-purple-500/30 text-purple-200 border border-purple-500/40">
+                          9-A Sınıfı
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-gray-300 font-mono mt-0.5 flex items-center gap-2.5">
+                        <span>Okul No: <strong className="text-purple-300 font-bold">101</strong></span>
+                        <span className="text-gray-600">•</span>
+                        <span>Şifre: <strong className="text-emerald-400 font-bold">ogrenci123</strong></span>
+                      </div>
+                      <div className="text-[10px] text-gray-400 mt-0.5">
+                        Alternatif E-posta: <code className="text-gray-300">ogrenci@oxonom.com</code>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleRoleSelect('student', true)
+                    }}
+                    className="px-2.5 py-1.5 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-200 text-[10px] font-bold shrink-0 transition-colors border border-purple-500/30 cursor-pointer"
+                  >
+                    Bilgileri Doldur →
+                  </button>
+                </div>
+              </div>
+
+              {/* Principal & Teacher 2-Column Cards */}
+              <div className="grid grid-cols-2 gap-2.5">
+                {/* Principal Card */}
+                <div
+                  onClick={() => handleRoleSelect('principal', true)}
+                  className={`p-3 rounded-2xl border transition-all cursor-pointer group ${
+                    selectedRole === 'principal'
+                      ? 'bg-emerald-950/30 border-emerald-500/70 shadow-md shadow-emerald-900/20 ring-1 ring-emerald-500/50'
+                      : 'bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.06] hover:border-emerald-500/40'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-300 flex items-center justify-center shrink-0">
+                        <Briefcase size={13} />
+                      </div>
+                      <span className="text-xs font-bold text-white">Müdür: Dr. Uğur U.</span>
+                    </div>
+                    <span className="text-[9px] font-bold text-emerald-300 bg-emerald-500/20 px-1 py-0.2 rounded">İdare</span>
+                  </div>
+                  <div className="text-[10px] text-gray-300 font-mono space-y-0.5">
+                    <div>E-posta: <span className="text-emerald-300 font-semibold">mudur@oxonom.com</span></div>
+                    <div>Şifre: <span className="text-emerald-400 font-bold">mudur123</span></div>
+                  </div>
+                </div>
+
+                {/* Teacher Card */}
+                <div
+                  onClick={() => handleRoleSelect('teacher', true)}
+                  className={`p-3 rounded-2xl border transition-all cursor-pointer group ${
+                    selectedRole === 'teacher'
+                      ? 'bg-indigo-950/30 border-indigo-500/70 shadow-md shadow-indigo-900/20 ring-1 ring-indigo-500/50'
+                      : 'bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.06] hover:border-indigo-500/40'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-6 h-6 rounded-lg bg-indigo-500/20 text-indigo-300 flex items-center justify-center shrink-0">
+                        <GraduationCap size={13} />
+                      </div>
+                      <span className="text-xs font-bold text-white">Öğretmen: Ebru T.</span>
+                    </div>
+                    <span className="text-[9px] font-bold text-indigo-300 bg-indigo-500/20 px-1 py-0.2 rounded">Eğitim</span>
+                  </div>
+                  <div className="text-[10px] text-gray-300 font-mono space-y-0.5">
+                    <div>E-posta: <span className="text-indigo-300 font-semibold">ogretmen@oxonom.com</span></div>
+                    <div>Şifre: <span className="text-emerald-400 font-bold">ogretmen123</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* ── RIGHT COLUMN: GLASSMORPHIC LOGIN CARD ── */}
@@ -480,40 +615,119 @@ export default function GlobalLoginClient() {
                 })}
               </div>
 
-              {/* Active Role Mini Banner */}
-              <div className="mb-5 p-3 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white flex items-center justify-center font-extrabold text-xs">
-                    {activeRoleConfig.defaultName.charAt(0)}
-                  </div>
-                  <div>
-                    <div className="text-xs font-black text-white">
-                      {activeRoleConfig.defaultName}
+              {/* Active Role Mini Banner with Direct Credentials */}
+              <div className={`mb-5 p-3.5 rounded-2xl border transition-all ${
+                selectedRole === 'student'
+                  ? 'bg-purple-950/30 border-purple-500/40'
+                  : selectedRole === 'principal'
+                  ? 'bg-emerald-950/30 border-emerald-500/40'
+                  : selectedRole === 'teacher'
+                  ? 'bg-indigo-950/30 border-indigo-500/40'
+                  : 'bg-amber-950/30 border-amber-500/40'
+              }`}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${activeRoleConfig.accentColor} text-white flex items-center justify-center font-extrabold text-xs shadow-md`}>
+                      {activeRoleConfig.defaultName.charAt(0)}
                     </div>
-                    <div className="text-[10px] text-emerald-400 font-semibold">
-                      {activeRoleConfig.subtitle}
+                    <div>
+                      <div className="text-xs font-black text-white flex items-center gap-1.5">
+                        <span>{activeRoleConfig.defaultName}</span>
+                        {selectedRole === 'student' && (
+                          <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-purple-500/30 text-purple-200">
+                            9-A
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[10px] text-gray-400 font-medium">
+                        {activeRoleConfig.subtitle}
+                      </div>
                     </div>
                   </div>
+
+                  <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded ${
+                    selectedRole === 'student'
+                      ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                      : selectedRole === 'principal'
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                      : selectedRole === 'teacher'
+                      ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+                      : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                  }`}>
+                    {activeRoleConfig.badge}
+                  </span>
                 </div>
 
-                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
-                  {activeRoleConfig.badge}
-                </span>
+                {/* Direct Credentials Display Strip */}
+                <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[11px] font-mono">
+                  <div className="flex items-center gap-2 text-gray-300">
+                    <span className="text-gray-400">Giriş:</span>
+                    <span className="text-white font-bold bg-white/10 px-1.5 py-0.5 rounded">
+                      {activeRoleConfig.defaultEmail}
+                    </span>
+                    <span className="text-gray-600">•</span>
+                    <span className="text-gray-400">Şifre:</span>
+                    <span className="text-emerald-400 font-bold bg-white/10 px-1.5 py-0.5 rounded">
+                      {activeRoleConfig.defaultPass}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIdentifier(activeRoleConfig.defaultEmail)
+                      setPassword(activeRoleConfig.defaultPass)
+                      toast.success(`${activeRoleConfig.label} bilgileri yüklendi`)
+                    }}
+                    className="text-[10px] font-bold text-gray-400 hover:text-white underline cursor-pointer"
+                  >
+                    Doldur
+                  </button>
+                </div>
               </div>
+
+              {/* ── STUDENT SPECIAL HELPER NOTICE ── */}
+              {selectedRole === 'student' && (
+                <div className="mb-4 p-3 rounded-2xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-between gap-3 animate-fadeIn">
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-base">🎒</span>
+                    <div>
+                      <div className="text-[11px] font-black text-purple-200">
+                        Öğrenci Giriş Bilgileri (Erçil UĞURLU)
+                      </div>
+                      <div className="text-[10px] text-gray-300 font-mono mt-0.5">
+                        Okul No: <strong className="text-purple-300">101</strong> (veya <code className="text-gray-300">ogrenci@oxonom.com</code>) • Şifre: <strong className="text-emerald-400">ogrenci123</strong>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIdentifier('101')
+                      setPassword('ogrenci123')
+                      toast.success('Öğrenci bilgileri dolduruldu: 101 / ogrenci123', { icon: '🎒' })
+                    }}
+                    className="px-2 py-1 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-200 text-[10px] font-bold shrink-0 transition-colors border border-purple-500/30 cursor-pointer"
+                  >
+                    Otomatik Gir
+                  </button>
+                </div>
+              )}
 
               {/* ── LOGIN FORM ── */}
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Identifier Input */}
                 <div>
                   <label className="text-xs font-bold text-gray-300 block mb-1.5">
-                    E-Posta, T.C. No veya Kullanıcı Adı
+                    {selectedRole === 'student'
+                      ? 'Öğrenci Okul No (101) veya E-Posta'
+                      : 'E-Posta, T.C. No veya Kullanıcı Adı'}
                   </label>
                   <div className="relative">
                     <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input
                       type="text"
                       required
-                      placeholder="E-posta veya kullanıcı adı"
+                      placeholder={selectedRole === 'student' ? '101 veya ogrenci@oxonom.com' : 'E-posta veya kullanıcı adı'}
                       value={identifier}
                       onChange={(e) => handleIdentifierChange(e.target.value)}
                       className="w-full h-11 pl-10 pr-3.5 text-xs bg-[#090D18] border border-gray-800 rounded-xl focus:outline-none focus:border-emerald-500 text-white font-medium placeholder-gray-600 transition-colors"
@@ -593,38 +807,145 @@ export default function GlobalLoginClient() {
               {/* ── QUICK DEMO ACCESS CHIPS (HIZLI TEST BUTONLARI) ── */}
               <div className="mt-6 pt-5 border-t border-gray-800/80">
                 <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2.5 flex items-center justify-between">
-                  <span>Hızlı Demo Giriş Butonları</span>
-                  <span className="text-emerald-400">Tek Tıkla Dene</span>
+                  <div className="flex items-center gap-1.5">
+                    <Key size={12} className="text-amber-400" />
+                    <span>Hızlı Demo Giriş Butonları</span>
+                  </div>
+                  <span className="text-emerald-400 font-mono text-[9px]">Tek Tıkla Doldur</span>
                 </div>
 
                 <div className="grid grid-cols-3 gap-2">
+                  {/* Student Chip */}
                   <button
                     type="button"
-                    onClick={() => handleRoleSelect('principal')}
-                    className="p-2 rounded-xl bg-white/[0.04] hover:bg-emerald-500/10 border border-white/[0.06] hover:border-emerald-500/30 text-left transition-all cursor-pointer"
+                    onClick={() => handleRoleSelect('student', true)}
+                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                      selectedRole === 'student'
+                        ? 'bg-purple-500/20 border-purple-500/60 ring-1 ring-purple-500/40 shadow-sm'
+                        : 'bg-white/[0.04] hover:bg-purple-500/10 border-white/[0.06] hover:border-purple-500/30'
+                    }`}
                   >
-                    <div className="text-[10px] font-extrabold text-white truncate">👔 Müdür</div>
-                    <div className="text-[9px] text-gray-400 truncate">Dr. Uğur U.</div>
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-[11px] font-black text-white">🎒 Öğrenci</span>
+                      <span className="text-[9px] font-extrabold text-purple-300 bg-purple-500/20 px-1 py-0.2 rounded">9-A</span>
+                    </div>
+                    <div className="text-[10px] font-bold text-purple-200 truncate">Erçil UĞURLU</div>
+                    <div className="text-[9px] text-gray-300 font-mono mt-0.5 truncate">
+                      No: <strong className="text-white">101</strong> · <strong className="text-emerald-400">ogrenci123</strong>
+                    </div>
                   </button>
 
+                  {/* Principal Chip */}
                   <button
                     type="button"
-                    onClick={() => handleRoleSelect('teacher')}
-                    className="p-2 rounded-xl bg-white/[0.04] hover:bg-indigo-500/10 border border-white/[0.06] hover:border-indigo-500/30 text-left transition-all cursor-pointer"
+                    onClick={() => handleRoleSelect('principal', true)}
+                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                      selectedRole === 'principal'
+                        ? 'bg-emerald-500/20 border-emerald-500/60 ring-1 ring-emerald-500/40 shadow-sm'
+                        : 'bg-white/[0.04] hover:bg-emerald-500/10 border-white/[0.06] hover:border-emerald-500/30'
+                    }`}
                   >
-                    <div className="text-[10px] font-extrabold text-white truncate">🎓 Öğretmen</div>
-                    <div className="text-[9px] text-gray-400 truncate">Ebru TEKNECİ</div>
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-[11px] font-black text-white">👔 Müdür</span>
+                      <span className="text-[9px] font-extrabold text-emerald-300 bg-emerald-500/20 px-1 py-0.2 rounded">İdare</span>
+                    </div>
+                    <div className="text-[10px] font-bold text-emerald-200 truncate">Dr. Uğur U.</div>
+                    <div className="text-[9px] text-gray-300 font-mono mt-0.5 truncate">
+                      <strong className="text-white">mudur</strong> · <strong className="text-emerald-400">mudur123</strong>
+                    </div>
                   </button>
 
+                  {/* Teacher Chip */}
                   <button
                     type="button"
-                    onClick={() => handleRoleSelect('student')}
-                    className="p-2 rounded-xl bg-white/[0.04] hover:bg-purple-500/10 border border-white/[0.06] hover:border-purple-500/30 text-left transition-all cursor-pointer"
+                    onClick={() => handleRoleSelect('teacher', true)}
+                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                      selectedRole === 'teacher'
+                        ? 'bg-indigo-500/20 border-indigo-500/60 ring-1 ring-indigo-500/40 shadow-sm'
+                        : 'bg-white/[0.04] hover:bg-indigo-500/10 border-white/[0.06] hover:border-indigo-500/30'
+                    }`}
                   >
-                    <div className="text-[10px] font-extrabold text-white truncate">🎒 Öğrenci</div>
-                    <div className="text-[9px] text-gray-400 truncate">Erçil UĞURLU</div>
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-[11px] font-black text-white">🎓 Öğretmen</span>
+                      <span className="text-[9px] font-extrabold text-indigo-300 bg-indigo-500/20 px-1 py-0.2 rounded">Eğitim</span>
+                    </div>
+                    <div className="text-[10px] font-bold text-indigo-200 truncate">Ebru TEKNECİ</div>
+                    <div className="text-[9px] text-gray-300 font-mono mt-0.5 truncate">
+                      <strong className="text-white">ogretmen</strong> · <strong className="text-emerald-400">ogretmen123</strong>
+                    </div>
                   </button>
                 </div>
+              </div>
+            </div>
+
+            {/* ── MOBILE ONLY: QUICK CREDENTIALS REFERENCE CARD ── */}
+            <div className="mt-4 p-4 rounded-2xl bg-white/[0.03] border border-white/[0.08] lg:hidden space-y-2.5">
+              <div className="flex items-center justify-between text-xs font-bold text-gray-300">
+                <div className="flex items-center gap-1.5">
+                  <Key size={13} className="text-amber-400" />
+                  <span>Hazır Giriş Bilgileri</span>
+                </div>
+                <span className="text-[10px] font-bold text-emerald-400">Öğrenci, Müdür, Öğretmen</span>
+              </div>
+
+              {/* Mobile Student Card */}
+              <div
+                onClick={() => handleRoleSelect('student', true)}
+                className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-between cursor-pointer hover:bg-purple-500/20 transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-base">🎒</span>
+                  <div>
+                    <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <span>Öğrenci: Erçil UĞURLU</span>
+                      <span className="text-[9px] px-1 py-0.2 rounded bg-purple-500/30 text-purple-200 font-bold">9-A</span>
+                    </div>
+                    <div className="text-[10px] font-mono text-purple-300 mt-0.5">
+                      Okul No: <strong>101</strong> • Şifre: <strong className="text-emerald-400">ogrenci123</strong>
+                    </div>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold text-purple-200 bg-purple-500/30 px-2 py-1 rounded-md border border-purple-500/40">
+                  Doldur
+                </span>
+              </div>
+
+              {/* Mobile Principal Card */}
+              <div
+                onClick={() => handleRoleSelect('principal', true)}
+                className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between cursor-pointer hover:bg-emerald-500/20 transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-base">👔</span>
+                  <div>
+                    <div className="text-xs font-bold text-white">Müdür: Dr. Uğur UĞURLU</div>
+                    <div className="text-[10px] font-mono text-emerald-300 mt-0.5">
+                      mudur@oxonom.com • Şifre: <strong className="text-emerald-400">mudur123</strong>
+                    </div>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold text-emerald-200 bg-emerald-500/30 px-2 py-1 rounded-md border border-emerald-500/40">
+                  Doldur
+                </span>
+              </div>
+
+              {/* Mobile Teacher Card */}
+              <div
+                onClick={() => handleRoleSelect('teacher', true)}
+                className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-between cursor-pointer hover:bg-indigo-500/20 transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-base">🎓</span>
+                  <div>
+                    <div className="text-xs font-bold text-white">Öğretmen: Ebru TEKNECİ</div>
+                    <div className="text-[10px] font-mono text-indigo-300 mt-0.5">
+                      ogretmen@oxonom.com • Şifre: <strong className="text-emerald-400">ogretmen123</strong>
+                    </div>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold text-indigo-200 bg-indigo-500/30 px-2 py-1 rounded-md border border-indigo-500/40">
+                  Doldur
+                </span>
               </div>
             </div>
           </div>

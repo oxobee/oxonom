@@ -238,6 +238,36 @@ export const DEMO_USERS: Record<string, DemoUser> = {
       },
     },
   },
+  '101': {
+    id: 3001,
+    user_uuid: 'user_ercil_ugurlu',
+    username: '101',
+    email: 'ogrenci@oxonom.com',
+    password: 'Ugur2803*',
+    first_name: 'Erçil',
+    last_name: 'UĞURLU',
+    email_verified: true,
+    is_superadmin: false,
+    is_demo: false,
+    avatar_image: '',
+    role: {
+      id: 4,
+      role_uuid: 'role_student',
+      name: 'Student',
+      rights: {
+        courses: { action_create: false, action_read: true, action_read_own: false, action_update: false, action_update_own: false, action_delete: false, action_delete_own: false },
+        users: { action_create: false, action_read: false, action_update: false, action_delete: false },
+        usergroups: { action_create: false, action_read: true, action_update: false, action_delete: false },
+        folders: { action_create: false, action_read: true, action_update: false, action_delete: false },
+        media: { action_create: false, action_read: true, action_update: false, action_delete: false },
+        organizations: { action_create: false, action_read: true, action_update: false, action_delete: false },
+        coursechapters: { action_create: false, action_read: true, action_update: false, action_delete: false },
+        activities: { action_create: false, action_read: true, action_update: false, action_delete: false },
+        roles: { action_create: false, action_read: false, action_update: false, action_delete: false },
+        dashboard: { action_access: true },
+      },
+    },
+  },
 }
 
 export function createDemoJwt(user: DemoUser): string {
