@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -44,6 +44,7 @@ import MobileAdminDock from './MobileAdminDock'
 import MobileAdminMoreSheet from './MobileAdminMoreSheet'
 import { useMobileTheme } from '@components/Mobile/useMobileTheme'
 import { SCHOOL_ORGS, getOrgTeachers } from '@services/demo/schoolDirectory'
+import { getStoredPrincipalProfile } from '@/lib/principal/principalProfileStorage'
 
 export interface MAdminReportsClientProps {
   orgSlug?: string
@@ -63,6 +64,32 @@ export default function MAdminReportsClient({
 
   // ── FILTER & CONTEXT STATES ──
   const [selectedOrgId, setSelectedOrgId] = useState<number>(30)
+
+  // Principal Dynamic Profile
+  const [principalProfile, setPrincipalProfile] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        return getStoredPrincipalProfile()
+      } catch (_) {}
+    }
+    return { name: 'Dr. Uğur UĞURLU', title: 'Okul Müdürü' }
+  })
+
+  useEffect(() => {
+    const syncPrincipal = () => {
+      const p = getStoredPrincipalProfile()
+      setPrincipalProfile(p)
+    }
+    syncPrincipal()
+    window.addEventListener('oxonom_admin_updated', syncPrincipal)
+    window.addEventListener('oxonom_principal_updated', syncPrincipal)
+    window.addEventListener('storage', syncPrincipal)
+    return () => {
+      window.removeEventListener('oxonom_admin_updated', syncPrincipal)
+      window.removeEventListener('oxonom_principal_updated', syncPrincipal)
+      window.removeEventListener('storage', syncPrincipal)
+    }
+  }, [])
   const [activeTab, setActiveTab] = useState<ReportTab>('overview')
   const [selectedTerm, setSelectedTerm] = useState<TermFilter>('term1')
   const [selectedGrade, setSelectedGrade] = useState<string>('all')
@@ -1491,7 +1518,7 @@ export default function MAdminReportsClient({
                       {pdfReportType}
                     </div>
                     <div className="text-[9.5px] text-gray-500 mt-1 font-sans">
-                      Rapor Tarihi: 09 Ekim 2026 · Hazırlayan: Dr. Uğur UĞURLU (Okul Müdürü)
+                      Rapor Tarihi: 09 Ekim 2026 · Hazırlayan: {principalProfile.name} ({principalProfile.title || 'Okul Müdürü'})
                     </div>
                   </div>
 
@@ -1525,8 +1552,8 @@ export default function MAdminReportsClient({
                       Karekod ile MEBBİS sisteminden<br />doğrulanabilir e-imzalı belgedir.
                     </div>
                     <div className="text-center">
-                      <div className="text-[10px] font-bold text-gray-800">Dr. Uğur UĞURLU</div>
-                      <div className="text-[8.5px] text-gray-500">Okul Müdürü</div>
+                      <div className="text-[10px] font-bold text-gray-800">{principalProfile.name}</div>
+                      <div className="text-[8.5px] text-gray-500">{principalProfile.title || 'Okul Müdürü'}</div>
                       <div className="text-[8px] text-emerald-600 font-bold mt-0.5">[E-İmzalıdır]</div>
                     </div>
                   </div>

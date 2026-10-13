@@ -26,6 +26,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@components/Contexts/AuthContext'
 import toast, { Toaster } from 'react-hot-toast'
+import { getStoredPrincipalProfile, savePrincipalProfile } from '@/lib/principal/principalProfileStorage'
 
 type RoleType = 'principal' | 'teacher' | 'student' | 'parent'
 
@@ -163,24 +164,12 @@ export default function GlobalLoginClient() {
           localStorage.removeItem('oxonom_teacher_profile')
           localStorage.removeItem('oxonom_teacher_profile_completed')
           localStorage.setItem('oxonom_current_role', 'admin')
-          localStorage.setItem(
-            'oxonom_active_admin_session',
-            JSON.stringify({
-              id: 50,
-              email: 'mudur@oxonom.com',
-              username: 'mudur',
-              first_name: 'Dr. Uğur',
-              last_name: 'UĞURLU',
-              name: 'Dr. Uğur UĞURLU',
-              role: 'admin',
-              title: 'Okul Müdürü · Kurum Yetkilisi',
-              schoolName: 'Necla Görer İlkokulu / Oxonom Okulları',
-              tcNo: '10000000146',
-              phone: '+90 532 999 2200',
-              loginTime: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
-              twoFactorActive: true,
-            })
-          )
+
+          const existingProfile = getStoredPrincipalProfile()
+          savePrincipalProfile({
+            ...existingProfile,
+            loginTime: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+          })
         } else if (isTeacher) {
           localStorage.removeItem('oxonom_active_admin_session')
           localStorage.setItem('oxonom_current_role', 'teacher')

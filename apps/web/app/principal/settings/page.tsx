@@ -23,6 +23,13 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { signOut } from '@components/Contexts/AuthContext'
+import {
+  getStoredPrincipalProfile,
+  savePrincipalProfile,
+  getStoredSchoolInfo,
+  saveSchoolInfo,
+  getPrincipalInitials,
+} from '@/lib/principal/principalProfileStorage'
 
 export default function PrincipalSettingsPage() {
   // Principal Profile
@@ -53,55 +60,69 @@ export default function PrincipalSettingsPage() {
   const [smsNotifications, setSmsNotifications] = useState(true)
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const savedSession = localStorage.getItem('oxonom_active_admin_session')
-        if (savedSession) {
-          const parsed = JSON.parse(savedSession)
-          const fullName = parsed.name || (parsed.first_name ? `${parsed.first_name} ${parsed.last_name || ''}`.trim() : 'Dr. Uğur UĞURLU')
-          setProfile((prev) => ({
-            ...prev,
-            name: fullName,
-            email: parsed.email || prev.email,
-            phone: parsed.phone || prev.phone,
-            title: parsed.title || prev.title,
-            twoFactorActive: parsed.twoFactorActive ?? true,
-          }))
-          setTwoFactor(parsed.twoFactorActive ?? true)
-          if (parsed.schoolName) {
-            setSchoolInfo((prev) => ({ ...prev, officialName: parsed.schoolName }))
-          }
-        }
+    const loadData = () => {
+      const storedProfile = getStoredPrincipalProfile()
+      const storedSchool = getStoredSchoolInfo()
 
-        const savedSchool = localStorage.getItem('oxonom_school_info')
-        if (savedSchool) {
-          const parsedSchool = JSON.parse(savedSchool)
-          setSchoolInfo((prev) => ({ ...prev, ...parsedSchool }))
-        }
-      } catch (_) {}
+      setProfile({
+        name: storedProfile.name,
+        title: storedProfile.title,
+        email: storedProfile.email,
+        tcNo: storedProfile.tcNo,
+        phone: storedProfile.phone,
+        twoFactorActive: storedProfile.twoFactorActive,
+      })
+      setTwoFactor(storedProfile.twoFactorActive)
+      setSchoolInfo((prev) => ({
+        ...prev,
+        ...storedSchool,
+        officialName: storedProfile.schoolName || storedSchool.officialName,
+      }))
+    }
+
+    loadData()
+    window.addEventListener('oxonom_admin_updated', loadData)
+    window.addEventListener('oxonom_principal_updated', loadData)
+    window.addEventListener('oxonom_school_updated', loadData)
+    window.addEventListener('storage', loadData)
+
+    return () => {
+      window.removeEventListener('oxonom_admin_updated', loadData)
+      window.removeEventListener('oxonom_principal_updated', loadData)
+      window.removeEventListener('oxonom_school_updated', loadData)
+      window.removeEventListener('storage', loadData)
     }
   }, [])
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault()
 
-    const updatedProfile = {
-      ...profile,
+    const updatedSchool = saveSchoolInfo({
+      ...schoolInfo,
+      officialName: schoolInfo.officialName.trim(),
+    })
+
+    const updatedProfile = savePrincipalProfile({
+      name: profile.name.trim(),
+      title: profile.title.trim(),
+      email: profile.email.trim(),
+      phone: profile.phone.trim(),
+      tcNo: profile.tcNo.trim(),
       twoFactorActive: twoFactor,
       schoolName: schoolInfo.officialName.trim(),
-    }
+    })
 
-    setProfile(updatedProfile)
+    setProfile({
+      name: updatedProfile.name,
+      title: updatedProfile.title,
+      email: updatedProfile.email,
+      tcNo: updatedProfile.tcNo,
+      phone: updatedProfile.phone,
+      twoFactorActive: updatedProfile.twoFactorActive,
+    })
+    setSchoolInfo(updatedSchool)
 
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem('oxonom_active_admin_session', JSON.stringify(updatedProfile))
-        localStorage.setItem('oxonom_school_info', JSON.stringify(schoolInfo))
-        window.dispatchEvent(new Event('oxonom_admin_updated'))
-      } catch (_) {}
-    }
-
-    toast.success('Okul resmi bilgileri ve yönetici ayarları başarıyla güncellendi!')
+    toast.success('Okul resmi bilgileri ve yönetici ayarları kalıcı olarak kaydedildi!')
   }
 
   const handleAdminLogout = async () => {
@@ -149,7 +170,7 @@ export default function PrincipalSettingsPage() {
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 rounded-3xl p-6 shadow-xs flex flex-col items-center text-center space-y-4">
             <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white flex items-center justify-center font-black text-2xl shadow-xl shadow-emerald-500/20">
-              {profile.name.charAt(0)}
+              {getPrincipalInitials(profile.name)}
             </div>
             <div>
               <h2 className="text-base font-black text-gray-900 dark:text-white">{profile.name}</h2>
@@ -388,6 +409,20 @@ export default function PrincipalSettingsPage() {
 
               <div>
                 <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
+                  T.C. Kimlik Numarası
+                </label>
+                <input
+                  type="text"
+                  maxLength={11}
+                  required
+                  value={profile.tcNo}
+                  onChange={(e) => setProfile({ ...profile, tcNo: e.target.value })}
+                  className="w-full h-10 px-3.5 text-xs font-mono bg-gray-50 dark:bg-[#161D2E] border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:border-emerald-500 font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
                   Yetkili İletişim Telefonu
                 </label>
                 <input
@@ -399,7 +434,7 @@ export default function PrincipalSettingsPage() {
                 />
               </div>
 
-              <div>
+              <div className="sm:col-span-2">
                 <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
                   Yetkili E-Posta
                 </label>

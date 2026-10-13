@@ -59,6 +59,7 @@ import {
   getOrgClassrooms,
 } from '@services/demo/schoolDirectory'
 import { useLHSession } from '@components/Contexts/LHSessionContext'
+import { getStoredPrincipalProfile } from '@/lib/principal/principalProfileStorage'
 
 export interface MAdminStudentsClientProps {
   orgSlug?: string
@@ -300,19 +301,20 @@ export default function MAdminStudentsClient({
     setEditMotherLivingStatus(student.motherLivingStatus || 'Hayatta')
     setEditMotherIsLegalGuardian(student.motherIsLegalGuardian ?? false)
 
-    setEditFatherName(student.fatherName || 'Dr. Uğur UĞURLU (Okul Müdürü)')
-    setEditFatherTc(student.fatherTc || '19482019482')
-    setEditFatherPhone(student.fatherPhone || '+90 532 999 2200')
-    setEditFatherEmail(student.fatherEmail || 'mudur@oxonom.com')
-    setEditFatherJob(student.fatherJob || 'Okul Müdürü · Kurum Yetkilisi')
+    const storedPrincipal = getStoredPrincipalProfile()
+    setEditFatherName(student.fatherName || `${storedPrincipal.name} (Okul Müdürü)`)
+    setEditFatherTc(student.fatherTc || storedPrincipal.tcNo || '19482019482')
+    setEditFatherPhone(student.fatherPhone || storedPrincipal.phone || '+90 532 999 2200')
+    setEditFatherEmail(student.fatherEmail || storedPrincipal.email || 'mudur@oxonom.com')
+    setEditFatherJob(student.fatherJob || `${storedPrincipal.title || 'Okul Müdürü'} · Kurum Yetkilisi`)
     setEditFatherLivingStatus(student.fatherLivingStatus || 'Hayatta')
     setEditFatherIsLegalGuardian(student.fatherIsLegalGuardian ?? true)
 
     setEditAddress(student.address || 'Caddebostan Mah. Bağdat Cad. No: 142/5 Kadıköy / İstanbul')
     setEditCityDistrict(student.cityDistrict || 'İstanbul / Kadıköy')
-    setEditEmergency1Name(student.emergency1Name || 'Dr. Uğur UĞURLU')
+    setEditEmergency1Name(student.emergency1Name || storedPrincipal.name)
     setEditEmergency1Relation(student.emergency1Relation || 'Baba (Okul Müdürü)')
-    setEditEmergency1Phone(student.emergency1Phone || '+90 532 999 2200')
+    setEditEmergency1Phone(student.emergency1Phone || storedPrincipal.phone || '+90 532 999 2200')
     setEditEmergency2Name(student.emergency2Name || 'Ebru UĞURLU')
     setEditEmergency2Relation(student.emergency2Relation || 'Anne')
     setEditEmergency2Phone(student.emergency2Phone || '+90 532 999 1100')
@@ -1735,29 +1737,37 @@ export default function MAdminStudentsClient({
                           <div className="space-y-2 text-xs">
                             <div className="flex justify-between">
                               <span className="text-gray-400">Ad Soyad:</span>
-                              <span className="font-black text-gray-900 dark:text-white">{selectedStudentForDetail.fatherName || 'Dr. Uğur UĞURLU (Okul Müdürü)'}</span>
+                              <span className="font-black text-gray-900 dark:text-white">
+                                {selectedStudentForDetail.fatherName || `${getStoredPrincipalProfile().name} (Okul Müdürü)`}
+                              </span>
                             </div>
                             <div className="flex justify-between">
                               <span className="text-gray-400">T.C. Kimlik:</span>
-                              <span className="font-mono font-bold text-gray-800 dark:text-gray-200">{selectedStudentForDetail.fatherTc || '19482019482'}</span>
+                              <span className="font-mono font-bold text-gray-800 dark:text-gray-200">
+                                {selectedStudentForDetail.fatherTc || getStoredPrincipalProfile().tcNo || '19482019482'}
+                              </span>
                             </div>
                             <div className="flex justify-between items-center">
                               <span className="text-gray-400">Telefon:</span>
                               <a
-                                href={`tel:${selectedStudentForDetail.fatherPhone || '+905329992200'}`}
+                                href={`tel:${selectedStudentForDetail.fatherPhone || getStoredPrincipalProfile().phone || '+905329992200'}`}
                                 className="font-mono text-emerald-600 dark:text-emerald-400 font-bold hover:underline flex items-center gap-1"
                               >
                                 <Phone size={11} />
-                                <span>{selectedStudentForDetail.fatherPhone || '+90 532 999 2200'}</span>
+                                <span>{selectedStudentForDetail.fatherPhone || getStoredPrincipalProfile().phone || '+90 532 999 2200'}</span>
                               </a>
                             </div>
                             <div className="flex justify-between items-center">
                               <span className="text-gray-400">E-Posta:</span>
-                              <span className="font-medium text-gray-800 dark:text-gray-200">{selectedStudentForDetail.fatherEmail || 'mudur@oxonom.com'}</span>
+                              <span className="font-medium text-gray-800 dark:text-gray-200">
+                                {selectedStudentForDetail.fatherEmail || getStoredPrincipalProfile().email || 'mudur@oxonom.com'}
+                              </span>
                             </div>
                             <div className="flex justify-between">
                               <span className="text-gray-400">Meslek:</span>
-                              <span className="font-medium text-gray-800 dark:text-gray-200">{selectedStudentForDetail.fatherJob || 'Okul Müdürü · Kurum Yetkilisi'}</span>
+                              <span className="font-medium text-gray-800 dark:text-gray-200">
+                                {selectedStudentForDetail.fatherJob || `${getStoredPrincipalProfile().title || 'Okul Müdürü'} · Kurum Yetkilisi`}
+                              </span>
                             </div>
                             <div className="flex justify-between">
                               <span className="text-gray-400">Durum:</span>
@@ -1788,10 +1798,10 @@ export default function MAdminStudentsClient({
                           <div className="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 space-y-1.5">
                             <div className="text-[10px] text-gray-400 font-bold uppercase">1. Acil Durum İrtibatı</div>
                             <div className="text-sm font-black text-gray-900 dark:text-white">
-                              {selectedStudentForDetail.emergency1Name || 'Dr. Uğur UĞURLU'} ({selectedStudentForDetail.emergency1Relation || 'Baba - Okul Müdürü'})
+                              {selectedStudentForDetail.emergency1Name || getStoredPrincipalProfile().name} ({selectedStudentForDetail.emergency1Relation || 'Baba - Okul Müdürü'})
                             </div>
                             <div className="text-xs font-mono text-emerald-600 dark:text-emerald-400 font-bold">
-                              {selectedStudentForDetail.emergency1Phone || '+90 532 999 2200'}
+                              {selectedStudentForDetail.emergency1Phone || getStoredPrincipalProfile().phone || '+90 532 999 2200'}
                             </div>
                           </div>
 

@@ -43,6 +43,7 @@ import {
   getOrgTeachers,
 } from '@services/demo/schoolDirectory'
 import { useLHSession } from '@components/Contexts/LHSessionContext'
+import { getStoredPrincipalProfile } from '@/lib/principal/principalProfileStorage'
 
 export interface MAdminCurriculumClientProps {
   orgSlug?: string
@@ -534,6 +535,32 @@ export default function MAdminCurriculumClient({
     return []
   })
 
+  // Principal Profile Dynamic Identity
+  const [principalName, setPrincipalName] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        return getStoredPrincipalProfile().name
+      } catch (_) {}
+    }
+    return 'Dr. Uğur UĞURLU'
+  })
+
+  useEffect(() => {
+    const syncPrincipal = () => {
+      const p = getStoredPrincipalProfile()
+      if (p.name) setPrincipalName(p.name)
+    }
+    syncPrincipal()
+    window.addEventListener('oxonom_admin_updated', syncPrincipal)
+    window.addEventListener('oxonom_principal_updated', syncPrincipal)
+    window.addEventListener('storage', syncPrincipal)
+    return () => {
+      window.removeEventListener('oxonom_admin_updated', syncPrincipal)
+      window.removeEventListener('oxonom_principal_updated', syncPrincipal)
+      window.removeEventListener('storage', syncPrincipal)
+    }
+  }, [])
+
   // Reload data on external storage changes
   useEffect(() => {
     const handleSync = () => {
@@ -629,12 +656,12 @@ export default function MAdminCurriculumClient({
   // ── TEACHER WORKLOAD & OVERTIME MONITOR ──
   // User Rule: "Öğretmenlerin mesai saatlerine göre ders saatleri hesaplanır ve öğretmen mesaisinden fazla çalışıyorsa grafiksel olarak gösterilir."
   const teacherWorkloads = useMemo(() => {
-    // Combine teachers from teachersList and Dr. Uğur UĞURLU
+    // Combine teachers from teachersList and dynamic principal
     const baseList = [...teachersList]
-    if (!baseList.some((t) => t.name === 'Dr. Uğur UĞURLU')) {
+    if (!baseList.some((t) => t.name === principalName)) {
       baseList.push({
         id: 9999,
-        name: 'Dr. Uğur UĞURLU',
+        name: principalName,
         branch: 'Okul Müdürü & Edebiyat',
         weeklyHours: 30,
       })
@@ -974,7 +1001,7 @@ export default function MAdminCurriculumClient({
     if (teacherObj && teacherObj.branch) {
       const cleanBranch = teacherObj.branch.split('(')[0].trim()
       setFormTeacherBranch(cleanBranch)
-    } else if (teacherName === 'Dr. Uğur UĞURLU') {
+    } else if (teacherName === principalName || teacherName === 'Dr. Uğur UĞURLU') {
       setFormTeacherBranch('Okul Müdürü & Edebiyat')
     }
   }
@@ -2035,7 +2062,7 @@ export default function MAdminCurriculumClient({
                               {t.name} ({t.branch ? t.branch.split('(')[0].trim() : 'Öğretmen'})
                             </option>
                           ))}
-                        <option value="Dr. Uğur UĞURLU">Dr. Uğur UĞURLU (Okul Müdürü)</option>
+                        <option value={principalName}>{principalName} (Okul Müdürü)</option>
                       </select>
                       <button
                         type="button"

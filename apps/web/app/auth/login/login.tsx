@@ -19,6 +19,7 @@ import TurnstileWidget, { useTurnstileRequired, verifyTurnstileToken, type Turns
 import { useLHAnalytics, AnalyticsEvent } from '@services/analytics'
 import { getAllowedAuthMethods } from '@services/auth/authMethods'
 import MLoginClient from '@components/Mobile/MLoginClient'
+import { getStoredPrincipalProfile, savePrincipalProfile } from '@/lib/principal/principalProfileStorage'
 
 interface LoginClientProps {
   org: any
@@ -453,24 +454,11 @@ const LoginClient = (props: LoginClientProps) => {
         const isAdmin = lowerEmail.includes('idare') || lowerEmail.includes('mudur') || lowerEmail.includes('admin')
         if (isAdmin && typeof window !== 'undefined') {
           try {
-            localStorage.setItem(
-              'oxonom_active_admin_session',
-              JSON.stringify({
-                id: 50,
-                email: lowerEmail.includes('mudur') ? 'mudur@oxonom.com' : 'idare@oxonom.com',
-                username: 'mudur',
-                first_name: 'Dr. Uğur',
-                last_name: 'UĞURLU',
-                name: 'Dr. Uğur UĞURLU',
-                role: 'admin',
-                title: 'Okul Müdürü · Kurum Yetkilisi',
-                schoolName: 'Oxonom Okulları',
-                tcNo: '10000002803',
-                phone: '+90 532 999 2803',
-                loginTime: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
-                twoFactorActive: true,
-              })
-            )
+            const existingProfile = getStoredPrincipalProfile()
+            savePrincipalProfile({
+              ...existingProfile,
+              loginTime: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+            })
           } catch (_) {}
         }
 
@@ -520,24 +508,11 @@ const LoginClient = (props: LoginClientProps) => {
 
     if (typeof window !== 'undefined' && role === 'admin') {
       try {
-        localStorage.setItem(
-          'oxonom_active_admin_session',
-          JSON.stringify({
-            id: 50,
-            email: 'mudur@oxonom.com',
-            username: 'mudur',
-            first_name: 'Dr. Uğur',
-            last_name: 'UĞURLU',
-            name: 'Dr. Uğur UĞURLU',
-            role: 'admin',
-            title: 'Okul Müdürü · Kurum Yetkilisi',
-            schoolName: 'Oxonom Okulları',
-            tcNo: '10000002803',
-            phone: '+90 532 999 2803',
-            loginTime: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
-            twoFactorActive: true,
-          })
-        )
+        const existingProfile = getStoredPrincipalProfile()
+        savePrincipalProfile({
+          ...existingProfile,
+          loginTime: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+        })
       } catch (_) {}
     }
 

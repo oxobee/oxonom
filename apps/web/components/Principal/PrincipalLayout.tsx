@@ -37,6 +37,7 @@ import { useLHSession } from '@components/Contexts/LHSessionContext'
 import { signOut } from '@components/Contexts/AuthContext'
 import ConnectBoardModal from '@components/DashboardV2/ConnectBoardModal'
 import toast from 'react-hot-toast'
+import { getStoredPrincipalProfile, getPrincipalInitials } from '@/lib/principal/principalProfileStorage'
 
 interface PrincipalLayoutProps {
   children: React.ReactNode
@@ -52,7 +53,7 @@ export default function PrincipalLayout({ children }: PrincipalLayoutProps) {
   const [isMoreSheetOpen, setIsMoreSheetOpen] = useState(false)
   const [isConnectBoardModalOpen, setIsConnectBoardModalOpen] = useState(false)
 
-  // Principal profile state (Authentic Dr. Uğur UĞURLU identity)
+  // Principal profile state (Authentic persistent identity)
   const [adminProfile, setAdminProfile] = useState<{
     name: string
     title: string
@@ -60,7 +61,7 @@ export default function PrincipalLayout({ children }: PrincipalLayoutProps) {
   }>({
     name: 'Dr. Uğur UĞURLU',
     title: 'Okul Müdürü · Kurum Yetkilisi',
-    schoolName: 'Oxonom Okulları & Necla Görer',
+    schoolName: 'Necla Görer İlkokulu',
   })
 
   // Dynamic counts for menu badges to completely eliminate mock data
@@ -74,15 +75,12 @@ export default function PrincipalLayout({ children }: PrincipalLayoutProps) {
     const loadAdminSessionAndCounts = () => {
       if (typeof window !== 'undefined') {
         try {
-          const saved = localStorage.getItem('oxonom_active_admin_session')
-          if (saved) {
-            const parsed = JSON.parse(saved)
-            setAdminProfile({
-              name: parsed.name || (parsed.first_name ? `${parsed.first_name} ${parsed.last_name || ''}`.trim() : 'Dr. Uğur UĞURLU'),
-              title: parsed.title || 'Okul Müdürü · Kurum Yetkilisi',
-              schoolName: parsed.schoolName || 'Oxonom Okulları',
-            })
-          }
+          const profile = getStoredPrincipalProfile()
+          setAdminProfile({
+            name: profile.name,
+            title: profile.title,
+            schoolName: profile.schoolName,
+          })
 
           const org = 30
           // Teachers dynamic count
@@ -110,11 +108,15 @@ export default function PrincipalLayout({ children }: PrincipalLayoutProps) {
     }
     loadAdminSessionAndCounts()
     window.addEventListener('oxonom_admin_updated', loadAdminSessionAndCounts)
+    window.addEventListener('oxonom_principal_updated', loadAdminSessionAndCounts)
+    window.addEventListener('oxonom_school_updated', loadAdminSessionAndCounts)
     window.addEventListener('oxonom_classes_updated', loadAdminSessionAndCounts)
     window.addEventListener('oxonom_teachers_updated', loadAdminSessionAndCounts)
     window.addEventListener('storage', loadAdminSessionAndCounts)
     return () => {
       window.removeEventListener('oxonom_admin_updated', loadAdminSessionAndCounts)
+      window.removeEventListener('oxonom_principal_updated', loadAdminSessionAndCounts)
+      window.removeEventListener('oxonom_school_updated', loadAdminSessionAndCounts)
       window.removeEventListener('oxonom_classes_updated', loadAdminSessionAndCounts)
       window.removeEventListener('oxonom_teachers_updated', loadAdminSessionAndCounts)
       window.removeEventListener('storage', loadAdminSessionAndCounts)
@@ -236,7 +238,7 @@ export default function PrincipalLayout({ children }: PrincipalLayoutProps) {
               <div className="relative shrink-0">
                 <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-400 via-teal-500 to-emerald-700 p-[1.5px] shadow-sm">
                   <div className="w-full h-full rounded-[10px] bg-[#0F172A] flex items-center justify-center font-black text-sm text-emerald-300">
-                    DU
+                    {getPrincipalInitials(adminProfile.name)}
                   </div>
                 </div>
                 <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#0F172A] flex items-center justify-center">

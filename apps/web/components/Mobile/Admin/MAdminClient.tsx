@@ -72,6 +72,13 @@ import {
 } from './MAdminScheduleClient'
 import { useLHSession } from '@components/Contexts/LHSessionContext'
 import { useAuth } from '@components/Contexts/AuthContext'
+import {
+  getStoredPrincipalProfile,
+  savePrincipalProfile,
+  getStoredSchoolInfo,
+  saveSchoolInfo,
+  getPrincipalInitials,
+} from '@/lib/principal/principalProfileStorage'
 
 export interface MAdminClientProps {
   orgSlug?: string
@@ -130,22 +137,25 @@ export default function MAdminClient({
     loginTime: string
     twoFactorActive: boolean
   }>({
-    name: user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : 'Dr. Uğur UĞURLU',
+    name: 'Dr. Uğur UĞURLU',
     title: 'Okul Müdürü · Kurum Yetkilisi',
-    email: user?.email || 'mudur@oxonom.com',
+    email: 'mudur@oxonom.com',
     tcNo: '10000000146',
     phone: '+90 532 999 2200',
     username: 'mudur',
     role: '1. Derece Kurum Müdürü (Baş Yönetici)',
-    schoolName: 'Oxonom Okulları',
+    schoolName: 'Necla Görer İlkokulu',
     loginTime: 'Bugün, 08:30',
     twoFactorActive: true,
   })
 
   // Edit profile form state
   const [editName, setEditName] = useState('Dr. Uğur UĞURLU')
+  const [editTitle, setEditTitle] = useState('Okul Müdürü · Kurum Yetkilisi')
+  const [editTcNo, setEditTcNo] = useState('10000000146')
   const [editPhone, setEditPhone] = useState('+90 532 999 2200')
   const [editEmail, setEditEmail] = useState('mudur@oxonom.com')
+  const [editSchoolName, setEditSchoolName] = useState('Necla Görer İlkokulu')
 
   // Dynamic counts for strictly REAL DATA (No mock data)
   const [realStats, setRealStats] = useState({
@@ -158,57 +168,71 @@ export default function MAdminClient({
     parentCount: 1,
   })
 
-  // Load from localStorage or session on mount
+  // Load from persistent storage on mount and on update events
   useEffect(() => {
+    const loadPrincipalAndStats = () => {
+      if (typeof window !== 'undefined') {
+        try {
+          const stored = getStoredPrincipalProfile()
+          const storedSchool = getStoredSchoolInfo()
+
+          setAdminProfile({
+            name: stored.name,
+            title: stored.title,
+            email: stored.email,
+            tcNo: stored.tcNo,
+            phone: stored.phone,
+            username: stored.username || 'mudur',
+            role: stored.role || '1. Derece Kurum Müdürü (Baş Yönetici)',
+            schoolName: stored.schoolName || storedSchool.officialName,
+            loginTime: stored.loginTime || 'Bugün, 08:30',
+            twoFactorActive: stored.twoFactorActive,
+          })
+          setEditName(stored.name)
+          setEditTitle(stored.title)
+          setEditTcNo(stored.tcNo)
+          setEditPhone(stored.phone)
+          setEditEmail(stored.email)
+          setEditSchoolName(stored.schoolName || storedSchool.officialName)
+
+          // Real counts for selectedOrgId
+          const rawTeachers = localStorage.getItem(`oxonom_admin_teachers_${selectedOrgId}`)
+          const teachers = rawTeachers ? JSON.parse(rawTeachers) : null
+          const tCount = Array.isArray(teachers) && teachers.length > 0 ? teachers.length : 1
+          const tName = Array.isArray(teachers) && teachers.length > 0 ? teachers[0].name : 'Ebru TEKNECİ'
+
+          const rawStudents = localStorage.getItem(`oxonom_admin_students_${selectedOrgId}`)
+          const students = rawStudents ? JSON.parse(rawStudents) : null
+          const sCount = Array.isArray(students) && students.length > 0 ? students.length : 1
+          const sName = Array.isArray(students) && students.length > 0 ? students[0].name : 'Erçil UĞURLU'
+
+          const rawClasses = localStorage.getItem(`oxonom_admin_classes_${selectedOrgId}`)
+          const classes = rawClasses ? JSON.parse(rawClasses) : null
+          const cCount = Array.isArray(classes) && classes.length > 0 ? classes.length : 1
+          const cName = Array.isArray(classes) && classes.length > 0 ? (classes[0].code || '9/A') : '9/A'
+
+          setRealStats({
+            studentCount: sCount,
+            studentName: sName,
+            teacherCount: tCount,
+            teacherName: tName,
+            classCount: cCount,
+            className: cName.includes('/') ? cName : cName.replace('-', '/'),
+            parentCount: sCount,
+          })
+        } catch (_) {}
+      }
+    }
+
+    loadPrincipalAndStats()
+
     if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('oxonom_active_admin_session')
-        if (saved) {
-          const parsed = JSON.parse(saved)
-          const fullName =
-            parsed.name ||
-            (parsed.first_name ? `${parsed.first_name} ${parsed.last_name || ''}`.trim() : 'Dr. Uğur UĞURLU')
-          setAdminProfile((prev) => ({
-            ...prev,
-            name: fullName,
-            email: parsed.email || prev.email,
-            phone: parsed.phone || prev.phone,
-            tcNo: parsed.tcNo || prev.tcNo,
-            username: parsed.username || prev.username,
-            title: parsed.title || prev.title,
-            loginTime: parsed.loginTime ? `Bugün, ${parsed.loginTime}` : prev.loginTime,
-          }))
-          setEditName(fullName)
-          setEditPhone(parsed.phone || '+90 532 999 2200')
-          setEditEmail(parsed.email || 'mudur@oxonom.com')
-        }
-
-        // Real counts for selectedOrgId
-        const rawTeachers = localStorage.getItem(`oxonom_admin_teachers_${selectedOrgId}`)
-        const teachers = rawTeachers ? JSON.parse(rawTeachers) : null
-        const tCount = Array.isArray(teachers) && teachers.length > 0 ? teachers.length : 1
-        const tName = Array.isArray(teachers) && teachers.length > 0 ? teachers[0].name : 'Ebru TEKNECİ'
-
-        const rawStudents = localStorage.getItem(`oxonom_admin_students_${selectedOrgId}`)
-        const students = rawStudents ? JSON.parse(rawStudents) : null
-        const sCount = Array.isArray(students) && students.length > 0 ? students.length : 1
-        const sName = Array.isArray(students) && students.length > 0 ? students[0].name : 'Erçil UĞURLU'
-
-        const rawClasses = localStorage.getItem(`oxonom_admin_classes_${selectedOrgId}`)
-        const classes = rawClasses ? JSON.parse(rawClasses) : null
-        const cCount = Array.isArray(classes) && classes.length > 0 ? classes.length : 1
-        const cName = Array.isArray(classes) && classes.length > 0 ? (classes[0].code || '9/A') : '9/A'
-
-        setRealStats({
-          studentCount: sCount,
-          studentName: sName,
-          teacherCount: tCount,
-          teacherName: tName,
-          classCount: cCount,
-          className: cName.includes('/') ? cName : cName.replace('-', '/'),
-          parentCount: sCount,
-        })
-      } catch (_) {}
+      window.addEventListener('oxonom_admin_updated', loadPrincipalAndStats)
+      window.addEventListener('oxonom_principal_updated', loadPrincipalAndStats)
+      window.addEventListener('oxonom_school_updated', loadPrincipalAndStats)
+      window.addEventListener('oxonom_teachers_updated', loadPrincipalAndStats)
+      window.addEventListener('oxonom_classes_updated', loadPrincipalAndStats)
+      window.addEventListener('storage', loadPrincipalAndStats)
 
       // Automatically open account modal if redirected from login with query param
       const params = new URLSearchParams(window.location.search)
@@ -220,32 +244,47 @@ export default function MAdminClient({
         setIsAdminProfileModalOpen(true)
       }
     }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('oxonom_admin_updated', loadPrincipalAndStats)
+        window.removeEventListener('oxonom_principal_updated', loadPrincipalAndStats)
+        window.removeEventListener('oxonom_school_updated', loadPrincipalAndStats)
+        window.removeEventListener('oxonom_teachers_updated', loadPrincipalAndStats)
+        window.removeEventListener('oxonom_classes_updated', loadPrincipalAndStats)
+        window.removeEventListener('storage', loadPrincipalAndStats)
+      }
+    }
   }, [selectedOrgId])
 
-  // Save profile changes
+  // Save profile changes permanently
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault()
-    const updated = {
-      ...adminProfile,
+
+    if (editSchoolName.trim()) {
+      saveSchoolInfo({ officialName: editSchoolName.trim() })
+    }
+
+    const updated = savePrincipalProfile({
       name: editName.trim(),
+      title: editTitle.trim(),
+      tcNo: editTcNo.trim(),
       phone: editPhone.trim(),
       email: editEmail.trim(),
-    }
-    setAdminProfile(updated)
+      schoolName: editSchoolName.trim() || adminProfile.schoolName,
+    })
+
+    setAdminProfile((prev) => ({
+      ...prev,
+      name: updated.name,
+      title: updated.title,
+      tcNo: updated.tcNo,
+      phone: updated.phone,
+      email: updated.email,
+      schoolName: updated.schoolName,
+    }))
     setIsEditingProfile(false)
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem(
-          'oxonom_active_admin_session',
-          JSON.stringify({
-            ...updated,
-            first_name: editName.split(' ')[0],
-            last_name: editName.split(' ').slice(1).join(' '),
-          })
-        )
-      } catch (_) {}
-    }
-    toast.success('Yönetici profil bilgileri başarıyla güncellendi.')
+    toast.success('Yönetici profil bilgileri kalıcı olarak güncellendi.')
   }
 
   const handleAdminSignOut = async () => {
@@ -640,11 +679,7 @@ export default function MAdminClient({
             >
               <div className="relative shrink-0">
                 <div className="w-13 h-13 rounded-2xl bg-gradient-to-tr from-emerald-500 via-teal-600 to-emerald-700 text-white font-black text-base flex items-center justify-center shadow-lg shadow-emerald-950/50 group-hover:scale-105 transition-transform border border-emerald-400/30">
-                  {adminName
-                    .split(' ')
-                    .map((p) => p[0])
-                    .join('')
-                    .slice(0, 2)}
+                  {getPrincipalInitials(adminName)}
                 </div>
                 <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-emerald-400 border-2 border-[#0B0F19] flex items-center justify-center">
                   <Check size={9} strokeWidth={3} className="text-gray-950" />
@@ -2177,7 +2212,7 @@ export default function MAdminClient({
                 {/* Hero Mini */}
                 <div className="p-3.5 rounded-2xl bg-gradient-to-br from-[#0B132B] to-[#06241C] text-white border border-emerald-500/30 flex items-center gap-3">
                   <div className="w-12 h-12 rounded-xl bg-emerald-500 text-gray-950 font-black text-base flex items-center justify-center">
-                    DU
+                    {getPrincipalInitials(adminProfile.name)}
                   </div>
                   <div>
                     <div className="text-sm font-black">{adminProfile.name}</div>
@@ -2190,13 +2225,50 @@ export default function MAdminClient({
                   <form onSubmit={handleSaveProfile} className="space-y-3">
                     <div>
                       <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">
-                        Ad Soyad
+                        Müdür Adı Soyadı
                       </label>
                       <input
                         type="text"
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
                         className="w-full h-9 px-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-bold text-xs"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">
+                        Resmi Görev / Ünvan
+                      </label>
+                      <input
+                        type="text"
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        className="w-full h-9 px-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-bold text-xs"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">
+                        Okul Resmi Adı
+                      </label>
+                      <input
+                        type="text"
+                        value={editSchoolName}
+                        onChange={(e) => setEditSchoolName(e.target.value)}
+                        className="w-full h-9 px-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-bold text-xs"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-gray-700 dark:text-gray-300 mb-1">
+                        T.C. Kimlik Numarası
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={11}
+                        value={editTcNo}
+                        onChange={(e) => setEditTcNo(e.target.value)}
+                        className="w-full h-9 px-3 rounded-xl font-mono bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 font-bold text-xs"
                         required
                       />
                     </div>
@@ -2228,15 +2300,15 @@ export default function MAdminClient({
                       <button
                         type="button"
                         onClick={() => setIsEditingProfile(false)}
-                        className="h-9 rounded-xl bg-gray-100 dark:bg-gray-800 font-bold text-xs"
+                        className="h-9 rounded-xl bg-gray-100 dark:bg-gray-800 font-bold text-xs cursor-pointer"
                       >
                         Vazgeç
                       </button>
                       <button
                         type="submit"
-                        className="h-9 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs"
+                        className="h-9 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs cursor-pointer"
                       >
-                        Kaydet
+                        Kalıcı Kaydet
                       </button>
                     </div>
                   </form>
