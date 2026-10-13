@@ -408,6 +408,9 @@ export default function MAdminScheduleClient({
           `oxonom_admin_schedule_${selectedOrgId}`,
           JSON.stringify(updated)
         )
+        localStorage.setItem('oxonom_admin_schedule_30', JSON.stringify(updated))
+        window.dispatchEvent(new CustomEvent('oxonom_admin_schedule_updated', { detail: updated }))
+        window.dispatchEvent(new CustomEvent('oxonom_schedule_updated', { detail: updated }))
       } catch (_) {}
     }
   }

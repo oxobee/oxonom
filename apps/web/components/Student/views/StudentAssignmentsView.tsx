@@ -200,10 +200,21 @@ export default function StudentAssignmentsView() {
               >
                 <div className="space-y-3">
                   {/* Status & Subject Pill */}
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/50">
-                      {(asg as any).subject_name || asg.subject || 'Edebiyat'}
-                    </span>
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/50">
+                        {(asg as any).subject_name || asg.subject || 'Edebiyat'}
+                      </span>
+                      {asg.target_type === 'INDIVIDUAL' || (asg as any).tool_data?.targetType === 'INDIVIDUAL' ? (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                          🎯 Sana Özel
+                        </span>
+                      ) : (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                          👥 9-A Şubesi
+                        </span>
+                      )}
+                    </div>
                     {isCompleted ? (
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                         <CheckCircle2 size={12} />

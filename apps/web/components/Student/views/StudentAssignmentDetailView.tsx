@@ -19,11 +19,10 @@ import {
   Award,
 } from 'lucide-react'
 import {
-  getStoredCustomAssignments,
-  DEFAULT_SCHOOL_ASSIGNMENTS,
   type SchoolAssignmentItem,
 } from '@services/school_assignments/school_assignments'
 import {
+  getSynchronizedStudentAssignments,
   getStudentSubmissions,
   saveStudentSubmission,
   type StudentSubmission,
@@ -46,8 +45,7 @@ export default function StudentAssignmentDetailView({
   // Load target assignment
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const customAsgs = getStoredCustomAssignments()
-      const allAsgs = customAsgs.length > 0 ? customAsgs : (DEFAULT_SCHOOL_ASSIGNMENTS as any)
+      const allAsgs = getSynchronizedStudentAssignments()
       const found = allAsgs.find(
         (a: any) =>
           String(a.assignment_uuid) === assignmentId ||

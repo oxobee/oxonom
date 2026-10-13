@@ -75,6 +75,9 @@ export interface SchoolAssignmentItem {
   due_date?: string
   max_score: number
   published: boolean
+  target_type?: 'CLASS' | 'INDIVIDUAL'
+  target_student_id?: string | null
+  target_student_name?: string | null
   created_by?: number
   teacher_name?: string
   creation_date?: string

@@ -801,45 +801,203 @@ export function getSynchronizedGuidanceNotes(): GuidanceNoteItem[] {
 }
 
 /**
+ * Returns the weekly class schedule configured by the school principal for 9-A.
+ * Synchronizes from oxonom_admin_schedule_30 and other admin schedule stores with fallback to INITIAL_SCHEDULE_ENTRIES.
+ */
+export function getSynchronizedClassWeeklySchedule(classCode: string = '9-A'): ScheduleEntry[] {
+  let entries = INITIAL_SCHEDULE_ENTRIES
+
+  if (typeof window !== 'undefined') {
+    try {
+      const raw30 = localStorage.getItem('oxonom_admin_schedule_30')
+      const raw1 = localStorage.getItem('oxonom_admin_schedule_1')
+      if (raw30) {
+        const parsed = JSON.parse(raw30)
+        if (Array.isArray(parsed) && parsed.length > 0) entries = parsed
+      } else if (raw1) {
+        const parsed = JSON.parse(raw1)
+        if (Array.isArray(parsed) && parsed.length > 0) entries = parsed
+      } else {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i)
+          if (key && key.startsWith('oxonom_admin_schedule_') && !key.includes('revisions')) {
+            const raw = localStorage.getItem(key)
+            if (raw) {
+              const parsed = JSON.parse(raw)
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                entries = parsed
+                break
+              }
+            }
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
+  const target = classCode.toLowerCase()
+  const filtered = entries.filter((e) => {
+    const c = String((e as any).classCode || (e as any).classroom || '').toLowerCase()
+    return c.includes(target) || c.includes('9-a') || c.includes('9/a') || c.includes('9a')
+  })
+
+  return filtered.length > 0 ? filtered : INITIAL_SCHEDULE_ENTRIES
+}
+
+/**
  * Returns homework assignments assigned by the teacher to 9-A or specifically to Erçil Uğurlu.
  */
 export function getSynchronizedStudentAssignments(): SchoolAssignmentItem[] {
-  if (typeof window === 'undefined') return DEFAULT_SCHOOL_ASSIGNMENTS as any
-  const customAsgs = getStoredCustomAssignments()
-  const allAsgs = customAsgs.length > 0 ? customAsgs : (DEFAULT_SCHOOL_ASSIGNMENTS as any)
+  let storedCustom: SchoolAssignmentItem[] = []
+  let studentHomeworks: SchoolAssignmentItem[] = []
 
-  return allAsgs.filter((asg: any) => {
-    // Individual assignment targeted to Erçil
-    if (asg.target_type === 'INDIVIDUAL') {
-      const matchStudent =
-        asg.target_student_id === 's-1' ||
-        asg.target_student_id === '101' ||
-        String(asg.target_student_name || '').toLowerCase().includes('erçil')
-      return matchStudent
+  if (typeof window !== 'undefined') {
+    try {
+      storedCustom = getStoredCustomAssignments()
+    } catch (_) {}
+    try {
+      const rawSh = localStorage.getItem('oxonom_student_homeworks_3001')
+      if (rawSh) {
+        const parsed = JSON.parse(rawSh)
+        if (Array.isArray(parsed)) studentHomeworks = parsed
+      }
+    } catch (_) {}
+  }
+
+  // Teacher 9-A defaults
+  const teacherDefaults: SchoolAssignmentItem[] = [
+    {
+      id: 1001,
+      assignment_uuid: 'asg_dede_korkut_okuma',
+      title: 'Dede Korkut Hikâyeleri Metin Tahlili & Karakter İncelemesi',
+      description: 'Dede Korkut destanlarından "Dirse Han Oğlu Boğaç Han" boyunun ana fikri, olay örgüsü ve kültürel motiflerinin tahlili.',
+      grade_level: '9. Sınıf',
+      grade_category: 'Lise (9-12)',
+      subject: 'Türk Dili ve Edebiyatı',
+      tool_type: 'READING',
+      classes: [{ id: 101, name: '9-A Şubesi', code: '9/A' }],
+      due_date: '2026-10-18T23:59:00',
+      max_score: 100,
+      published: true,
+      teacher_name: 'Ebru TEKNECİ',
+      creation_date: '2026-10-06T09:00:00',
+    },
+    {
+      id: 1002,
+      assignment_uuid: 'asg_edebi_sanatlar_tahta',
+      title: 'Edebi Sanatlar & Teşbih-Mecaz Kavram Haritası Çizimi',
+      description: 'Divan ve Halk edebiyatında kullanılan teşbih, istiare ve mecaz-ı mürsel sanatlarını gösteren interaktif kavram haritası.',
+      grade_level: '9. Sınıf',
+      grade_category: 'Lise (9-12)',
+      subject: 'Türk Dili ve Edebiyatı',
+      tool_type: 'WHITEBOARD',
+      classes: [{ id: 101, name: '9-A Şubesi', code: '9/A' }],
+      due_date: '2026-10-20T23:59:00',
+      max_score: 100,
+      published: true,
+      teacher_name: 'Ebru TEKNECİ',
+      creation_date: '2026-10-08T10:00:00',
+    },
+    {
+      id: 1003,
+      assignment_uuid: 'asg_paragraf_anlam_test',
+      title: 'Sözcükte Anlam & Paragrafta Ana Düşünce Değerlendirme Quiz',
+      description: '15 soruluk çoktan seçmeli paragraf analiz ve akıl yürütme tarama testi.',
+      grade_level: '9. Sınıf',
+      grade_category: 'Lise (9-12)',
+      subject: 'Türk Dili ve Edebiyatı',
+      tool_type: 'QUIZ',
+      classes: [{ id: 101, name: '9-A Şubesi', code: '9/A' }],
+      due_date: '2026-10-22T23:59:00',
+      max_score: 100,
+      published: true,
+      teacher_name: 'Ebru TEKNECİ',
+      creation_date: '2026-10-09T11:00:00',
+    },
+    {
+      id: 1004,
+      assignment_uuid: 'asg_kumeler_mantik_calisma',
+      title: 'Kümeler, Önermeler ve Bileşik Önermeler Problem Çalışması',
+      description: 'Kümelerde kesişim, birleşim ve mantık önermeleri ile modelleme çalışma föyü.',
+      grade_level: '9. Sınıf',
+      grade_category: 'Lise (9-12)',
+      subject: 'Matematik',
+      tool_type: 'WORKSHEET',
+      classes: [{ id: 101, name: '9-A Şubesi', code: '9/A' }],
+      due_date: '2026-10-24T23:59:00',
+      max_score: 100,
+      published: true,
+      teacher_name: 'Ebru TEKNECİ',
+      creation_date: '2026-10-10T14:00:00',
+    },
+  ]
+
+  // Combine custom assignments, student homeworks, teacher defaults, and global defaults
+  const pool = [
+    ...studentHomeworks,
+    ...storedCustom,
+    ...teacherDefaults,
+    ...(DEFAULT_SCHOOL_ASSIGNMENTS as any),
+  ]
+
+  // Deduplicate pool by assignment_uuid or id
+  const seenIds = new Set<string>()
+  const uniquePool: SchoolAssignmentItem[] = []
+
+  for (const asg of pool) {
+    const key = String(asg.assignment_uuid || asg.id)
+    if (!seenIds.has(key)) {
+      seenIds.add(key)
+      uniquePool.push(asg)
+    }
+  }
+
+  // Filter for 9-A class or individual student Erçil Uğurlu
+  return uniquePool.filter((asg: any) => {
+    // Check if target is individual
+    const targetType = asg.target_type || asg.tool_data?.targetType || 'CLASS'
+    if (targetType === 'INDIVIDUAL') {
+      const studentId = String(asg.target_student_id || asg.tool_data?.targetStudentId || '')
+      const studentName = String(asg.target_student_name || asg.tool_data?.targetStudentName || '').toLowerCase()
+      const isForErcil =
+        studentId === 's-1' ||
+        studentId === '101' ||
+        studentName.includes('erçil') ||
+        studentName.includes('ugurlu') ||
+        studentName.includes('uğurlu')
+      return isForErcil
     }
 
     // Class assignment targeted to 9-A or 9. Sınıf
     const classStr = String(asg.className || asg.grade_level || '').toLowerCase()
     const hasClassInClasses = asg.classes?.some((c: any) => {
       const cStr = String(c.code || c.name || '').toLowerCase()
-      return cStr.includes('9-a') || cStr.includes('9/a') || cStr.includes('9. sınıf')
+      return cStr.includes('9-a') || cStr.includes('9/a') || cStr.includes('9a') || cStr.includes('9. sınıf')
     })
 
     if (
       classStr.includes('9-a') ||
       classStr.includes('9/a') ||
+      classStr.includes('9a') ||
       classStr.includes('9. sınıf') ||
       hasClassInClasses
     ) {
       return true
     }
 
-    // Exclude if explicitly targeted to another grade
-    if (asg.grade_level && !asg.grade_level.includes('9')) {
+    // Exclude if explicitly targeted to other grades (1. Sınıf, 5-A, etc.)
+    if (
+      asg.grade_level &&
+      (asg.grade_level.includes('1.') ||
+        asg.grade_level.includes('5.') ||
+        asg.grade_level.includes('6.') ||
+        asg.grade_level.includes('7.') ||
+        asg.grade_level.includes('8.'))
+    ) {
       return false
     }
 
-    // General fallback assignment without restrictive class setting
+    // Fallback if no specific class defined and not excluded
     if (!asg.className && (!asg.classes || asg.classes.length === 0)) {
       return true
     }
@@ -847,4 +1005,5 @@ export function getSynchronizedStudentAssignments(): SchoolAssignmentItem[] {
     return false
   })
 }
+
 
