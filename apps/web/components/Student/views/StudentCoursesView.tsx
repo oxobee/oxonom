@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import {
   GraduationCap,
@@ -16,22 +16,49 @@ import {
   CheckCircle2,
   Calendar,
 } from 'lucide-react'
-import { STUDENT_COURSES, type StudentCourse } from '@/lib/student/studentData'
+import {
+  STUDENT_COURSES,
+  getSynchronizedStudentCourses,
+  getSynchronizedStudentProfile,
+  type StudentCourse,
+  type StudentProfile,
+  DEFAULT_STUDENT_PROFILE,
+} from '@/lib/student/studentData'
 import MockBadge from '@components/Common/MockBadge'
 
 export default function StudentCoursesView() {
+  const [courses, setCourses] = useState<StudentCourse[]>(STUDENT_COURSES)
+  const [profile, setProfile] = useState<StudentProfile>(DEFAULT_STUDENT_PROFILE)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'mandatory' | 'elective'>('all')
 
+  React.useEffect(() => {
+    const sync = () => {
+      setCourses(getSynchronizedStudentCourses())
+      setProfile(getSynchronizedStudentProfile())
+    }
+    sync()
+
+    window.addEventListener('oxonom_student_updated', sync)
+    window.addEventListener('oxonom_teacher_profile_updated', sync)
+    window.addEventListener('storage', sync)
+
+    return () => {
+      window.removeEventListener('oxonom_student_updated', sync)
+      window.removeEventListener('oxonom_teacher_profile_updated', sync)
+      window.removeEventListener('storage', sync)
+    }
+  }, [])
+
   const filteredCourses = useMemo(() => {
-    return STUDENT_COURSES.filter((course) => {
+    return courses.filter((course) => {
       const matchesSearch =
         course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         course.teacherName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         course.code.toLowerCase().includes(searchQuery.toLowerCase())
       return matchesSearch
     })
-  }, [searchQuery])
+  }, [courses, searchQuery])
 
   return (
     <div className="p-4 lg:p-8 max-w-7xl mx-auto space-y-6">
@@ -40,16 +67,16 @@ export default function StudentCoursesView() {
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 text-xs font-bold mb-2">
             <GraduationCap size={14} />
-            <span>9-A Şubesi Müfredatı</span>
+            <span>{profile.className} Şubesi Müfredatı</span>
           </div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-2xl lg:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
               Kayıtlı Derslerim
             </h1>
-            <MockBadge label="Mock Veri" />
+            <MockBadge label="Canlı Senkronize" />
           </div>
           <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mt-1">
-            2025-2026 Akademik yılında kayıtlı olduğun 5 ders ve haftalık ders programın.
+            2025-2026 Akademik yılında {profile.className} şubesinde kayıtlı olduğun {courses.length} ders ve ders öğretmenlerin.
           </p>
         </div>
 

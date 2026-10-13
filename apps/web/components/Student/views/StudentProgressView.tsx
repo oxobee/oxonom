@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
   TrendingUp,
@@ -16,11 +16,17 @@ import {
   ChevronRight,
   BookOpen,
 } from 'lucide-react'
-import { DEFAULT_STUDENT_PROFILE } from '@/lib/student/studentData'
+import {
+  DEFAULT_STUDENT_PROFILE,
+  getSynchronizedStudentProfile,
+  getSynchronizedGuidanceNotes,
+  type StudentProfile,
+  type GuidanceNoteItem,
+} from '@/lib/student/studentData'
 import MockBadge from '@components/Common/MockBadge'
 
 interface StudentProgressViewProps {
-  initialTab?: 'all' | 'subjects' | 'achievements' | 'goals'
+  initialTab?: 'all' | 'subjects' | 'guidance' | 'achievements' | 'goals'
 }
 
 interface AchievementBadge {
@@ -90,16 +96,38 @@ const BADGES: AchievementBadge[] = [
   },
 ]
 
-const COURSE_PROGRESS = [
-  { name: 'Türk Dili ve Edebiyatı', teacher: 'Ebru TEKNECİ', exam1: 98, exam2: 100, perf: 100, avg: 99.3, color: 'bg-indigo-500' },
-  { name: 'Matematik', teacher: 'Ebru TEKNECİ', exam1: 96, exam2: 98, perf: 100, avg: 98.0, color: 'bg-emerald-500' },
-  { name: 'Bilişim & Kodlama', teacher: 'Ebru TEKNECİ', exam1: 100, exam2: 98, perf: 100, avg: 99.0, color: 'bg-violet-500' },
-  { name: 'Yabancı Dil (İngilizce)', teacher: 'Yabancı Dil', exam1: 100, exam2: 98, perf: 100, avg: 99.3, color: 'bg-amber-500' },
-  { name: 'Fizik & Fen Bilimleri', teacher: 'Fen Zümresi', exam1: 95, exam2: 98, perf: 100, avg: 97.6, color: 'bg-cyan-500' },
+const FALLBACK_COURSES = [
+  { name: 'Türk Dili ve Edebiyatı', teacher: 'Ebru TEKNECİ', exam1: 98, exam2: 100, perf: 100, avg: 99.3 },
+  { name: 'Matematik', teacher: 'Ebru TEKNECİ', exam1: 96, exam2: 98, perf: 100, avg: 98.0 },
+  { name: 'Bilişim & Kodlama', teacher: 'Ebru TEKNECİ', exam1: 100, exam2: 98, perf: 100, avg: 99.0 },
+  { name: 'Yabancı Dil (İngilizce)', teacher: 'Yabancı Dil', exam1: 100, exam2: 98, perf: 100, avg: 99.3 },
+  { name: 'Fizik & Fen Bilimleri', teacher: 'Fen Zümresi', exam1: 95, exam2: 98, perf: 100, avg: 97.6 },
 ]
 
 export default function StudentProgressView({ initialTab = 'all' }: StudentProgressViewProps) {
-  const [activeTab, setActiveTab] = useState<'all' | 'subjects' | 'achievements' | 'goals'>(initialTab)
+  const [activeTab, setActiveTab] = useState<'all' | 'subjects' | 'guidance' | 'achievements' | 'goals'>(initialTab)
+  const [profile, setProfile] = useState<StudentProfile>(DEFAULT_STUDENT_PROFILE)
+  const [guidanceNotes, setGuidanceNotes] = useState<GuidanceNoteItem[]>([])
+
+  useEffect(() => {
+    const sync = () => {
+      setProfile(getSynchronizedStudentProfile())
+      setGuidanceNotes(getSynchronizedGuidanceNotes())
+    }
+    sync()
+
+    window.addEventListener('oxonom_student_updated', sync)
+    window.addEventListener('oxonom_teacher_profile_updated', sync)
+    window.addEventListener('oxonom_attendance_updated', sync)
+    window.addEventListener('storage', sync)
+
+    return () => {
+      window.removeEventListener('oxonom_student_updated', sync)
+      window.removeEventListener('oxonom_teacher_profile_updated', sync)
+      window.removeEventListener('oxonom_attendance_updated', sync)
+      window.removeEventListener('storage', sync)
+    }
+  }, [])
 
   return (
     <div className="p-4 lg:p-8 max-w-7xl mx-auto space-y-6">
@@ -114,19 +142,19 @@ export default function StudentProgressView({ initialTab = 'all' }: StudentProgr
             <h1 className="text-2xl lg:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
               Gelişimim ve Başarılarım
             </h1>
-            <MockBadge label="Mock Veri" />
+            <MockBadge label="Canlı Senkronize" />
           </div>
           <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Ders başarı grafiklerin, ortalamaların, kazanım rozetlerin ve akademik hedeflerin.
+            Öğretmenin tarafından girilen ders notları, rehberlik değerlendirmeleri ve akademik kazanımların.
           </p>
         </div>
 
         {/* Tab switcher */}
-        <div className="flex items-center p-1 rounded-2xl bg-gray-100 dark:bg-[#131C31] border border-gray-200/80 dark:border-gray-800/80">
+        <div className="flex items-center p-1 rounded-2xl bg-gray-100 dark:bg-[#131C31] border border-gray-200/80 dark:border-gray-800/80 overflow-x-auto">
           <button
             type="button"
             onClick={() => setActiveTab('all')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
               activeTab === 'all'
                 ? 'bg-white dark:bg-[#0E1526] text-emerald-600 dark:text-emerald-400 shadow-xs'
                 : 'text-gray-600 dark:text-gray-400'
@@ -137,29 +165,40 @@ export default function StudentProgressView({ initialTab = 'all' }: StudentProgr
           <button
             type="button"
             onClick={() => setActiveTab('subjects')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
               activeTab === 'subjects'
                 ? 'bg-white dark:bg-[#0E1526] text-emerald-600 dark:text-emerald-400 shadow-xs'
                 : 'text-gray-600 dark:text-gray-400'
             }`}
           >
-            Ders Başarıları
+            Ders Notları
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('guidance')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+              activeTab === 'guidance'
+                ? 'bg-white dark:bg-[#0E1526] text-emerald-600 dark:text-emerald-400 shadow-xs'
+                : 'text-gray-600 dark:text-gray-400'
+            }`}
+          >
+            Rehberlik Görüşleri
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('achievements')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
               activeTab === 'achievements'
                 ? 'bg-white dark:bg-[#0E1526] text-emerald-600 dark:text-emerald-400 shadow-xs'
                 : 'text-gray-600 dark:text-gray-400'
             }`}
           >
-            Başarı Rozetleri
+            Rozetler
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('goals')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
               activeTab === 'goals'
                 ? 'bg-white dark:bg-[#0E1526] text-emerald-600 dark:text-emerald-400 shadow-xs'
                 : 'text-gray-600 dark:text-gray-400'
@@ -175,30 +214,30 @@ export default function StudentProgressView({ initialTab = 'all' }: StudentProgr
         <div className="p-5 rounded-3xl bg-white dark:bg-[#0E1526] border border-gray-200/80 dark:border-gray-800/80 shadow-xs space-y-1">
           <div className="text-[11px] text-gray-400 font-bold uppercase">Genel Not Ortalaması</div>
           <div className="text-2xl font-black text-gray-900 dark:text-white">
-            {DEFAULT_STUDENT_PROFILE.gpa} <span className="text-xs font-normal text-gray-400">/ 100</span>
+            {profile.gpa} <span className="text-xs font-normal text-gray-400">/ 100</span>
           </div>
           <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">
-            Dönem Sonu Takdir Belgesi
+            {profile.gpa >= 85 ? 'Dönem Sonu Takdir Belgesi' : 'Dönem Sonu Teşekkür Belgesi'}
           </div>
         </div>
 
         <div className="p-5 rounded-3xl bg-white dark:bg-[#0E1526] border border-gray-200/80 dark:border-gray-800/80 shadow-xs space-y-1">
           <div className="text-[11px] text-gray-400 font-bold uppercase">Sınıf Sıralaması</div>
           <div className="text-2xl font-black text-cyan-600 dark:text-cyan-400">
-            1. Sıra <span className="text-xs font-normal text-gray-400">({DEFAULT_STUDENT_PROFILE.className})</span>
+            {profile.classRank}. Sıra <span className="text-xs font-normal text-gray-400">({profile.className})</span>
           </div>
           <div className="text-[11px] text-gray-500 font-semibold">
-            Şube Birincisi
+            {profile.classRank === 1 ? 'Şube Birincisi' : 'Sınıf Başarı Sırası'}
           </div>
         </div>
 
         <div className="p-5 rounded-3xl bg-white dark:bg-[#0E1526] border border-gray-200/80 dark:border-gray-800/80 shadow-xs space-y-1">
           <div className="text-[11px] text-gray-400 font-bold uppercase">Devamlılık Oranı</div>
           <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
-            %{DEFAULT_STUDENT_PROFILE.attendanceRate}
+            %{profile.attendanceRate}
           </div>
           <div className="text-[11px] text-gray-500 font-semibold">
-            0 Gün Devamsızlık
+            {profile.absentDays} Gün Devamsızlık
           </div>
         </div>
 
@@ -219,10 +258,10 @@ export default function StudentProgressView({ initialTab = 'all' }: StudentProgr
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-base font-extrabold text-gray-900 dark:text-white">
-                Ders Bazlı Akademik Not Çizelgesi
+                Ders Bazlı Akademik Not Çizelgesi ({profile.className})
               </h2>
               <p className="text-[11px] text-gray-400">
-                1. Dönem yazılı sınavlar, sözlü ve performans notları
+                Öğretmen panelinde girilen yazılı sınavlar, sözlü ve performans notları canlı listelenmektedir
               </p>
             </div>
           </div>
@@ -232,7 +271,7 @@ export default function StudentProgressView({ initialTab = 'all' }: StudentProgr
               <thead>
                 <tr className="border-b border-gray-100 dark:border-gray-800 text-[11px] text-gray-400 font-bold">
                   <th className="pb-3">Ders Adı</th>
-                  <th className="pb-3">Öğretmen</th>
+                  <th className="pb-3">Ders Öğretmeni</th>
                   <th className="pb-3 text-center">1. Yazılı</th>
                   <th className="pb-3 text-center">2. Yazılı</th>
                   <th className="pb-3 text-center">Performans</th>
@@ -240,20 +279,87 @@ export default function StudentProgressView({ initialTab = 'all' }: StudentProgr
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800/60 font-semibold">
-                {COURSE_PROGRESS.map((c) => (
-                  <tr key={c.name} className="hover:bg-gray-50 dark:hover:bg-[#131C31]/50 transition-colors">
-                    <td className="py-3.5 font-bold text-gray-900 dark:text-white">{c.name}</td>
-                    <td className="py-3.5 text-gray-500 dark:text-gray-400">{c.teacher}</td>
-                    <td className="py-3.5 text-center">{c.exam1}</td>
-                    <td className="py-3.5 text-center">{c.exam2}</td>
-                    <td className="py-3.5 text-center">{c.perf}</td>
-                    <td className="py-3.5 text-right font-black text-emerald-600 dark:text-emerald-400">
-                      {c.avg.toFixed(1)}
-                    </td>
-                  </tr>
-                ))}
+                {((profile.grades && profile.grades.length > 0) ? profile.grades : FALLBACK_COURSES).map((c: any) => {
+                  const courseTitle = c.courseName || c.name
+                  const teacher = c.teacherName || c.teacher || 'Ders Öğretmeni'
+                  const e1 = c.exam1 !== undefined && c.exam1 !== null && c.exam1 !== '' ? c.exam1 : '-'
+                  const e2 = c.exam2 !== undefined && c.exam2 !== null && c.exam2 !== '' ? c.exam2 : '-'
+                  const perf = c.performance !== undefined && c.performance !== null && c.performance !== '' ? c.performance : '-'
+                  
+                  let calculatedAvg = c.average
+                  if (!calculatedAvg || isNaN(calculatedAvg)) {
+                    const numE1 = Number(c.exam1) || 0
+                    const numE2 = Number(c.exam2) || 0
+                    const numPerf = Number(c.performance) || 0
+                    calculatedAvg = Number(((numE1 * 0.4) + (numE2 * 0.4) + (numPerf * 0.2)).toFixed(1))
+                  } else {
+                    calculatedAvg = Number(calculatedAvg).toFixed(1)
+                  }
+
+                  return (
+                    <tr key={courseTitle} className="hover:bg-gray-50 dark:hover:bg-[#131C31]/50 transition-colors">
+                      <td className="py-3.5 font-bold text-gray-900 dark:text-white">{courseTitle}</td>
+                      <td className="py-3.5 text-gray-500 dark:text-gray-400">{teacher}</td>
+                      <td className="py-3.5 text-center">{e1}</td>
+                      <td className="py-3.5 text-center">{e2}</td>
+                      <td className="py-3.5 text-center">{perf}</td>
+                      <td className="py-3.5 text-right font-black text-emerald-600 dark:text-emerald-400">
+                        {calculatedAvg}
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Guidance and Pedagogical Notes Section */}
+      {(activeTab === 'all' || activeTab === 'guidance') && (
+        <div className="p-6 rounded-3xl bg-white dark:bg-[#0E1526] border border-gray-200/80 dark:border-gray-800/80 shadow-xs space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[11px] font-bold mb-1">
+                <Sparkles size={12} />
+                <span>Öğretmen Gözlemi</span>
+              </div>
+              <h2 className="text-base font-extrabold text-gray-900 dark:text-white">
+                Rehberlik ve Pedagojik Gelişim Görüşleri
+              </h2>
+              <p className="text-[11px] text-gray-400">
+                Sınıf rehber öğretmeni ve ders öğretmenlerinin öğrenci hakkındaki resmi pedagojik değerlendirmeleri
+              </p>
+            </div>
+            <span className="text-xs font-bold px-3 py-1 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
+              {guidanceNotes.length} Kayıtlı Görüş
+            </span>
+          </div>
+
+          <div className="space-y-3">
+            {guidanceNotes.map((note) => (
+              <div
+                key={note.id}
+                className="p-5 rounded-2xl bg-gray-50 dark:bg-[#131C31] border border-gray-200/60 dark:border-gray-800/60 space-y-2.5 hover:border-indigo-400/30 transition-all"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
+                  <div className="font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
+                    <span>{note.author}</span>
+                  </div>
+                  <div className="text-[11px] text-gray-400 font-semibold">{note.date}</div>
+                </div>
+                <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed font-normal bg-white/70 dark:bg-black/20 p-3.5 rounded-xl border border-gray-200/40 dark:border-gray-800/40">
+                  {note.content}
+                </p>
+              </div>
+            ))}
+
+            {guidanceNotes.length === 0 && (
+              <div className="p-8 text-center rounded-2xl bg-gray-50 dark:bg-[#131C31] text-gray-400 text-xs">
+                Henüz eklenmiş bir rehberlik görüşü bulunmamaktadır.
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -313,7 +419,7 @@ export default function StudentProgressView({ initialTab = 'all' }: StudentProgr
               Dönem Sonu Akademik Hedefleri
             </h2>
             <p className="text-[11px] text-gray-400">
-              Rehber öğretmen Ebru TEKNECİ ile belirlenmiş akademik yol haritası
+              Rehber öğretmen {profile.mentorTeacher} ile belirlenmiş akademik yol haritası
             </p>
           </div>
 
@@ -326,7 +432,7 @@ export default function StudentProgressView({ initialTab = 'all' }: StudentProgr
                     1. Dönem Ağırlıklı Ortalamasını 98 Üzerinde Tutmak
                   </div>
                   <div className="text-[10px] text-emerald-600 font-semibold mt-0.5">
-                    Mevcut: 98.8 (Hedef Başarıyla Korunuyor)
+                    Mevcut: {profile.gpa} (Hedef Başarıyla Korunuyor)
                   </div>
                 </div>
               </div>

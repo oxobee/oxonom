@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
   FileCheck,
@@ -18,7 +18,11 @@ import {
   ShieldAlert,
   Play,
 } from 'lucide-react'
-import { STUDENT_ASSESSMENTS, type StudentAssessment } from '@/lib/student/studentData'
+import {
+  STUDENT_ASSESSMENTS,
+  getSynchronizedStudentAssessments,
+  type StudentAssessment,
+} from '@/lib/student/studentData'
 import toast from 'react-hot-toast'
 import MockBadge from '@components/Common/MockBadge'
 
@@ -31,8 +35,28 @@ export default function StudentAssessmentsView({
 }: StudentAssessmentsViewProps) {
   const [activeTab, setActiveTab] = useState<'all' | 'exams' | 'quizzes' | 'results'>(initialTab)
   const [searchQuery, setSearchQuery] = useState('')
+  const [assessments, setAssessments] = useState<StudentAssessment[]>([])
 
-  const filteredAssessments = STUDENT_ASSESSMENTS.filter((item) => {
+  useEffect(() => {
+    const syncAssessments = () => {
+      setAssessments(getSynchronizedStudentAssessments())
+    }
+    syncAssessments()
+
+    window.addEventListener('oxonom_student_updated', syncAssessments)
+    window.addEventListener('oxonom_teacher_profile_updated', syncAssessments)
+    window.addEventListener('storage', syncAssessments)
+
+    return () => {
+      window.removeEventListener('oxonom_student_updated', syncAssessments)
+      window.removeEventListener('oxonom_teacher_profile_updated', syncAssessments)
+      window.removeEventListener('storage', syncAssessments)
+    }
+  }, [])
+
+  const displayAssessments = assessments.length > 0 ? assessments : STUDENT_ASSESSMENTS
+
+  const filteredAssessments = displayAssessments.filter((item) => {
     if (activeTab === 'exams' && item.type !== 'exam') return false
     if (activeTab === 'quizzes' && item.type !== 'quiz') return false
     if (activeTab === 'results' && (!item.isPublished || item.score === undefined)) return false
@@ -45,7 +69,7 @@ export default function StudentAssessmentsView({
   })
 
   // Calculate Average Score of published exams
-  const publishedScores = STUDENT_ASSESSMENTS.filter((a) => a.isPublished && a.score !== undefined)
+  const publishedScores = displayAssessments.filter((a) => a.isPublished && a.score !== undefined)
   const averageScore = publishedScores.length
     ? Math.round(
         publishedScores.reduce((acc, curr) => acc + (curr.score || 0), 0) / publishedScores.length
@@ -97,7 +121,7 @@ export default function StudentAssessmentsView({
               : 'bg-white dark:bg-[#0E1526] text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-800'
           }`}
         >
-          Tüm Değerlendirmeler ({STUDENT_ASSESSMENTS.length})
+          Tüm Değerlendirmeler ({displayAssessments.length})
         </button>
         <button
           type="button"

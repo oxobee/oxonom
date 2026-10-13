@@ -20,6 +20,9 @@ import {
   saveStoredPlannerTasks,
   type PlannerTask,
   STUDENT_ASSESSMENTS,
+  getSynchronizedStudentAssessments,
+  getSynchronizedStudentProfile,
+  type StudentAssessment,
 } from '@/lib/student/studentData'
 import toast from 'react-hot-toast'
 import MockBadge from '@components/Common/MockBadge'
@@ -59,6 +62,7 @@ export default function StudentPlannerView({ initialTab = 'all' }: StudentPlanne
   const [activeTab, setActiveTab] = useState<'all' | 'calendar' | 'notes' | 'tasks'>(initialTab)
   const [tasks, setTasks] = useState<PlannerTask[]>([])
   const [notes, setNotes] = useState<StudentNote[]>(INITIAL_NOTES)
+  const [assessments, setAssessments] = useState<StudentAssessment[]>(STUDENT_ASSESSMENTS)
 
   // New task form state
   const [newTaskTitle, setNewTaskTitle] = useState('')
@@ -73,10 +77,23 @@ export default function StudentPlannerView({ initialTab = 'all' }: StudentPlanne
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setTasks(getStoredPlannerTasks())
+      setAssessments(getSynchronizedStudentAssessments())
       try {
         const rawNotes = localStorage.getItem('oxonom_student_notes_ercil')
         if (rawNotes) setNotes(JSON.parse(rawNotes))
       } catch (_) {}
+
+      const sync = () => {
+        setAssessments(getSynchronizedStudentAssessments())
+      }
+      window.addEventListener('oxonom_student_updated', sync)
+      window.addEventListener('oxonom_teacher_profile_updated', sync)
+      window.addEventListener('storage', sync)
+      return () => {
+        window.removeEventListener('oxonom_student_updated', sync)
+        window.removeEventListener('oxonom_teacher_profile_updated', sync)
+        window.removeEventListener('storage', sync)
+      }
     }
   }, [])
 
@@ -158,7 +175,7 @@ export default function StudentPlannerView({ initialTab = 'all' }: StudentPlanne
             <h1 className="text-2xl lg:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
               Defterim ve Planlayıcım
             </h1>
-            <MockBadge label="Mock Veri" />
+            <MockBadge label="Canlı Senkronize" />
           </div>
           <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mt-1">
             Kişisel yapılacaklar listesi, ders not defteri ve haftalık akademik çalışma takvimi.
@@ -395,7 +412,7 @@ export default function StudentPlannerView({ initialTab = 'all' }: StudentPlanne
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-              {STUDENT_ASSESSMENTS.map((exam) => (
+              {assessments.map((exam) => (
                 <div
                   key={exam.id}
                   className="p-4 rounded-2xl bg-gray-50 dark:bg-[#131C31] border border-gray-200/60 dark:border-gray-800/60 space-y-2"

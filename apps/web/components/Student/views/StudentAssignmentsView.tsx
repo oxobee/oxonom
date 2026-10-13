@@ -25,8 +25,13 @@ import {
 import {
   getStudentSubmissions,
   saveStudentSubmission,
+  getSynchronizedStudentAssignments,
+  getSynchronizedStudentProfile,
   type StudentSubmission,
+  type StudentProfile,
+  DEFAULT_STUDENT_PROFILE,
 } from '@/lib/student/studentData'
+import MockBadge from '@components/Common/MockBadge'
 
 export default function StudentAssignmentsView() {
   const [activeTab, setActiveTab] = useState<'pending' | 'completed' | 'all'>('pending')
@@ -34,24 +39,28 @@ export default function StudentAssignmentsView() {
   const [selectedSubject, setSelectedSubject] = useState<string>('all')
   const [assignments, setAssignments] = useState<SchoolAssignmentItem[]>([])
   const [submissions, setSubmissions] = useState<Record<string, StudentSubmission>>({})
+  const [profile, setProfile] = useState<StudentProfile>(DEFAULT_STUDENT_PROFILE)
 
   // Load assignments and student submissions
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const customAsgs = getStoredCustomAssignments()
-      if (customAsgs && customAsgs.length > 0) {
-        setAssignments(customAsgs)
-      } else {
-        setAssignments(DEFAULT_SCHOOL_ASSIGNMENTS as any)
-      }
-      setSubmissions(getStudentSubmissions())
-
-      const handleSubUpdate = () => {
+      const sync = () => {
+        setAssignments(getSynchronizedStudentAssignments())
         setSubmissions(getStudentSubmissions())
+        setProfile(getSynchronizedStudentProfile())
       }
-      window.addEventListener('oxonom_student_submission_updated', handleSubUpdate)
+      sync()
+
+      window.addEventListener('oxonom_assignments_updated', sync)
+      window.addEventListener('oxonom_student_submission_updated', sync)
+      window.addEventListener('oxonom_student_updated', sync)
+      window.addEventListener('storage', sync)
+
       return () => {
-        window.removeEventListener('oxonom_student_submission_updated', handleSubUpdate)
+        window.removeEventListener('oxonom_assignments_updated', sync)
+        window.removeEventListener('oxonom_student_submission_updated', sync)
+        window.removeEventListener('oxonom_student_updated', sync)
+        window.removeEventListener('storage', sync)
       }
     }
   }, [])
@@ -98,11 +107,14 @@ export default function StudentAssignmentsView() {
             <BookOpen size={14} />
             <span>Akademik Çalışmalar</span>
           </div>
-          <h1 className="text-2xl lg:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
-            Ödevlerim ve Çalışmalarım
-          </h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl lg:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
+              Ödevlerim ve Çalışmalarım
+            </h1>
+            <MockBadge label="Canlı Senkronize" />
+          </div>
           <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Öğretmenlerin tanımladığı ders görevleri, çalışma föyleri ve teslim durumu.
+            Öğretmenlerin {profile.className} şubesi ve senin için tanımladığı ders görevleri, çalışma föyleri ve teslim durumu.
           </p>
         </div>
 

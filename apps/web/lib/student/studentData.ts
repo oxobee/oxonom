@@ -1,6 +1,7 @@
 import {
   CUSTOM_ASSIGNMENTS_STORAGE_KEY,
   getStoredCustomAssignments,
+  DEFAULT_SCHOOL_ASSIGNMENTS,
   type SchoolAssignmentItem,
 } from '@services/school_assignments/school_assignments'
 import {
@@ -10,6 +11,18 @@ import {
   INITIAL_SCHEDULE_ENTRIES,
   type ScheduleEntry,
 } from '@components/Mobile/Admin/MAdminScheduleClient'
+import {
+  ALL_INITIAL_STUDENTS,
+  type MStudentItem,
+  type MStudentCourseGrade,
+} from '@components/Mobile/MStudentClient'
+
+export interface GuidanceNoteItem {
+  id: string
+  date: string
+  author: string
+  content: string
+}
 
 export interface StudentProfile {
   id: string
@@ -40,6 +53,10 @@ export interface StudentProfile {
   emergencyPhone: string
   address: string
   disciplineStatus: string
+  specialHealthNote?: string
+  notes?: string
+  guidanceNotes?: GuidanceNoteItem[]
+  grades?: MStudentCourseGrade[]
 }
 
 export const DEFAULT_STUDENT_PROFILE: StudentProfile = {
@@ -467,3 +484,361 @@ export function saveStoredPlannerTasks(tasks: PlannerTask[]): void {
     localStorage.setItem(PLANNER_TASKS_KEY, JSON.stringify(tasks))
   } catch (_) {}
 }
+
+// ────────────────────────────────────────────────────────────
+// DYNAMIC SYNCHRONIZATION WITH TEACHER & PRINCIPAL ACCOUNTS
+// ────────────────────────────────────────────────────────────
+
+/**
+ * Returns the authoritative student profile synchronized with the
+ * teacher and principal portal records (oxonom_m_students_v3, teacher profile, attendance).
+ */
+export function getSynchronizedStudentProfile(): StudentProfile {
+  if (typeof window === 'undefined') return DEFAULT_STUDENT_PROFILE
+
+  try {
+    let studentRecord: MStudentItem | null = null
+
+    // 1. Read from authoritative student directory managed by teachers and principal
+    const rawStudents = localStorage.getItem('oxonom_m_students_v3')
+    if (rawStudents) {
+      try {
+        const parsed = JSON.parse(rawStudents)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Erçil UĞURLU (student ID s-1, No 101, class 9-A)
+          studentRecord =
+            parsed.find(
+              (s: MStudentItem) =>
+                s.id === 's-1' ||
+                s.studentNo === '101' ||
+                (s.name && s.name.toLowerCase().includes('erçil'))
+            ) ||
+            parsed.find(
+              (s: MStudentItem) =>
+                s.className?.includes('9-A') || s.className?.includes('9/A')
+            ) ||
+            parsed[0]
+        }
+      } catch (_) {}
+    }
+
+    if (!studentRecord) {
+      studentRecord = ALL_INITIAL_STUDENTS[0] || (DEFAULT_STUDENT_PROFILE as any)
+    }
+
+    // 2. Mentor Teacher synchronization from active teacher's profile
+    let mentorTeacher = studentRecord.mentorTeacher || 'Ebru TEKNECİ (Türk Dili ve Edebiyatı)'
+    const rawTeacher = localStorage.getItem('oxonom_teacher_profile')
+    if (rawTeacher) {
+      try {
+        const teacherObj = JSON.parse(rawTeacher)
+        const tName = `${teacherObj.firstName || teacherObj.name || 'Ebru'} ${teacherObj.lastName || 'TEKNECİ'}`.trim()
+        const tBranch = teacherObj.branch || 'Türk Dili ve Edebiyatı'
+        mentorTeacher = `${tName} (${tBranch})`
+      } catch (_) {}
+    }
+
+    // 3. Dynamic GPA calculation from actual grades entered by teacher
+    const grades: MStudentCourseGrade[] =
+      studentRecord.grades && studentRecord.grades.length > 0
+        ? studentRecord.grades
+        : ALL_INITIAL_STUDENTS[0]?.grades || []
+
+    let calculatedGpa = studentRecord.gpa || 98.8
+    if (grades.length > 0) {
+      const totalAvg = grades.reduce((acc, g) => {
+        let avg = g.average
+        if (!avg || isNaN(avg)) {
+          const e1 = Number(g.exam1) || 0
+          const e2 = Number(g.exam2) || 0
+          const pf = Number(g.performance) || 0
+          avg = Number(((e1 * 0.4) + (e2 * 0.4) + (pf * 0.2)).toFixed(1))
+        }
+        return acc + avg
+      }, 0)
+      calculatedGpa = Number((totalAvg / grades.length).toFixed(1))
+    }
+
+    // 4. Live Attendance Synchronization from teacher's attendance service
+    let attendanceRate = studentRecord.attendanceRate || 100
+    let absentDays = (studentRecord.absentExcusedDays || 0) + (studentRecord.absentUnexcusedDays || 0)
+    try {
+      const rawAttendance = localStorage.getItem('oxonom_attendance_records')
+      if (rawAttendance) {
+        const attList = JSON.parse(rawAttendance)
+        if (Array.isArray(attList) && attList.length > 0) {
+          const classAtts = attList.filter((a: any) =>
+            a.classCode === '9/A' || a.classCode === '9-A' || a.classCode === '9-A Şubesi'
+          )
+          if (classAtts.length > 0) {
+            let presentCount = 0
+            let absentCount = 0
+            classAtts.forEach((att: any) => {
+              const status =
+                att.records?.[studentRecord?.id || 's-1'] ||
+                att.records?.['101'] ||
+                att.records?.['s-1']
+              if (status === 'absent') absentCount++
+              else presentCount++
+            })
+            const total = presentCount + absentCount
+            if (total > 0) {
+              attendanceRate = Math.round((presentCount / total) * 100)
+              absentDays = absentCount
+            }
+          }
+        }
+      }
+    } catch (_) {}
+
+    const nameParts = (studentRecord.name || 'Erçil UĞURLU').split(' ')
+    const firstName = nameParts[0] || 'Erçil'
+    const lastName = nameParts.slice(1).join(' ') || 'UĞURLU'
+
+    return {
+      id: studentRecord.id || 's-1',
+      name: studentRecord.name || 'Erçil UĞURLU',
+      firstName,
+      lastName,
+      email: studentRecord.email || 'ogrenci@oxonom.com',
+      studentNo: studentRecord.studentNo || '101',
+      tcNo: studentRecord.tcNo || '10000000146',
+      gender: studentRecord.gender || 'Erkek',
+      birthDate: studentRecord.birthDate || '15.06.2010 (16 Yaşında)',
+      bloodType: studentRecord.bloodType || 'A Rh+',
+      enrollmentDate: studentRecord.enrollmentDate || '01.09.2024',
+      className: studentRecord.className ? studentRecord.className.replace(' Şubesi', '') : '9-A',
+      gradeLevel: '9. Sınıf',
+      mentorTeacher,
+      schoolName: studentRecord.schoolName || 'Oxonom Okulları',
+      gpa: calculatedGpa,
+      classRank: studentRecord.classRank || 1,
+      attendanceRate,
+      absentDays,
+      parentName: studentRecord.parentName || 'Ebru UĞURLU',
+      parentPhone: studentRecord.parentPhone || '+90 532 999 1100',
+      parentRelation: studentRecord.parentRelation || 'Anne (Mimar)',
+      secondParentName: studentRecord.secondParentName || 'Dr. Uğur UĞURLU',
+      secondParentPhone: studentRecord.secondParentPhone || '+90 532 999 2200',
+      secondParentRelation: studentRecord.secondParentRelation || 'Baba (Kurum Müdürü)',
+      emergencyPhone: studentRecord.emergencyPhone || '+90 532 999 2200',
+      address: studentRecord.address || 'Caddebostan Mah. Bağdat Cad. No: 142/5 Kadıköy / İstanbul',
+      disciplineStatus: studentRecord.disciplineStatus || 'Temiz Sicil — Üstün Başarı Onur Belgesi',
+      specialHealthNote: studentRecord.specialHealthNote,
+      notes: studentRecord.notes,
+      guidanceNotes: (studentRecord.guidanceNotes as any) || [],
+      grades,
+    }
+  } catch (err) {
+    console.warn('getSynchronizedStudentProfile fallback:', err)
+    return DEFAULT_STUDENT_PROFILE
+  }
+}
+
+/**
+ * Returns dynamic assessments matching the teacher's grade book records for the student.
+ */
+export function getSynchronizedStudentAssessments(): StudentAssessment[] {
+  const profile = getSynchronizedStudentProfile()
+  const grades = profile.grades || []
+  const assessments: StudentAssessment[] = []
+
+  grades.forEach((g, idx) => {
+    // 1. Yazılı Sınav
+    if (g.exam1 !== undefined && g.exam1 !== null && String(g.exam1) !== '') {
+      assessments.push({
+        id: `exam1-${idx}-${g.courseName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+        title: `${g.courseName} 1. Yazılı Sınavı`,
+        courseName: g.courseName,
+        type: 'exam',
+        date: '12 Ekim 2026',
+        time: '09:25',
+        durationMinutes: 40,
+        location: `Derslik 101 (${profile.className})`,
+        maxScore: 100,
+        score: Number(g.exam1),
+        isGraded: true,
+        isPublished: true,
+        teacherFeedback:
+          Number(g.exam1) >= 90
+            ? `${g.teacherName || 'Öğretmen'}: Üstün akademik başarı ve konu hakimiyeti.`
+            : `${g.teacherName || 'Öğretmen'}: Başarılı, küçük eksikler tekrar edilmeli.`,
+        status: 'completed',
+      })
+    }
+
+    // 2. Yazılı Sınav
+    if (g.exam2 !== undefined && g.exam2 !== null && String(g.exam2) !== '') {
+      assessments.push({
+        id: `exam2-${idx}-${g.courseName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+        title: `${g.courseName} 2. Yazılı Sınavı`,
+        courseName: g.courseName,
+        type: 'exam',
+        date: '28 Kasım 2026',
+        time: '10:20',
+        durationMinutes: 40,
+        location: `Derslik 101 (${profile.className})`,
+        maxScore: 100,
+        score: Number(g.exam2),
+        isGraded: true,
+        isPublished: true,
+        teacherFeedback:
+          Number(g.exam2) >= 90
+            ? `${g.teacherName || 'Öğretmen'}: Mükemmel kompozisyon ve tam puan.`
+            : `${g.teacherName || 'Öğretmen'}: Başarılı çalışma.`,
+        status: 'completed',
+      })
+    }
+
+    // 1. Performans Görevi
+    if (g.performance !== undefined && g.performance !== null && String(g.performance) !== '') {
+      assessments.push({
+        id: `perf-${idx}-${g.courseName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+        title: `${g.courseName} 1. Performans Görevi`,
+        courseName: g.courseName,
+        type: 'performance',
+        date: '05 Kasım 2026',
+        time: '11:15',
+        durationMinutes: 40,
+        location: `Derslik 101 (${profile.className})`,
+        maxScore: 100,
+        score: Number(g.performance),
+        isGraded: true,
+        isPublished: true,
+        teacherFeedback: `${g.teacherName || 'Öğretmen'}: Ders içi katılım ve proje tam puanla onaylandı.`,
+        status: 'completed',
+      })
+    }
+  })
+
+  // Upcoming Quizzes
+  assessments.push(
+    {
+      id: 'as-quiz-1',
+      title: 'Edebiyat Şiir Tahlili Mini Quiz',
+      courseName: 'Türk Dili ve Edebiyatı',
+      type: 'quiz',
+      date: '24 Ekim 2026',
+      time: '10:20',
+      durationMinutes: 20,
+      location: `Derslik 101 (${profile.className})`,
+      maxScore: 100,
+      score: undefined,
+      isGraded: false,
+      isPublished: false,
+      status: 'upcoming',
+    },
+    {
+      id: 'as-quiz-2',
+      title: 'Denklem Sistemleri Hızlı Tarama Quizi',
+      courseName: 'Matematik',
+      type: 'quiz',
+      date: '27 Ekim 2026',
+      time: '11:15',
+      durationMinutes: 25,
+      location: `Derslik 101 (${profile.className})`,
+      maxScore: 100,
+      score: undefined,
+      isGraded: false,
+      isPublished: false,
+      status: 'upcoming',
+    }
+  )
+
+  return assessments
+}
+
+/**
+ * Returns courses matching the teacher and schedule records for 9-A.
+ */
+export function getSynchronizedStudentCourses(): StudentCourse[] {
+  const profile = getSynchronizedStudentProfile()
+
+  return STUDENT_COURSES.map((course) => {
+    const gradeMatch = profile.grades?.find((g) => g.courseName === course.name)
+    const teacherName =
+      gradeMatch?.teacherName ||
+      (course.name.includes('Edebiyat') ? profile.mentorTeacher.split('(')[0].trim() : course.teacherName)
+
+    return {
+      ...course,
+      classroom: `${profile.className} (${course.roomType})`,
+      teacherName,
+    }
+  })
+}
+
+/**
+ * Returns guidance & pedagogical notes written by the teacher for this student.
+ */
+export function getSynchronizedGuidanceNotes(): GuidanceNoteItem[] {
+  const profile = getSynchronizedStudentProfile()
+  if (profile.guidanceNotes && profile.guidanceNotes.length > 0) {
+    return profile.guidanceNotes
+  }
+  return [
+    {
+      id: 'gn-1',
+      date: '28.09.2026',
+      author: 'Ebru TEKNECİ (Türk Dili ve Edebiyatı · Rehberlik)',
+      content:
+        'Öğrencinin edebiyat tahlilleri, kompozisyon yeteneği ve ders içi motivasyonu en üst düzeydedir.',
+    },
+    {
+      id: 'gn-2',
+      date: '15.09.2026',
+      author: 'Dr. Uğur UĞURLU (Okul Müdürü)',
+      content:
+        'Velisi Ebru Hanım ile yapılan dönem başı akademik ve eğitim planlama görüşmesi verimli tamamlandı.',
+    },
+  ]
+}
+
+/**
+ * Returns homework assignments assigned by the teacher to 9-A or specifically to Erçil Uğurlu.
+ */
+export function getSynchronizedStudentAssignments(): SchoolAssignmentItem[] {
+  if (typeof window === 'undefined') return DEFAULT_SCHOOL_ASSIGNMENTS as any
+  const customAsgs = getStoredCustomAssignments()
+  const allAsgs = customAsgs.length > 0 ? customAsgs : (DEFAULT_SCHOOL_ASSIGNMENTS as any)
+
+  return allAsgs.filter((asg: any) => {
+    // Individual assignment targeted to Erçil
+    if (asg.target_type === 'INDIVIDUAL') {
+      const matchStudent =
+        asg.target_student_id === 's-1' ||
+        asg.target_student_id === '101' ||
+        String(asg.target_student_name || '').toLowerCase().includes('erçil')
+      return matchStudent
+    }
+
+    // Class assignment targeted to 9-A or 9. Sınıf
+    const classStr = String(asg.className || asg.grade_level || '').toLowerCase()
+    const hasClassInClasses = asg.classes?.some((c: any) => {
+      const cStr = String(c.code || c.name || '').toLowerCase()
+      return cStr.includes('9-a') || cStr.includes('9/a') || cStr.includes('9. sınıf')
+    })
+
+    if (
+      classStr.includes('9-a') ||
+      classStr.includes('9/a') ||
+      classStr.includes('9. sınıf') ||
+      hasClassInClasses
+    ) {
+      return true
+    }
+
+    // Exclude if explicitly targeted to another grade
+    if (asg.grade_level && !asg.grade_level.includes('9')) {
+      return false
+    }
+
+    // General fallback assignment without restrictive class setting
+    if (!asg.className && (!asg.classes || asg.classes.length === 0)) {
+      return true
+    }
+
+    return false
+  })
+}
+

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
   ArrowLeft,
@@ -17,7 +17,13 @@ import {
   Calendar,
   Sparkles,
 } from 'lucide-react'
-import { STUDENT_COURSES, STUDENT_ASSESSMENTS, type StudentCourse } from '@/lib/student/studentData'
+import {
+  STUDENT_COURSES,
+  getSynchronizedStudentCourses,
+  getSynchronizedStudentAssessments,
+  type StudentCourse,
+  type StudentAssessment,
+} from '@/lib/student/studentData'
 import toast from 'react-hot-toast'
 
 interface StudentCourseDetailViewProps {
@@ -26,9 +32,29 @@ interface StudentCourseDetailViewProps {
 
 export default function StudentCourseDetailView({ courseId }: StudentCourseDetailViewProps) {
   const [activeTab, setActiveTab] = useState<'topics' | 'materials' | 'assessments'>('topics')
+  const [courses, setCourses] = useState<StudentCourse[]>(STUDENT_COURSES)
+  const [assessments, setAssessments] = useState<StudentAssessment[]>([])
 
-  const course = STUDENT_COURSES.find((c) => c.id === courseId) || STUDENT_COURSES[0]
-  const courseExams = STUDENT_ASSESSMENTS.filter((a) => a.courseName === course.name)
+  React.useEffect(() => {
+    const sync = () => {
+      setCourses(getSynchronizedStudentCourses())
+      setAssessments(getSynchronizedStudentAssessments())
+    }
+    sync()
+
+    window.addEventListener('oxonom_student_updated', sync)
+    window.addEventListener('oxonom_teacher_profile_updated', sync)
+    window.addEventListener('storage', sync)
+
+    return () => {
+      window.removeEventListener('oxonom_student_updated', sync)
+      window.removeEventListener('oxonom_teacher_profile_updated', sync)
+      window.removeEventListener('storage', sync)
+    }
+  }, [])
+
+  const course = courses.find((c) => c.id === courseId) || courses[0] || STUDENT_COURSES[0]
+  const courseExams = assessments.filter((a) => a.courseName === course.name)
 
   const handleDownload = (materialTitle: string) => {
     toast.success(`"${materialTitle}" başarıyla indiriliyor...`)

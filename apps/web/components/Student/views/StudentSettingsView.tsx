@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
   Settings,
@@ -19,9 +19,10 @@ import {
   Award,
   Sparkles,
 } from 'lucide-react'
-import { DEFAULT_STUDENT_PROFILE, type StudentProfile } from '@/lib/student/studentData'
+import { DEFAULT_STUDENT_PROFILE, getSynchronizedStudentProfile, type StudentProfile } from '@/lib/student/studentData'
 import { useMobileTheme } from '@components/Mobile/useMobileTheme'
 import { signOut } from '@components/Contexts/AuthContext'
+import MockBadge from '@components/Common/MockBadge'
 import toast from 'react-hot-toast'
 
 interface StudentSettingsViewProps {
@@ -36,6 +37,23 @@ export default function StudentSettingsView({
     initialTab === 'all' ? 'profile' : initialTab
   )
   const [profile, setProfile] = useState<StudentProfile>(DEFAULT_STUDENT_PROFILE)
+
+  React.useEffect(() => {
+    const sync = () => {
+      setProfile(getSynchronizedStudentProfile())
+    }
+    sync()
+
+    window.addEventListener('oxonom_student_updated', sync)
+    window.addEventListener('oxonom_teacher_profile_updated', sync)
+    window.addEventListener('storage', sync)
+
+    return () => {
+      window.removeEventListener('oxonom_student_updated', sync)
+      window.removeEventListener('oxonom_teacher_profile_updated', sync)
+      window.removeEventListener('storage', sync)
+    }
+  }, [])
 
   // Notification toggles
   const [notifHomework, setNotifHomework] = useState(true)
@@ -67,9 +85,12 @@ export default function StudentSettingsView({
             <Settings size={14} />
             <span>Hesap ve Tercihler</span>
           </div>
-          <h1 className="text-2xl lg:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
-            Profilim ve Ayarlar
-          </h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl lg:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
+              Profilim ve Ayarlar
+            </h1>
+            <MockBadge label="Canlı Senkronize" />
+          </div>
           <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mt-1">
             Öğrenci kimlik bilgileri, veli irtibatı, bildirim tercihleri ve güvenlik.
           </p>
@@ -131,7 +152,7 @@ export default function StudentSettingsView({
           <div className="p-6 lg:p-8 rounded-3xl bg-gradient-to-br from-cyan-600 to-blue-700 text-white shadow-xl shadow-cyan-500/10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center font-black text-2xl text-white border border-white/20 shrink-0">
-                EU
+                {(profile.firstName?.slice(0, 1) || 'E') + (profile.lastName?.slice(0, 1) || 'U')}
               </div>
               <div>
                 <div className="text-xl font-black">{profile.name}</div>
@@ -231,6 +252,71 @@ export default function StudentSettingsView({
                 </div>
               </div>
             </div>
+
+            {/* Address and Emergency contact */}
+            <div className="pt-4 border-t border-gray-100 dark:border-gray-800 space-y-3">
+              <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
+                İkametgah ve Acil Durum İletişimi
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                <div className="p-4 rounded-2xl bg-gray-50 dark:bg-[#131C31] border border-gray-200/50 dark:border-gray-800/50 space-y-1.5">
+                  <span className="text-[10px] text-gray-400 font-bold uppercase flex items-center gap-1.5">
+                    <MapPin size={12} className="text-cyan-500" />
+                    Kayıtlı Ev Adresi
+                  </span>
+                  <div className="font-bold text-gray-900 dark:text-white leading-relaxed">
+                    {profile.address}
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-gray-50 dark:bg-[#131C31] border border-gray-200/50 dark:border-gray-800/50 space-y-1.5">
+                  <span className="text-[10px] text-gray-400 font-bold uppercase flex items-center gap-1.5">
+                    <Phone size={12} className="text-rose-500" />
+                    Acil Durum Numarası
+                  </span>
+                  <div className="font-bold text-gray-900 dark:text-white">
+                    {profile.emergencyPhone}
+                  </div>
+                  <div className="text-[11px] text-gray-400">
+                    Öncelikli arama veli ve kurum koordinatörü
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Health & Pedagogical Notes */}
+            {(profile.specialHealthNote || profile.notes) && (
+              <div className="pt-4 border-t border-gray-100 dark:border-gray-800 space-y-3">
+                <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
+                  Özel Sağlık ve Kurumsal Kayıt Notları
+                </h3>
+                <div className="space-y-3 text-xs">
+                  {profile.specialHealthNote && (
+                    <div className="p-4 rounded-2xl bg-rose-500/5 dark:bg-rose-950/20 border border-rose-500/20 space-y-1">
+                      <span className="text-[10px] text-rose-600 dark:text-rose-400 font-bold uppercase flex items-center gap-1.5">
+                        <HeartPulse size={12} />
+                        Özel Sağlık Bildirimi
+                      </span>
+                      <p className="font-semibold text-rose-900 dark:text-rose-200 leading-relaxed">
+                        {profile.specialHealthNote}
+                      </p>
+                    </div>
+                  )}
+
+                  {profile.notes && (
+                    <div className="p-4 rounded-2xl bg-indigo-500/5 dark:bg-indigo-950/20 border border-indigo-500/20 space-y-1">
+                      <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold uppercase flex items-center gap-1.5">
+                        <Sparkles size={12} />
+                        Rehberlik ve İdare Notu
+                      </span>
+                      <p className="font-semibold text-indigo-900 dark:text-indigo-200 leading-relaxed">
+                        {profile.notes}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

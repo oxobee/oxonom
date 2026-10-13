@@ -28,7 +28,11 @@ import {
 } from 'lucide-react'
 import { STUDENT_MENU_CONFIG, type StudentMenuItem } from '@/lib/student/studentMenuConfig'
 import { signOut } from '@components/Contexts/AuthContext'
-import { DEFAULT_STUDENT_PROFILE, type StudentProfile } from '@/lib/student/studentData'
+import {
+  DEFAULT_STUDENT_PROFILE,
+  getSynchronizedStudentProfile,
+  type StudentProfile,
+} from '@/lib/student/studentData'
 import HeaderLiveClock from '@components/Common/HeaderLiveClock'
 import { useMobileTheme } from '@components/Mobile/useMobileTheme'
 
@@ -46,15 +50,23 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
   const [isMoreSheetOpen, setIsMoreSheetOpen] = useState(false)
   const [profile, setProfile] = useState<StudentProfile>(DEFAULT_STUDENT_PROFILE)
 
-  // Load student profile
+  // Load student profile synchronized with teacher records
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('oxonom_student_profile')
-        if (saved) {
-          setProfile(JSON.parse(saved))
-        }
-      } catch (_) {}
+    const syncProfile = () => {
+      setProfile(getSynchronizedStudentProfile())
+    }
+    syncProfile()
+
+    window.addEventListener('oxonom_student_updated', syncProfile)
+    window.addEventListener('oxonom_teacher_profile_updated', syncProfile)
+    window.addEventListener('oxonom_attendance_updated', syncProfile)
+    window.addEventListener('storage', syncProfile)
+
+    return () => {
+      window.removeEventListener('oxonom_student_updated', syncProfile)
+      window.removeEventListener('oxonom_teacher_profile_updated', syncProfile)
+      window.removeEventListener('oxonom_attendance_updated', syncProfile)
+      window.removeEventListener('storage', syncProfile)
     }
   }, [])
 

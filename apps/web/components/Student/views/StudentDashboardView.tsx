@@ -23,6 +23,7 @@ import {
   Play,
   Layers,
   Flame,
+  MessageSquareQuote,
 } from 'lucide-react'
 import {
   DEFAULT_STUDENT_PROFILE,
@@ -30,8 +31,14 @@ import {
   STUDENT_ASSESSMENTS,
   STUDENT_ANNOUNCEMENTS,
   getStoredPlannerTasks,
+  getSynchronizedStudentProfile,
+  getSynchronizedStudentAssignments,
+  getSynchronizedStudentAssessments,
+  getSynchronizedGuidanceNotes,
   type PlannerTask,
   type StudentProfile,
+  type StudentAssessment,
+  type GuidanceNoteItem,
 } from '@/lib/student/studentData'
 import {
   getStoredCustomAssignments,
@@ -50,22 +57,34 @@ export default function StudentDashboardView() {
   const [profile, setProfile] = useState<StudentProfile>(DEFAULT_STUDENT_PROFILE)
   const [tasks, setTasks] = useState<PlannerTask[]>([])
   const [assignments, setAssignments] = useState<SchoolAssignmentItem[]>([])
+  const [assessments, setAssessments] = useState<StudentAssessment[]>([])
+  const [guidanceNotes, setGuidanceNotes] = useState<GuidanceNoteItem[]>([])
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const savedProf = localStorage.getItem('oxonom_student_profile')
-        if (savedProf) setProfile(JSON.parse(savedProf))
-      } catch (_) {}
+    const syncAll = () => {
+      setProfile(getSynchronizedStudentProfile())
       setTasks(getStoredPlannerTasks())
+      setAssignments(getSynchronizedStudentAssignments())
+      setAssessments(getSynchronizedStudentAssessments())
+      setGuidanceNotes(getSynchronizedGuidanceNotes())
+    }
 
-      // Load custom assignments
-      const customAsgs = getStoredCustomAssignments()
-      if (customAsgs && customAsgs.length > 0) {
-        setAssignments(customAsgs)
-      } else {
-        setAssignments(DEFAULT_SCHOOL_ASSIGNMENTS as any)
-      }
+    syncAll()
+
+    window.addEventListener('oxonom_student_updated', syncAll)
+    window.addEventListener('oxonom_assignments_updated', syncAll)
+    window.addEventListener('oxonom_teacher_profile_updated', syncAll)
+    window.addEventListener('oxonom_attendance_updated', syncAll)
+    window.addEventListener('oxonom_schedule_updated', syncAll)
+    window.addEventListener('storage', syncAll)
+
+    return () => {
+      window.removeEventListener('oxonom_student_updated', syncAll)
+      window.removeEventListener('oxonom_assignments_updated', syncAll)
+      window.removeEventListener('oxonom_teacher_profile_updated', syncAll)
+      window.removeEventListener('oxonom_attendance_updated', syncAll)
+      window.removeEventListener('oxonom_schedule_updated', syncAll)
+      window.removeEventListener('storage', syncAll)
     }
   }, [])
 
@@ -115,8 +134,8 @@ export default function StudentDashboardView() {
 
   // Upcoming assessments
   const upcomingAssessments = useMemo(() => {
-    return STUDENT_ASSESSMENTS.filter((a) => a.status === 'upcoming').slice(0, 2)
-  }, [])
+    return assessments.filter((a) => a.status === 'upcoming').slice(0, 2)
+  }, [assessments])
 
   // Toggle quick planner task
   const handleToggleTask = (taskId: string) => {
@@ -474,6 +493,38 @@ export default function StudentDashboardView() {
               ))}
             </div>
           </div>
+
+          {/* Rehber Öğretmen Değerlendirmesi & Pedagojik Not */}
+          {guidanceNotes.length > 0 && (
+            <div className="p-5 lg:p-6 rounded-3xl bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-cyan-500/10 border border-indigo-500/30 shadow-xs space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <MessageSquareQuote size={18} className="text-indigo-600 dark:text-indigo-400" />
+                  <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
+                    Rehber Öğretmen Değerlendirmesi
+                  </h3>
+                </div>
+                <Link
+                  href="/student/progress"
+                  className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
+                >
+                  Tüm Görüşler
+                </Link>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-white/80 dark:bg-[#0E1526]/80 border border-indigo-100 dark:border-indigo-900/40 space-y-1.5 backdrop-blur-xs">
+                <div className="flex items-center justify-between text-[10px]">
+                  <span className="font-extrabold text-indigo-700 dark:text-indigo-300">
+                    {guidanceNotes[0].author}
+                  </span>
+                  <span className="text-gray-400 font-medium">{guidanceNotes[0].date}</span>
+                </div>
+                <p className="text-xs text-gray-700 dark:text-gray-200 leading-relaxed font-medium">
+                  "{guidanceNotes[0].content}"
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Son Duyurular */}
           <div className="p-5 lg:p-6 rounded-3xl bg-white dark:bg-[#0E1526] border border-gray-200/80 dark:border-gray-800/80 shadow-xs space-y-3.5">
