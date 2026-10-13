@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { STUDENT_ANNOUNCEMENTS, type StudentAnnouncement } from '@/lib/student/studentData'
 import toast from 'react-hot-toast'
+import MockBadge from '@components/Common/MockBadge'
 
 interface StudentCommunicationViewProps {
   initialTab?: 'all' | 'announcements' | 'messages' | 'notifications'
@@ -81,9 +82,12 @@ export default function StudentCommunicationView({
             <MessageSquare size={14} />
             <span>Okul İletişim Merkezi</span>
           </div>
-          <h1 className="text-2xl lg:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
-            Mesajlar ve Duyurular
-          </h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl lg:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
+              Mesajlar ve Duyurular
+            </h1>
+            <MockBadge label="Mock Veri" />
+          </div>
           <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mt-1">
             Resmi okul duyuruları, öğretmen mesajları ve akademik bilgilendirmeler.
           </p>

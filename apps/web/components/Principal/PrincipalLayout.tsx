@@ -38,6 +38,7 @@ import { signOut } from '@components/Contexts/AuthContext'
 import ConnectBoardModal from '@components/DashboardV2/ConnectBoardModal'
 import toast from 'react-hot-toast'
 import { getStoredPrincipalProfile, getPrincipalInitials } from '@/lib/principal/principalProfileStorage'
+import HeaderLiveClock from '@components/Common/HeaderLiveClock'
 
 interface PrincipalLayoutProps {
   children: React.ReactNode
@@ -409,24 +410,28 @@ export default function PrincipalLayout({ children }: PrincipalLayoutProps) {
       <div className="flex-1 flex flex-col min-w-0 min-h-screen">
         {/* Desktop Top Header Bar (lg+) */}
         <header className="hidden lg:flex items-center justify-between h-16 px-8 border-b border-gray-200/80 dark:border-gray-800/80 bg-white/80 dark:bg-[#0E1526]/80 backdrop-blur-md sticky top-0 z-20">
-          <div className="flex items-center gap-2 text-xs">
-            <span className="text-gray-400 font-medium">Müdür Portalı</span>
-            <ChevronRight size={13} className="text-gray-400" />
-            <span className="font-extrabold text-gray-900 dark:text-white">
-              {currentItem?.label || 'Genel Bakış'}
-            </span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-gray-400 font-medium">Müdür Portalı</span>
+              <ChevronRight size={13} className="text-gray-400" />
+              <span className="font-extrabold text-gray-900 dark:text-white">
+                {currentItem?.label || 'Genel Bakış'}
+              </span>
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
+            {/* Live Clock & Date matching theme */}
+            <HeaderLiveClock theme="emerald" variant="desktop" />
+
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-500/20">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span>Yönetim Çevrimiçi</span>
             </div>
 
-
             <Link
               href="/principal/schedule"
-              className="h-9 px-3.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold text-xs flex items-center gap-1.5 transition-colors"
+              className="h-9 px-3.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold text-xs flex items-center gap-1.5 transition-colors border border-gray-200/60 dark:border-gray-700/60"
             >
               <Calendar size={13} />
               <span>Ders Programı</span>
@@ -439,13 +444,22 @@ export default function PrincipalLayout({ children }: PrincipalLayoutProps) {
               <Plus size={13} />
               <span>Öğretmen Görevlendir</span>
             </Link>
+
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="w-9 h-9 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center transition-colors cursor-pointer border border-gray-200/60 dark:border-gray-700/60"
+              title="Temayı Değiştir"
+            >
+              {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+            </button>
           </div>
         </header>
 
         {/* Mobile Header Bar (<lg) */}
         <header className="lg:hidden flex items-center justify-between px-4 h-14 bg-white/95 dark:bg-[#0E1526]/95 border-b border-gray-200/80 dark:border-gray-800/80 sticky top-0 z-30 backdrop-blur-md">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white font-black text-xs flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white font-black text-xs flex items-center justify-center shadow-xs">
               OX
             </div>
             <div>
@@ -458,7 +472,10 @@ export default function PrincipalLayout({ children }: PrincipalLayoutProps) {
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
+            {/* Live Clock & Date matching theme (Mobile Compact) */}
+            <HeaderLiveClock theme="emerald" variant="mobile" />
+
             <button
               type="button"
               onClick={() => setIsConnectBoardModalOpen(true)}

@@ -60,6 +60,7 @@ import MobileHeader from '@components/Mobile/MobileHeader'
 import MobileAdminDock from './MobileAdminDock'
 import MobileAdminMoreSheet from './MobileAdminMoreSheet'
 import { useMobileTheme } from '@components/Mobile/useMobileTheme'
+import MockBadge from '@components/Common/MockBadge'
 import { SCHOOL_ORGS, getOrgTeachers } from '@services/demo/schoolDirectory'
 import {
   INITIAL_SCHEDULE_ENTRIES,
@@ -1050,9 +1051,12 @@ export default function MAdminClient({
                 <div className="w-8 h-8 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                   <BarChart3 size={18} />
                 </div>
-                <h3 className="text-sm font-black text-gray-900 dark:text-white">
-                  İstatistiksel Analitik & Grafik Paneli
-                </h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-black text-gray-900 dark:text-white">
+                    İstatistiksel Analitik & Grafik Paneli
+                  </h3>
+                  <MockBadge size="sm" />
+                </div>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                 Katılım trendleri, ders başarı oranları, akıllı tahta süreleri ve personel ders yükü
@@ -1108,6 +1112,7 @@ export default function MAdminClient({
                   <span className="text-xs font-bold text-gray-700 dark:text-gray-300">
                     Haftalık Katılım Eğrisi & Günlük Yoklama Analizi
                   </span>
+                  <MockBadge size="xs" />
                 </div>
                 <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1 rounded-xl">
                   Haftalık Katılım Ortalaması: %100
@@ -1269,7 +1274,10 @@ export default function MAdminClient({
           {activeChartTab === 'academic' && (
             <div className="pt-4 space-y-3.5">
               <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
-                <span className="font-bold">Branş Başarı & Müfredat İlerleme Oranları</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold">Branş Başarı & Müfredat İlerleme Oranları</span>
+                  <MockBadge size="xs" />
+                </div>
                 <span>Zümre: Edebiyat & Türkçe</span>
               </div>
 
@@ -1554,9 +1562,12 @@ export default function MAdminClient({
                   <UserCheck size={18} />
                 </div>
                 <div>
-                  <h4 className="text-xs font-black text-gray-900 dark:text-white">
-                    Öğretmen & Personel Devam Özeti
-                  </h4>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-xs font-black text-gray-900 dark:text-white">
+                      Öğretmen & Personel Devam Özeti
+                    </h4>
+                    <MockBadge size="xs" />
+                  </div>
                   <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">
                     Bugünkü Mesai Katılımı & İşe Geliş Analizi
                   </p>

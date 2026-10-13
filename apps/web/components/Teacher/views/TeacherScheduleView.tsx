@@ -33,6 +33,7 @@ import {
 } from '@components/Mobile/Admin/MAdminScheduleClient'
 import ConnectBoardModal from '@components/DashboardV2/ConnectBoardModal'
 import { useMobileTheme } from '@components/Mobile/useMobileTheme'
+import MockBadge from '@components/Common/MockBadge'
 
 interface LessonPlanModalData {
   title: string
@@ -142,9 +143,12 @@ export default function TeacherScheduleView() {
             <GraduationCap size={15} />
             <span>Müdür Onaylı Bütünleşik Ders Çizelgesi</span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
-            Haftalık Ders Programı
-          </h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
+              Haftalık Ders Programı
+            </h1>
+            <MockBadge size="sm" />
+          </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
             Okul Müdürü tarafından oluşturulan haftalık ders akışı, derslik ve akıllı tahta dağılımı
           </p>

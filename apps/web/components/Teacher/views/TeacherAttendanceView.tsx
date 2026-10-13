@@ -20,6 +20,7 @@ import {
   AlertCircle,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import MockBadge from '@components/Common/MockBadge'
 import { ALL_INITIAL_STUDENTS, MStudentItem } from '@components/Mobile/MStudentClient'
 import {
   saveAttendanceForClass,
@@ -120,9 +121,12 @@ export default function TeacherAttendanceView() {
             <CheckSquare size={15} />
             <span>Sınıf İçi Devam & Yoklama Takibi</span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
-            Yoklama ve Devam
-          </h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
+              Yoklama ve Devam
+            </h1>
+            <MockBadge size="sm" />
+          </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
             Tarih bazlı günlük yoklama alma, sınıf mevcudu kontrolü ve geçmiş yoklama arşivini inceleme
           </p>

@@ -44,6 +44,7 @@ import {
 } from '@services/demo/schoolDirectory'
 import { useLHSession } from '@components/Contexts/LHSessionContext'
 import { getStoredPrincipalProfile } from '@/lib/principal/principalProfileStorage'
+import MockBadge from '@components/Common/MockBadge'
 
 export interface MAdminCurriculumClientProps {
   orgSlug?: string
@@ -1166,6 +1167,7 @@ export default function MAdminCurriculumClient({
                     <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                       Çakışma Korumalı
                     </span>
+                    <MockBadge size="xs" />
                   </div>
                   <p className="text-xs text-gray-300/80 mt-0.5">
                     Oxonom Okulları · Akıllı Zümre, Derslik ve Öğretmen Yerleşimi

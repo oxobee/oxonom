@@ -44,6 +44,7 @@ import {
   type ScheduleEntry,
   type DayKey,
 } from '@components/Mobile/Admin/MAdminScheduleClient'
+import MockBadge from '@components/Common/MockBadge'
 
 export default function StudentDashboardView() {
   const [profile, setProfile] = useState<StudentProfile>(DEFAULT_STUDENT_PROFILE)
@@ -153,7 +154,10 @@ export default function StudentDashboardView() {
               <Award size={24} />
             </div>
             <div>
-              <div className="text-[10px] uppercase font-bold text-cyan-200">Akademik Başarı</div>
+              <div className="text-[10px] uppercase font-bold text-cyan-200 flex items-center gap-1.5">
+                <span>Akademik Başarı</span>
+                <MockBadge label="Mock Veri" size="xs" />
+              </div>
               <div className="text-xl font-extrabold">{profile.gpa} Ort.</div>
               <div className="text-[10px] text-emerald-300 font-semibold">{profile.disciplineStatus.split('—')[1] || 'Sınıf 1. Sıra'}</div>
             </div>
@@ -236,9 +240,12 @@ export default function StudentDashboardView() {
                   <Calendar size={18} />
                 </div>
                 <div>
-                  <h2 className="text-base font-extrabold text-gray-900 dark:text-white">
-                    Bugünün Ders Akışı ({profile.className})
-                  </h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-extrabold text-gray-900 dark:text-white">
+                      Bugünün Ders Akışı ({profile.className})
+                    </h2>
+                    <MockBadge label="Mock Veri" />
+                  </div>
                   <p className="text-[11px] text-gray-400">
                     Haftalık programa göre planlanmış ders saatleri
                   </p>
@@ -433,6 +440,7 @@ export default function StudentDashboardView() {
                 <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
                   Yaklaşan Değerlendirmeler
                 </h3>
+                <MockBadge label="Mock Veri" />
               </div>
               <Link
                 href="/student/assessments"
@@ -475,6 +483,7 @@ export default function StudentDashboardView() {
                 <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
                   Okul ve Sınıf Duyurusu
                 </h3>
+                <MockBadge label="Mock Veri" />
               </div>
               <Link
                 href="/student/communication"

@@ -70,6 +70,7 @@ import {
   normalizeClassCode,
   AttendanceRecord,
 } from '@services/demo/attendanceService'
+import MockBadge from '@components/Common/MockBadge'
 
 export interface DashV2ClientProps {
   hideDock?: boolean
@@ -917,9 +918,12 @@ export default function DashV2Client({
                   </div>
 
                   <div>
-                    <h3 className="text-sm font-bold text-gray-900 dark:text-white">
-                      Günlük Sınıf Yoklaması
-                    </h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-bold text-gray-900 dark:text-white">
+                        Günlük Sınıf Yoklaması
+                      </h3>
+                      <MockBadge size="xs" />
+                    </div>
                     <p className="text-[11px] text-gray-400 mt-0.5">
                       {selectedClass.code} Şubesi için bugünkü devam kaydı
                     </p>
@@ -1316,9 +1320,12 @@ export default function DashV2Client({
                   </div>
 
                   <div>
-                    <h3 className="text-sm font-bold text-gray-900 dark:text-white">
-                      Verilen Ödevler ve Değerlendirme
-                    </h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-bold text-gray-900 dark:text-white">
+                        Verilen Ödevler ve Değerlendirme
+                      </h3>
+                      <MockBadge size="xs" />
+                    </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                       {selectedClass.code} Şubesi · Erçil UĞURLU için verilen ödevler, teslim durumları ve puanlama ekranı.
                     </p>

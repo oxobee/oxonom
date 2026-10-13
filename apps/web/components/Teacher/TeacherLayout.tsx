@@ -33,6 +33,7 @@ import { useMobileTheme } from '@components/Mobile/useMobileTheme'
 import { useLHSession } from '@components/Contexts/LHSessionContext'
 import { signOut } from '@components/Contexts/AuthContext'
 import ConnectBoardModal from '@components/DashboardV2/ConnectBoardModal'
+import HeaderLiveClock from '@components/Common/HeaderLiveClock'
 
 interface TeacherLayoutProps {
   children: React.ReactNode
@@ -40,6 +41,7 @@ interface TeacherLayoutProps {
 
 export default function TeacherLayout({ children }: TeacherLayoutProps) {
   const pathname = usePathname() || '/teacher/dashboard'
+  const currentItem = getMenuItemByPath(pathname)
   const { theme, toggleTheme } = useMobileTheme()
   const session = useLHSession() as any
   const user = session?.data?.user
@@ -248,46 +250,101 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
         </div>
       </aside>
 
-      {/* ── MOBILE HEADER (<lg) ── */}
-      <header className="lg:hidden sticky top-0 z-30 bg-white/95 dark:bg-[#0E1526]/95 backdrop-blur-md border-b border-gray-200/80 dark:border-gray-800/80 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-800 flex items-center justify-center text-white shadow-xs font-black text-sm">
-            OX
-          </div>
-          <div>
-            <div className="text-xs font-extrabold text-gray-900 dark:text-white leading-tight">
-              Oxonom EDU
+      {/* ── MAIN CONTENT WORKSPACE ── */}
+      <div className="flex-1 flex flex-col min-w-0 min-h-screen">
+        {/* Desktop Top Header Bar (lg+) */}
+        <header className="hidden lg:flex items-center justify-between h-16 px-8 border-b border-gray-200/80 dark:border-gray-800/80 bg-white/80 dark:bg-[#0E1526]/80 backdrop-blur-md sticky top-0 z-20">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-gray-400 font-medium">Öğretmen Portalı</span>
+              <ChevronRight size={13} className="text-gray-400" />
+              <span className="font-extrabold text-gray-900 dark:text-white">
+                {currentItem?.label || 'Dersler & Yoklama'}
+              </span>
             </div>
-            <div className="text-[10px] text-gray-500 dark:text-gray-400">
-              {teacherName}
+          </div>
+
+          <div className="flex items-center gap-3">
+            {/* Live Clock & Date matching theme (Indigo) */}
+            <HeaderLiveClock theme="indigo" variant="desktop" />
+
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-xs font-bold border border-indigo-500/20">
+              <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+              <span>Öğretmen Çevrimiçi</span>
+            </div>
+
+            <Link
+              href="/teacher/schedule"
+              className="h-9 px-3.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold text-xs flex items-center gap-1.5 transition-colors border border-gray-200/60 dark:border-gray-700/60"
+            >
+              <Calendar size={13} />
+              <span>Ders Programım</span>
+            </Link>
+
+            <button
+              type="button"
+              onClick={() => setIsConnectBoardModalOpen(true)}
+              className="h-9 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs shadow-emerald-500/20 cursor-pointer"
+            >
+              <QrCode size={14} />
+              <span>Akıllı Tahta QR</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="w-9 h-9 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center transition-colors cursor-pointer border border-gray-200/60 dark:border-gray-700/60"
+              title="Temayı Değiştir"
+            >
+              {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+            </button>
+          </div>
+        </header>
+
+        {/* ── MOBILE HEADER (<lg) ── */}
+        <header className="lg:hidden sticky top-0 z-30 bg-white/95 dark:bg-[#0E1526]/95 backdrop-blur-md border-b border-gray-200/80 dark:border-gray-800/80 px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-800 flex items-center justify-center text-white shadow-xs font-black text-sm">
+              OX
+            </div>
+            <div>
+              <div className="text-xs font-extrabold text-gray-900 dark:text-white leading-tight">
+                Oxonom EDU
+              </div>
+              <div className="text-[9px] font-bold text-indigo-600 dark:text-indigo-400">
+                {teacherName}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => setIsConnectBoardModalOpen(true)}
-            className="h-8 px-2.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center gap-1.5"
-            title="Tahtaya Bağlan"
-          >
-            <QrCode size={14} />
-            <span>Tahta</span>
-          </button>
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 flex items-center justify-center"
-          >
-            {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
-          </button>
-        </div>
-      </header>
+          <div className="flex items-center gap-2">
+            {/* Live Clock & Date matching theme (Mobile Compact) */}
+            <HeaderLiveClock theme="indigo" variant="mobile" />
 
-      {/* ── MAIN CONTENT AREA ── */}
-      <main className="flex-1 min-w-0 pb-28 lg:pb-8 flex flex-col">
-        {children}
-      </main>
+            <button
+              type="button"
+              onClick={() => setIsConnectBoardModalOpen(true)}
+              className="h-8 px-2.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+              title="Tahtaya Bağlan"
+            >
+              <QrCode size={14} />
+              <span>Tahta</span>
+            </button>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 flex items-center justify-center cursor-pointer"
+            >
+              {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+            </button>
+          </div>
+        </header>
+
+        {/* ── MAIN CONTENT AREA ── */}
+        <main className="flex-1 min-w-0 pb-28 lg:pb-8 flex flex-col">
+          {children}
+        </main>
+      </div>
 
       {/* ── MOBILE FLOATING BOTTOM DOCK (Visual Matched to Design Mockup) ── */}
       <nav

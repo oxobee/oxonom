@@ -18,6 +18,7 @@ import {
   Compass,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import MockBadge from '@components/Common/MockBadge'
 
 interface StudentLearnViewProps {
   initialTab?: 'subjects' | 'topics' | 'activities' | 'games'
@@ -132,9 +133,12 @@ export default function StudentLearnView({ initialTab = 'activities' }: StudentL
             <Sparkles size={14} />
             <span>Etkileşimli Öğrenme</span>
           </div>
-          <h1 className="text-2xl lg:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
-            Öğren ve Keşfet
-          </h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl lg:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
+              Öğren ve Keşfet
+            </h1>
+            <MockBadge label="Mock Veri" />
+          </div>
           <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mt-1">
             Ders dışı konu tekrarları, eğitici zeka oyunları ve bilimsel simülasyonlar.
           </p>

@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import { STUDENT_ASSESSMENTS, type StudentAssessment } from '@/lib/student/studentData'
 import toast from 'react-hot-toast'
+import MockBadge from '@components/Common/MockBadge'
 
 interface StudentAssessmentsViewProps {
   initialTab?: 'all' | 'exams' | 'quizzes' | 'results'
@@ -60,9 +61,12 @@ export default function StudentAssessmentsView({
             <FileCheck size={14} />
             <span>Resmi Değerlendirmeler</span>
           </div>
-          <h1 className="text-2xl lg:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
-            Sınavlar, Quizler ve Sonuçlar
-          </h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl lg:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
+              Sınavlar, Quizler ve Sonuçlar
+            </h1>
+            <MockBadge label="Mock Veri" />
+          </div>
           <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mt-1">
             Dönem içi yazılı sınav takvimi, mini quizler ve yayımlanmış resmi sınav notları.
           </p>

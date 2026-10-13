@@ -17,6 +17,7 @@ import {
   BookOpen,
 } from 'lucide-react'
 import { DEFAULT_STUDENT_PROFILE } from '@/lib/student/studentData'
+import MockBadge from '@components/Common/MockBadge'
 
 interface StudentProgressViewProps {
   initialTab?: 'all' | 'subjects' | 'achievements' | 'goals'
@@ -109,9 +110,12 @@ export default function StudentProgressView({ initialTab = 'all' }: StudentProgr
             <TrendingUp size={14} />
             <span>Akademik Başarı Takibi</span>
           </div>
-          <h1 className="text-2xl lg:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
-            Gelişimim ve Başarılarım
-          </h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl lg:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
+              Gelişimim ve Başarılarım
+            </h1>
+            <MockBadge label="Mock Veri" />
+          </div>
           <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mt-1">
             Ders başarı grafiklerin, ortalamaların, kazanım rozetlerin ve akademik hedeflerin.
           </p>

@@ -17,6 +17,7 @@ import {
   Calendar,
 } from 'lucide-react'
 import { STUDENT_COURSES, type StudentCourse } from '@/lib/student/studentData'
+import MockBadge from '@components/Common/MockBadge'
 
 export default function StudentCoursesView() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -41,9 +42,12 @@ export default function StudentCoursesView() {
             <GraduationCap size={14} />
             <span>9-A Şubesi Müfredatı</span>
           </div>
-          <h1 className="text-2xl lg:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
-            Kayıtlı Derslerim
-          </h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl lg:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
+              Kayıtlı Derslerim
+            </h1>
+            <MockBadge label="Mock Veri" />
+          </div>
           <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mt-1">
             2025-2026 Akademik yılında kayıtlı olduğun 5 ders ve haftalık ders programın.
           </p>

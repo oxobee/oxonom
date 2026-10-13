@@ -45,6 +45,7 @@ import MobileAdminMoreSheet from './MobileAdminMoreSheet'
 import { useMobileTheme } from '@components/Mobile/useMobileTheme'
 import { SCHOOL_ORGS, getOrgTeachers } from '@services/demo/schoolDirectory'
 import { getStoredPrincipalProfile } from '@/lib/principal/principalProfileStorage'
+import MockBadge from '@components/Common/MockBadge'
 
 export interface MAdminReportsClientProps {
   orgSlug?: string
@@ -521,11 +522,14 @@ export default function MAdminReportsClient({
                   <BarChart3 size={20} />
                 </div>
                 <div>
-                  <div className="flex items-center gap-1.5">
-                    <h2 className="text-sm font-black text-white">Akademik Takip & Raporlar</h2>
-                    <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded-md bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">
-                      07. MODÜL
-                    </span>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <h2 className="text-sm font-black text-white">Akademik Takip & Raporlar</h2>
+                      <span className="text-[9px] font-black uppercase px-1.5 py-0.2 rounded-md bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">
+                        07. MODÜL
+                      </span>
+                    </div>
+                    <MockBadge size="xs" />
                   </div>
                   <p className="text-[10px] text-gray-400 font-medium mt-0.5">
                     MEB Müfredatı, Başarı Grafikleri & Devamsızlık Takibi
@@ -742,9 +746,12 @@ export default function MAdminReportsClient({
             <div className="bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800/80 rounded-3xl p-4 shadow-sm">
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-wider">
-                    Şube Başarı Karşılaştırması
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-wider">
+                      Şube Başarı Karşılaştırması
+                    </h3>
+                    <MockBadge size="xs" />
+                  </div>
                   <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">
                     Tüm derslerin ağırlıklı dönem ortalamaları
                   </p>
@@ -898,9 +905,12 @@ export default function MAdminReportsClient({
 
             {/* Ders Bazında Okul Ortalamaları Kartları */}
             <div className="bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800/80 rounded-3xl p-4 shadow-sm">
-              <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-wider mb-2.5">
-                Ders Bazında Okul Ortalamaları
-              </h3>
+              <div className="flex items-center gap-2 mb-2.5">
+                <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-wider">
+                  Ders Bazında Okul Ortalamaları
+                </h3>
+                <MockBadge size="xs" />
+              </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {subjectAverages.map((sub) => (
                   <div

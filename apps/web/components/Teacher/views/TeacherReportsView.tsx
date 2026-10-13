@@ -21,6 +21,7 @@ import {
   Search,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import MockBadge from '@components/Common/MockBadge'
 
 const CLASSES = [
   { id: '9-A', name: '9-A Şubesi', course: 'Türk Dili ve Edebiyatı', studentCount: 1, avgGrade: 95.5, attendanceRate: 100, homeworkRate: 100 },
@@ -91,9 +92,12 @@ export default function TeacherReportsView() {
             <BarChart3 size={15} />
             <span>Sınıf Bazlı İstatistik ve Grafik Raporları</span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
-            Raporlarım
-          </h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
+              Raporlarım
+            </h1>
+            <MockBadge size="sm" />
+          </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
             Sınıf seçerek detaylı akademik performans, yoklama istatistikleri ve ödev raporlarını inceleyin
           </p>
@@ -249,9 +253,12 @@ export default function TeacherReportsView() {
             <div className="bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 rounded-3xl p-5 shadow-xs space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
-                    Kategori Bazlı Başarı Analizi
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
+                      Kategori Bazlı Başarı Analizi
+                    </h3>
+                    <MockBadge size="xs" />
+                  </div>
                   <p className="text-[11px] text-gray-400">Müfredat alanlarına göre ortalama başarı</p>
                 </div>
                 <Award size={18} className="text-indigo-600" />
@@ -279,9 +286,12 @@ export default function TeacherReportsView() {
             <div className="bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 rounded-3xl p-5 shadow-xs space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
-                    Not Dağılımı ve Başarı Kümeleri
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
+                      Not Dağılımı ve Başarı Kümeleri
+                    </h3>
+                    <MockBadge size="xs" />
+                  </div>
                   <p className="text-[11px] text-gray-400">{activeClass.name} genel başarı yüzdeleri</p>
                 </div>
                 <BarChart3 size={18} className="text-emerald-600" />
@@ -344,9 +354,12 @@ export default function TeacherReportsView() {
           </div>
 
           <div className="bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 rounded-3xl p-6 shadow-xs space-y-4">
-            <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
-              Sınıf Katılım Dağılımı ve Risk Durumu
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
+                Sınıf Katılım Dağılımı ve Risk Durumu
+              </h3>
+              <MockBadge size="xs" />
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {attendanceBreakdown.map((item, i) => (
                 <div key={i} className="p-4 rounded-2xl bg-gray-50 dark:bg-[#161D2E] border border-gray-100 dark:border-gray-800">
@@ -365,8 +378,11 @@ export default function TeacherReportsView() {
         <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="p-5 rounded-3xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 shadow-xs">
-              <div className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
-                Zamanında Teslim Oranı
+              <div className="flex items-center justify-between">
+                <div className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+                  Zamanında Teslim Oranı
+                </div>
+                <MockBadge size="xs" />
               </div>
               <div className="text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
                 %{activeClass.homeworkRate}
@@ -375,8 +391,11 @@ export default function TeacherReportsView() {
             </div>
 
             <div className="p-5 rounded-3xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 shadow-xs">
-              <div className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
-                Verilen Toplam Ödev
+              <div className="flex items-center justify-between">
+                <div className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
+                  Verilen Toplam Ödev
+                </div>
+                <MockBadge size="xs" />
               </div>
               <div className="text-3xl font-black text-gray-900 dark:text-white mt-1">
                 12 Görev
@@ -385,8 +404,11 @@ export default function TeacherReportsView() {
             </div>
 
             <div className="p-5 rounded-3xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 shadow-xs">
-              <div className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider">
-                Ortalama Ödev Puanı
+              <div className="flex items-center justify-between">
+                <div className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider">
+                  Ortalama Ödev Puanı
+                </div>
+                <MockBadge size="xs" />
               </div>
               <div className="text-3xl font-black text-gray-900 dark:text-white mt-1">
                 89.4 / 100
@@ -401,9 +423,12 @@ export default function TeacherReportsView() {
       <div className="bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 rounded-3xl p-5 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-gray-100 dark:border-gray-800">
           <div>
-            <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
-              {activeClass.name} Öğrenci Başarı ve Devam Çizelgesi
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
+                {activeClass.name} Öğrenci Başarı ve Devam Çizelgesi
+              </h3>
+              <MockBadge size="xs" />
+            </div>
             <p className="text-[11px] text-gray-400">
               Seçili şubedeki öğrencilerin karne ve istatistik özetleri
             </p>

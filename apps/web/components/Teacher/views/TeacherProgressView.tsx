@@ -21,6 +21,7 @@ import {
   UserCheck,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import MockBadge from '@components/Common/MockBadge'
 import { ALL_INITIAL_STUDENTS, MStudentItem } from '@components/Mobile/MStudentClient'
 
 export default function TeacherProgressView() {
@@ -128,9 +129,12 @@ export default function TeacherProgressView() {
             <TrendingUp size={15} />
             <span>Akademik Gelişim & Pedagojik Rehberlik</span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
-            Öğrenci Gelişimi ve Rehberlik
-          </h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
+              Öğrenci Gelişimi ve Rehberlik
+            </h1>
+            <MockBadge size="sm" />
+          </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
             Sınıf seçin, öğrenci bazlı grafiksel not ve devamsızlık analizlerini inceleyin ve rehberlik notu ekleyin
           </p>

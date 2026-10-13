@@ -27,9 +27,10 @@ import {
   Bell,
 } from 'lucide-react'
 import { STUDENT_MENU_CONFIG, type StudentMenuItem } from '@/lib/student/studentMenuConfig'
-import { useMobileTheme } from '@components/Mobile/useMobileTheme'
 import { signOut } from '@components/Contexts/AuthContext'
 import { DEFAULT_STUDENT_PROFILE, type StudentProfile } from '@/lib/student/studentData'
+import HeaderLiveClock from '@components/Common/HeaderLiveClock'
+import { useMobileTheme } from '@components/Mobile/useMobileTheme'
 
 interface StudentLayoutProps {
   children: React.ReactNode
@@ -37,6 +38,9 @@ interface StudentLayoutProps {
 
 export default function StudentLayout({ children }: StudentLayoutProps) {
   const pathname = usePathname() || '/student/dashboard'
+  const currentMenuItem = STUDENT_MENU_CONFIG.find(
+    (m) => m.path === pathname || (m.path !== '/student/dashboard' && pathname.startsWith(m.path))
+  )
   const { theme, toggleTheme } = useMobileTheme()
 
   const [isMoreSheetOpen, setIsMoreSheetOpen] = useState(false)
@@ -225,45 +229,99 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
         </div>
       </aside>
 
-      {/* ── MOBILE HEADER (<lg) ── */}
-      <header className="lg:hidden sticky top-0 z-30 bg-white/95 dark:bg-[#0E1526]/95 backdrop-blur-md border-b border-gray-200/80 dark:border-gray-800/80 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-xs font-black text-sm">
-            OX
-          </div>
-          <div>
-            <div className="text-xs font-extrabold text-gray-900 dark:text-white leading-tight">
-              Oxonom EDU
+      {/* ── MAIN CONTENT WORKSPACE ── */}
+      <div className="flex-1 flex flex-col min-w-0 min-h-screen">
+        {/* Desktop Top Header Bar (lg+) */}
+        <header className="hidden lg:flex items-center justify-between h-16 px-8 border-b border-gray-200/80 dark:border-gray-800/80 bg-white/80 dark:bg-[#0E1526]/80 backdrop-blur-md sticky top-0 z-20">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-gray-400 font-medium">Öğrenci Portalı</span>
+              <ChevronRight size={13} className="text-gray-400" />
+              <span className="font-extrabold text-gray-900 dark:text-white">
+                {currentMenuItem?.label || 'Derslerim & Ödevler'}
+              </span>
             </div>
-            <div className="text-[10px] text-gray-500 dark:text-gray-400">
-              {profile.name} ({profile.className})
+          </div>
+
+          <div className="flex items-center gap-3">
+            {/* Live Clock & Date matching theme (Cyan) */}
+            <HeaderLiveClock theme="cyan" variant="desktop" />
+
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 text-xs font-bold border border-cyan-500/20">
+              <span className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
+              <span>Öğrenci Aktif</span>
+            </div>
+
+            <Link
+              href="/student/planner"
+              className="h-9 px-3.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold text-xs flex items-center gap-1.5 transition-colors border border-gray-200/60 dark:border-gray-700/60"
+            >
+              <Calendar size={13} />
+              <span>Ders Programı</span>
+            </Link>
+
+            <Link
+              href="/student/assignments"
+              className="h-9 px-3.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs shadow-cyan-500/20"
+            >
+              <FileCheck size={14} />
+              <span>Ödevlerim</span>
+            </Link>
+
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="w-9 h-9 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center transition-colors cursor-pointer border border-gray-200/60 dark:border-gray-700/60"
+              title="Temayı Değiştir"
+            >
+              {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+            </button>
+          </div>
+        </header>
+
+        {/* ── MOBILE HEADER (<lg) ── */}
+        <header className="lg:hidden sticky top-0 z-30 bg-white/95 dark:bg-[#0E1526]/95 backdrop-blur-md border-b border-gray-200/80 dark:border-gray-800/80 px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-xs font-black text-sm">
+              OX
+            </div>
+            <div>
+              <div className="text-xs font-extrabold text-gray-900 dark:text-white leading-tight">
+                Oxonom EDU
+              </div>
+              <div className="text-[10px] text-gray-500 dark:text-gray-400">
+                {profile.name} ({profile.className})
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-1.5">
-          <Link
-            href="/student/communication"
-            className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 flex items-center justify-center"
-            title="Duyurular"
-          >
-            <Bell size={15} />
-          </Link>
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 flex items-center justify-center"
-            title="Temayı Değiştir"
-          >
-            {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
-          </button>
-        </div>
-      </header>
+          <div className="flex items-center gap-2">
+            {/* Live Clock & Date matching theme (Mobile Compact) */}
+            <HeaderLiveClock theme="cyan" variant="mobile" />
 
-      {/* ── MAIN CONTENT AREA ── */}
-      <main className="flex-1 min-w-0 pb-28 lg:pb-8 flex flex-col">
-        {children}
-      </main>
+            <Link
+              href="/student/communication"
+              className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 flex items-center justify-center"
+              title="Duyurular"
+            >
+              <Bell size={15} />
+            </Link>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 flex items-center justify-center"
+              title="Temayı Değiştir"
+            >
+              {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+            </button>
+          </div>
+        </header>
+
+        {/* ── MAIN CONTENT AREA ── */}
+        <main className="flex-1 min-w-0 pb-28 lg:pb-8 flex flex-col">
+          {children}
+        </main>
+      </div>
 
       {/* ── MOBILE FLOATING BOTTOM DOCK (5 Items) ── */}
       <nav

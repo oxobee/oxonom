@@ -22,6 +22,7 @@ import {
   Zap,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import MockBadge from '@components/Common/MockBadge'
 import { ALL_INITIAL_STUDENTS, MStudentItem, MStudentCourseGrade } from '@components/Mobile/MStudentClient'
 
 interface CourseDef {
@@ -185,9 +186,12 @@ export default function TeacherAssessmentsView() {
             <Award size={15} />
             <span>Ölçme, Değerlendirme & Hızlı Not Girişi</span>
           </div>
-          <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
-            Sınavlar ve Notlar
-          </h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
+              Sınavlar ve Notlar
+            </h1>
+            <MockBadge size="sm" />
+          </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
             Sınav tipini belirleyin, öğrencilerinize hızlıca not girin ve akademik karneye anında işleyin
           </p>
@@ -366,9 +370,12 @@ export default function TeacherAssessmentsView() {
                 <BarChart2 size={15} />
                 <span>Öğrenci Dosyası • Akademik Başarı ve Trend Analizi</span>
               </div>
-              <h2 className="text-lg font-black text-gray-900 dark:text-white tracking-tight">
-                {primaryStudent.name} — Akademik Performans Karnesi
-              </h2>
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-lg font-black text-gray-900 dark:text-white tracking-tight">
+                  {primaryStudent.name} — Akademik Performans Karnesi
+                </h2>
+                <MockBadge size="xs" />
+              </div>
             </div>
 
             <div className="flex items-center gap-2">

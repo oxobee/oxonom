@@ -22,6 +22,7 @@ import {
   STUDENT_ASSESSMENTS,
 } from '@/lib/student/studentData'
 import toast from 'react-hot-toast'
+import MockBadge from '@components/Common/MockBadge'
 
 interface StudentPlannerViewProps {
   initialTab?: 'all' | 'calendar' | 'notes' | 'tasks'
@@ -153,9 +154,12 @@ export default function StudentPlannerView({ initialTab = 'all' }: StudentPlanne
             <CalendarIcon size={14} />
             <span>Kişisel Çalışma Alanı</span>
           </div>
-          <h1 className="text-2xl lg:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
-            Defterim ve Planlayıcım
-          </h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl lg:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
+              Defterim ve Planlayıcım
+            </h1>
+            <MockBadge label="Mock Veri" />
+          </div>
           <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mt-1">
             Kişisel yapılacaklar listesi, ders not defteri ve haftalık akademik çalışma takvimi.
           </p>
