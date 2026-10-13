@@ -129,7 +129,7 @@ export default function TeacherAuthorization({ children }: TeacherAuthorizationP
               <span>Öğretmen Olarak Çalışma Alanını Aç</span>
             </button>
             <Link
-              href="/m-student"
+              href="/student/dashboard"
               className="w-full h-11 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-colors"
             >
               <GraduationCap size={16} />

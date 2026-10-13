@@ -78,7 +78,7 @@ const ROLES: RoleConfig[] = [
     defaultEmail: '101',
     defaultPass: 'ogrenci123',
     defaultName: 'Erçil UĞURLU',
-    targetRoute: '/m-student',
+    targetRoute: '/student/dashboard',
   },
   {
     id: 'parent',
@@ -154,7 +154,7 @@ export default function GlobalLoginClient() {
     } else if (isTeacher) {
       targetRoute = '/teacher/dashboard'
     } else if (isStudent) {
-      targetRoute = '/m-student'
+      targetRoute = '/student/dashboard'
     }
 
     // Explicit Session Isolation: Clear conflicting accounts on device
@@ -199,6 +199,39 @@ export default function GlobalLoginClient() {
           localStorage.removeItem('oxonom_active_admin_session')
           localStorage.removeItem('oxonom_teacher_profile')
           localStorage.setItem('oxonom_current_role', 'student')
+          localStorage.setItem(
+            'oxonom_student_profile',
+            JSON.stringify({
+              id: 's-1',
+              name: 'Erçil UĞURLU',
+              firstName: 'Erçil',
+              lastName: 'UĞURLU',
+              email: 'ogrenci@oxonom.com',
+              studentNo: '101',
+              tcNo: '10000000146',
+              gender: 'Erkek',
+              birthDate: '15.06.2010 (16 Yaşında)',
+              bloodType: 'A Rh+',
+              enrollmentDate: '01.09.2024',
+              className: '9-A',
+              gradeLevel: '9. Sınıf',
+              mentorTeacher: 'Ebru TEKNECİ (Türk Dili ve Edebiyatı)',
+              schoolName: 'Oxonom Okulları',
+              gpa: 98.8,
+              classRank: 1,
+              attendanceRate: 100,
+              absentDays: 0,
+              parentName: 'Ebru UĞURLU',
+              parentPhone: '+90 532 999 1100',
+              parentRelation: 'Anne (Mimar)',
+              secondParentName: 'Dr. Uğur UĞURLU',
+              secondParentPhone: '+90 532 999 2200',
+              secondParentRelation: 'Baba (Kurum Müdürü)',
+              emergencyPhone: '+90 532 999 2200',
+              address: 'Caddebostan Mah. Bağdat Cad. No: 142/5 Kadıköy / İstanbul',
+              disciplineStatus: 'Temiz Sicil — Üstün Başarı Onur Belgesi',
+            })
+          )
         }
       } catch (_) {}
     }
