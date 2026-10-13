@@ -538,14 +538,20 @@ export function getSynchronizedStudentProfile(): StudentProfile {
       } catch (_) {}
     }
 
-    // 3. Dynamic GPA calculation from actual grades entered by teacher
+    // 3. Dynamic GPA calculation from official student record and teacher grade inputs
     const grades: MStudentCourseGrade[] =
       studentRecord.grades && studentRecord.grades.length > 0
         ? studentRecord.grades
         : ALL_INITIAL_STUDENTS[0]?.grades || []
 
-    let calculatedGpa = studentRecord.gpa || 98.8
-    if (grades.length > 0) {
+    let calculatedGpa =
+      typeof studentRecord.gpa === 'number'
+        ? studentRecord.gpa
+        : studentRecord.gpa
+        ? Number(studentRecord.gpa)
+        : 98.8
+
+    if ((studentRecord.gpa === undefined || studentRecord.gpa === null) && grades.length > 0) {
       const totalAvg = grades.reduce((acc, g) => {
         let avg = g.average
         if (!avg || isNaN(avg)) {

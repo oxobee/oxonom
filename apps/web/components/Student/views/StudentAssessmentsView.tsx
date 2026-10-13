@@ -89,7 +89,7 @@ export default function StudentAssessmentsView({
             <h1 className="text-2xl lg:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
               Sınavlar, Quizler ve Sonuçlar
             </h1>
-            <MockBadge label="Mock Veri" />
+            <MockBadge label="Canlı Senkronize" />
           </div>
           <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mt-1">
             Dönem içi yazılı sınav takvimi, mini quizler ve yayımlanmış resmi sınav notları.

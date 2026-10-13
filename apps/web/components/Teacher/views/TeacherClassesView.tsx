@@ -504,7 +504,7 @@ export default function TeacherClassesView() {
                         <div className="font-black text-sm text-indigo-900 dark:text-indigo-200">Genel Akademik Not Ortalaması</div>
                         <div className="text-indigo-700 dark:text-indigo-300 text-[11px]">Sınıf Sıralaması: 1 / 30</div>
                       </div>
-                      <div className="text-2xl font-black text-indigo-600 dark:text-indigo-400">98.8</div>
+                      <div className="text-2xl font-black text-indigo-600 dark:text-indigo-400">{selectedStudent.gpa || 98.8}</div>
                     </div>
 
                     <div className="space-y-2">

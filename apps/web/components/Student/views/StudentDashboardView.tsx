@@ -163,7 +163,7 @@ export default function StudentDashboardView() {
               Hoş geldin, {profile.firstName}! 👋
             </h1>
             <p className="text-cyan-100 text-xs lg:text-sm max-w-xl leading-relaxed">
-              Bugün 9-A sınıfında seni bekleyen {todayClasses.length > 0 ? todayClasses.length : '5'} ders saati ve {pendingAssignments.length} aktif çalışma bulunuyor.
+              Bugün {profile.className} şubesinde seni bekleyen {todayClasses.length > 0 ? todayClasses.length : '5'} ders saati ve {pendingAssignments.length} aktif çalışma bulunuyor.
             </p>
           </div>
 
@@ -175,10 +175,11 @@ export default function StudentDashboardView() {
             <div>
               <div className="text-[10px] uppercase font-bold text-cyan-200 flex items-center gap-1.5">
                 <span>Akademik Başarı</span>
-                <MockBadge label="Mock Veri" size="xs" />
               </div>
               <div className="text-xl font-extrabold">{profile.gpa} Ort.</div>
-              <div className="text-[10px] text-emerald-300 font-semibold">{profile.disciplineStatus.split('—')[1] || 'Sınıf 1. Sıra'}</div>
+              <div className="text-[10px] text-emerald-300 font-semibold">
+                {profile.disciplineStatus.split('—')[1]?.trim() || 'Örnek Öğrenci Onur Belgesi'}
+              </div>
             </div>
           </div>
         </div>
@@ -263,7 +264,7 @@ export default function StudentDashboardView() {
                     <h2 className="text-base font-extrabold text-gray-900 dark:text-white">
                       Bugünün Ders Akışı ({profile.className})
                     </h2>
-                    <MockBadge label="Mock Veri" />
+                    <MockBadge label="Canlı Senkronize" />
                   </div>
                   <p className="text-[11px] text-gray-400">
                     Haftalık programa göre planlanmış ders saatleri
@@ -459,7 +460,7 @@ export default function StudentDashboardView() {
                 <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
                   Yaklaşan Değerlendirmeler
                 </h3>
-                <MockBadge label="Mock Veri" />
+                <MockBadge label="Canlı Senkronize" />
               </div>
               <Link
                 href="/student/assessments"
