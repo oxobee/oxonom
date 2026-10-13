@@ -392,6 +392,7 @@ export default async function proxy(req: NextRequest) {
     '/m-admin-boards': '/principal/smartboards',
     '/m-admin-reports': '/principal/reports',
     '/m-admin-curriculum': '/principal/curriculum',
+    '/m-student': '/student/dashboard',
   }
   if (PRINCIPAL_LEGACY_MAP[cleanAuthPath]) {
     return NextResponse.redirect(new URL(`${PRINCIPAL_LEGACY_MAP[cleanAuthPath]}${search}`, req.url), 307)
@@ -490,6 +491,8 @@ export default async function proxy(req: NextRequest) {
     return NextResponse.rewrite(new URL(`/editor${pathname}`, req.url))
   }
   if (
+    pathname === '/student' ||
+    pathname.startsWith('/student/') ||
     pathname === '/teacher' ||
     pathname.startsWith('/teacher/') ||
     pathname === '/principal' ||
