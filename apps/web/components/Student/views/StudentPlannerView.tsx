@@ -63,6 +63,7 @@ export default function StudentPlannerView({ initialTab = 'all' }: StudentPlanne
   const [tasks, setTasks] = useState<PlannerTask[]>([])
   const [notes, setNotes] = useState<StudentNote[]>(INITIAL_NOTES)
   const [assessments, setAssessments] = useState<StudentAssessment[]>(STUDENT_ASSESSMENTS)
+  const [examFilter, setExamFilter] = useState<'all' | 'upcoming' | 'completed'>('all')
 
   // New task form state
   const [newTaskTitle, setNewTaskTitle] = useState('')
@@ -83,15 +84,28 @@ export default function StudentPlannerView({ initialTab = 'all' }: StudentPlanne
         if (rawNotes) setNotes(JSON.parse(rawNotes))
       } catch (_) {}
 
+      // Cross-client sync from server
+      fetch('/api/exams?className=9-A')
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.success && Array.isArray(d.exams) && d.exams.length > 0) {
+            localStorage.setItem('oxonom_school_exam_calendar', JSON.stringify(d.exams))
+            setAssessments(getSynchronizedStudentAssessments())
+          }
+        })
+        .catch(() => {})
+
       const sync = () => {
         setAssessments(getSynchronizedStudentAssessments())
       }
       window.addEventListener('oxonom_student_updated', sync)
       window.addEventListener('oxonom_teacher_profile_updated', sync)
+      window.addEventListener('oxonom_exam_calendar_updated', sync)
       window.addEventListener('storage', sync)
       return () => {
         window.removeEventListener('oxonom_student_updated', sync)
         window.removeEventListener('oxonom_teacher_profile_updated', sync)
+        window.removeEventListener('oxonom_exam_calendar_updated', sync)
         window.removeEventListener('storage', sync)
       }
     }
@@ -404,32 +418,149 @@ export default function StudentPlannerView({ initialTab = 'all' }: StudentPlanne
         {/* BOTTOM FULL-WIDTH: Sınav Takvimi */}
         {(activeTab === 'all' || activeTab === 'calendar') && (
           <div className="lg:col-span-2 p-6 rounded-3xl bg-white dark:bg-[#0E1526] border border-gray-200/80 dark:border-gray-800/80 shadow-xs space-y-4">
-            <div className="flex items-center gap-2">
-              <CalendarIcon size={18} className="text-amber-500" />
-              <h2 className="text-base font-extrabold text-gray-900 dark:text-white">
-                Akademik Değerlendirme Takvimi
-              </h2>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
+                  <CalendarIcon size={18} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-extrabold text-gray-900 dark:text-white">
+                      Sınav Takvimi
+                    </h2>
+                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                      Öğretmenle Canlı Senkronize
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-gray-400">
+                    Öğretmenler tarafından 9-A sınıfı için planlanan yazılı sınavlar, ortak sınavlar ve quizler
+                  </p>
+                </div>
+              </div>
+
+              {/* Filter Tabs */}
+              <div className="flex items-center gap-1.5 bg-gray-100 dark:bg-gray-800/80 p-1 rounded-xl self-start sm:self-auto">
+                <button
+                  type="button"
+                  onClick={() => setExamFilter('all')}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    examFilter === 'all'
+                      ? 'bg-white dark:bg-[#131C31] text-gray-900 dark:text-white shadow-xs'
+                      : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  Tümü ({assessments.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setExamFilter('upcoming')}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    examFilter === 'upcoming'
+                      ? 'bg-white dark:bg-[#131C31] text-gray-900 dark:text-white shadow-xs'
+                      : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  Yaklaşanlar ({assessments.filter((a) => a.status !== 'completed').length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setExamFilter('completed')}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    examFilter === 'completed'
+                      ? 'bg-white dark:bg-[#131C31] text-gray-900 dark:text-white shadow-xs'
+                      : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                  }`}
+                >
+                  Tamamlananlar ({assessments.filter((a) => a.status === 'completed').length})
+                </button>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-              {assessments.map((exam) => (
-                <div
-                  key={exam.id}
-                  className="p-4 rounded-2xl bg-gray-50 dark:bg-[#131C31] border border-gray-200/60 dark:border-gray-800/60 space-y-2"
-                >
-                  <div className="flex items-center justify-between text-[10px] text-gray-400">
-                    <span className="font-bold text-amber-600 dark:text-amber-400">{exam.courseName}</span>
-                    <span>{exam.date}</span>
-                  </div>
-                  <h4 className="text-xs font-bold text-gray-900 dark:text-white line-clamp-1">
-                    {exam.title}
-                  </h4>
-                  <div className="text-[10px] text-gray-500 flex items-center justify-between">
-                    <span>{exam.location}</span>
-                    <span>{exam.durationMinutes} dk</span>
-                  </div>
-                </div>
-              ))}
+            {/* Clear, Intuitive Exam Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {assessments
+                .filter((exam) => {
+                  if (examFilter === 'upcoming') return exam.status !== 'completed'
+                  if (examFilter === 'completed') return exam.status === 'completed'
+                  return true
+                })
+                .map((exam) => {
+                  const isCompleted = exam.status === 'completed'
+                  const isQuiz = exam.type === 'quiz'
+
+                  return (
+                    <div
+                      key={exam.id}
+                      className={`p-4.5 rounded-2xl border transition-all space-y-3 flex flex-col justify-between ${
+                        isCompleted
+                          ? 'bg-gray-50/70 dark:bg-[#131C31]/70 border-gray-200/60 dark:border-gray-800/60'
+                          : 'bg-white dark:bg-[#131C31] border-amber-200/80 dark:border-amber-900/40 shadow-xs hover:border-amber-400'
+                      }`}
+                    >
+                      <div className="space-y-2">
+                        {/* Top Badges: Course & Type */}
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                            {exam.courseName}
+                          </span>
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                              isCompleted
+                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                : isQuiz
+                                ? 'bg-teal-500/10 text-teal-600 dark:text-teal-400'
+                                : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                            }`}
+                          >
+                            {isCompleted
+                              ? `Not: ${exam.score ?? 100}/100`
+                              : isQuiz
+                              ? 'Mini Quiz'
+                              : 'Yazılı Sınav'}
+                          </span>
+                        </div>
+
+                        {/* Title */}
+                        <h4 className="text-sm font-extrabold text-gray-900 dark:text-white leading-snug">
+                          {exam.title}
+                        </h4>
+
+                        {/* Scope/Topics (if provided by teacher) */}
+                        {exam.scope && (
+                          <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-2 bg-gray-100/60 dark:bg-gray-800/40 p-2 rounded-xl">
+                            <span className="font-semibold text-gray-700 dark:text-gray-300">Kapsam: </span>
+                            {exam.scope}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Footer Info: Date, Time, Location, Duration */}
+                      <div className="pt-2 border-t border-gray-100 dark:border-gray-800/60 space-y-1.5">
+                        <div className="flex items-center justify-between text-xs font-black text-gray-900 dark:text-white">
+                          <span className="flex items-center gap-1.5">
+                            <CalendarIcon size={13} className="text-amber-500" />
+                            {exam.date}
+                          </span>
+                          <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                            <Clock size={12} className="text-indigo-500" />
+                            {exam.time}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400">
+                          <span>{exam.location}</span>
+                          <span>{exam.durationMinutes} dakika</span>
+                        </div>
+
+                        {exam.teacherName && (
+                          <div className="text-[10px] text-gray-400 pt-0.5">
+                            Öğretmen: <span className="font-semibold text-gray-600 dark:text-gray-300">{exam.teacherName}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
             </div>
           </div>
         )}

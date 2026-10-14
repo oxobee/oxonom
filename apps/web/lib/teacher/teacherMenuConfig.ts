@@ -14,6 +14,7 @@ import {
   BarChart3,
   Settings,
   LucideIcon,
+  CalendarDays,
 } from 'lucide-react'
 
 export type FeatureStatus = 'active' | 'passive' | 'restricted'
@@ -106,6 +107,20 @@ export const TEACHER_MENU_CONFIG: TeacherMenuItem[] = [
     ],
   },
   {
+    id: 'agenda',
+    label: 'Ajanda & Sınav Takvimi',
+    path: '/teacher/agenda',
+    icon: CalendarDays,
+    status: 'active',
+    sortOrder: 5.5,
+    description: 'Renkli kategorize ders notları, zümre toplantıları ve öğrencilere canlı yansıyan sınav takvimi.',
+    children: [
+      { id: 'agenda-all', label: 'Tüm Ajanda', path: '/teacher/agenda', status: 'active' },
+      { id: 'agenda-notes', label: 'Notlarım & Not Oluştur', path: '/teacher/agenda', status: 'active' },
+      { id: 'agenda-exams', label: 'Sınav Takvimi', path: '/teacher/agenda', status: 'active' },
+    ],
+  },
+  {
     id: 'assessments',
     label: 'Sınavlar ve Notlar',
     path: '/teacher/assessments',
@@ -116,7 +131,7 @@ export const TEACHER_MENU_CONFIG: TeacherMenuItem[] = [
     children: [
       { id: 'assessments-quizzes', label: 'Sınıf Quizleri', path: '/teacher/assessments/quizzes', status: 'active' },
       { id: 'assessments-question-bank', label: 'Soru Bankası', path: '/teacher/assessments/question-bank', status: 'active' },
-      { id: 'assessments-exams', label: 'Yazılı Sınavlar', path: '/teacher/assessments/exams', status: 'passive', description: 'Okul geneli ortak sınav modülü', missingDependency: 'Ortak sınav takvimi ve optik form okuma altyapısı' },
+      { id: 'assessments-exams', label: 'Yazılı Sınav Takvimi', path: '/teacher/agenda', status: 'active', description: 'Şube bazlı ve canlı senkronize resmi sınav takvimi' },
       { id: 'assessments-grades', label: 'Not Girişi & e-Okul Aktarımı', path: '/teacher/assessments/grades', status: 'passive', description: 'Dönemlik resmi not defteri', missingDependency: 'e-Okul resmi not aktarım servisi' },
     ],
   },

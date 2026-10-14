@@ -238,6 +238,10 @@ export interface StudentAssessment {
   isPublished: boolean
   teacherFeedback?: string
   status: 'upcoming' | 'completed' | 'in_progress'
+  scope?: string
+  teacherName?: string
+  period?: number
+  className?: string
 }
 
 export const STUDENT_ASSESSMENTS: StudentAssessment[] = [
@@ -713,43 +717,141 @@ export function getSynchronizedStudentAssessments(): StudentAssessment[] {
         isPublished: true,
         teacherFeedback: `${g.teacherName || 'Öğretmen'}: Ders içi katılım ve proje tam puanla onaylandı.`,
         status: 'completed',
+        teacherName: g.teacherName || 'Ebru TEKNECİ',
       })
     }
   })
 
-  // Upcoming Quizzes
-  assessments.push(
-    {
-      id: 'as-quiz-1',
-      title: 'Edebiyat Şiir Tahlili Mini Quiz',
-      courseName: 'Türk Dili ve Edebiyatı',
-      type: 'quiz',
-      date: '24 Ekim 2026',
-      time: '10:20',
-      durationMinutes: 20,
-      location: `Derslik 101 (${profile.className})`,
-      maxScore: 100,
-      score: undefined,
-      isGraded: false,
-      isPublished: false,
-      status: 'upcoming',
-    },
-    {
-      id: 'as-quiz-2',
-      title: 'Denklem Sistemleri Hızlı Tarama Quizi',
-      courseName: 'Matematik',
-      type: 'quiz',
-      date: '27 Ekim 2026',
-      time: '11:15',
-      durationMinutes: 25,
-      location: `Derslik 101 (${profile.className})`,
-      maxScore: 100,
-      score: undefined,
-      isGraded: false,
-      isPublished: false,
-      status: 'upcoming',
+  // Merge teacher-created exams from the school exam calendar for this class
+  try {
+    let calendarExams: any[] = []
+    if (typeof window !== 'undefined') {
+      const rawCal = localStorage.getItem('oxonom_school_exam_calendar')
+      if (rawCal) {
+        calendarExams = JSON.parse(rawCal)
+      }
     }
-  )
+
+    if (!calendarExams || calendarExams.length === 0) {
+      calendarExams = [
+        {
+          id: 'exam-ede-quiz-1',
+          className: '9-A',
+          courseName: 'Türk Dili ve Edebiyatı',
+          title: 'Edebiyat Şiir Tahlili Mini Quiz',
+          type: 'quiz',
+          date: '24 Ekim 2026',
+          time: '10:20 - 10:40',
+          period: 3,
+          durationMinutes: 20,
+          location: 'Derslik 101 (9-A)',
+          teacherName: 'Ebru TEKNECİ',
+          scope: 'Nazım birimi, kafiye ve redif, şiirde ahenk unsurları',
+          isPublished: true,
+          status: 'upcoming',
+        },
+        {
+          id: 'exam-mat-quiz-1',
+          className: '9-A',
+          courseName: 'Matematik',
+          title: 'Denklem Sistemleri Hızlı Tarama Quizi',
+          type: 'quiz',
+          date: '27 Ekim 2026',
+          time: '11:15 - 11:40',
+          period: 4,
+          durationMinutes: 25,
+          location: 'Derslik 101 (9-A)',
+          teacherName: 'Ebru TEKNECİ',
+          scope: 'Birinci dereceden iki bilinmeyenli denklem ve eşitsizlikler',
+          isPublished: true,
+          status: 'upcoming',
+        },
+        {
+          id: 'exam-bil-1',
+          className: '9-A',
+          courseName: 'Bilişim & Kodlama',
+          title: 'Python Kodlama ve Algoritma Uygulama Sınavı',
+          type: 'exam',
+          date: '20 Kasım 2026',
+          time: '13:40 - 14:20',
+          period: 6,
+          durationMinutes: 40,
+          location: 'Bilişim Atölyesi',
+          teacherName: 'Ebru TEKNECİ',
+          scope: 'Python değişkenler, koşul blokları ve akış diyagramları',
+          isPublished: true,
+          status: 'upcoming',
+        },
+        {
+          id: 'exam-ede-2',
+          className: '9-A',
+          courseName: 'Türk Dili ve Edebiyatı',
+          title: '1. Dönem 2. Yazılı Sınavı',
+          type: 'exam',
+          date: '28 Kasım 2026',
+          time: '10:20 - 11:00',
+          period: 3,
+          durationMinutes: 40,
+          location: 'Derslik 101 (9-A)',
+          teacherName: 'Ebru TEKNECİ',
+          scope: 'Şiir ünitesi geneli, masal/fabl türleri, isim tamlamaları ve yazım kuralları',
+          isPublished: true,
+          status: 'upcoming',
+        },
+      ]
+    }
+
+    const currentClass = profile.className || '9-A'
+    calendarExams.forEach((ce: any) => {
+      const matchClass =
+        !ce.className ||
+        ce.className === 'Tüm Sınıflar' ||
+        ce.className === currentClass ||
+        currentClass.includes(ce.className)
+
+      if (!matchClass) return
+
+      // Find if we have an existing assessment matching this title and course
+      const existing = assessments.find(
+        (a) =>
+          a.id === ce.id ||
+          (a.courseName.toLowerCase().includes(ce.courseName.toLowerCase()) &&
+            a.title.toLowerCase().includes(ce.title.toLowerCase()))
+      )
+
+      if (existing) {
+        existing.date = ce.date || existing.date
+        existing.time = ce.time || existing.time
+        existing.location = ce.location || existing.location
+        existing.durationMinutes = ce.durationMinutes || existing.durationMinutes
+        existing.scope = ce.scope || existing.scope
+        existing.teacherName = ce.teacherName || existing.teacherName
+        existing.period = ce.period || existing.period
+      } else {
+        assessments.push({
+          id: ce.id || `as-custom-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+          title: ce.title,
+          courseName: ce.courseName,
+          type: ce.type === 'quiz' ? 'quiz' : ce.type === 'performance' ? 'performance' : 'exam',
+          date: ce.date,
+          time: ce.time || '10:20',
+          period: ce.period,
+          durationMinutes: ce.durationMinutes || 40,
+          location: ce.location || `Derslik 101 (${currentClass})`,
+          maxScore: 100,
+          score: undefined,
+          isGraded: false,
+          isPublished: true,
+          status: ce.status || 'upcoming',
+          scope: ce.scope,
+          teacherName: ce.teacherName || 'Ebru TEKNECİ',
+          className: ce.className,
+        })
+      }
+    })
+  } catch (err) {
+    console.warn('Error merging teacher calendar exams:', err)
+  }
 
   return assessments
 }

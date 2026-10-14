@@ -45,11 +45,13 @@ export default function StudentAssessmentsView({
 
     window.addEventListener('oxonom_student_updated', syncAssessments)
     window.addEventListener('oxonom_teacher_profile_updated', syncAssessments)
+    window.addEventListener('oxonom_exam_calendar_updated', syncAssessments)
     window.addEventListener('storage', syncAssessments)
 
     return () => {
       window.removeEventListener('oxonom_student_updated', syncAssessments)
       window.removeEventListener('oxonom_teacher_profile_updated', syncAssessments)
+      window.removeEventListener('oxonom_exam_calendar_updated', syncAssessments)
       window.removeEventListener('storage', syncAssessments)
     }
   }, [])
