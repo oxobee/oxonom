@@ -27,6 +27,7 @@ import {
   Tv,
   Table,
   List,
+  CalendarDays,
 } from 'lucide-react'
 import {
   DEFAULT_STUDENT_PROFILE,
@@ -46,6 +47,7 @@ import {
   type GuidanceNoteItem,
   type StudentSubmission,
 } from '@/lib/student/studentData'
+import LiveClassRadar from '@components/Common/LiveClassRadar'
 import {
   getStoredCustomAssignments,
   DEFAULT_SCHOOL_ASSIGNMENTS,
@@ -57,7 +59,6 @@ import {
   type ScheduleEntry,
   type DayKey,
 } from '@components/Mobile/Admin/MAdminScheduleClient'
-import MockBadge from '@components/Common/MockBadge'
 
 function getStudentDashboardSubjectColor(subject: string, color?: string) {
   const sub = subject.toLowerCase()
@@ -194,8 +195,22 @@ export default function StudentDashboardView() {
         }
       } catch (_) {}
     }
-    fetchRemoteSchedule()
-    const interval = setInterval(fetchRemoteSchedule, 4000)
+    const fetchRemoteExams = async () => {
+      try {
+        const res = await fetch('/api/exams?className=9-A', { cache: 'no-store' })
+        if (res.ok) {
+          const data = await res.json()
+          if (data && Array.isArray(data.exams) && data.exams.length > 0) {
+            try {
+              localStorage.setItem('oxonom_school_exam_calendar', JSON.stringify(data.exams))
+            } catch (_) {}
+            setAssessments(getSynchronizedStudentAssessments())
+          }
+        }
+      } catch (_) {}
+    }
+    fetchRemoteExams()
+    const scheduleInterval = setInterval(fetchRemoteSchedule, 5000)
 
     window.addEventListener('oxonom_student_updated', syncAll)
     window.addEventListener('oxonom_assignments_updated', syncAll)
@@ -206,10 +221,11 @@ export default function StudentDashboardView() {
     window.addEventListener('oxonom_admin_schedule_updated', syncAll)
     window.addEventListener('oxonom_schedule_updated', syncAll)
     window.addEventListener('oxonom_schedule_published', syncAll)
+    window.addEventListener('oxonom_exam_calendar_updated', syncAll)
     window.addEventListener('storage', syncAll)
 
     return () => {
-      clearInterval(interval)
+      clearInterval(scheduleInterval)
       window.removeEventListener('oxonom_student_updated', syncAll)
       window.removeEventListener('oxonom_assignments_updated', syncAll)
       window.removeEventListener('oxonom_student_homeworks_updated', syncAll)
@@ -219,6 +235,7 @@ export default function StudentDashboardView() {
       window.removeEventListener('oxonom_admin_schedule_updated', syncAll)
       window.removeEventListener('oxonom_schedule_updated', syncAll)
       window.removeEventListener('oxonom_schedule_published', syncAll)
+      window.removeEventListener('oxonom_exam_calendar_updated', syncAll)
       window.removeEventListener('storage', syncAll)
     }
   }, [])
@@ -288,9 +305,78 @@ export default function StudentDashboardView() {
       .slice(0, 4)
   }, [assignments, submissions])
 
-  // Upcoming assessments
-  const upcomingAssessments = useMemo(() => {
-    return assessments.filter((a) => a.status === 'upcoming').slice(0, 2)
+  // Helper to parse exam dates
+  const parseExamDate = (dateStr: string): Date | null => {
+    if (!dateStr) return null
+    if (dateStr.includes('-')) {
+      const d = new Date(dateStr)
+      if (!isNaN(d.getTime())) return d
+    }
+    if (dateStr.includes('.')) {
+      const parts = dateStr.split('.')
+      if (parts.length === 3) {
+        return new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]))
+      }
+    }
+    const monthsMap: Record<string, number> = {
+      ocak: 0,
+      şubat: 1,
+      mart: 2,
+      nisan: 3,
+      mayıs: 4,
+      haziran: 5,
+      temmuz: 6,
+      ağustos: 7,
+      eylül: 8,
+      ekim: 9,
+      kasım: 10,
+      aralık: 11,
+    }
+    const parts = dateStr.trim().split(' ')
+    if (parts.length >= 3) {
+      const day = parseInt(parts[0], 10)
+      const month = monthsMap[parts[1].toLowerCase()]
+      const year = parseInt(parts[2], 10)
+      if (!isNaN(day) && month !== undefined && !isNaN(year)) {
+        return new Date(year, month, day)
+      }
+    }
+    return null
+  }
+
+  // Yaklaşan Sınavlar: Son 1 hafta içinde olan ve en yakın yaklaşan sınavlar
+  const upcomingWeekExams = useMemo(() => {
+    const now = new Date()
+    const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+
+    const sorted = assessments
+      .filter((a) => a.status === 'upcoming')
+      .map((exam) => {
+        const parsed = parseExamDate(exam.date)
+        let daysLeft: number | null = null
+        if (parsed) {
+          const examMidnight = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate()).getTime()
+          daysLeft = Math.round((examMidnight - todayMidnight) / (1000 * 60 * 60 * 24))
+        }
+        return {
+          ...exam,
+          parsedDate: parsed,
+          daysLeft,
+        }
+      })
+      .sort((a, b) => {
+        if (a.daysLeft !== null && b.daysLeft !== null) {
+          return a.daysLeft - b.daysLeft
+        }
+        return 0
+      })
+
+    // Filter for upcoming within 1 week (0 to 7 days)
+    const withinOneWeek = sorted.filter((e) => e.daysLeft !== null && e.daysLeft >= 0 && e.daysLeft <= 7)
+    if (withinOneWeek.length >= 2) {
+      return withinOneWeek
+    }
+    return sorted.slice(0, 3)
   }, [assessments])
 
   // Toggle quick planner task
@@ -374,21 +460,21 @@ export default function StudentDashboardView() {
         </Link>
 
         {/* Card 3: Yaklaşan Sınavlar */}
-        <Link
-          href="/student/assessments"
+        <a
+          href="#yaklasan-sinavlar"
           className="p-4 rounded-2xl bg-white dark:bg-[#0E1526] border border-gray-200/80 dark:border-gray-800/80 shadow-xs flex items-center gap-3.5 hover:border-amber-400/50 transition-all group"
         >
           <div className="w-11 h-11 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
             <FileCheck size={22} />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">Yaklaşan Sınav</div>
+            <div className="text-[11px] text-gray-500 dark:text-gray-400 font-medium">Yaklaşan Sınavlar</div>
             <div className="text-sm font-extrabold text-gray-900 dark:text-white flex items-center justify-between">
-              <span>{upcomingAssessments.length} Değerlendirme</span>
+              <span>{upcomingWeekExams.length} Sınav Yayında</span>
               <ChevronRight size={14} className="text-gray-400 group-hover:translate-x-0.5 transition-transform" />
             </div>
           </div>
-        </Link>
+        </a>
 
         {/* Card 4: Devamlılık */}
         <div className="p-4 rounded-2xl bg-white dark:bg-[#0E1526] border border-gray-200/80 dark:border-gray-800/80 shadow-xs flex items-center gap-3.5">
@@ -408,6 +494,9 @@ export default function StudentDashboardView() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* LEFT COLUMN (2 Cols): Bugünün Ders Programı & Bekleyen Ödevler */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Canlı Ders & Zaman Radarı */}
+          <LiveClassRadar role="student" initialClassCode={profile.className || '9-A'} />
+
           {/* Haftalık Ders Programı (Müdürlük Tarafından Ayarlanan Güncel Program) */}
           <div className="p-5 lg:p-6 rounded-3xl bg-white dark:bg-[#0E1526] border border-gray-200/80 dark:border-gray-800/80 shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -420,7 +509,9 @@ export default function StudentDashboardView() {
                     <h2 className="text-base font-extrabold text-gray-900 dark:text-white">
                       Haftalık Ders Programı ({profile.className})
                     </h2>
-                    <MockBadge label="Canlı Senkronize" />
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                      Canlı Senkronize
+                    </span>
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-200/50 dark:border-cyan-800/50">
                       Müdürlük Onaylı
                     </span>
@@ -657,6 +748,130 @@ export default function StudentDashboardView() {
             )}
           </div>
 
+          {/* Yaklaşan Sınavlar (Ders Programının Hemen Altında) */}
+          <div
+            id="yaklasan-sinavlar"
+            className="p-5 lg:p-6 rounded-3xl bg-white dark:bg-[#0E1526] border border-gray-200/80 dark:border-gray-800/80 shadow-xs space-y-4"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                  <CalendarDays size={18} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-extrabold text-gray-900 dark:text-white">
+                      Yaklaşan Sınavlar
+                    </h2>
+                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                      Son 1 Hafta / Yaklaşanlar
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                    Öğretmenler tarafından planlanan ve yaklaşan resmi sınav takvimi ({profile.className})
+                  </p>
+                </div>
+              </div>
+
+              <Link
+                href="/student/planner?tab=calendar"
+                className="text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1 shrink-0 self-start sm:self-auto"
+              >
+                <span>Tüm Sınav Takvimini Gör</span>
+                <ChevronRight size={14} />
+              </Link>
+            </div>
+
+            {upcomingWeekExams.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                {upcomingWeekExams.map((exam) => {
+                  const isQuiz = exam.type === 'quiz'
+                  const daysLeft = (exam as any).daysLeft
+
+                  let countdownLabel = 'Yaklaşıyor'
+                  if (daysLeft === 0) countdownLabel = 'Bugün!'
+                  else if (daysLeft === 1) countdownLabel = 'Yarın!'
+                  else if (daysLeft !== null && daysLeft > 1 && daysLeft <= 7) {
+                    countdownLabel = `${daysLeft} Gün Kaldı`
+                  } else if (daysLeft !== null && daysLeft > 7) {
+                    countdownLabel = `${daysLeft} Gün Sonra`
+                  }
+
+                  return (
+                    <div
+                      key={exam.id}
+                      className="p-4.5 rounded-2xl bg-gradient-to-br from-white to-amber-50/30 dark:from-[#131C31] dark:to-[#172036] border border-amber-200/80 dark:border-amber-900/40 shadow-xs hover:border-amber-400 transition-all flex flex-col justify-between space-y-3"
+                    >
+                      <div className="space-y-2">
+                        {/* Course & Countdown Badge */}
+                        <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                            {exam.courseName}
+                          </span>
+                          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                            <Clock size={11} className="text-amber-500" />
+                            {countdownLabel}
+                          </span>
+                        </div>
+
+                        {/* Title */}
+                        <h3 className="text-sm font-extrabold text-gray-900 dark:text-white leading-snug">
+                          {exam.title}
+                        </h3>
+
+                        {/* Scope */}
+                        {exam.scope && (
+                          <p className="text-[11px] text-gray-600 dark:text-gray-300 line-clamp-2 bg-amber-50/60 dark:bg-amber-950/20 p-2 rounded-xl border border-amber-200/40 dark:border-amber-800/30">
+                            <span className="font-bold text-gray-800 dark:text-gray-200">Kapsam: </span>
+                            {exam.scope}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Footer Info: Date, Time, Room, Duration */}
+                      <div className="pt-2 border-t border-gray-100 dark:border-gray-800/60 space-y-1.5 text-[11px]">
+                        <div className="flex items-center justify-between font-bold text-gray-900 dark:text-white">
+                          <span className="flex items-center gap-1.5">
+                            <Calendar size={13} className="text-amber-500" />
+                            {exam.date}
+                          </span>
+                          <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1 font-semibold">
+                            <Clock size={12} className="text-indigo-500" />
+                            {exam.time}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between text-gray-500 dark:text-gray-400">
+                          <span className="flex items-center gap-1">
+                            <MapPin size={12} className="text-emerald-500" />
+                            {exam.location}
+                          </span>
+                          <span>{exam.durationMinutes} dakika</span>
+                        </div>
+
+                        {exam.teacherName && (
+                          <div className="text-[10px] text-gray-400 pt-0.5">
+                            Öğretmen: <span className="font-semibold text-gray-700 dark:text-gray-300">{exam.teacherName}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="p-8 text-center bg-gray-50 dark:bg-[#131C31] rounded-2xl border border-dashed border-gray-200 dark:border-gray-800">
+                <CheckCircle2 size={32} className="mx-auto text-emerald-500 mb-2" />
+                <p className="text-xs font-bold text-gray-900 dark:text-white">
+                  Önümüzdeki bir hafta içinde planlanmış sınavın bulunmuyor 🎉
+                </p>
+                <p className="text-[11px] text-gray-400 mt-1">
+                  Dönemlik sınav tarihlerini Sınav Takvimi ekranından takip edebilirsin.
+                </p>
+              </div>
+            )}
+          </div>
+
           {/* Bekleyen Ödevler Kartları (Öğretmenin Öğrenciye/Sınıfına Verdiği Ödevler) */}
           <div className="p-5 lg:p-6 rounded-3xl bg-white dark:bg-[#0E1526] border border-gray-200/80 dark:border-gray-800/80 shadow-xs space-y-4">
             <div className="flex items-center justify-between">
@@ -831,49 +1046,6 @@ export default function StudentDashboardView() {
             </Link>
           </div>
 
-          {/* Yaklaşan Sınavlar */}
-          <div className="p-5 lg:p-6 rounded-3xl bg-white dark:bg-[#0E1526] border border-gray-200/80 dark:border-gray-800/80 shadow-xs space-y-3.5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <FileCheck size={18} className="text-amber-500" />
-                <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
-                  Yaklaşan Değerlendirmeler
-                </h3>
-                <MockBadge label="Canlı Senkronize" />
-              </div>
-              <Link
-                href="/student/assessments"
-                className="text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:underline"
-              >
-                Tümü
-              </Link>
-            </div>
-
-            <div className="space-y-2">
-              {upcomingAssessments.map((exam) => (
-                <div
-                  key={exam.id}
-                  className="p-3 rounded-2xl bg-amber-500/5 dark:bg-amber-950/20 border border-amber-500/20 space-y-1"
-                >
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="font-bold text-amber-700 dark:text-amber-300">
-                      {exam.courseName}
-                    </span>
-                    <span className="text-gray-400">{exam.date}</span>
-                  </div>
-                  <div className="text-xs font-bold text-gray-900 dark:text-white">
-                    {exam.title}
-                  </div>
-                  <div className="text-[10px] text-gray-500 flex items-center gap-2">
-                    <span>Süre: {exam.durationMinutes} dk</span>
-                    <span>·</span>
-                    <span>{exam.location}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* Rehber Öğretmen Değerlendirmesi & Pedagojik Not */}
           {guidanceNotes.length > 0 && (
             <div className="p-5 lg:p-6 rounded-3xl bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-cyan-500/10 border border-indigo-500/30 shadow-xs space-y-3">
@@ -914,7 +1086,6 @@ export default function StudentDashboardView() {
                 <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
                   Okul ve Sınıf Duyurusu
                 </h3>
-                <MockBadge label="Mock Veri" />
               </div>
               <Link
                 href="/student/communication"

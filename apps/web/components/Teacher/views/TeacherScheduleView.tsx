@@ -36,6 +36,7 @@ import { CANONICAL_9A_SCHEDULE_30 } from '@/lib/student/studentData'
 import ConnectBoardModal from '@components/DashboardV2/ConnectBoardModal'
 import { useMobileTheme } from '@components/Mobile/useMobileTheme'
 import MockBadge from '@components/Common/MockBadge'
+import LiveClassRadar from '@components/Common/LiveClassRadar'
 
 interface LessonPlanModalData {
   title: string
@@ -396,6 +397,9 @@ export default function TeacherScheduleView() {
           <span className="text-xs text-gray-400 font-mono">Rev. 2026-Güz</span>
         </div>
       </div>
+
+      {/* Canlı Ders Takip Radarı & Akış */}
+      <LiveClassRadar role="teacher" initialClassCode="9-A" />
 
       {/* Week Day Selector Tabs (for Daily mode) */}
       {viewMode === 'daily' && (

@@ -61,6 +61,7 @@ import MobileAdminDock from './MobileAdminDock'
 import MobileAdminMoreSheet from './MobileAdminMoreSheet'
 import { useMobileTheme } from '@components/Mobile/useMobileTheme'
 import MockBadge from '@components/Common/MockBadge'
+import LiveClassRadar from '@components/Common/LiveClassRadar'
 import { SCHOOL_ORGS, getOrgTeachers } from '@services/demo/schoolDirectory'
 import {
   INITIAL_SCHEDULE_ENTRIES,
@@ -1429,65 +1430,20 @@ export default function MAdminClient({
         </div>
       </section>
 
-      {/* ── 5. ÇİFT SÜTUNLU CANLI AKIŞ & DENETİM ALANI (DESKTOP GRID) ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 w-full">
-        {/* SOL SÜTUN: BUGÜNKÜ CANLI DERS AKIŞI & ÇAKIŞMA KONTROLÜ */}
-        <div className="space-y-4">
-          {/* Canlı Ders Akışı Kartı */}
-          <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-gray-800 rounded-3xl p-4 sm:p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-                  <Clock size={18} />
-                </div>
-                <div>
-                  <h4 className="text-xs font-black text-gray-900 dark:text-white">
-                    Bugünkü Ders Programı & Canlı Akış
-                  </h4>
-                  <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">
-                    Aktif Periyot: 3. Ders (10:20 - 11:00)
-                  </p>
-                </div>
-              </div>
+      {/* ── 5. CANLI DERS RADARI & DENETİM ALANI ── */}
+      <div className="space-y-4 sm:space-y-5 w-full">
+        {/* Okul Geneli Canlı Ders ve Zaman Radarı */}
+        <LiveClassRadar
+          role="principal"
+          initialClassCode="9-A"
+          showClassSelector={true}
+          titleOverride="Okul Geneli Canlı Ders ve Zaman Radarı"
+        />
 
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-full">
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-ping" />
-                Ders İşleniyor
-              </span>
-            </div>
-
-            {/* Current Active Lesson */}
-            <div className="p-3.5 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/60 space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2.5">
-                  <span className="font-extrabold text-white bg-indigo-600 px-2 py-0.5 rounded-lg text-[10.5px]">
-                    {realStats.className}
-                  </span>
-                  <div>
-                    <div className="font-black text-gray-900 dark:text-white">
-                      Türk Dili ve Edebiyatı
-                    </div>
-                    <div className="text-[10.5px] text-gray-500 dark:text-gray-400">
-                      Öğretmen: {realStats.teacherName} · Derslik 9-A
-                    </div>
-                  </div>
-                </div>
-
-                <span className="text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-md flex items-center gap-1">
-                  <Tv size={11} />
-                  <span>PANO-901 Açık</span>
-                </span>
-              </div>
-            </div>
-
-            <Link
-              href={getUrl('/m-admin-schedule')}
-              className="w-full mt-3 h-10 rounded-xl bg-gray-50 hover:bg-gray-100 dark:bg-gray-800/80 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
-            >
-              <span>Tüm Haftalık Ders Dağılımını Görüntüle</span>
-              <ChevronRight size={14} />
-            </Link>
-          </div>
+        {/* ÇİFT SÜTUNLU DENETİM ALANI */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 w-full">
+          {/* SOL SÜTUN: ÇAKIŞMA KONTROLÜ */}
+          <div className="space-y-4">
 
           {/* Ders Programı Çakışma Denetimi */}
           <div
@@ -1657,6 +1613,7 @@ export default function MAdminClient({
           </div>
         </div>
       </div>
+    </div>
 
       {/* ── 6. DİĞER MODÜLLER AÇILIR ÇEKMECESİ (MOBİL İÇİN) ── */}
       <MobileAdminMoreSheet

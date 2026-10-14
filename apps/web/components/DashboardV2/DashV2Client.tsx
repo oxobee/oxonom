@@ -71,6 +71,7 @@ import {
   AttendanceRecord,
 } from '@services/demo/attendanceService'
 import MockBadge from '@components/Common/MockBadge'
+import LiveClassRadar from '@components/Common/LiveClassRadar'
 
 export interface DashV2ClientProps {
   hideDock?: boolean
@@ -843,6 +844,16 @@ export default function DashV2Client({
               </button>
             </div>
           </motion.section>
+
+          {/* ══════════════════════════════════════════════════════════════════════════
+              CANLI DERS TAKİP RADARI & ZAMAN AKIŞI (ÖĞRETMEN)
+          ══════════════════════════════════════════════════════════════════════════ */}
+          <motion.div variants={itemVariants}>
+            <LiveClassRadar
+              role="teacher"
+              initialClassCode={selectedClass.code === '9/A' ? '9-A' : selectedClass.code}
+            />
+          </motion.div>
 
           {/* ══════════════════════════════════════════════════════════════════════════
               KATEGORİ 1: GÜNLÜK SINIF VE DEVAM YÖNETİMİ
