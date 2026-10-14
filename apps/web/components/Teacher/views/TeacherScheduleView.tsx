@@ -22,6 +22,7 @@ import {
   User,
   School,
   CheckCircle2,
+  Table,
 } from 'lucide-react'
 import {
   DAYS_LIST,
@@ -69,9 +70,81 @@ const CURRICULUM_GOALS: Record<string, string> = {
   'Rehberlik ve Yönlendirme': 'Akademik hedef belirleme, verimli ders çalışma ve sınav motivasyonu.',
 }
 
+function getTeacherSubjectColor(subject: string, color?: string) {
+  const sub = subject.toLowerCase()
+  if (color === 'blue' || sub.includes('türk') || sub.includes('edebiyat')) {
+    return {
+      bg: 'bg-blue-50/80 dark:bg-blue-950/40',
+      border: 'border-blue-200 dark:border-blue-900/60',
+      text: 'text-blue-700 dark:text-blue-300',
+    }
+  }
+  if (color === 'indigo' || sub.includes('matematik')) {
+    return {
+      bg: 'bg-indigo-50/80 dark:bg-indigo-950/40',
+      border: 'border-indigo-200 dark:border-indigo-900/60',
+      text: 'text-indigo-700 dark:text-indigo-300',
+    }
+  }
+  if (color === 'emerald' || sub.includes('fen') || sub.includes('fizik') || sub.includes('kimya') || sub.includes('biyoloji') || sub.includes('din')) {
+    return {
+      bg: 'bg-emerald-50/80 dark:bg-emerald-950/40',
+      border: 'border-emerald-200 dark:border-emerald-900/60',
+      text: 'text-emerald-700 dark:text-emerald-300',
+    }
+  }
+  if (color === 'cyan' || sub.includes('bilişim') || sub.includes('kodlama') || sub.includes('yazılım')) {
+    return {
+      bg: 'bg-cyan-50/80 dark:bg-cyan-950/40',
+      border: 'border-cyan-200 dark:border-cyan-900/60',
+      text: 'text-cyan-700 dark:text-cyan-300',
+    }
+  }
+  if (color === 'purple' || sub.includes('ingilizce') || sub.includes('yabancı')) {
+    return {
+      bg: 'bg-purple-50/80 dark:bg-purple-950/40',
+      border: 'border-purple-200 dark:border-purple-900/60',
+      text: 'text-purple-700 dark:text-purple-300',
+    }
+  }
+  if (color === 'pink' || sub.includes('görsel') || sub.includes('sanat') || sub.includes('müzik') || sub.includes('rehberlik')) {
+    return {
+      bg: 'bg-pink-50/80 dark:bg-pink-950/40',
+      border: 'border-pink-200 dark:border-pink-900/60',
+      text: 'text-pink-700 dark:text-pink-300',
+    }
+  }
+  if (color === 'amber' || sub.includes('tarih') || sub.includes('sosyal')) {
+    return {
+      bg: 'bg-amber-50/80 dark:bg-amber-950/40',
+      border: 'border-amber-200 dark:border-amber-900/60',
+      text: 'text-amber-700 dark:text-amber-300',
+    }
+  }
+  if (color === 'teal' || sub.includes('coğrafya') || sub.includes('hayat')) {
+    return {
+      bg: 'bg-teal-50/80 dark:bg-teal-950/40',
+      border: 'border-teal-200 dark:border-teal-900/60',
+      text: 'text-teal-700 dark:text-teal-300',
+    }
+  }
+  if (color === 'orange' || sub.includes('beden') || sub.includes('spor') || sub.includes('oyun')) {
+    return {
+      bg: 'bg-orange-50/80 dark:bg-orange-950/40',
+      border: 'border-orange-200 dark:border-orange-900/60',
+      text: 'text-orange-700 dark:text-orange-300',
+    }
+  }
+  return {
+    bg: 'bg-blue-50/80 dark:bg-blue-950/40',
+    border: 'border-blue-200 dark:border-blue-900/60',
+    text: 'text-blue-700 dark:text-blue-300',
+  }
+}
+
 export default function TeacherScheduleView() {
   const { theme } = useMobileTheme()
-  const [viewMode, setViewMode] = useState<'daily' | 'weekly'>('daily')
+  const [viewMode, setViewMode] = useState<'weekly' | 'daily'>('weekly')
   const [scopeFilter, setScopeFilter] = useState<'my_lessons' | 'all_school'>('my_lessons')
   const [selectedDayKey, setSelectedDayKey] = useState<DayKey>('mon')
   const [selectedLessonModal, setSelectedLessonModal] = useState<LessonPlanModalData | null>(null)
@@ -85,17 +158,31 @@ export default function TeacherScheduleView() {
   const allEntries = useMemo<ScheduleEntry[]>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const raw = localStorage.getItem('oxonom_admin_schedule_30')
-        if (raw) {
-          const parsed = JSON.parse(raw)
+        const raw30 = localStorage.getItem('oxonom_admin_schedule_30')
+        const rawSchedule = localStorage.getItem('oxonom_schedule_30')
+        if (raw30) {
+          const parsed = JSON.parse(raw30)
           if (Array.isArray(parsed) && parsed.length > 0) return parsed
+        } else if (rawSchedule) {
+          const parsed = JSON.parse(rawSchedule)
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed
+        }
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i)
+          if (key && (key.startsWith('oxonom_admin_schedule_') || key.startsWith('oxonom_schedule_')) && !key.includes('revisions')) {
+            const val = localStorage.getItem(key)
+            if (val) {
+              const parsed = JSON.parse(val)
+              if (Array.isArray(parsed) && parsed.length > 0) return parsed
+            }
+          }
         }
       } catch (_) {}
     }
     return INITIAL_SCHEDULE_ENTRIES
   }, [scheduleVersion])
 
-  // Listen for schedule updates from Principal
+  // Listen for schedule updates and publishes from Principal
   useEffect(() => {
     const handleUpdate = () => {
       setScheduleVersion((v) => v + 1)
@@ -103,10 +190,12 @@ export default function TeacherScheduleView() {
     window.addEventListener('storage', handleUpdate)
     window.addEventListener('oxonom_admin_schedule_updated', handleUpdate)
     window.addEventListener('oxonom_schedule_updated', handleUpdate)
+    window.addEventListener('oxonom_schedule_published', handleUpdate)
     return () => {
       window.removeEventListener('storage', handleUpdate)
       window.removeEventListener('oxonom_admin_schedule_updated', handleUpdate)
       window.removeEventListener('oxonom_schedule_updated', handleUpdate)
+      window.removeEventListener('oxonom_schedule_published', handleUpdate)
     }
   }, [])
 
@@ -192,29 +281,31 @@ export default function TeacherScheduleView() {
             </button>
           </div>
 
-          {/* View Mode Toggle: Günlük vs Haftalık */}
+          {/* View Mode Toggle: Haftalık Tablo vs Günlük Liste */}
           <div className="flex items-center p-1 rounded-2xl bg-gray-100 dark:bg-gray-800/80">
             <button
               type="button"
-              onClick={() => setViewMode('daily')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                viewMode === 'daily'
-                  ? 'bg-white dark:bg-[#1A2338] text-gray-900 dark:text-white shadow-xs'
+              onClick={() => setViewMode('weekly')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+                viewMode === 'weekly'
+                  ? 'bg-white dark:bg-[#1A2338] text-emerald-600 dark:text-emerald-400 shadow-xs'
                   : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
-              Günlük
+              <Table size={13} />
+              <span>Haftalık Tablo</span>
             </button>
             <button
               type="button"
-              onClick={() => setViewMode('weekly')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                viewMode === 'weekly'
-                  ? 'bg-white dark:bg-[#1A2338] text-gray-900 dark:text-white shadow-xs'
+              onClick={() => setViewMode('daily')}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+                viewMode === 'daily'
+                  ? 'bg-white dark:bg-[#1A2338] text-emerald-600 dark:text-emerald-400 shadow-xs'
                   : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
-              Haftalık Çizelge
+              <Clock size={13} />
+              <span>Günlük Liste</span>
             </button>
           </div>
         </div>
@@ -433,73 +524,124 @@ export default function TeacherScheduleView() {
         </div>
       )}
 
-      {/* WEEKLY TIMETABLE GRID (Weekly mode) */}
+      {/* WEEKLY TIMETABLE GRID (Weekly mode - Matris Tablo Görünümü) */}
       {viewMode === 'weekly' && (
-        <div className="bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 rounded-3xl p-5 shadow-sm overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[760px]">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-800">
-                <th className="py-3 px-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider w-24">
-                  Saat
-                </th>
-                {DAYS_LIST.map((day) => (
-                  <th key={day.key} className="py-3 px-3 text-xs font-extrabold text-gray-900 dark:text-white">
-                    {day.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800/60 text-xs">
-              {MIDDLE_PERIODS.map((period) => (
-                <tr key={period.periodNumber} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/30">
-                  <td className="py-3.5 px-3 font-mono text-[11px] text-gray-500">
-                    <div className="font-bold text-gray-900 dark:text-white">
-                      {period.periodNumber}. Ders
-                    </div>
-                    <div>{period.time}</div>
-                  </td>
+        <div className="bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800/80 rounded-3xl p-4 sm:p-5 shadow-sm overflow-hidden space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-gray-100 dark:border-gray-800">
+            <div>
+              <h3 className="text-sm font-black text-gray-900 dark:text-white flex items-center gap-2">
+                <span>Haftalık Ders Dağılım Matrisi</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                  {filteredEntries.length} Ders Saati
+                </span>
+              </h3>
+              <p className="text-[11px] text-gray-400 mt-0.5">
+                {scopeFilter === 'my_lessons'
+                  ? `Öğretmen: ${teacherName} · Müdürlük onaylı haftalık ders programı`
+                  : 'Okul Geneli Tüm Sınıflar ve Şubeler'}
+              </p>
+            </div>
+            <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full self-start sm:self-auto">
+              🟢 Canlı Senkronize
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[720px]">
+              <thead>
+                <tr className="bg-gray-50/80 dark:bg-gray-800/50 border-b border-gray-200/80 dark:border-gray-800 text-[11px] font-black text-gray-600 dark:text-gray-300">
+                  <th className="p-3 w-28 text-center shrink-0">Saat / Periyot</th>
                   {DAYS_LIST.map((day) => {
-                    const match = filteredEntries.find(
-                      (e) => e.day === day.key && e.period === period.periodNumber
-                    )
-
-                    if (!match) {
-                      return (
-                        <td key={day.key} className="py-3 px-3">
-                          <div className="p-2.5 rounded-xl border border-dashed border-gray-200 dark:border-gray-800/60 text-center text-[11px] text-gray-400">
-                            —
-                          </div>
-                        </td>
-                      )
-                    }
-
+                    const dayCount = filteredEntries.filter((e) => e.day === day.key).length
                     return (
-                      <td key={day.key} className="py-3 px-3">
-                        <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-[#161D2E] border border-gray-100 dark:border-gray-800/80 space-y-1">
-                          <div className="font-extrabold text-gray-900 dark:text-white text-xs line-clamp-1">
-                            {match.subject}
-                          </div>
-                          <div className="flex items-center justify-between text-[10px]">
-                            <span className="text-indigo-600 dark:text-indigo-400 font-bold">
-                              {match.classCode === '9-A' ? '9/A' : match.classCode}
-                            </span>
-                            <span className="text-gray-400 font-medium truncate max-w-[80px]">
-                              {match.roomName.split('(')[0]}
-                            </span>
-                          </div>
-                          {scopeFilter === 'all_school' && (
-                            <div className="text-[9.5px] text-purple-600 dark:text-purple-400 font-semibold truncate">
-                              {match.teacherName}
-                            </div>
-                          )}
+                      <th key={day.key} className="p-3 text-center">
+                        <div>{day.label}</div>
+                        <div className="text-[9px] font-medium text-gray-400">
+                          {dayCount} Ders
                         </div>
-                      </td>
+                      </th>
                     )
                   })}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800/60 text-xs">
+                {MIDDLE_PERIODS.map((period) => (
+                  <tr key={period.periodNumber} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors">
+                    {/* Periyot & Saat Hücresi */}
+                    <td className="p-2.5 text-center bg-gray-50/40 dark:bg-gray-900/40 border-r border-gray-100 dark:border-gray-800/60 shrink-0">
+                      <div className="font-black text-gray-900 dark:text-white">
+                        {period.periodNumber}. Ders
+                      </div>
+                      <div className="text-[10px] text-gray-400 font-mono mt-0.5">
+                        {period.time}
+                      </div>
+                    </td>
+
+                    {/* Günler */}
+                    {DAYS_LIST.map((day) => {
+                      const match = filteredEntries.find(
+                        (e) => e.day === day.key && e.period === period.periodNumber
+                      )
+                      const style = match ? getTeacherSubjectColor(match.subject, match.color) : null
+
+                      return (
+                        <td
+                          key={day.key}
+                          className="p-1.5 align-top border-r last:border-r-0 border-gray-100 dark:border-gray-800/60"
+                        >
+                          {match ? (
+                            <div
+                              onClick={() =>
+                                setSelectedLessonModal({
+                                  title: match.subject,
+                                  subject: match.subject,
+                                  classroom: match.classCode === '9-A' ? '9/A Şubesi' : `${match.classCode} Şubesi`,
+                                  teacher: (match as any).activeTeacherName || match.teacherName,
+                                  time: period.time,
+                                  room: match.roomName,
+                                  curriculumGoal: CURRICULUM_GOALS[match.subject] || 'MEB 9. Sınıf müfredat kazanımı ve metin uygulaması.',
+                                  materials: [
+                                    'Ders Kitabı ve Etkileşimli Föy',
+                                    'Akıllı Tahta Sunumu',
+                                    'Ders İçi Uygulama ve Soru Seti',
+                                  ],
+                                  teacherNotes: 'Müdür onaylı haftalık ders akışı kapsamında işlenecektir. Tahta oturumu ve yoklama kaydı aktiftir.',
+                                })
+                              }
+                              className={`p-2 rounded-2xl border transition-all cursor-pointer hover:shadow-md hover:scale-[1.01] ${style?.bg} ${style?.border} ${style?.text}`}
+                            >
+                              <div className="font-black text-[11px] leading-tight">
+                                {match.subject}
+                              </div>
+                              <div className="flex items-center gap-1 mt-1 text-[10px] opacity-90">
+                                <span className="font-semibold">{(match as any).activeTeacherName || match.teacherName}</span>
+                                {(match as any).isTeacherOnLeave && (
+                                  <span className="text-[8px] font-black px-1 rounded bg-amber-500 text-white">
+                                    Yedek
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center justify-between text-[9px] opacity-75 mt-1">
+                                <span className="truncate">{match.roomName.split('(')[0].trim()}</span>
+                                {match.isSmartBoardActive && (
+                                  <span title="Akıllı Tahta Aktif">📺</span>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="w-full h-16 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-800/80 flex flex-col items-center justify-center text-gray-400 text-[10px] font-bold">
+                              <span className="text-xs">+</span>
+                              <span>Boş</span>
+                            </div>
+                          )}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

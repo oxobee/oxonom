@@ -1089,6 +1089,38 @@ export default function MAdminCurriculumClient({
     toast.success('Oxonom Okulları 9/A standart ders müfredatı başarıyla yüklendi!')
   }
 
+  // ── PUBLISH SCHEDULE ENGINE (KAYDET VE YAYINLA) ──
+  const [lastPublishedTime, setLastPublishedTime] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        return localStorage.getItem('oxonom_schedule_last_published_at') || 'Canlıda Aktif'
+      } catch (_) {}
+    }
+    return 'Canlıda Aktif'
+  })
+
+  const handlePublishSchedule = () => {
+    persistSchedule(scheduleList)
+    const nowStr = new Date().toLocaleString('tr-TR', {
+      day: 'numeric',
+      month: 'long',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+    setLastPublishedTime(nowStr)
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('oxonom_schedule_last_published_at', nowStr)
+        localStorage.setItem('oxonom_schedule_last_published_by', principalName)
+        window.dispatchEvent(new CustomEvent('oxonom_schedule_published', { detail: scheduleList }))
+      } catch (_) {}
+    }
+    toast.success(
+      `🎉 ${selectedClass} haftalık ders programı başarıyla kaydedildi ve tüm öğretmen ile öğrenci panellerinde anında yayınlandı!`,
+      { duration: 4500, icon: '🚀' }
+    )
+  }
+
   // ── OPEN NEW COURSE MODAL HANDLERS ──
   const handleOpenNewCourseModal = () => {
     const defaultTeacher = teachersList[0]?.name || 'Ebru TEKNECİ'
@@ -1514,8 +1546,16 @@ export default function MAdminCurriculumClient({
                   <div className="flex items-center gap-2 flex-wrap">
                     <button
                       type="button"
+                      onClick={handlePublishSchedule}
+                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-black shadow-md transition-all cursor-pointer active:scale-98"
+                    >
+                      <CheckCircle2 size={14} />
+                      <span>Kaydet & Canlıya Yayınla</span>
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => setActiveTab('distribute')}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black shadow-xs transition-all cursor-pointer"
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-bold transition-all cursor-pointer"
                     >
                       <Edit3 size={13} />
                       <span>Programı Düzenle / Yeni Ders Ekle</span>
@@ -2296,6 +2336,50 @@ export default function MAdminCurriculumClient({
             </div>
           </div>
         )}
+
+        {/* ── ALTA SABİTLENEN KAYDET VE CANLIYA YAYINLA ÇUBUĞU ── */}
+        <section className="sticky bottom-0 z-30 px-3 py-3 mt-4 bg-white/95 dark:bg-[#0E1526]/95 backdrop-blur-md border border-gray-200/90 dark:border-gray-800/90 rounded-3xl shadow-xl">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                <CheckCircle2 size={20} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-black text-gray-900 dark:text-white flex items-center gap-2">
+                  <span>Haftalık Program Yayın Kontrolü</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                    {totalAssignedHours}/{targetWeeklyHours} Saat Yerleşik
+                  </span>
+                </div>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                  {lastPublishedTime
+                    ? `Son Yayın: ${lastPublishedTime} · Öğretmen ve Öğrenci Panellerine Anında Yansır`
+                    : 'Öğretmen ve öğrenci ekranlarını güncellemek için yayınlayın.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={handleSmartAutoFill}
+                className="flex-1 sm:flex-none h-11 px-3.5 rounded-2xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+              >
+                <Wand2 size={14} className="text-emerald-500" />
+                <span>Otomatik Doldur</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handlePublishSchedule}
+                className="flex-1 sm:flex-none h-11 px-5 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-400 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/25 active:scale-98 transition-all cursor-pointer"
+              >
+                <CheckCircle2 size={16} />
+                <span>Kaydet ve Canlıya Yayınla</span>
+              </button>
+            </div>
+          </div>
+        </section>
       </main>
 
       {/* ── MODAL 1: YENİ DERS TANIMLA (USER SPECIFIED LAYOUT) ── */}

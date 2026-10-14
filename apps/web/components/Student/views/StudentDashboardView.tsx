@@ -25,6 +25,8 @@ import {
   Flame,
   MessageSquareQuote,
   Tv,
+  Table,
+  List,
 } from 'lucide-react'
 import {
   DEFAULT_STUDENT_PROFILE,
@@ -57,6 +59,78 @@ import {
 } from '@components/Mobile/Admin/MAdminScheduleClient'
 import MockBadge from '@components/Common/MockBadge'
 
+function getStudentDashboardSubjectColor(subject: string, color?: string) {
+  const sub = subject.toLowerCase()
+  if (color === 'blue' || sub.includes('türk') || sub.includes('edebiyat')) {
+    return {
+      bg: 'bg-blue-50/80 dark:bg-blue-950/40',
+      border: 'border-blue-200 dark:border-blue-900/60',
+      text: 'text-blue-700 dark:text-blue-300',
+    }
+  }
+  if (color === 'indigo' || sub.includes('matematik')) {
+    return {
+      bg: 'bg-indigo-50/80 dark:bg-indigo-950/40',
+      border: 'border-indigo-200 dark:border-indigo-900/60',
+      text: 'text-indigo-700 dark:text-indigo-300',
+    }
+  }
+  if (color === 'emerald' || sub.includes('fen') || sub.includes('fizik') || sub.includes('kimya') || sub.includes('biyoloji') || sub.includes('din')) {
+    return {
+      bg: 'bg-emerald-50/80 dark:bg-emerald-950/40',
+      border: 'border-emerald-200 dark:border-emerald-900/60',
+      text: 'text-emerald-700 dark:text-emerald-300',
+    }
+  }
+  if (color === 'cyan' || sub.includes('bilişim') || sub.includes('kodlama') || sub.includes('yazılım')) {
+    return {
+      bg: 'bg-cyan-50/80 dark:bg-cyan-950/40',
+      border: 'border-cyan-200 dark:border-cyan-900/60',
+      text: 'text-cyan-700 dark:text-cyan-300',
+    }
+  }
+  if (color === 'purple' || sub.includes('ingilizce') || sub.includes('yabancı')) {
+    return {
+      bg: 'bg-purple-50/80 dark:bg-purple-950/40',
+      border: 'border-purple-200 dark:border-purple-900/60',
+      text: 'text-purple-700 dark:text-purple-300',
+    }
+  }
+  if (color === 'pink' || sub.includes('görsel') || sub.includes('sanat') || sub.includes('müzik') || sub.includes('rehberlik')) {
+    return {
+      bg: 'bg-pink-50/80 dark:bg-pink-950/40',
+      border: 'border-pink-200 dark:border-pink-900/60',
+      text: 'text-pink-700 dark:text-pink-300',
+    }
+  }
+  if (color === 'amber' || sub.includes('tarih') || sub.includes('sosyal')) {
+    return {
+      bg: 'bg-amber-50/80 dark:bg-amber-950/40',
+      border: 'border-amber-200 dark:border-amber-900/60',
+      text: 'text-amber-700 dark:text-amber-300',
+    }
+  }
+  if (color === 'teal' || sub.includes('coğrafya') || sub.includes('hayat')) {
+    return {
+      bg: 'bg-teal-50/80 dark:bg-teal-950/40',
+      border: 'border-teal-200 dark:border-teal-900/60',
+      text: 'text-teal-700 dark:text-teal-300',
+    }
+  }
+  if (color === 'orange' || sub.includes('beden') || sub.includes('spor') || sub.includes('oyun')) {
+    return {
+      bg: 'bg-orange-50/80 dark:bg-orange-950/40',
+      border: 'border-orange-200 dark:border-orange-900/60',
+      text: 'text-orange-700 dark:text-orange-300',
+    }
+  }
+  return {
+    bg: 'bg-blue-50/80 dark:bg-blue-950/40',
+    border: 'border-blue-200 dark:border-blue-900/60',
+    text: 'text-blue-700 dark:text-blue-300',
+  }
+}
+
 export default function StudentDashboardView() {
   const [profile, setProfile] = useState<StudentProfile>(DEFAULT_STUDENT_PROFILE)
   const [tasks, setTasks] = useState<PlannerTask[]>([])
@@ -65,6 +139,7 @@ export default function StudentDashboardView() {
   const [guidanceNotes, setGuidanceNotes] = useState<GuidanceNoteItem[]>([])
   const [weeklySchedule, setWeeklySchedule] = useState<ScheduleEntry[]>([])
   const [submissions, setSubmissions] = useState<Record<string, StudentSubmission>>({})
+  const [scheduleViewMode, setScheduleViewMode] = useState<'matrix' | 'list'>('matrix')
 
   // Active day selection in the weekly schedule tabs (defaults to today's weekday, or Monday on weekend)
   const [selectedScheduleDay, setSelectedScheduleDay] = useState<DayKey>(() => {
@@ -107,6 +182,7 @@ export default function StudentDashboardView() {
     window.addEventListener('oxonom_attendance_updated', syncAll)
     window.addEventListener('oxonom_admin_schedule_updated', syncAll)
     window.addEventListener('oxonom_schedule_updated', syncAll)
+    window.addEventListener('oxonom_schedule_published', syncAll)
     window.addEventListener('storage', syncAll)
 
     return () => {
@@ -118,6 +194,7 @@ export default function StudentDashboardView() {
       window.removeEventListener('oxonom_attendance_updated', syncAll)
       window.removeEventListener('oxonom_admin_schedule_updated', syncAll)
       window.removeEventListener('oxonom_schedule_updated', syncAll)
+      window.removeEventListener('oxonom_schedule_published', syncAll)
       window.removeEventListener('storage', syncAll)
     }
   }, [])
@@ -305,108 +382,231 @@ export default function StudentDashboardView() {
                   </p>
                 </div>
               </div>
-              <Link
-                href="/student/courses"
-                className="text-xs font-bold text-cyan-600 dark:text-cyan-400 hover:underline flex items-center gap-1 self-start sm:self-auto shrink-0"
-              >
-                <span>Tüm Program</span>
-                <ChevronRight size={14} />
-              </Link>
-            </div>
 
-            {/* Day Selector Tabs (Pazartesi .. Cuma) */}
-            <div className="grid grid-cols-5 gap-1.5 p-1 rounded-2xl bg-gray-100 dark:bg-[#131C31] border border-gray-200/80 dark:border-gray-800/80">
-              {DAYS_LIST.map((day) => {
-                const isSelected = selectedScheduleDay === day.key
-                const isToday = todayKey === day.key
-                const count = weeklySchedule.filter((e) => e.day === day.key).length
-
-                return (
+              {/* View Switcher & Link to full schedule */}
+              <div className="flex items-center gap-2 self-start sm:self-auto shrink-0 flex-wrap">
+                <div className="flex items-center p-1 rounded-xl bg-gray-100 dark:bg-[#131C31] border border-gray-200/80 dark:border-gray-800/80">
                   <button
-                    key={day.key}
                     type="button"
-                    onClick={() => setSelectedScheduleDay(day.key)}
-                    className={`relative py-2 px-1.5 sm:px-2 rounded-xl text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
-                      isSelected
-                        ? 'bg-white dark:bg-[#0E1526] text-blue-600 dark:text-cyan-400 font-extrabold shadow-xs'
-                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium'
+                    onClick={() => setScheduleViewMode('matrix')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                      scheduleViewMode === 'matrix'
+                        ? 'bg-white dark:bg-[#0E1526] text-blue-600 dark:text-cyan-400 shadow-xs'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                     }`}
                   >
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs sm:text-xs tracking-tight">{day.label}</span>
-                      {isToday && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" title="Bugün" />
-                      )}
-                    </div>
-                    <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium hidden sm:inline">
-                      {count > 0 ? `${count} Ders` : '—'}
-                    </span>
+                    <Table size={13} />
+                    <span>Tablo (Varsayılan)</span>
                   </button>
-                )
-              })}
-            </div>
-
-            {/* Timetable slots for the selected day */}
-            <div className="space-y-2.5">
-              {selectedDayClasses.length > 0 ? (
-                selectedDayClasses.map((item, idx) => {
-                  const periodTime =
-                    MIDDLE_PERIODS.find((p) => p.periodNumber === item.period)?.time ||
-                    (item as any).timeSlot ||
-                    '09:25 - 10:05'
-
-                  return (
-                    <div
-                      key={item.id || idx}
-                      className="p-3.5 rounded-2xl bg-gray-50 dark:bg-[#131C31] border border-gray-200/60 dark:border-gray-800/60 flex items-center justify-between gap-3 hover:border-cyan-400/50 hover:bg-gray-100/50 dark:hover:bg-[#17223b] transition-all"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 text-blue-600 dark:text-cyan-400 border border-blue-500/20 flex flex-col items-center justify-center font-bold text-xs shrink-0">
-                          <span className="text-sm font-black">{item.period}</span>
-                          <span className="text-[8px] font-bold uppercase tracking-wider text-gray-400">Ders</span>
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-extrabold text-gray-900 dark:text-white truncate">
-                              {(item as any).subjectName || item.subject || 'Ders'}
-                            </span>
-                            {item.isSmartBoardActive && (
-                              <span className="hidden md:inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
-                                <Tv size={10} />
-                                <span>Akıllı Tahta</span>
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-2 mt-0.5 flex-wrap">
-                            <span className="font-medium text-gray-700 dark:text-gray-300">
-                              {item.teacherName || 'Ebru TEKNECİ'}
-                            </span>
-                            <span>·</span>
-                            <span className="flex items-center gap-1 text-gray-400">
-                              <MapPin size={11} />
-                              {item.roomName || 'Derslik 9-A (1. Kat)'}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="text-right shrink-0">
-                        <div className="text-xs font-extrabold text-gray-700 dark:text-gray-300">
-                          {periodTime}
-                        </div>
-                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
-                          40 Dk
-                        </span>
-                      </div>
-                    </div>
-                  )
-                })
-              ) : (
-                <div className="p-8 text-center text-gray-400 text-xs bg-gray-50 dark:bg-[#131C31] rounded-2xl border border-dashed border-gray-200 dark:border-gray-800">
-                  Bu gün için planlanmış ders saati bulunmamaktadır.
+                  <button
+                    type="button"
+                    onClick={() => setScheduleViewMode('list')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                      scheduleViewMode === 'list'
+                        ? 'bg-white dark:bg-[#0E1526] text-blue-600 dark:text-cyan-400 shadow-xs'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <List size={13} />
+                    <span>Günlük Liste</span>
+                  </button>
                 </div>
-              )}
+
+                <Link
+                  href="/student/courses?tab=schedule"
+                  className="text-xs font-bold text-cyan-600 dark:text-cyan-400 hover:underline flex items-center gap-1 pl-1"
+                >
+                  <span>Tam Program</span>
+                  <ChevronRight size={14} />
+                </Link>
+              </div>
             </div>
+
+            {/* TABLO MATRİS GÖRÜNÜMÜ (VARSAYILAN): 5 Gün x 7 Periyot */}
+            {scheduleViewMode === 'matrix' && (
+              <div className="rounded-2xl border border-gray-200/70 dark:border-gray-800/70 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[660px]">
+                    <thead>
+                      <tr className="bg-gray-50/80 dark:bg-gray-800/50 border-b border-gray-200/80 dark:border-gray-800 text-[10px] font-black text-gray-600 dark:text-gray-300">
+                        <th className="p-2.5 w-24 text-center shrink-0">Saat / Periyot</th>
+                        {DAYS_LIST.map((day) => {
+                          const dayCount = weeklySchedule.filter((e) => e.day === day.key).length
+                          const isToday = todayKey === day.key
+                          return (
+                            <th key={day.key} className="p-2 text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <span>{day.label}</span>
+                                {isToday && (
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" title="Bugün" />
+                                )}
+                              </div>
+                              <div className="text-[9px] font-medium text-gray-400">
+                                {dayCount} Ders
+                              </div>
+                            </th>
+                          )
+                        })}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800/60 text-xs">
+                      {MIDDLE_PERIODS.map((period) => (
+                        <tr key={period.periodNumber} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors">
+                          {/* Saat ve Periyot Kolonu */}
+                          <td className="p-2 text-center bg-gray-50/40 dark:bg-gray-900/40 border-r border-gray-100 dark:border-gray-800/60 shrink-0">
+                            <div className="font-black text-gray-900 dark:text-white text-[11px]">
+                              {period.periodNumber}. Ders
+                            </div>
+                            <div className="text-[9px] text-gray-400 font-mono">
+                              {period.time}
+                            </div>
+                          </td>
+
+                          {/* Gün Kolonları (Pazartesi .. Cuma) */}
+                          {DAYS_LIST.map((day) => {
+                            const match = weeklySchedule.find(
+                              (e) => e.day === day.key && e.period === period.periodNumber
+                            )
+                            const subjectName = (match as any)?.subjectName || match?.subject || ''
+                            const style = match ? getStudentDashboardSubjectColor(subjectName, (match as any).color) : null
+
+                            return (
+                              <td
+                                key={day.key}
+                                className="p-1 align-top border-r last:border-r-0 border-gray-100 dark:border-gray-800/60"
+                              >
+                                {match ? (
+                                  <Link
+                                    href="/student/courses?tab=schedule"
+                                    className={`block p-1.5 rounded-xl border transition-all hover:shadow-xs hover:scale-[1.01] ${style?.bg} ${style?.border} ${style?.text}`}
+                                  >
+                                    <div className="font-black text-[10px] leading-tight truncate">
+                                      {subjectName}
+                                    </div>
+                                    <div className="text-[9px] opacity-90 truncate mt-0.5">
+                                      {match.teacherName || 'Öğretmen'}
+                                    </div>
+                                    <div className="flex items-center justify-between text-[8px] opacity-75 mt-0.5">
+                                      <span className="truncate">{match.roomName?.split('(')[0]?.trim() || '9-A'}</span>
+                                      {match.isSmartBoardActive && (
+                                        <span title="Akıllı Tahta Aktif">📺</span>
+                                      )}
+                                    </div>
+                                  </Link>
+                                ) : (
+                                  <div className="w-full h-12 rounded-xl border border-dashed border-gray-200 dark:border-gray-800/80 flex flex-col items-center justify-center text-gray-400 text-[9px] font-bold">
+                                    <span>Boş</span>
+                                  </div>
+                                )}
+                              </td>
+                            )
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* GÜNLÜK LİSTE GÖRÜNÜMÜ */}
+            {scheduleViewMode === 'list' && (
+              <div className="space-y-3">
+                {/* Day Selector Tabs (Pazartesi .. Cuma) */}
+                <div className="grid grid-cols-5 gap-1.5 p-1 rounded-2xl bg-gray-100 dark:bg-[#131C31] border border-gray-200/80 dark:border-gray-800/80">
+                  {DAYS_LIST.map((day) => {
+                    const isSelected = selectedScheduleDay === day.key
+                    const isToday = todayKey === day.key
+                    const count = weeklySchedule.filter((e) => e.day === day.key).length
+
+                    return (
+                      <button
+                        key={day.key}
+                        type="button"
+                        onClick={() => setSelectedScheduleDay(day.key)}
+                        className={`relative py-2 px-1.5 sm:px-2 rounded-xl text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
+                          isSelected
+                            ? 'bg-white dark:bg-[#0E1526] text-blue-600 dark:text-cyan-400 font-extrabold shadow-xs'
+                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white font-medium'
+                        }`}
+                      >
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs sm:text-xs tracking-tight">{day.label}</span>
+                          {isToday && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" title="Bugün" />
+                          )}
+                        </div>
+                        <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium hidden sm:inline">
+                          {count > 0 ? `${count} Ders` : '—'}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+
+                {/* Timetable slots for the selected day */}
+                <div className="space-y-2.5">
+                  {selectedDayClasses.length > 0 ? (
+                    selectedDayClasses.map((item, idx) => {
+                      const periodTime =
+                        MIDDLE_PERIODS.find((p) => p.periodNumber === item.period)?.time ||
+                        (item as any).timeSlot ||
+                        '09:25 - 10:05'
+
+                      return (
+                        <div
+                          key={item.id || idx}
+                          className="p-3.5 rounded-2xl bg-gray-50 dark:bg-[#131C31] border border-gray-200/60 dark:border-gray-800/60 flex items-center justify-between gap-3 hover:border-cyan-400/50 hover:bg-gray-100/50 dark:hover:bg-[#17223b] transition-all"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 text-blue-600 dark:text-cyan-400 border border-blue-500/20 flex flex-col items-center justify-center font-bold text-xs shrink-0">
+                              <span className="text-sm font-black">{item.period}</span>
+                              <span className="text-[8px] font-bold uppercase tracking-wider text-gray-400">Ders</span>
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-extrabold text-gray-900 dark:text-white truncate">
+                                  {(item as any).subjectName || item.subject || 'Ders'}
+                                </span>
+                                {item.isSmartBoardActive && (
+                                  <span className="hidden md:inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
+                                    <Tv size={10} />
+                                    <span>Akıllı Tahta</span>
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-2 mt-0.5 flex-wrap">
+                                <span className="font-medium text-gray-700 dark:text-gray-300">
+                                  {item.teacherName || 'Ebru TEKNECİ'}
+                                </span>
+                                <span>·</span>
+                                <span className="flex items-center gap-1 text-gray-400">
+                                  <MapPin size={11} />
+                                  {item.roomName || 'Derslik 9-A (1. Kat)'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="text-right shrink-0">
+                            <div className="text-xs font-extrabold text-gray-700 dark:text-gray-300">
+                              {periodTime}
+                            </div>
+                            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                              40 Dk
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    })
+                  ) : (
+                    <div className="p-8 text-center text-gray-400 text-xs bg-gray-50 dark:bg-[#131C31] rounded-2xl border border-dashed border-gray-200 dark:border-gray-800">
+                      Bu gün için planlanmış ders saati bulunmamaktadır.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Bekleyen Ödevler Kartları (Öğretmenin Öğrenciye/Sınıfına Verdiği Ödevler) */}
