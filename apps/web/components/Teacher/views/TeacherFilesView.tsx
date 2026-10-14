@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   FileText,
@@ -15,6 +15,7 @@ import {
   Clock,
   Sparkles,
   ChevronRight,
+  ChevronLeft,
   Tv,
   Eye,
   ArrowLeft,
@@ -26,172 +27,266 @@ import {
   Plus,
   X,
   ExternalLink,
+  Copy,
+  Check,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  Printer,
+  Send,
+  Radio,
+  FileCheck,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-
-interface FileItem {
-  id: string
-  name: string
-  extension: 'pdf' | 'png' | 'docx' | 'pptx' | 'xlsx'
-  size: string
-  updatedAt: string
-  author: string
-  sharedWithClass?: string
-  downloadsCount: number
-}
-
-interface FolderCategory {
-  id: string
-  name: string
-  description: string
-  color: string
-  iconColor: string
-  bgLight: string
-  files: FileItem[]
-}
-
-const INITIAL_FOLDERS: FolderCategory[] = [
-  {
-    id: 'folder-presentations',
-    name: 'Ders Sunumları ve Slaytlar',
-    description: 'Türk Dili ve Edebiyatı ders slaytları, interaktif konu sunumları ve PDF notlar.',
-    color: 'border-blue-200 dark:border-blue-900/50 hover:border-blue-400',
-    iconColor: 'text-blue-600 dark:text-blue-400',
-    bgLight: 'bg-blue-50/60 dark:bg-blue-950/30',
-    files: [
-      { id: 'f-1', name: '9-A_Edebiyat_Metin_Tahlili_Ders_Notlari.pdf', extension: 'pdf', size: '3.4 MB', updatedAt: 'Bugün 10:15', author: 'Ebru TEKNECİ', sharedWithClass: '9-A', downloadsCount: 28 },
-      { id: 'f-2', name: 'Tanzimat_Donemi_Edebi_Akimlar_Sunumu.pptx', extension: 'pptx', size: '14.2 MB', updatedAt: 'Dün 16:40', author: 'Ebru TEKNECİ', sharedWithClass: '9-A, 9-B', downloadsCount: 42 },
-      { id: 'f-3', name: 'Divan_Edebiyati_Gazel_ve_Kaside_Tahlili.pdf', extension: 'pdf', size: '5.1 MB', updatedAt: '3 gün önce', author: 'Ebru TEKNECİ', downloadsCount: 19 },
-    ],
-  },
-  {
-    id: 'folder-worksheets',
-    name: 'Çalışma Kâğıtları ve Testler',
-    description: 'Öğrenciler için MEB kazanım kavrama testleri, paragraf çözümleri ve kompozisyon ödev formları.',
-    color: 'border-emerald-200 dark:border-emerald-900/50 hover:border-emerald-400',
-    iconColor: 'text-emerald-600 dark:text-emerald-400',
-    bgLight: 'bg-emerald-50/60 dark:bg-emerald-950/30',
-    files: [
-      { id: 'f-4', name: '9-A_Paragrafta_Anlam_Calisma_Kagidi_Hafta4.pdf', extension: 'pdf', size: '1.2 MB', updatedAt: 'Bugün 08:30', author: 'Ebru TEKNECİ', sharedWithClass: '9-A', downloadsCount: 24 },
-      { id: 'f-5', name: 'Noktalama_Isaretleri_Pratik_Uygulama.docx', extension: 'docx', size: '820 KB', updatedAt: '4 gün önce', author: 'Ebru TEKNECİ', sharedWithClass: '9-B', downloadsCount: 21 },
-      { id: 'f-6', name: 'Cümle_Turleri_Tarama_Testi_20_Soru.pdf', extension: 'pdf', size: '2.1 MB', updatedAt: 'Geçen hafta', author: 'Ebru TEKNECİ', downloadsCount: 35 },
-    ],
-  },
-  {
-    id: 'folder-smartboard',
-    name: 'Akıllı Tahta Ders Çizimleri',
-    description: 'Pano ve sınıf akıllı tahtalarında işlenen derslerin canlı çizimleri, ekran çıktıları ve tahta özetleri.',
-    color: 'border-teal-200 dark:border-teal-900/50 hover:border-teal-400',
-    iconColor: 'text-teal-600 dark:text-teal-400',
-    bgLight: 'bg-teal-50/60 dark:bg-teal-950/30',
-    files: [
-      { id: 'f-7', name: '9A_AkilliTahta_Siir_Tahlili_Sema_Cizimi.png', extension: 'png', size: '2.8 MB', updatedAt: 'Bugün 11:45', author: 'Ebru TEKNECİ (Tahta)', sharedWithClass: '9-A', downloadsCount: 15 },
-      { id: 'f-8', name: 'BeyazTahta_Kelimede_Anlam_Zihin_Haritasi.png', extension: 'png', size: '1.9 MB', updatedAt: '2 gün önce', author: 'Ebru TEKNECİ (Tahta)', sharedWithClass: '9-A', downloadsCount: 22 },
-      { id: 'f-9', name: 'Paragraf_Akis_Semasi_Canli_Cizim.png', extension: 'png', size: '3.1 MB', updatedAt: '5 gün önce', author: 'Ebru TEKNECİ (Tahta)', downloadsCount: 18 },
-    ],
-  },
-  {
-    id: 'folder-meb-curriculum',
-    name: 'MEB Müfredat Kılavuzları & Kitaplar',
-    description: 'Bakanlık 9. Sınıf Edebiyat ders kitabı, yıllık planlar, zümre hedefleri ve kazanım tabloları.',
-    color: 'border-purple-200 dark:border-purple-900/50 hover:border-purple-400',
-    iconColor: 'text-purple-600 dark:text-purple-400',
-    bgLight: 'bg-purple-50/60 dark:bg-purple-950/30',
-    files: [
-      { id: 'f-10', name: 'MEB_9_Sinif_Turk_Dili_ve_Edebiyati_Ders_Kitabi.pdf', extension: 'pdf', size: '42.5 MB', updatedAt: 'Eylül 2026', author: 'MEB Yayınları', downloadsCount: 110 },
-      { id: 'f-11', name: '2026_2027_Edebiyat_Yillik_Cerceve_Plani.docx', extension: 'docx', size: '1.4 MB', updatedAt: 'Eylül 2026', author: 'Ebru TEKNECİ', downloadsCount: 45 },
-      { id: 'f-12', name: 'MEB_Haftalik_Kazanim_ve_Degerlendirme_Tablosu.xlsx', extension: 'xlsx', size: '680 KB', updatedAt: '1 ay önce', author: 'Ebru TEKNECİ', downloadsCount: 16 },
-    ],
-  },
-  {
-    id: 'folder-official-docs',
-    name: 'Zümre Tutanakları ve Resmi Evraklar',
-    description: 'Sene başı ve dönem başı zümre toplantı tutanakları, şube öğretmenler kurulu kararları ve dilekçeler.',
-    color: 'border-amber-200 dark:border-amber-900/50 hover:border-amber-400',
-    iconColor: 'text-amber-600 dark:text-amber-400',
-    bgLight: 'bg-amber-50/60 dark:bg-amber-950/30',
-    files: [
-      { id: 'f-13', name: '2026_2027_1_Donem_Zumre_Ogretmenler_Kurulu_Tutanagi.pdf', extension: 'pdf', size: '2.2 MB', updatedAt: '15 Eylül', author: 'Ebru TEKNECİ', downloadsCount: 12 },
-      { id: 'f-14', name: '9-A_Sube_Ogretmenler_Kurulu_Toplanti_Raporu.docx', extension: 'docx', size: '940 KB', updatedAt: '28 Eylül', author: 'Ebru TEKNECİ', downloadsCount: 8 },
-    ],
-  },
-  {
-    id: 'folder-student-projects',
-    name: 'Öğrenci Proje & Ödev Arşivi',
-    description: 'Öğrencilerin teslim ettiği dönem projeleri, şiir dinletisi ses kayıtları ve ödev derlemeleri.',
-    color: 'border-rose-200 dark:border-rose-900/50 hover:border-rose-400',
-    iconColor: 'text-rose-600 dark:text-rose-400',
-    bgLight: 'bg-rose-50/60 dark:bg-rose-950/30',
-    files: [
-      { id: 'f-15', name: '101_Ercil_Ugurlu_Edebi_Metin_Incelemesi_Proje.pdf', extension: 'pdf', size: '4.8 MB', updatedAt: 'Dün', author: 'Erçil UĞURLU', downloadsCount: 4 },
-      { id: 'f-16', name: '102_Zeynep_Yilmaz_Cumhuriyet_Donemi_Siirleri.pdf', extension: 'pdf', size: '3.6 MB', updatedAt: '3 gün önce', author: 'Zeynep YILMAZ', downloadsCount: 3 },
-    ],
-  },
-]
+import {
+  TeacherFileItem,
+  TeacherFolderCategory,
+  getStoredTeacherFolders,
+  saveStoredTeacherFolders,
+  addTeacherFile,
+  updateFileSharing,
+  deleteTeacherFile,
+  dispatchFileToSmartboard,
+  getSmartboardQueue,
+} from '@/lib/files/teacherFilesStorage'
 
 export default function TeacherFilesView() {
-  const [folders, setFolders] = useState<FolderCategory[]>(INITIAL_FOLDERS)
+  const [folders, setFolders] = useState<TeacherFolderCategory[]>([])
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState<string>('')
-  const [previewFile, setPreviewFile] = useState<FileItem | null>(null)
+
+  // Modals state
+  const [previewFile, setPreviewFile] = useState<TeacherFileItem | null>(null)
+  const [previewPdfPage, setPreviewPdfPage] = useState<number>(1)
+  const [previewZoom, setPreviewZoom] = useState<number>(100)
+
+  // Upload Modal State
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [isUploadModalOpen, setIsUploadModalOpen] = useState<boolean>(false)
-  const [newFileName, setNewFileName] = useState<string>('')
-  const [targetFolderForUpload, setTargetFolderForUpload] = useState<string>(folders[0].id)
+  const [selectedFileObj, setSelectedFileObj] = useState<File | null>(null)
+  const [customFileName, setCustomFileName] = useState<string>('')
+  const [targetFolderForUpload, setTargetFolderForUpload] = useState<string>('folder-presentations')
+  const [uploadClassShare, setUploadClassShare] = useState<string>('9-A')
+  const [fileDataUrl, setFileDataUrl] = useState<string>('')
+
+  // Share Modal State
+  const [shareModalFile, setShareModalFile] = useState<TeacherFileItem | null>(null)
+  const [shareSelectedClasses, setShareSelectedClasses] = useState<string[]>([])
+  const [copiedShareLink, setCopiedShareLink] = useState(false)
+
+  // Smartboard Send Modal State
+  const [smartboardModalFile, setSmartboardModalFile] = useState<TeacherFileItem | null>(null)
+  const [targetBoardId, setTargetBoardId] = useState<string>('PANO-9A')
+  const [boardProjectionMode, setBoardProjectionMode] = useState<'card' | 'fullscreen'>('card')
+
+  // Load folders on mount and listen to changes
+  useEffect(() => {
+    setFolders(getStoredTeacherFolders())
+
+    const handleUpdate = (e: any) => {
+      if (e.detail && Array.isArray(e.detail)) {
+        setFolders(e.detail)
+      } else {
+        setFolders(getStoredTeacherFolders())
+      }
+    }
+
+    window.addEventListener('oxonom_teacher_files_updated', handleUpdate)
+    return () => window.removeEventListener('oxonom_teacher_files_updated', handleUpdate)
+  }, [])
 
   const activeFolder = folders.find((f) => f.id === selectedFolderId)
-
-  // Total statistics
   const totalFilesCount = folders.reduce((acc, f) => acc + f.files.length, 0)
 
-  // Filtered files when inside a folder or searching globally
+  // Filtered files
   const displayedFiles = activeFolder
     ? activeFolder.files.filter((file) =>
-        file.name.toLowerCase().includes(searchTerm.toLowerCase())
+        file.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (file.description && file.description.toLowerCase().includes(searchTerm.toLowerCase()))
       )
     : []
 
-  const handleUploadFile = (e: React.FormEvent) => {
+  // Global search when not in a folder
+  const globalSearchResults = !activeFolder && searchTerm.trim().length > 1
+    ? folders.flatMap((f) =>
+        f.files
+          .filter((file) =>
+            file.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (file.description && file.description.toLowerCase().includes(searchTerm.toLowerCase()))
+          )
+          .map((file) => ({ ...file, folderName: f.name, folderId: f.id }))
+      )
+    : []
+
+  // ── Native File Input Picker ──
+  const handleOpenNativePicker = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setSelectedFileObj(file)
+    setCustomFileName(file.name)
+    setTargetFolderForUpload(selectedFolderId || folders[0]?.id || 'folder-presentations')
+
+    // Read as Data URL for authentic previewing
+    const reader = new FileReader()
+    reader.onload = (uploadEvent) => {
+      const result = uploadEvent.target?.result as string
+      setFileDataUrl(result || '')
+    }
+    if (file.type.startsWith('image/') || file.type === 'application/pdf' || file.type.startsWith('text/')) {
+      reader.readAsDataURL(file)
+    } else {
+      setFileDataUrl('')
+    }
+
+    setIsUploadModalOpen(true)
+    // reset input so picking same file again triggers change
+    e.target.value = ''
+  }
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return bytes + ' B'
+    const kb = bytes / 1024
+    if (kb < 1024) return kb.toFixed(1) + ' KB'
+    const mb = kb / 1024
+    return mb.toFixed(1) + ' MB'
+  }
+
+  const handleSaveUploadedFile = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newFileName.trim()) {
-      toast.error('Lütfen bir dosya adı girin.')
+    if (!customFileName.trim()) {
+      toast.error('Lütfen geçerli bir dosya adı girin.')
       return
     }
 
-    const extMatch = newFileName.includes('.') ? newFileName.split('.').pop()?.toLowerCase() : 'pdf'
-    const safeExt = (['pdf', 'png', 'docx', 'pptx', 'xlsx'].includes(extMatch || '') ? extMatch : 'pdf') as FileItem['extension']
+    const extMatch = customFileName.includes('.') ? customFileName.split('.').pop()?.toLowerCase() : 'pdf'
+    const validExts: TeacherFileItem['extension'][] = ['pdf', 'png', 'jpg', 'jpeg', 'docx', 'pptx', 'xlsx', 'txt']
+    const safeExt = (validExts.includes(extMatch as any) ? extMatch : 'pdf') as TeacherFileItem['extension']
 
-    const newFile: FileItem = {
+    const finalName = customFileName.includes('.') ? customFileName : `${customFileName}.${safeExt}`
+
+    const newFile: TeacherFileItem = {
       id: `f-${Date.now()}`,
-      name: newFileName.includes('.') ? newFileName : `${newFileName}.pdf`,
+      name: finalName,
       extension: safeExt,
-      size: '1.8 MB',
+      size: selectedFileObj ? formatFileSize(selectedFileObj.size) : '1.8 MB',
       updatedAt: 'Şimdi',
       author: 'Ebru TEKNECİ',
+      sharedWithClass: uploadClassShare === 'none' ? undefined : uploadClassShare,
       downloadsCount: 0,
+      dataUrl: fileDataUrl || undefined,
+      description: `Cihazdan yüklenen ${safeExt.toUpperCase()} ders materyali.`,
     }
 
-    setFolders((prev) =>
-      prev.map((f) => (f.id === targetFolderForUpload ? { ...f, files: [newFile, ...f.files] } : f))
-    )
+    const updatedFolders = addTeacherFile(targetFolderForUpload, newFile)
+    setFolders(updatedFolders)
 
-    toast.success(`"${newFile.name}" başarıyla yüklendi.`)
-    setNewFileName('')
+    const folderName = folders.find((f) => f.id === targetFolderForUpload)?.name || 'Seçilen klasöre'
+    toast.success(`"${newFile.name}" başarıyla ${folderName} klasörüne kaydedildi.`, {
+      icon: '📁',
+    })
+
     setIsUploadModalOpen(false)
+    setSelectedFileObj(null)
+    setCustomFileName('')
+    setFileDataUrl('')
   }
 
-  const handleDownload = (file: FileItem) => {
-    toast.success(`${file.name} başarıyla indirildi.`)
+  // ── Share Modal Actions ──
+  const handleOpenShareModal = (file: TeacherFileItem) => {
+    setShareModalFile(file)
+    const existing = file.sharedWithClass ? file.sharedWithClass.split(',').map((s) => s.trim()) : ['9-A']
+    setShareSelectedClasses(existing)
+    setCopiedShareLink(false)
   }
 
-  const handleShareToClass = (file: FileItem) => {
-    toast.success(`"${file.name}" 9-A ve 9-B sınıfı öğrenci panellerinde paylaşıldı.`)
+  const handleToggleShareClass = (className: string) => {
+    setShareSelectedClasses((prev) =>
+      prev.includes(className) ? prev.filter((c) => c !== className) : [...prev, className]
+    )
   }
 
-  const handleSendToSmartboard = (file: FileItem) => {
-    toast.success(`"${file.name}" akıllı tahtaya canlı aktarıldı. Tahtada açılıyor...`)
+  const handleSaveShare = () => {
+    if (!shareModalFile) return
+    const sharedString = shareSelectedClasses.length > 0 ? shareSelectedClasses.join(', ') : ''
+    const updated = updateFileSharing(shareModalFile.id, sharedString)
+    setFolders(updated)
+
+    // Dispatch event so student panel receives updates
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('oxonom_file_shared', {
+          detail: { fileId: shareModalFile.id, sharedWith: sharedString },
+        })
+      )
+    }
+
+    toast.success(
+      sharedString
+        ? `"${shareModalFile.name}" ${sharedString} sınıfları ile paylaşıldı.`
+        : `"${shareModalFile.name}" paylaşımı kaldırıldı (Gizli).`,
+      { icon: '🔗' }
+    )
+    setShareModalFile(null)
   }
 
-  const getExtensionBadge = (ext: FileItem['extension']) => {
+  const handleCopyShareLink = () => {
+    if (!shareModalFile) return
+    const url = `${typeof window !== 'undefined' ? window.location.origin : 'https://agenapos.vercel.app'}/student/library?file=${shareModalFile.id}`
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(url)
+      setCopiedShareLink(true)
+      toast.success('Paylaşım bağlantısı panoya kopyalandı!')
+      setTimeout(() => setCopiedShareLink(false), 2500)
+    }
+  }
+
+  // ── Smartboard Dispatch Actions ──
+  const handleOpenSmartboardModal = (file: TeacherFileItem) => {
+    setSmartboardModalFile(file)
+    // Pre-populate with last dispatched or 9-A board
+    if (typeof window !== 'undefined') {
+      const last = localStorage.getItem('oxonom_last_dispatched_board_id')
+      if (last) setTargetBoardId(last)
+    }
+  }
+
+  const handleSendToSmartboardConfirm = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!smartboardModalFile) return
+    if (!targetBoardId.trim()) {
+      toast.error('Lütfen geçerli bir Akıllı Tahta ID numarası girin.')
+      return
+    }
+
+    const cleanBoardId = targetBoardId.trim().toUpperCase()
+    dispatchFileToSmartboard(cleanBoardId, smartboardModalFile, boardProjectionMode)
+
+    toast.success(`🚀 "${smartboardModalFile.name}" [${cleanBoardId}] ID'li tahtaya başarıyla gönderildi!`, {
+      icon: '🖥️',
+      duration: 5000,
+    })
+
+    setSmartboardModalFile(null)
+  }
+
+  const handleDownload = (file: TeacherFileItem) => {
+    toast.success(`${file.name} cihazınıza indirildi.`, { icon: '📥' })
+  }
+
+  const handleDeleteFile = (fileId: string, fileName: string) => {
+    if (confirm(`"${fileName}" dosyasını silmek istediğinize emin misiniz?`)) {
+      const updated = deleteTeacherFile(fileId)
+      setFolders(updated)
+      toast.success('Dosya silindi.')
+    }
+  }
+
+  const getExtensionBadge = (ext: TeacherFileItem['extension']) => {
     switch (ext) {
       case 'pdf':
         return <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-rose-50 text-rose-600 dark:bg-rose-950/50 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40">PDF</span>
@@ -202,6 +297,8 @@ export default function TeacherFilesView() {
       case 'xlsx':
         return <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/40">XLSX</span>
       case 'png':
+      case 'jpg':
+      case 'jpeg':
         return <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-teal-50 text-teal-600 dark:bg-teal-950/50 dark:text-teal-400 border border-teal-200 dark:border-teal-900/40">GÖRSEL</span>
       default:
         return <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-gray-100 text-gray-700">BELGE</span>
@@ -209,7 +306,16 @@ export default function TeacherFilesView() {
   }
 
   return (
-    <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 font-jakarta space-y-6">
+    <div className="w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 font-jakarta space-y-6">
+      {/* Hidden Native File Input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        onChange={handleFileInputChange}
+        className="hidden"
+        accept=".pdf,.png,.jpg,.jpeg,.docx,.pptx,.xlsx,.txt"
+      />
+
       {/* ── HEADER BANNER ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 rounded-3xl p-6 shadow-xs">
         <div>
@@ -228,7 +334,7 @@ export default function TeacherFilesView() {
         <div className="flex items-center gap-2 self-start sm:self-auto">
           <button
             type="button"
-            onClick={() => setIsUploadModalOpen(true)}
+            onClick={handleOpenNativePicker}
             className="h-10 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-2 transition-colors cursor-pointer shadow-xs shadow-indigo-500/20"
           >
             <Upload size={15} />
@@ -237,7 +343,7 @@ export default function TeacherFilesView() {
         </div>
       </div>
 
-      {/* ── BREADCRUMB NAVIGATION & SEARCH ── */}
+      {/* ── BREADCRUMB & SEARCH ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 rounded-2xl p-4 shadow-xs">
         <div className="flex items-center gap-2 text-xs font-bold">
           <button
@@ -259,7 +365,7 @@ export default function TeacherFilesView() {
           {activeFolder && (
             <>
               <ChevronRight size={14} className="text-gray-400" />
-              <span className="text-gray-900 dark:text-white font-extrabold flex items-center gap-1.5">
+              <span className="text-gray-900 dark:text-white flex items-center gap-1.5 font-black">
                 <FolderOpen size={15} className={activeFolder.iconColor} />
                 <span>{activeFolder.name}</span>
               </span>
@@ -267,75 +373,129 @@ export default function TeacherFilesView() {
           )}
         </div>
 
-        {/* Search */}
-        <div className="relative w-full sm:w-64">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <div className="relative w-full sm:w-72">
+          <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder={activeFolder ? `"${activeFolder.name}" içinde ara...` : 'Dosya veya klasör ara...'}
+            placeholder={activeFolder ? 'Bu klasörde dosya ara...' : 'Tüm dosyalarda ara...'}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full h-9 pl-9 pr-3 text-xs bg-gray-50 dark:bg-[#161D2E] border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:border-indigo-500"
+            className="w-full h-9 pl-9 pr-4 text-xs bg-gray-50 dark:bg-[#161D2E] border border-gray-200 dark:border-gray-700/80 rounded-xl focus:outline-none focus:border-indigo-500 text-gray-900 dark:text-white"
           />
         </div>
       </div>
 
-      {/* ── ROOT VIEW: FOLDER CARDS (KLASÖR MANTIĞI) ── */}
-      {selectedFolderId === null ? (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 px-1 font-bold">
-            <span>Ders Materyali Kategorileri & Klasörler</span>
-            <span>Toplam {totalFilesCount} Dosya</span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {folders
-              .filter((f) =>
-                searchTerm
-                  ? f.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    f.files.some((item) => item.name.toLowerCase().includes(searchTerm.toLowerCase()))
-                  : true
-              )
-              .map((folder) => {
-                return (
-                  <button
-                    key={folder.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedFolderId(folder.id)
-                      setSearchTerm('')
-                    }}
-                    className={`group p-5 rounded-3xl border ${folder.color} bg-white dark:bg-[#121826] text-left transition-all duration-200 hover:shadow-md cursor-pointer flex flex-col justify-between`}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <div className={`w-12 h-12 rounded-2xl ${folder.bgLight} ${folder.iconColor} flex items-center justify-center transition-transform group-hover:scale-105`}>
-                          <Folder size={24} />
-                        </div>
-                        <span className="text-[11px] font-extrabold px-2.5 py-1 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
-                          {folder.files.length} Dosya
-                        </span>
-                      </div>
-
-                      <h3 className="text-sm font-extrabold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                        {folder.name}
-                      </h3>
-                      <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 line-clamp-2 leading-relaxed">
-                        {folder.description}
-                      </p>
+      {/* ── ROOT VIEW: FOLDER CARDS ── */}
+      {selectedFolderId === null && searchTerm.trim().length <= 1 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {folders.map((folder) => {
+            const fileCount = folder.files.length
+            return (
+              <motion.div
+                key={folder.id}
+                whileHover={{ y: -3 }}
+                transition={{ duration: 0.15 }}
+                onClick={() => setSelectedFolderId(folder.id)}
+                className={`group bg-white dark:bg-[#121826] border ${folder.color} rounded-3xl p-6 shadow-xs cursor-pointer flex flex-col justify-between transition-all`}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className={`w-12 h-12 rounded-2xl ${folder.bgLight} flex items-center justify-center shrink-0`}>
+                      <Folder size={24} className={folder.iconColor} />
                     </div>
+                    <span className="text-xs font-bold text-gray-400 bg-gray-100 dark:bg-gray-800/80 px-2.5 py-1 rounded-xl">
+                      {fileCount} Dosya
+                    </span>
+                  </div>
 
-                    <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800/80 flex items-center justify-between text-[11px] font-bold text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
-                      <span>Klasörü Aç</span>
-                      <ChevronRight size={14} className="transition-transform group-hover:translate-x-1" />
-                    </div>
-                  </button>
-                )
-              })}
-          </div>
+                  <h3 className="text-base font-extrabold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                    {folder.name}
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2 leading-relaxed">
+                    {folder.description}
+                  </p>
+                </div>
+
+                <div className="mt-5 pt-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                  <span>Klasörü Aç</span>
+                  <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                </div>
+              </motion.div>
+            )
+          })}
         </div>
-      ) : (
-        /* ── INSIDE FOLDER VIEW: FILE LIST & ACTIONS ── */
+      )}
+
+      {/* ── GLOBAL SEARCH RESULTS ── */}
+      {selectedFolderId === null && searchTerm.trim().length > 1 && (
+        <div className="bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 rounded-3xl p-5 shadow-xs">
+          <div className="text-xs font-bold text-gray-500 mb-4">
+            &quot;{searchTerm}&quot; için bulunan dosyalar ({globalSearchResults.length}):
+          </div>
+          {globalSearchResults.length === 0 ? (
+            <div className="py-12 text-center text-xs text-gray-400">
+              Arama kriterinize uygun dosya bulunamadı.
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100 dark:divide-gray-800/80">
+              {globalSearchResults.map((file) => (
+                <div key={file.id} className="py-3 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-[#161D2E] border border-gray-200/60 dark:border-gray-800 flex items-center justify-center shrink-0">
+                      <FileText size={18} className="text-gray-600 dark:text-gray-300" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-gray-900 dark:text-white truncate">
+                          {file.name}
+                        </span>
+                        {getExtensionBadge(file.extension)}
+                      </div>
+                      <div className="text-[10px] text-gray-400 mt-0.5 flex items-center gap-2">
+                        <span className="text-indigo-600 font-semibold">{file.folderName}</span>
+                        <span>•</span>
+                        <span>{file.size}</span>
+                        <span>•</span>
+                        <span>{file.updatedAt}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewFile(file)}
+                      className="h-8 px-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 text-gray-700 dark:text-gray-300 flex items-center gap-1 text-[11px] font-bold cursor-pointer"
+                    >
+                      <Eye size={13} />
+                      <span>Önizle</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenSmartboardModal(file)}
+                      className="h-8 px-2.5 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400 hover:bg-teal-100 flex items-center gap-1 text-[11px] font-bold cursor-pointer"
+                    >
+                      <Tv size={13} />
+                      <span>Tahtaya Gönder</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenShareModal(file)}
+                      className="h-8 px-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 flex items-center gap-1 text-[11px] font-bold cursor-pointer"
+                    >
+                      <Share2 size={13} />
+                      <span>Paylaş</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── FOLDER DETAIL VIEW ── */}
+      {activeFolder && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <button
@@ -344,14 +504,14 @@ export default function TeacherFilesView() {
                 setSelectedFolderId(null)
                 setSearchTerm('')
               }}
-              className="text-xs font-bold text-gray-600 dark:text-gray-300 hover:text-indigo-600 flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="text-xs font-bold text-gray-600 dark:text-gray-400 hover:text-indigo-600 flex items-center gap-1.5 cursor-pointer"
             >
               <ArrowLeft size={14} />
               <span>Geri (Tüm Klasörler)</span>
             </button>
 
             <span className="text-xs font-bold text-gray-400">
-              {displayedFiles.length} / {activeFolder?.files.length} dosya listeleniyor
+              {displayedFiles.length} / {activeFolder.files.length} dosya listeleniyor
             </span>
           </div>
 
@@ -380,7 +540,7 @@ export default function TeacherFilesView() {
                         {getExtensionBadge(file.extension)}
                       </div>
 
-                      <div className="flex items-center gap-2 text-[10px] text-gray-400 mt-1">
+                      <div className="flex items-center gap-2 text-[10px] text-gray-400 mt-1 flex-wrap">
                         <span className="font-semibold text-gray-600 dark:text-gray-300">{file.author}</span>
                         <span>•</span>
                         <span>{file.size}</span>
@@ -390,7 +550,7 @@ export default function TeacherFilesView() {
                           <>
                             <span>•</span>
                             <span className="text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-indigo-950/40 px-1.5 py-0.5 rounded">
-                              {file.sharedWithClass} Paylaşıldı
+                              {file.sharedWithClass} ile Paylaşıldı
                             </span>
                           </>
                         )}
@@ -400,36 +560,40 @@ export default function TeacherFilesView() {
 
                   {/* Actions */}
                   <div className="flex items-center gap-1.5 self-end sm:self-auto shrink-0">
+                    {/* Önizle Button */}
                     <button
                       type="button"
                       onClick={() => setPreviewFile(file)}
-                      className="h-8 px-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center gap-1 text-[11px] font-bold transition-colors cursor-pointer"
+                      className="h-8 px-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 flex items-center gap-1 text-[11px] font-bold transition-colors cursor-pointer"
                       title="Önizle"
                     >
                       <Eye size={13} />
                       <span className="hidden sm:inline">Önizle</span>
                     </button>
 
+                    {/* Tahtaya Gönder Button */}
                     <button
                       type="button"
-                      onClick={() => handleSendToSmartboard(file)}
-                      className="h-8 px-2.5 rounded-xl bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 text-teal-600 dark:text-teal-400 flex items-center gap-1 text-[11px] font-bold transition-colors cursor-pointer"
+                      onClick={() => handleOpenSmartboardModal(file)}
+                      className="h-8 px-2.5 rounded-xl bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 text-teal-600 dark:text-teal-400 flex items-center gap-1 text-[11px] font-bold transition-colors cursor-pointer border border-teal-200/50"
                       title="Akıllı Tahtaya Gönder"
                     >
                       <Tv size={13} />
                       <span className="hidden sm:inline">Tahtaya Gönder</span>
                     </button>
 
+                    {/* Paylaş Button */}
                     <button
                       type="button"
-                      onClick={() => handleShareToClass(file)}
-                      className="h-8 px-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 text-indigo-600 dark:text-indigo-400 flex items-center gap-1 text-[11px] font-bold transition-colors cursor-pointer"
+                      onClick={() => handleOpenShareModal(file)}
+                      className="h-8 px-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 text-indigo-600 dark:text-indigo-400 flex items-center gap-1 text-[11px] font-bold transition-colors cursor-pointer border border-indigo-200/50"
                       title="Sınıfla Paylaş"
                     >
                       <Share2 size={13} />
                       <span className="hidden sm:inline">Paylaş</span>
                     </button>
 
+                    {/* İndir Button */}
                     <button
                       type="button"
                       onClick={() => handleDownload(file)}
@@ -437,6 +601,16 @@ export default function TeacherFilesView() {
                       title="İndir"
                     >
                       <Download size={14} />
+                    </button>
+
+                    {/* Sil Button */}
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteFile(file.id, file.name)}
+                      className="w-8 h-8 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 text-gray-400 hover:text-rose-600 flex items-center justify-center transition-colors cursor-pointer"
+                      title="Sil"
+                    >
+                      <Trash2 size={14} />
                     </button>
                   </div>
                 </div>
@@ -469,7 +643,7 @@ export default function TeacherFilesView() {
                     <Upload size={16} />
                   </div>
                   <h3 className="text-base font-extrabold text-gray-900 dark:text-white">
-                    Dosya Yükle
+                    Dosya Yükle & Kaydet
                   </h3>
                 </div>
                 <button
@@ -481,39 +655,91 @@ export default function TeacherFilesView() {
                 </button>
               </div>
 
-              <form onSubmit={handleUploadFile} className="space-y-4">
+              <form onSubmit={handleSaveUploadedFile} className="space-y-4">
+                {/* Selected File Card */}
+                {selectedFileObj ? (
+                  <div className="p-3 rounded-2xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900/50 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <FileText size={20} className="text-indigo-600 shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-gray-900 dark:text-white truncate">
+                          {selectedFileObj.name}
+                        </div>
+                        <div className="text-[10px] text-gray-500">
+                          {formatFileSize(selectedFileObj.size)} • Seçildi
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleOpenNativePicker}
+                      className="text-[11px] font-bold text-indigo-600 hover:underline shrink-0"
+                    >
+                      Değiştir
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    onClick={handleOpenNativePicker}
+                    className="p-6 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-700 hover:border-indigo-500 text-center cursor-pointer space-y-2 transition-colors"
+                  >
+                    <Upload size={24} className="mx-auto text-gray-400" />
+                    <div className="text-xs font-bold text-gray-700 dark:text-gray-300">
+                      Cihazınızdan dosya seçmek için tıklayın
+                    </div>
+                    <div className="text-[10px] text-gray-400">PDF, PNG, JPG, DOCX, PPTX, XLSX</div>
+                  </div>
+                )}
+
+                {/* Dosya Adı (İsterse isim versin) */}
                 <div>
                   <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
-                    Hedef Klasör
+                    Dosya Adı (İsteğe Bağlı Değiştirilebilir)
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Örn: 9-A_Edebiyat_Siir_Tahlili_Ders_Notu.pdf"
+                    value={customFileName}
+                    onChange={(e) => setCustomFileName(e.target.value)}
+                    className="w-full h-10 px-3 text-xs bg-gray-50 dark:bg-[#161D2E] border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:border-indigo-500 text-gray-900 dark:text-white"
+                  />
+                </div>
+
+                {/* Kaydedileceği Klasör / Konum Seçimi (Dropdown) */}
+                <div>
+                  <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
+                    Kaydedilecek Klasör / Konum
                   </label>
                   <select
                     value={targetFolderForUpload}
                     onChange={(e) => setTargetFolderForUpload(e.target.value)}
-                    className="w-full h-10 px-3 text-xs bg-gray-50 dark:bg-[#161D2E] border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:border-indigo-500"
+                    className="w-full h-10 px-3 text-xs bg-gray-50 dark:bg-[#161D2E] border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:border-indigo-500 text-gray-900 dark:text-white"
                   >
                     {folders.map((f) => (
                       <option key={f.id} value={f.id}>
-                        {f.name}
+                        {f.name} ({f.files.length} dosya)
                       </option>
                     ))}
                   </select>
                 </div>
 
+                {/* Sınıfla Paylaşım (Opsiyonel) */}
                 <div>
                   <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
-                    Dosya Adı & Uzantısı
+                    Sınıf Paylaşımı
                   </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Örn: 9-A_Edebiyat_Cümle_Turleri_Notlari.pdf"
-                    value={newFileName}
-                    onChange={(e) => setNewFileName(e.target.value)}
-                    className="w-full h-10 px-3 text-xs bg-gray-50 dark:bg-[#161D2E] border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:border-indigo-500"
-                  />
-                  <span className="text-[10px] text-gray-400 mt-1 block">
-                    Desteklenen formatlar: .pdf, .docx, .pptx, .xlsx, .png
-                  </span>
+                  <select
+                    value={uploadClassShare}
+                    onChange={(e) => setUploadClassShare(e.target.value)}
+                    className="w-full h-10 px-3 text-xs bg-gray-50 dark:bg-[#161D2E] border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:border-indigo-500 text-gray-900 dark:text-white"
+                  >
+                    <option value="none">Paylaşma (Yalnızca Ben)</option>
+                    <option value="9-A">9-A Şubesi</option>
+                    <option value="9-B">9-B Şubesi</option>
+                    <option value="9-A, 9-B">9-A ve 9-B Şubeleri</option>
+                    <option value="Tüm Şubeler">Tüm 9. Sınıf Şubeleri</option>
+                  </select>
                 </div>
 
                 <div className="pt-2 flex items-center justify-end gap-2">
@@ -528,7 +754,7 @@ export default function TeacherFilesView() {
                     type="submit"
                     className="h-10 px-5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition-colors cursor-pointer shadow-xs shadow-indigo-500/20"
                   >
-                    Klasöre Kaydet
+                    Klasöre Kaydet ve Yükle
                   </button>
                 </div>
               </form>
@@ -537,78 +763,801 @@ export default function TeacherFilesView() {
         )}
       </AnimatePresence>
 
-      {/* ── MODAL: DOSYA ÖNİZLEME ── */}
+      {/* ── MODAL: SINIFLA PAYLAŞ ── */}
       <AnimatePresence>
-        {previewFile && (
+        {shareModalFile && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setPreviewFile(null)}
+              onClick={() => setShareModalFile(null)}
               className="absolute inset-0 bg-black/60 backdrop-blur-xs"
             />
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-lg bg-white dark:bg-[#121826] border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl z-10 space-y-4"
+              className="relative w-full max-w-md bg-white dark:bg-[#121826] border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl z-10 space-y-4"
             >
               <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-gray-800">
                 <div className="flex items-center gap-2">
-                  <Eye size={18} className="text-indigo-600" />
-                  <h3 className="text-sm font-extrabold text-gray-900 dark:text-white truncate max-w-[280px]">
-                    {previewFile.name}
+                  <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 flex items-center justify-center">
+                    <Share2 size={16} />
+                  </div>
+                  <h3 className="text-base font-extrabold text-gray-900 dark:text-white">
+                    Dosyayı Sınıflarla Paylaş
                   </h3>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setPreviewFile(null)}
+                  onClick={() => setShareModalFile(null)}
                   className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-400 flex items-center justify-center cursor-pointer"
                 >
                   <X size={16} />
                 </button>
               </div>
 
-              {/* Preview Content Placeholder */}
-              <div className="h-64 rounded-2xl bg-gray-50 dark:bg-[#161D2E] border border-dashed border-gray-200 dark:border-gray-800 flex flex-col items-center justify-center text-center p-6 space-y-3">
-                <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 flex items-center justify-center">
-                  <FileText size={28} />
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-gray-900 dark:text-white">{previewFile.name}</div>
-                  <div className="text-[10px] text-gray-400 mt-1">
-                    Boyut: {previewFile.size} • Yazar: {previewFile.author} • {previewFile.updatedAt}
+              {/* File Info */}
+              <div className="p-3 rounded-2xl bg-gray-50 dark:bg-[#161D2E] border border-gray-200 dark:border-gray-800 flex items-center gap-3">
+                <FileText size={20} className="text-indigo-600 shrink-0" />
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-gray-900 dark:text-white truncate">
+                    {shareModalFile.name}
+                  </div>
+                  <div className="text-[10px] text-gray-400">
+                    Boyut: {shareModalFile.size} • Yazar: {shareModalFile.author}
                   </div>
                 </div>
-                <p className="text-[11px] text-gray-500 max-w-xs">
-                  MEB Türk Dili ve Edebiyatı ders dokümanı güvenli görüntüleme penceresi hazır.
-                </p>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2">
+              {/* Class Checkboxes */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block">
+                  Erişim Yetkisi Verilecek Sınıflar:
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {['9-A', '9-B', '10-A', 'Öğretmen Zümresi'].map((cls) => {
+                    const isChecked = shareSelectedClasses.includes(cls)
+                    return (
+                      <button
+                        key={cls}
+                        type="button"
+                        onClick={() => handleToggleShareClass(cls)}
+                        className={`p-2.5 rounded-xl border text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer ${
+                          isChecked
+                            ? 'bg-indigo-50 dark:bg-indigo-950/50 border-indigo-500 text-indigo-700 dark:text-indigo-300'
+                            : 'bg-white dark:bg-[#161D2E] border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'
+                        }`}
+                      >
+                        <div
+                          className={`w-4 h-4 rounded flex items-center justify-center border text-[10px] ${
+                            isChecked
+                              ? 'bg-indigo-600 border-indigo-600 text-white'
+                              : 'border-gray-300 dark:border-gray-600'
+                          }`}
+                        >
+                          {isChecked && <Check size={12} />}
+                        </div>
+                        <span>{cls}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Direct Share Link */}
+              <div className="space-y-1.5 pt-1">
+                <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block">
+                  Doğrudan Öğrenci Bağlantısı:
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={`https://agenapos.vercel.app/student/library?file=${shareModalFile.id}`}
+                    className="flex-1 h-9 px-3 text-[11px] bg-gray-50 dark:bg-[#161D2E] border border-gray-200 dark:border-gray-700 rounded-xl text-gray-600 dark:text-gray-400 select-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCopyShareLink}
+                    className="h-9 px-3 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5 shrink-0 cursor-pointer"
+                  >
+                    {copiedShareLink ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
+                    <span>{copiedShareLink ? 'Kopyalandı' : 'Kopyala'}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="pt-3 flex items-center justify-end gap-2 border-t border-gray-100 dark:border-gray-800">
                 <button
                   type="button"
-                  onClick={() => {
-                    handleSendToSmartboard(previewFile)
-                    setPreviewFile(null)
-                  }}
-                  className="h-10 px-4 rounded-xl text-xs font-bold bg-teal-50 dark:bg-teal-950 text-teal-600 dark:text-teal-400 hover:bg-teal-100 transition-colors cursor-pointer flex items-center gap-1.5"
+                  onClick={() => setShareModalFile(null)}
+                  className="h-10 px-4 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
                 >
-                  <Tv size={14} />
-                  <span>Tahtaya Yansıt</span>
+                  Kapat
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    handleDownload(previewFile)
-                    setPreviewFile(null)
-                  }}
-                  className="h-10 px-4 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition-colors cursor-pointer flex items-center gap-1.5"
+                  onClick={handleSaveShare}
+                  className="h-10 px-5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition-colors cursor-pointer shadow-xs shadow-indigo-500/20"
                 >
-                  <Download size={14} />
-                  <span>İndir</span>
+                  Paylaşımı Güncelle
                 </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── MODAL: TAHTAYA GÖNDER (BOARD ID İLE) ── */}
+      <AnimatePresence>
+        {smartboardModalFile && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSmartboardModalFile(null)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-xs"
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full max-w-md bg-white dark:bg-[#121826] border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl z-10 space-y-4"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-gray-800">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-teal-50 dark:bg-teal-950 text-teal-600 flex items-center justify-center">
+                    <Tv size={16} />
+                  </div>
+                  <h3 className="text-base font-extrabold text-gray-900 dark:text-white">
+                    Akıllı Tahtaya İçerik Gönder
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSmartboardModalFile(null)}
+                  className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-400 flex items-center justify-center cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* Target File Card */}
+              <div className="p-3 rounded-2xl bg-teal-50/50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-900/50 flex items-center gap-3">
+                <FileText size={20} className="text-teal-600 shrink-0" />
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-gray-900 dark:text-white truncate">
+                    {smartboardModalFile.name}
+                  </div>
+                  <div className="text-[10px] text-gray-500">
+                    Boyut: {smartboardModalFile.size} • Tahtada anında belirecek
+                  </div>
+                </div>
+              </div>
+
+              <form onSubmit={handleSendToSmartboardConfirm} className="space-y-4">
+                {/* Board ID Input */}
+                <div>
+                  <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
+                    Akıllı Tahta ID No:
+                  </label>
+                  <div className="relative">
+                    <Tv size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-teal-600" />
+                    <input
+                      type="text"
+                      required
+                      placeholder="Örn: PANO-9A veya TAHTA-901"
+                      value={targetBoardId}
+                      onChange={(e) => setTargetBoardId(e.target.value.toUpperCase())}
+                      className="w-full h-11 pl-10 pr-4 text-xs font-mono font-bold bg-gray-50 dark:bg-[#161D2E] border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:border-teal-500 uppercase text-gray-900 dark:text-white tracking-wider"
+                    />
+                  </div>
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1.5 leading-relaxed">
+                    Açık olan her akıllı tahtanın sol üst köşesinde bir <strong>Tahta ID</strong> bulunur.
+                  </p>
+                </div>
+
+                {/* Quick Select Board IDs */}
+                <div>
+                  <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 block mb-1.5">
+                    Hızlı Seçim (Kayıtlı & Çevrim İçi Tahtalar):
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { id: 'PANO-9A', label: '9/A Şubesi (1. Kat)', active: true },
+                      { id: 'PANO-9B', label: '9/B Şubesi (1. Kat)', active: true },
+                      { id: 'TAHTA-901', label: 'Çalışma Tahtam', active: true },
+                      { id: 'PANO-FEN', label: 'Fen Laboratuvarı', active: false },
+                    ].map((b) => (
+                      <button
+                        key={b.id}
+                        type="button"
+                        onClick={() => setTargetBoardId(b.id)}
+                        className={`p-2 rounded-xl border text-left transition-colors cursor-pointer ${
+                          targetBoardId === b.id
+                            ? 'bg-teal-50 dark:bg-teal-950/50 border-teal-500 text-teal-800 dark:text-teal-200 font-bold'
+                            : 'bg-white dark:bg-[#161D2E] border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono text-xs font-black">{b.id}</span>
+                          <span className={`w-2 h-2 rounded-full ${b.active ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+                        </div>
+                        <div className="text-[10px] text-gray-400 truncate mt-0.5">{b.label}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Placement Mode */}
+                <div>
+                  <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1.5">
+                    Tahtada Gösterim Modu:
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setBoardProjectionMode('card')}
+                      className={`p-2.5 rounded-xl border text-left text-xs font-bold transition-colors cursor-pointer ${
+                        boardProjectionMode === 'card'
+                          ? 'bg-teal-50 dark:bg-teal-950/50 border-teal-500 text-teal-800 dark:text-teal-200'
+                          : 'bg-white dark:bg-[#161D2E] border-gray-200 dark:border-gray-700 text-gray-600'
+                      }`}
+                    >
+                      <div>📌 Not Kartı Olarak</div>
+                      <div className="text-[10px] font-normal text-gray-400 mt-0.5">Tahtaya kart olarak eklenir</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBoardProjectionMode('fullscreen')}
+                      className={`p-2.5 rounded-xl border text-left text-xs font-bold transition-colors cursor-pointer ${
+                        boardProjectionMode === 'fullscreen'
+                          ? 'bg-teal-50 dark:bg-teal-950/50 border-teal-500 text-teal-800 dark:text-teal-200'
+                          : 'bg-white dark:bg-[#161D2E] border-gray-200 dark:border-gray-700 text-gray-600'
+                      }`}
+                    >
+                      <div>🖥️ Tam Ekran Sunum</div>
+                      <div className="text-[10px] font-normal text-gray-400 mt-0.5">Doğrudan ekrana yansıtılır</div>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-2 flex items-center justify-end gap-2 border-t border-gray-100 dark:border-gray-800">
+                  <button
+                    type="button"
+                    onClick={() => setSmartboardModalFile(null)}
+                    className="h-10 px-4 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                  >
+                    Vazgeç
+                  </button>
+                  <button
+                    type="submit"
+                    className="h-10 px-5 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-500 text-white transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs shadow-teal-500/20"
+                  >
+                    <Send size={13} />
+                    <span>Tahtaya Canlı Gönder</span>
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── MODAL: DETAYLI & GERÇEKÇİ DOSYA ÖNİZLEME (PDF / GÖRSEL / METİN / TABLO) ── */}
+      <AnimatePresence>
+        {previewFile && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setPreviewFile(null)}
+              className="absolute inset-0 bg-black/75 backdrop-blur-xs"
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full max-w-4xl max-h-[92vh] bg-white dark:bg-[#121826] border border-gray-200 dark:border-gray-800 rounded-3xl shadow-2xl z-10 flex flex-col overflow-hidden"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800 shrink-0">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 flex items-center justify-center shrink-0">
+                    <Eye size={18} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-extrabold text-gray-900 dark:text-white truncate">
+                        {previewFile.name}
+                      </h3>
+                      {getExtensionBadge(previewFile.extension)}
+                    </div>
+                    <div className="text-[11px] text-gray-400 mt-0.5">
+                      {previewFile.size} • {previewFile.author} • {previewFile.updatedAt}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  {/* Tahtaya Gönder Shortcut */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const f = previewFile
+                      setPreviewFile(null)
+                      handleOpenSmartboardModal(f)
+                    }}
+                    className="h-8 px-3 rounded-xl bg-teal-50 dark:bg-teal-950 text-teal-600 dark:text-teal-400 hover:bg-teal-100 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <Tv size={13} />
+                    <span>Tahtaya Gönder</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPreviewFile(null)}
+                    className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-400 hover:text-gray-700 flex items-center justify-center cursor-pointer transition-colors"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Dynamic Content Preview Viewer */}
+              <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-50/70 dark:bg-[#0B0F19]">
+                {/* ── CASE 1: PDF DOCUMENT PREVIEW ── */}
+                {previewFile.extension === 'pdf' && (
+                  <div className="space-y-4 max-w-3xl mx-auto">
+                    {/* PDF Reader Toolbar */}
+                    <div className="bg-white dark:bg-[#121826] border border-gray-200 dark:border-gray-800 rounded-2xl p-2.5 flex items-center justify-between text-xs font-bold shadow-xs">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          disabled={previewPdfPage <= 1}
+                          onClick={() => setPreviewPdfPage((p) => Math.max(1, p - 1))}
+                          className="h-7 px-2 rounded-lg bg-gray-100 dark:bg-gray-800 disabled:opacity-40 flex items-center gap-1 text-[11px] cursor-pointer"
+                        >
+                          <ChevronLeft size={14} />
+                          <span>Önceki</span>
+                        </button>
+                        <span className="text-gray-600 dark:text-gray-300 font-mono text-[11px]">
+                          Sayfa {previewPdfPage} / 4
+                        </span>
+                        <button
+                          type="button"
+                          disabled={previewPdfPage >= 4}
+                          onClick={() => setPreviewPdfPage((p) => Math.min(4, p + 1))}
+                          className="h-7 px-2 rounded-lg bg-gray-100 dark:bg-gray-800 disabled:opacity-40 flex items-center gap-1 text-[11px] cursor-pointer"
+                        >
+                          <span>Sonraki</span>
+                          <ChevronRight size={14} />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setPreviewZoom((z) => Math.max(75, z - 25))}
+                          className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 hover:bg-gray-200 cursor-pointer"
+                          title="Uzaklaştır"
+                        >
+                          <ZoomOut size={13} />
+                        </button>
+                        <span className="text-[11px] font-mono">{previewZoom}%</span>
+                        <button
+                          type="button"
+                          onClick={() => setPreviewZoom((z) => Math.min(150, z + 25))}
+                          className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 hover:bg-gray-200 cursor-pointer"
+                          title="Yakınlaştır"
+                        >
+                          <ZoomIn size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => window.print()}
+                          className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 hover:bg-gray-200 cursor-pointer ml-1"
+                          title="Yazdır"
+                        >
+                          <Printer size={13} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* PDF Authentic Page Canvas */}
+                    <div
+                      className="bg-white text-gray-900 border border-gray-300 shadow-xl rounded-xl p-8 sm:p-12 min-h-[560px] font-serif transition-transform origin-top"
+                      style={{ transform: `scale(${previewZoom / 100})` }}
+                    >
+                      {/* Page Header */}
+                      <div className="border-b-2 border-red-800 pb-4 mb-6 text-center">
+                        <div className="text-[11px] font-sans font-black tracking-widest text-red-800 uppercase">
+                          T.C. MİLLÎ EĞİTİM BAKANLIĞI
+                        </div>
+                        <div className="text-[9px] font-sans text-gray-500 uppercase tracking-wider mt-0.5">
+                          ORTAÖĞRETİM GENEL MÜDÜRLÜĞÜ • 2026-2027 EĞİTİM VE ÖĞRETİM YILI
+                        </div>
+                        <div className="text-sm font-sans font-black text-gray-900 mt-2 uppercase tracking-wide">
+                          9. SINIF TÜRK DİLİ VE EDEBİYATI DERSİ ÇALIŞMA FORMU
+                        </div>
+                      </div>
+
+                      {/* Content According to Page Number */}
+                      {previewPdfPage === 1 && (
+                        <div className="space-y-4 text-xs leading-relaxed text-gray-800">
+                          <div className="font-sans font-bold text-xs bg-gray-100 p-2.5 rounded-lg border border-gray-200 flex justify-between">
+                            <span>Kazanım: A.1.4. Şiirde ahengi sağlayan unsurları belirler.</span>
+                            <span className="font-mono text-red-700">Ders Kodu: TDE-09</span>
+                          </div>
+
+                          <h4 className="font-sans font-black text-sm text-gray-900 pt-2">
+                            Bölüm I: Şiirde Ahenk ve Yapı Unsurları İncelemesi
+                          </h4>
+                          <p>
+                            Şiirde ahenk; ses tekrarları, ritim, ölçü, uyak ve rediflerle sağlanır. Şair, duygularını aktarırken kelimelerin musikisinden ve dizelerin diziliş geometrisinden yararlanır.
+                          </p>
+
+                          <div className="p-4 bg-amber-50/60 border-l-4 border-amber-600 rounded-r-lg italic text-[11px]">
+                            &quot;Korkma, sönmez bu şafaklarda yüzen al sancak;<br />
+                            Sönmeden yurdumun üstünde tüten en son ocak.<br />
+                            O benim milletimin yıldızıdır, parlayacak;<br />
+                            O benimdir, o benim milletimindir ancak.&quot;
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3 pt-2 text-[11px]">
+                            <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                              <span className="font-sans font-bold block text-gray-900 mb-1">Ölçü Tahlili:</span>
+                              Aruz Vezni (Mef&apos;ûlü / Mefâ&apos;îlü / Mefâ&apos;îlü / Fe&apos;ûlün)
+                            </div>
+                            <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                              <span className="font-sans font-bold block text-gray-900 mb-1">Kafiye Düzeni:</span>
+                              Düz kafiye (a-a-a-a), &quot;-acak&quot; zengin kafiye unsuru.
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {previewPdfPage === 2 && (
+                        <div className="space-y-4 text-xs leading-relaxed text-gray-800">
+                          <h4 className="font-sans font-black text-sm text-gray-900 border-b pb-2">
+                            Bölüm II: Edebi Sanatlar ve Anlamsal Çözümleme
+                          </h4>
+                          <table className="w-full border-collapse border border-gray-300 text-[11px]">
+                            <thead>
+                              <tr className="bg-gray-100 font-sans font-bold">
+                                <th className="border border-gray-300 p-2 text-left">Sanat Adı</th>
+                                <th className="border border-gray-300 p-2 text-left">Dizedeki Karşılığı</th>
+                                <th className="border border-gray-300 p-2 text-left">İşlevi</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td className="border border-gray-300 p-2 font-bold font-sans">Teşhis (Kişileştirme)</td>
+                                <td className="border border-gray-300 p-2">&quot;Çatma, kurban olayım çehreni ey nazlı hilal!&quot;</td>
+                                <td className="border border-gray-300 p-2">Bayrağa canlı insan özellikleri yüklenmiştir.</td>
+                              </tr>
+                              <tr>
+                                <td className="border border-gray-300 p-2 font-bold font-sans">İstiare (Eğretileme)</td>
+                                <td className="border border-gray-300 p-2">&quot;Ben ezelden beridir hür yaşadım, hür yaşarım&quot;</td>
+                                <td className="border border-gray-300 p-2">Millet adına konuşan güçlü benlik kurgusu.</td>
+                              </tr>
+                              <tr>
+                                <td className="border border-gray-300 p-2 font-bold font-sans">Nida (Seslenme)</td>
+                                <td className="border border-gray-300 p-2">&quot;Ey nazlı hilal!&quot; / &quot;Arkadaş!&quot;</td>
+                                <td className="border border-gray-300 p-2">Heyecanı ve vatanperver coşkuyu artırır.</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+
+                      {previewPdfPage === 3 && (
+                        <div className="space-y-4 text-xs leading-relaxed text-gray-800">
+                          <h4 className="font-sans font-black text-sm text-gray-900 border-b pb-2">
+                            Bölüm III: Kazanım Kavrama ve Uygulama Soruları
+                          </h4>
+                          <div className="space-y-3 text-[11px]">
+                            <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                              <span className="font-sans font-bold text-gray-900 block mb-1">
+                                Soru 1: Aşağıdaki dizelerin hangisinde tam kafiye kullanılmıştır?
+                              </span>
+                              <div className="space-y-1 pl-2">
+                                <div>A) Derinden derine ırmaklar ağlar / Uzaktan uzağa çoban çeşmesi</div>
+                                <div>B) Bir zafer müjdesi burda her keder / Kalpleri ferahlatan tatlı ezgiler</div>
+                                <div>C) Yollar köyleri bağlar birbirine / Işık saçar her bir hanesine</div>
+                              </div>
+                            </div>
+
+                            <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                              <span className="font-sans font-bold text-gray-900 block mb-1">
+                                Soru 2: &quot;Aliterasyon&quot; ile &quot;Asonans&quot; arasındaki temel farkı birer örnek dize ile açıklayınız.
+                              </span>
+                              <div className="h-14 border border-dashed border-gray-300 rounded p-2 text-gray-400 italic">
+                                Öğrenci çalışma ve cevaplama alanı...
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {previewPdfPage === 4 && (
+                        <div className="space-y-4 text-xs leading-relaxed text-gray-800">
+                          <h4 className="font-sans font-black text-sm text-gray-900 border-b pb-2">
+                            Bölüm IV: Öğretmen Değerlendirme Rubriği ve Onay
+                          </h4>
+                          <div className="p-4 bg-emerald-50/50 border border-emerald-200 rounded-xl space-y-2">
+                            <div className="flex items-center justify-between font-sans font-bold text-emerald-900">
+                              <span>MEB Ortak Sınav Kapsam İndeksi</span>
+                              <span>Puan: 100</span>
+                            </div>
+                            <p className="text-[11px] text-emerald-800">
+                              Bu çalışma formu, 1. Dönem 1. Ortak Edebiyat Sınavı öncesi 9-A ve 9-B şubelerinde kavrama amaçlı dağıtılmak üzere onaylanmıştır.
+                            </p>
+                          </div>
+
+                          <div className="pt-12 flex justify-between items-end font-sans">
+                            <div>
+                              <div className="text-[10px] text-gray-400">Tarih: 14 Ekim 2026</div>
+                              <div className="text-[10px] text-gray-400">Şube: 9-A / 9-B</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="font-bold text-xs">Ebru TEKNECİ</div>
+                              <div className="text-[10px] text-gray-500">Türk Dili ve Edebiyatı Zümre Başkanı</div>
+                              <div className="w-24 h-0.5 bg-gray-400 mx-auto mt-2" />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Footer Page Number */}
+                      <div className="border-t border-gray-200 mt-8 pt-3 flex justify-between text-[10px] font-sans text-gray-400">
+                        <span>Oxonom EDU MEB Dijital Kütüphane</span>
+                        <span>Sayfa {previewPdfPage} / 4</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ── CASE 2: IMAGE / SMARTBOARD DIAGRAM PREVIEW ── */}
+                {(previewFile.extension === 'png' || previewFile.extension === 'jpg' || previewFile.extension === 'jpeg') && (
+                  <div className="space-y-4 max-w-3xl mx-auto">
+                    {previewFile.dataUrl ? (
+                      <div className="bg-black/90 rounded-2xl p-4 flex items-center justify-center min-h-[460px] overflow-hidden">
+                        <img
+                          src={previewFile.dataUrl}
+                          alt={previewFile.name}
+                          className="max-h-[500px] max-w-full object-contain rounded-xl shadow-2xl"
+                        />
+                      </div>
+                    ) : (
+                      /* High-resolution Smartboard Drawing Mockup */
+                      <div className="bg-[#10141D] rounded-2xl border-2 border-teal-500/30 p-6 sm:p-8 text-white min-h-[480px] shadow-2xl relative overflow-hidden font-sans">
+                        {/* Canvas Grid Background */}
+                        <div
+                          className="absolute inset-0 opacity-15 pointer-events-none"
+                          style={{
+                            backgroundImage: 'radial-gradient(circle, #2dd4bf 1px, transparent 1px)',
+                            backgroundSize: '24px 24px',
+                          }}
+                        />
+
+                        {/* Top Smartboard Banner */}
+                        <div className="relative z-10 flex items-center justify-between pb-4 border-b border-gray-800">
+                          <div className="flex items-center gap-2">
+                            <span className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="font-mono text-xs font-bold text-teal-400">
+                              VESTEL 75&quot; AKILLI TAHTA ÇIKTISI • 9/A DERSİ
+                            </span>
+                          </div>
+                          <span className="font-mono text-[11px] text-gray-400">
+                            14 Ekim 2026 • 11:45
+                          </span>
+                        </div>
+
+                        {/* Whiteboard Drawing Schema Content */}
+                        <div className="relative z-10 py-8 space-y-6">
+                          <div className="text-center space-y-1">
+                            <div className="inline-block px-4 py-1 rounded-full bg-teal-500/20 border border-teal-400/40 text-teal-300 font-extrabold text-sm tracking-wide">
+                              ŞİİRDE AHENK UNSURLARI ZİHİN HARİTASI
+                            </div>
+                            <div className="text-xs text-gray-400">Ebru Öğretmen Canlı Ders Çizimi</div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
+                            <div className="p-4 rounded-xl bg-teal-950/40 border border-teal-500/40 space-y-2">
+                              <div className="font-black text-teal-300 text-xs flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full bg-teal-400" />
+                                1. Ses Tekrarları
+                              </div>
+                              <ul className="text-[11px] text-gray-300 space-y-1 list-disc list-inside">
+                                <li><strong>Aliterasyon:</strong> Ünsüz ses tekrarı (s, r, l)</li>
+                                <li><strong>Asonans:</strong> Ünlü ses tekrarı (a, e, i)</li>
+                                <li><strong>Vurgu ve Tonlama:</strong> Duygu aktarımı</li>
+                              </ul>
+                            </div>
+
+                            <div className="p-4 rounded-xl bg-indigo-950/40 border border-indigo-500/40 space-y-2">
+                              <div className="font-black text-indigo-300 text-xs flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full bg-indigo-400" />
+                                2. Ölçü Çeşitleri
+                              </div>
+                              <ul className="text-[11px] text-gray-300 space-y-1 list-disc list-inside">
+                                <li><strong>Hece Ölçüsü:</strong> 7&apos;li, 8&apos;li, 11&apos;li kalıplar</li>
+                                <li><strong>Aruz Ölçüsü:</strong> Açık / kapalı heceler</li>
+                                <li><strong>Serbest Ölçü:</strong> Kural ve kalıpsız</li>
+                              </ul>
+                            </div>
+
+                            <div className="p-4 rounded-xl bg-amber-950/40 border border-amber-500/40 space-y-2">
+                              <div className="font-black text-amber-300 text-xs flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full bg-amber-400" />
+                                3. Kafiye ve Redif
+                              </div>
+                              <ul className="text-[11px] text-gray-300 space-y-1 list-disc list-inside">
+                                <li><strong>Yarım:</strong> 1 ses benzerliği</li>
+                                <li><strong>Tam:</strong> 2 ses benzerliği</li>
+                                <li><strong>Zengin:</strong> 3+ ses benzerliği</li>
+                                <li><strong>Cinaslı:</strong> Eş sesli kelimeler</li>
+                              </ul>
+                            </div>
+                          </div>
+
+                          <div className="p-3 rounded-xl bg-gray-900/80 border border-dashed border-gray-700 text-center text-xs text-gray-400">
+                            ✍️ <span className="text-gray-300 font-semibold">Öğretmen Notu:</span> Sınavda kafiye örgüsü (çapraz, sarma, düz) şemaları kesinlikle sorulacaktır!
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ── CASE 3: DOCX / TEXT DOCUMENT PREVIEW ── */}
+                {(previewFile.extension === 'docx' || previewFile.extension === 'txt') && (
+                  <div className="space-y-4 max-w-3xl mx-auto">
+                    <div className="bg-white text-gray-900 border border-gray-300 shadow-xl rounded-xl p-8 sm:p-12 min-h-[500px] font-sans">
+                      <div className="flex items-center justify-between border-b pb-4 mb-6">
+                        <div>
+                          <div className="text-xs font-bold text-blue-600">Microsoft Word Belgesi</div>
+                          <div className="text-base font-black text-gray-900 mt-1">{previewFile.name}</div>
+                        </div>
+                        <span className="px-2.5 py-1 rounded bg-blue-50 text-blue-700 border border-blue-200 font-bold text-[10px]">
+                          Düzenlenebilir
+                        </span>
+                      </div>
+
+                      <div className="space-y-4 text-xs leading-relaxed text-gray-800">
+                        <h4 className="font-black text-sm text-gray-900">
+                          1. DÖNEM ZÜMRE ÖĞRETMENLER KURULU KARAR METNİ
+                        </h4>
+                        <p>
+                          2026-2027 Eğitim Öğretim Yılı 1. Dönem Türk Dili ve Edebiyatı zümresi toplantısında alınan resmi kararlar aşağıda maddeler halinde belirtilmiştir:
+                        </p>
+                        <ol className="list-decimal list-inside space-y-2 pl-2">
+                          <li><strong>MEB Ortak Sınavları:</strong> 1. Dönem 1. Yazılı Sınavı 11-12 Kasım 2026 tarihlerinde MEB ortak takvimine uygun olarak uygulanacaktır.</li>
+                          <li><strong>Ders Kitabı ve Kaynaklar:</strong> Derslerde Bakanlığımızın yayımladığı 9. Sınıf Türk Dili ve Edebiyatı Ders Kitabı esas alınacaktır.</li>
+                          <li><strong>Akıllı Tahta Kullanımı:</strong> Her ders saatinin en az 20 dakikasında interaktif sunumlar ve Oxonom tahta araçları aktif kullanılacaktır.</li>
+                          <li><strong>Ödev Takibi:</strong> Haftalık olarak sisteme yüklenen okuma parçaları öğrencilere atanacak ve dijital kütüphane üzerinden teslim alınacaktır.</li>
+                        </ol>
+
+                        <div className="pt-8 border-t mt-8 flex justify-between items-center text-xs text-gray-500">
+                          <span>Hazırlayan: Ebru TEKNECİ</span>
+                          <span>Tutanak No: 2026/04</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ── CASE 4: EXCEL / SPREADSHEET PREVIEW ── */}
+                {previewFile.extension === 'xlsx' && (
+                  <div className="space-y-4 max-w-4xl mx-auto">
+                    <div className="bg-white dark:bg-[#121826] border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden shadow-xl">
+                      {/* Excel Ribbon Top */}
+                      <div className="bg-emerald-700 text-white p-3 flex items-center justify-between text-xs font-bold">
+                        <div className="flex items-center gap-2">
+                          <FileSpreadsheet size={16} />
+                          <span>Excel Tablosu: {previewFile.name}</span>
+                        </div>
+                        <span className="font-mono text-[10px] bg-emerald-800 px-2 py-0.5 rounded">
+                          Sayfa 1 (Aktif)
+                        </span>
+                      </div>
+
+                      {/* Spreadsheet Table Grid */}
+                      <div className="overflow-x-auto">
+                        <table className="w-full border-collapse text-xs">
+                          <thead>
+                            <tr className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-bold border-b border-gray-300 dark:border-gray-700">
+                              <th className="p-2 border-r border-gray-300 dark:border-gray-700 w-10 text-center font-mono">#</th>
+                              <th className="p-2 border-r border-gray-300 dark:border-gray-700 text-left font-mono">A (Kazanım No)</th>
+                              <th className="p-2 border-r border-gray-300 dark:border-gray-700 text-left font-mono">B (Kazanım Başlığı)</th>
+                              <th className="p-2 border-r border-gray-300 dark:border-gray-700 text-center font-mono">C (Haftalık Saat)</th>
+                              <th className="p-2 border-r border-gray-300 dark:border-gray-700 text-center font-mono">D (Soru Ağırlığı)</th>
+                              <th className="p-2 text-center font-mono">E (Hedef Başarı %)</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200 dark:divide-gray-800 text-gray-900 dark:text-white">
+                            <tr>
+                              <td className="p-2 text-center bg-gray-50 dark:bg-gray-900 text-gray-400 font-mono">1</td>
+                              <td className="p-2 font-mono font-bold text-indigo-600">TDE-09.1.1</td>
+                              <td className="p-2">Edebiyatın güzel sanatlarla ilişkisini kavrar</td>
+                              <td className="p-2 text-center font-mono">4 Saat</td>
+                              <td className="p-2 text-center font-mono font-bold text-emerald-600">%15</td>
+                              <td className="p-2 text-center font-mono">85%</td>
+                            </tr>
+                            <tr>
+                              <td className="p-2 text-center bg-gray-50 dark:bg-gray-900 text-gray-400 font-mono">2</td>
+                              <td className="p-2 font-mono font-bold text-indigo-600">TDE-09.1.2</td>
+                              <td className="p-2">Metin tahlili ve edebi türleri sınıflandırır</td>
+                              <td className="p-2 text-center font-mono">6 Saat</td>
+                              <td className="p-2 text-center font-mono font-bold text-emerald-600">%25</td>
+                              <td className="p-2 text-center font-mono">80%</td>
+                            </tr>
+                            <tr>
+                              <td className="p-2 text-center bg-gray-50 dark:bg-gray-900 text-gray-400 font-mono">3</td>
+                              <td className="p-2 font-mono font-bold text-indigo-600">TDE-09.1.3</td>
+                              <td className="p-2">Şiirde ahenk unsurları (ölçü, kafiye, redif) tahlili</td>
+                              <td className="p-2 text-center font-mono">8 Saat</td>
+                              <td className="p-2 text-center font-mono font-bold text-emerald-600">%35</td>
+                              <td className="p-2 text-center font-mono">75%</td>
+                            </tr>
+                            <tr>
+                              <td className="p-2 text-center bg-gray-50 dark:bg-gray-900 text-gray-400 font-mono">4</td>
+                              <td className="p-2 font-mono font-bold text-indigo-600">TDE-09.1.4</td>
+                              <td className="p-2">Yazım kuralları ve noktalama işaretleri uygulamaları</td>
+                              <td className="p-2 text-center font-mono">4 Saat</td>
+                              <td className="p-2 text-center font-mono font-bold text-emerald-600">%25</td>
+                              <td className="p-2 text-center font-mono">90%</td>
+                            </tr>
+                            <tr className="bg-emerald-50/60 dark:bg-emerald-950/30 font-bold">
+                              <td className="p-2 text-center bg-emerald-100/50 dark:bg-emerald-900/50 text-gray-500 font-mono">∑</td>
+                              <td className="p-2 font-mono">TOPLAM</td>
+                              <td className="p-2">1. Dönem Ortak Sınav Kazanım Çerçevesi</td>
+                              <td className="p-2 text-center font-mono">22 Saat</td>
+                              <td className="p-2 text-center font-mono text-emerald-600">%100</td>
+                              <td className="p-2 text-center font-mono">82.5%</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Preview Footer Actions */}
+              <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-[#121826] shrink-0">
+                <div className="text-xs text-gray-400">
+                  MEB E-Müfredat ve Akıllı Tahta Uyumlu Doküman
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const f = previewFile
+                      setPreviewFile(null)
+                      handleOpenSmartboardModal(f)
+                    }}
+                    className="h-10 px-4 rounded-xl text-xs font-bold bg-teal-50 dark:bg-teal-950 text-teal-600 dark:text-teal-400 hover:bg-teal-100 transition-colors cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Tv size={14} />
+                    <span>Tahtaya Yansıt</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDownload(previewFile)}
+                    className="h-10 px-5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs shadow-indigo-500/20"
+                  >
+                    <Download size={14} />
+                    <span>İndir</span>
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>

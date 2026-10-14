@@ -11,6 +11,7 @@ import {
   Settings,
   LucideIcon,
   Radio,
+  CalendarDays,
 } from 'lucide-react'
 
 export type FeatureStatus = 'active' | 'passive' | 'restricted'
@@ -101,6 +102,16 @@ export const STUDENT_MENU_CONFIG: StudentMenuItem[] = [
       { id: 'assessments-quizzes', label: 'Quizler', path: '/student/assessments/quizzes', status: 'active' },
       { id: 'assessments-results', label: 'Sınav Sonuçları', path: '/student/assessments/results', status: 'active' },
     ],
+  },
+  {
+    id: 'academic-calendar',
+    label: 'Akademik Takvim & Etkinlikler',
+    path: '/student/academic-calendar',
+    icon: CalendarDays,
+    status: 'active',
+    sortOrder: 4.5,
+    category: 'academic',
+    description: 'MEB 2026-2027 resmi çalışma takvimi, sınav haftaları, ara tatiller ve okul etkinlikleri.',
   },
   {
     id: 'learn',

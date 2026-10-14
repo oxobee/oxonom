@@ -122,6 +122,15 @@ export const TEACHER_MENU_CONFIG: TeacherMenuItem[] = [
     ],
   },
   {
+    id: 'academic-calendar',
+    label: 'Akademik Takvim & Etkinlikler',
+    path: '/teacher/academic-calendar',
+    icon: CalendarDays,
+    status: 'active',
+    sortOrder: 5.8,
+    description: 'MEB 2026-2027 resmi çalışma takvimi, ortak sınavlar, tatiller ve okul etkinlikleri.',
+  },
+  {
     id: 'assessments',
     label: 'Sınavlar ve Notlar',
     path: '/teacher/assessments',

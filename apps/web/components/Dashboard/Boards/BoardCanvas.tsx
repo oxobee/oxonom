@@ -347,6 +347,85 @@ function BoardEditorInner({
     return () => { editor.off('update', handler) }
   }, [editor])
 
+  // Listen for incoming smartboard dispatches from Teacher Files
+  useEffect(() => {
+    if (!editor || typeof window === 'undefined') return
+
+    const currentBoardId = (
+      board?.code ||
+      (board?.board_uuid?.includes('9a') || board?.board_uuid?.includes('demo') ? 'PANO-9A' : null) ||
+      (board?.board_uuid?.includes('9b') ? 'PANO-9B' : null) ||
+      (board?.board_uuid ? `TAHTA-${board.board_uuid.replace('board_', '').slice(0, 6).toUpperCase()}` : 'TAHTA-901')
+    ).toUpperCase()
+
+    const handleIncomingDispatch = (payload: any) => {
+      if (!payload || !payload.boardId) return
+      const targetId = payload.boardId.toUpperCase().trim()
+      if (targetId !== currentBoardId && targetId !== 'ALL' && targetId !== 'TUM') return
+
+      toast.success(`📥 "${payload.fileName}" içeriği akıllı tahtaya eklendi!`, {
+        icon: '🖥️',
+        duration: 5000,
+      })
+
+      // Insert card onto the canvas at visible center
+      const centerX = Math.max(100, Math.round((-pan.x + window.innerWidth / 2) / zoom) - 160)
+      const centerY = Math.max(100, Math.round((-pan.y + window.innerHeight / 2) / zoom) - 90)
+
+      editor.chain().insertContentAt(editor.state.doc.content.size, {
+        type: 'boardCard',
+        attrs: {
+          x: centerX,
+          y: centerY,
+          width: 320,
+          height: 180,
+        },
+        content: [
+          {
+            type: 'paragraph',
+            content: [
+              {
+                type: 'text',
+                text: `📄 ${payload.fileName}`,
+                marks: [{ type: 'bold' }],
+              },
+            ],
+          },
+          {
+            type: 'paragraph',
+            content: [
+              {
+                type: 'text',
+                text: `Aktaran: ${payload.author || 'Öğretmen'} • Boyut: ${payload.size} • Saat: ${payload.dispatchedAt}`,
+              },
+            ],
+          },
+        ],
+      }).run()
+    }
+
+    const onCustomEvent = (e: any) => {
+      handleIncomingDispatch(e.detail)
+    }
+
+    window.addEventListener('oxonom_smartboard_dispatch', onCustomEvent)
+
+    let bc: BroadcastChannel | null = null
+    if ('BroadcastChannel' in window) {
+      try {
+        bc = new BroadcastChannel('oxonom_smartboard_channel')
+        bc.onmessage = (ev) => handleIncomingDispatch(ev.data)
+      } catch (_) {}
+    }
+
+    return () => {
+      window.removeEventListener('oxonom_smartboard_dispatch', onCustomEvent)
+      if (bc) {
+        bc.close()
+      }
+    }
+  }, [editor, board, pan, zoom])
+
   // Keyboard handler: Delete/Backspace removes all selected nodes, Space to pan
   useEffect(() => {
     if (!editor) return

@@ -4,10 +4,11 @@ import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Tv, Copy, Check } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 import ToolTip from '@components/Objects/StyledElements/Tooltip/Tooltip'
 import { getUriWithOrg } from '@services/config/config'
+import toast from 'react-hot-toast'
 
 interface BoardTopBarProps {
   boardName: string
@@ -48,6 +49,43 @@ export default function BoardTopBar({
       return () => window.removeEventListener('resize', check)
     }
   }, [])
+
+  const [copiedId, setCopiedId] = useState(false)
+
+  // Determine distinct Board ID
+  const boardId =
+    board?.code ||
+    (board?.board_uuid?.includes('9a') || board?.board_uuid?.includes('demo') ? 'PANO-9A' : null) ||
+    (board?.board_uuid?.includes('9b') ? 'PANO-9B' : null) ||
+    (board?.board_uuid ? `TAHTA-${board.board_uuid.replace('board_', '').slice(0, 6).toUpperCase()}` : 'TAHTA-901')
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && boardId) {
+      try {
+        const raw = localStorage.getItem('oxonom_active_boards')
+        const current = raw ? JSON.parse(raw) : []
+        const filtered = current.filter((b: any) => b.id !== boardId)
+        filtered.unshift({
+          id: boardId,
+          name: boardName || 'Akıllı Tahta',
+          classroom: board?.classroom || '9/A Şubesi',
+          activeAt: Date.now(),
+        })
+        localStorage.setItem('oxonom_active_boards', JSON.stringify(filtered.slice(0, 10)))
+      } catch (_) {}
+    }
+  }, [boardId, boardName, board])
+
+  const handleCopyBoardId = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(boardId)
+      setCopiedId(true)
+      toast.success(`🖥️ Tahta ID (${boardId}) panoya kopyalandı!`)
+      setTimeout(() => setCopiedId(false), 2000)
+    }
+  }
 
   const isPanoWindow =
     searchParams?.get('chrome') === 'none' ||
@@ -96,6 +134,20 @@ export default function BoardTopBar({
           <span className="text-sm font-bold text-neutral-800 truncate max-w-[120px] sm:max-w-[260px] md:max-w-[460px]">
             {boardName}
           </span>
+
+          {/* Board ID Badge for pairing and content dispatch */}
+          <div
+            onClick={handleCopyBoardId}
+            title="Akıllı Tahta ID Numarası. Tıklayarak kopyalayabilir, öğretmen panelinden içerik gönderebilirsiniz."
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-teal-50 dark:bg-teal-950/60 border border-teal-200/90 dark:border-teal-800/80 text-teal-800 dark:text-teal-300 font-mono text-[11px] font-black tracking-wide cursor-pointer hover:bg-teal-100 transition-colors shadow-xs"
+          >
+            <Tv size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />
+            <span className="font-extrabold">Tahta ID:</span>
+            <span className="text-teal-900 dark:text-teal-200 underline decoration-teal-400 underline-offset-2">{boardId}</span>
+            <span className="text-teal-500 hover:text-teal-700 ml-0.5">
+              {copiedId ? <Check size={11} className="text-emerald-600" /> : <Copy size={11} />}
+            </span>
+          </div>
 
           {(board?.is_demo || board?.board_uuid?.startsWith('board_')) && (
             <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">

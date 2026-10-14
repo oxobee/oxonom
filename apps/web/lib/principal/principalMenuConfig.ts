@@ -148,6 +148,16 @@ export const PRINCIPAL_MENU_CONFIG: PrincipalMenuItem[] = [
     description: 'Haftalık ders programı, sınıf çizelgeleri, ders saatleri dağılımı ve zümre müfredat koordinasyonu.',
   },
   {
+    id: 'academic-calendar',
+    label: 'Akademik Takvim & Etkinlikler',
+    path: '/principal/academic-calendar',
+    icon: CalendarDays,
+    status: 'active',
+    sortOrder: 7,
+    category: 'academic',
+    description: 'MEB 2026-2027 resmi çalışma takvimi, ortak sınav haftaları, tatiller ve etkinlik yönetimi.',
+  },
+  {
     id: 'reports',
     label: 'İdari Raporlar & İstatistik',
     path: '/principal/reports',
