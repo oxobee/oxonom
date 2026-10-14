@@ -89,13 +89,13 @@ export const STUDENT_MENU_CONFIG: StudentMenuItem[] = [
   },
   {
     id: 'assessments',
-    label: 'Sınavlar ve Quizler',
+    label: 'Sınavlar ve Notlar',
     path: '/student/assessments',
     icon: FileCheck,
     status: 'active',
     sortOrder: 4,
     category: 'academic',
-    description: 'Yazılı sınavlar, mini testler, değerlendirmeler ve yayımlanmış resmi sınav sonuçları.',
+    description: 'Yazılı sınavlar, sözlü değerlendirmeler, quizler ve yayımlanmış resmi sınav sonuçları.',
     children: [
       { id: 'assessments-exams', label: 'Yazılı Sınavlar', path: '/student/assessments/exams', status: 'active' },
       { id: 'assessments-quizzes', label: 'Quizler', path: '/student/assessments/quizzes', status: 'active' },
@@ -140,11 +140,9 @@ export const STUDENT_MENU_CONFIG: StudentMenuItem[] = [
     status: 'active',
     sortOrder: 7,
     category: 'personal',
-    description: 'Akademik not ortalaması, ders başarı grafikleri, devamlılık durumu ve kazanım rozetleri.',
+    description: 'Akademik not ortalaması, çalışma analizi, devamlılık durumu ve ödev istatistikleri.',
     children: [
-      { id: 'progress-subjects', label: 'Ders Bazlı Başarı', path: '/student/progress/subjects', status: 'active' },
-      { id: 'progress-achievements', label: 'Başarı Rozetleri', path: '/student/progress/achievements', status: 'active' },
-      { id: 'progress-goals', label: 'Akademik Hedefler', path: '/student/progress/goals', status: 'active' },
+      { id: 'progress-subjects', label: 'Ders Başarısı & Analiz', path: '/student/progress/subjects', status: 'active' },
     ],
   },
   {

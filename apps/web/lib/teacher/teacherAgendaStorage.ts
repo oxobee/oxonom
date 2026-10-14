@@ -21,7 +21,8 @@ export interface SchoolExamItem {
   className: string // e.g. "9-A" or "Tüm Sınıflar"
   courseName: string // e.g. "Türk Dili ve Edebiyatı"
   title: string // e.g. "1. Dönem 1. Yazılı Sınavı"
-  type: 'exam' | 'quiz' | 'common' | 'mock' | 'performance'
+  type: 'exam' | 'quiz' | 'common' | 'mock' | 'performance' | 'oral' | 'written' | string
+  examTypeLabel?: string // e.g. "Yazılı Sınav", "Sözlü Sınav", "Quiz", "Performans / Proje", "Deneme Sınavı"
   date: string // ISO date or localized date string, e.g. "2026-10-28"
   time: string // e.g. "10:20 - 11:00"
   period?: number // e.g. 3 (3. Ders)
@@ -31,6 +32,7 @@ export interface SchoolExamItem {
   scope?: string // Kazanımlar ve Konu Kapsamı
   isPublished: boolean
   status: 'upcoming' | 'completed' | 'in_progress'
+  scores?: Record<string, number>
   createdAt?: string
 }
 
@@ -218,6 +220,7 @@ export const CANONICAL_SCHOOL_EXAMS: SchoolExamItem[] = [
     courseName: 'Türk Dili ve Edebiyatı',
     title: '1. Dönem 1. Yazılı Sınavı',
     type: 'exam',
+    examTypeLabel: 'Yazılı Sınav',
     date: '12 Ekim 2026',
     time: '09:25 - 10:05',
     period: 2,
@@ -227,6 +230,7 @@ export const CANONICAL_SCHOOL_EXAMS: SchoolExamItem[] = [
     scope: 'Giriş Ünitesi, Edebiyatın Sanatlarla İlişkisi, İletişim Ögeleri ve Hikaye Tahlili',
     isPublished: true,
     status: 'completed',
+    scores: { 's-1': 98 },
   },
   {
     id: 'exam-mat-1',
@@ -234,6 +238,7 @@ export const CANONICAL_SCHOOL_EXAMS: SchoolExamItem[] = [
     courseName: 'Matematik',
     title: '1. Dönem 1. Yazılı Sınavı',
     type: 'exam',
+    examTypeLabel: 'Yazılı Sınav',
     date: '18 Ekim 2026',
     time: '08:30 - 09:10',
     period: 1,
@@ -243,6 +248,43 @@ export const CANONICAL_SCHOOL_EXAMS: SchoolExamItem[] = [
     scope: 'Önermeler, Bileşik Önermeler ve Kümelerde İşlemler',
     isPublished: true,
     status: 'completed',
+    scores: { 's-1': 96 },
+  },
+  {
+    id: 'exam-ede-sozlu-1',
+    className: '9-A',
+    courseName: 'Türk Dili ve Edebiyatı',
+    title: '1. Dönem Şiir Okuma & Diksiyon Sözlü Sınavı',
+    type: 'oral',
+    examTypeLabel: 'Sözlü Sınav',
+    date: '15 Ekim 2026',
+    time: '11:15 - 11:55',
+    period: 4,
+    durationMinutes: 40,
+    location: 'Derslik 101 (9-A)',
+    teacherName: 'Ebru TEKNECİ',
+    scope: 'Ezbere şiir okuma, tonlama ve vurgu, divan şiiri ahenk tahlili',
+    isPublished: true,
+    status: 'completed',
+    scores: { 's-1': 100 },
+  },
+  {
+    id: 'exam-mat-perf-1',
+    className: '9-A',
+    courseName: 'Matematik',
+    title: '1. Dönem Fonksiyon Modelleme Performans Görevi',
+    type: 'performance',
+    examTypeLabel: 'Performans / Proje',
+    date: '05 Kasım 2026',
+    time: '11:15 - 11:55',
+    period: 4,
+    durationMinutes: 40,
+    location: 'Derslik 101 (9-A)',
+    teacherName: 'Ebru TEKNECİ',
+    scope: 'Günlük hayat problemlerinin fonksiyonlarla modellenmesi ve grafik çizimi',
+    isPublished: true,
+    status: 'completed',
+    scores: { 's-1': 100 },
   },
   {
     id: 'exam-ede-quiz-1',
@@ -250,6 +292,7 @@ export const CANONICAL_SCHOOL_EXAMS: SchoolExamItem[] = [
     courseName: 'Türk Dili ve Edebiyatı',
     title: 'Edebiyat Şiir Tahlili Mini Quiz',
     type: 'quiz',
+    examTypeLabel: 'Quiz',
     date: '24 Ekim 2026',
     time: '10:20 - 10:40',
     period: 3,
@@ -266,6 +309,7 @@ export const CANONICAL_SCHOOL_EXAMS: SchoolExamItem[] = [
     courseName: 'Matematik',
     title: 'Denklem Sistemleri Hızlı Tarama Quizi',
     type: 'quiz',
+    examTypeLabel: 'Quiz',
     date: '27 Ekim 2026',
     time: '11:15 - 11:40',
     period: 4,
@@ -282,6 +326,7 @@ export const CANONICAL_SCHOOL_EXAMS: SchoolExamItem[] = [
     courseName: 'Bilişim & Kodlama',
     title: 'Python Kodlama ve Algoritma Uygulama Sınavı',
     type: 'exam',
+    examTypeLabel: 'Yazılı Sınav',
     date: '20 Kasım 2026',
     time: '13:40 - 14:20',
     period: 6,
@@ -298,6 +343,7 @@ export const CANONICAL_SCHOOL_EXAMS: SchoolExamItem[] = [
     courseName: 'Türk Dili ve Edebiyatı',
     title: '1. Dönem 2. Yazılı Sınavı (Ortak)',
     type: 'common',
+    examTypeLabel: 'Yazılı Sınav',
     date: '28 Kasım 2026',
     time: '10:20 - 11:00',
     period: 3,
@@ -305,6 +351,23 @@ export const CANONICAL_SCHOOL_EXAMS: SchoolExamItem[] = [
     location: 'Derslik 101 (9-A)',
     teacherName: 'Ebru TEKNECİ',
     scope: 'Şiir ünitesi geneli, masal/fabl türleri, isim tamlamaları ve yazım kuralları',
+    isPublished: true,
+    status: 'upcoming',
+  },
+  {
+    id: 'exam-deneme-1',
+    className: '9-A',
+    courseName: 'Tüm Dersler',
+    title: '1. Kurumsal Genel Kazanım Deneme Sınavı',
+    type: 'mock',
+    examTypeLabel: 'Deneme Sınavı',
+    date: '15 Kasım 2026',
+    time: '09:00 - 11:30',
+    period: 1,
+    durationMinutes: 120,
+    location: 'Okul Konferans Salonu',
+    teacherName: 'Ölçme & Değerlendirme Zümresi',
+    scope: 'MEB 9. Sınıf 1. Çeyrek Tüm Müfredat Konuları',
     isPublished: true,
     status: 'upcoming',
   },

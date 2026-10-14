@@ -16,6 +16,7 @@ import {
   type MStudentItem,
   type MStudentCourseGrade,
 } from '@components/Mobile/MStudentClient'
+import { CANONICAL_SCHOOL_EXAMS } from '@/lib/teacher/teacherAgendaStorage'
 
 export interface GuidanceNoteItem {
   id: string
@@ -227,7 +228,8 @@ export interface StudentAssessment {
   id: string
   title: string
   courseName: string
-  type: 'exam' | 'quiz' | 'performance'
+  type: 'exam' | 'quiz' | 'performance' | 'oral' | 'mock' | 'common' | string
+  examTypeLabel?: string
   date: string
   time: string
   durationMinutes: number
@@ -661,6 +663,7 @@ export function getSynchronizedStudentAssessments(): StudentAssessment[] {
         title: `${g.courseName} 1. Yazılı Sınavı`,
         courseName: g.courseName,
         type: 'exam',
+        examTypeLabel: 'Yazılı Sınav',
         date: '12 Ekim 2026',
         time: '09:25',
         durationMinutes: 40,
@@ -684,6 +687,7 @@ export function getSynchronizedStudentAssessments(): StudentAssessment[] {
         title: `${g.courseName} 2. Yazılı Sınavı`,
         courseName: g.courseName,
         type: 'exam',
+        examTypeLabel: 'Yazılı Sınav',
         date: '28 Kasım 2026',
         time: '10:20',
         durationMinutes: 40,
@@ -707,6 +711,7 @@ export function getSynchronizedStudentAssessments(): StudentAssessment[] {
         title: `${g.courseName} 1. Performans Görevi`,
         courseName: g.courseName,
         type: 'performance',
+        examTypeLabel: 'Performans / Proje',
         date: '05 Kasım 2026',
         time: '11:15',
         durationMinutes: 40,
@@ -733,72 +738,7 @@ export function getSynchronizedStudentAssessments(): StudentAssessment[] {
     }
 
     if (!calendarExams || calendarExams.length === 0) {
-      calendarExams = [
-        {
-          id: 'exam-ede-quiz-1',
-          className: '9-A',
-          courseName: 'Türk Dili ve Edebiyatı',
-          title: 'Edebiyat Şiir Tahlili Mini Quiz',
-          type: 'quiz',
-          date: '24 Ekim 2026',
-          time: '10:20 - 10:40',
-          period: 3,
-          durationMinutes: 20,
-          location: 'Derslik 101 (9-A)',
-          teacherName: 'Ebru TEKNECİ',
-          scope: 'Nazım birimi, kafiye ve redif, şiirde ahenk unsurları',
-          isPublished: true,
-          status: 'upcoming',
-        },
-        {
-          id: 'exam-mat-quiz-1',
-          className: '9-A',
-          courseName: 'Matematik',
-          title: 'Denklem Sistemleri Hızlı Tarama Quizi',
-          type: 'quiz',
-          date: '27 Ekim 2026',
-          time: '11:15 - 11:40',
-          period: 4,
-          durationMinutes: 25,
-          location: 'Derslik 101 (9-A)',
-          teacherName: 'Ebru TEKNECİ',
-          scope: 'Birinci dereceden iki bilinmeyenli denklem ve eşitsizlikler',
-          isPublished: true,
-          status: 'upcoming',
-        },
-        {
-          id: 'exam-bil-1',
-          className: '9-A',
-          courseName: 'Bilişim & Kodlama',
-          title: 'Python Kodlama ve Algoritma Uygulama Sınavı',
-          type: 'exam',
-          date: '20 Kasım 2026',
-          time: '13:40 - 14:20',
-          period: 6,
-          durationMinutes: 40,
-          location: 'Bilişim Atölyesi',
-          teacherName: 'Ebru TEKNECİ',
-          scope: 'Python değişkenler, koşul blokları ve akış diyagramları',
-          isPublished: true,
-          status: 'upcoming',
-        },
-        {
-          id: 'exam-ede-2',
-          className: '9-A',
-          courseName: 'Türk Dili ve Edebiyatı',
-          title: '1. Dönem 2. Yazılı Sınavı',
-          type: 'exam',
-          date: '28 Kasım 2026',
-          time: '10:20 - 11:00',
-          period: 3,
-          durationMinutes: 40,
-          location: 'Derslik 101 (9-A)',
-          teacherName: 'Ebru TEKNECİ',
-          scope: 'Şiir ünitesi geneli, masal/fabl türleri, isim tamlamaları ve yazım kuralları',
-          isPublished: true,
-          status: 'upcoming',
-        },
-      ]
+      calendarExams = CANONICAL_SCHOOL_EXAMS
     }
 
     const currentClass = profile.className || '9-A'
@@ -810,6 +750,20 @@ export function getSynchronizedStudentAssessments(): StudentAssessment[] {
         currentClass.includes(ce.className)
 
       if (!matchClass) return
+
+      const studentScore = ce.scores?.[profile.id] ?? ce.scores?.['s-1']
+      const hasScore = studentScore !== undefined && studentScore !== null && String(studentScore) !== ''
+      const typeLabel =
+        ce.examTypeLabel ||
+        (ce.type === 'quiz'
+          ? 'Quiz'
+          : ce.type === 'oral'
+          ? 'Sözlü Sınav'
+          : ce.type === 'performance'
+          ? 'Performans / Proje'
+          : ce.type === 'mock'
+          ? 'Deneme Sınavı'
+          : 'Yazılı Sınav')
 
       // Find if we have an existing assessment matching this title and course
       const existing = assessments.find(
@@ -827,22 +781,34 @@ export function getSynchronizedStudentAssessments(): StudentAssessment[] {
         existing.scope = ce.scope || existing.scope
         existing.teacherName = ce.teacherName || existing.teacherName
         existing.period = ce.period || existing.period
+        existing.examTypeLabel = typeLabel
+        if (hasScore) {
+          existing.score = Number(studentScore)
+          existing.isGraded = true
+          existing.status = 'completed'
+        }
       } else {
         assessments.push({
           id: ce.id || `as-custom-${Date.now()}-${Math.random().toString(36).substring(7)}`,
           title: ce.title,
           courseName: ce.courseName,
-          type: ce.type === 'quiz' ? 'quiz' : ce.type === 'performance' ? 'performance' : 'exam',
+          type: ce.type || 'exam',
+          examTypeLabel: typeLabel,
           date: ce.date,
           time: ce.time || '10:20',
           period: ce.period,
           durationMinutes: ce.durationMinutes || 40,
           location: ce.location || `Derslik 101 (${currentClass})`,
           maxScore: 100,
-          score: undefined,
-          isGraded: false,
+          score: hasScore ? Number(studentScore) : undefined,
+          isGraded: hasScore,
           isPublished: true,
-          status: ce.status || 'upcoming',
+          status: hasScore || ce.status === 'completed' ? 'completed' : ce.status || 'upcoming',
+          teacherFeedback: hasScore
+            ? Number(studentScore) >= 90
+              ? `${ce.teacherName || 'Öğretmen'}: Tebrikler, üstün akademik başarı.`
+              : `${ce.teacherName || 'Öğretmen'}: Başarılı çalışma, eksikler pekiştirilmeli.`
+            : undefined,
           scope: ce.scope,
           teacherName: ce.teacherName || 'Ebru TEKNECİ',
           className: ce.className,
