@@ -1,12 +1,12 @@
 'use client'
 
 import React from 'react'
-import { Database, AlertCircle, Info, Sparkles } from 'lucide-react'
+import { Database, AlertCircle, Info, Sparkles, CheckCircle2 } from 'lucide-react'
 
 export interface MockBadgeProps {
   label?: string
   size?: 'xs' | 'sm' | 'md'
-  variant?: 'amber' | 'subtle' | 'card' | 'banner' | 'outline'
+  variant?: 'amber' | 'subtle' | 'card' | 'banner' | 'outline' | 'live'
   className?: string
   tooltip?: string
   description?: string
@@ -15,12 +15,21 @@ export interface MockBadgeProps {
 export function MockBadge({
   label = 'Mock Veri',
   size = 'xs',
-  variant = 'amber',
+  variant,
   className = '',
-  tooltip = 'Bu veri canlı veritabanından çekilmemektedir (Yerel Mock / Demo Veri).',
+  tooltip,
   description,
 }: MockBadgeProps) {
-  if (variant === 'banner') {
+  const isLive = label === 'Canlı Senkronize' || label === 'Canlı' || variant === 'live'
+  const effectiveVariant = variant || (isLive ? 'live' : 'amber')
+
+  const effectiveTooltip =
+    tooltip ||
+    (isLive
+      ? 'Bu alan güncel ve senkronize gerçek sistem verisidir.'
+      : 'Bu veri canlı veritabanından çekilmemektedir (Yerel Mock / Demo Veri).')
+
+  if (effectiveVariant === 'banner') {
     return (
       <div
         className={`px-3 py-2 rounded-xl bg-amber-500/[0.08] dark:bg-amber-500/[0.12] border border-amber-500/30 text-amber-800 dark:text-amber-300 flex items-center justify-between text-xs gap-2 select-none ${className}`}
@@ -47,6 +56,8 @@ export function MockBadge({
   const variantClasses = {
     amber:
       'bg-amber-500/15 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 font-extrabold shadow-2xs',
+    live:
+      'bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 font-extrabold shadow-2xs',
     subtle:
       'bg-gray-500/10 dark:bg-gray-500/20 text-gray-600 dark:text-gray-400 border border-gray-500/20 font-bold',
     outline:
@@ -57,10 +68,14 @@ export function MockBadge({
 
   return (
     <span
-      title={tooltip}
-      className={`inline-flex items-center select-none shrink-0 tracking-tight transition-colors ${sizeClasses[size]} ${variantClasses[variant] || variantClasses.amber} ${className}`}
+      title={effectiveTooltip}
+      className={`inline-flex items-center select-none shrink-0 tracking-tight transition-colors ${sizeClasses[size]} ${variantClasses[effectiveVariant] || variantClasses.amber} ${className}`}
     >
-      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
+      <span
+        className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+          isLive ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'
+        }`}
+      />
       <span>{label}</span>
     </span>
   )

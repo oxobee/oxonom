@@ -293,7 +293,6 @@ export default function TeacherScheduleView() {
             <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
               Haftalık Ders Programı
             </h1>
-            <MockBadge size="sm" />
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
             Okul Müdürü tarafından oluşturulan haftalık ders akışı, derslik ve akıllı tahta dağılımı

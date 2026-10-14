@@ -922,7 +922,6 @@ export default function DashV2Client({
                       <h3 className="text-sm font-bold text-gray-900 dark:text-white">
                         Günlük Sınıf Yoklaması
                       </h3>
-                      <MockBadge size="xs" />
                     </div>
                     <p className="text-[11px] text-gray-400 mt-0.5">
                       {selectedClass.code} Şubesi için bugünkü devam kaydı
@@ -1324,7 +1323,6 @@ export default function DashV2Client({
                       <h3 className="text-sm font-bold text-gray-900 dark:text-white">
                         Verilen Ödevler ve Değerlendirme
                       </h3>
-                      <MockBadge size="xs" />
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                       {selectedClass.code} Şubesi · Erçil UĞURLU için verilen ödevler, teslim durumları ve puanlama ekranı.

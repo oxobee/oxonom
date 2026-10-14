@@ -190,7 +190,6 @@ export default function TeacherAssessmentsView() {
             <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
               Sınavlar ve Notlar
             </h1>
-            <MockBadge size="sm" />
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
             Sınav tipini belirleyin, öğrencilerinize hızlıca not girin ve akademik karneye anında işleyin
@@ -374,7 +373,6 @@ export default function TeacherAssessmentsView() {
                 <h2 className="text-lg font-black text-gray-900 dark:text-white tracking-tight">
                   {primaryStudent.name} — Akademik Performans Karnesi
                 </h2>
-                <MockBadge size="xs" />
               </div>
             </div>
 

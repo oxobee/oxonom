@@ -228,7 +228,6 @@ export default function TeacherClassesView() {
                 <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400">
                   {classStudents.length} Kayıtlı Öğrenci
                 </span>
-                <MockBadge size="xs" />
               </h1>
             </div>
 

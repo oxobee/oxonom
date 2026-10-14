@@ -133,7 +133,6 @@ export default function TeacherProgressView() {
             <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
               Öğrenci Gelişimi ve Rehberlik
             </h1>
-            <MockBadge size="sm" />
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
             Sınıf seçin, öğrenci bazlı grafiksel not ve devamsızlık analizlerini inceleyin ve rehberlik notu ekleyin
