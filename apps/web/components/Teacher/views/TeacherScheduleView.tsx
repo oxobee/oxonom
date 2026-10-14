@@ -32,6 +32,7 @@ import {
   type ScheduleEntry,
   type DayKey,
 } from '@components/Mobile/Admin/MAdminScheduleClient'
+import { CANONICAL_9A_SCHEDULE_30 } from '@/lib/student/studentData'
 import ConnectBoardModal from '@components/DashboardV2/ConnectBoardModal'
 import { useMobileTheme } from '@components/Mobile/useMobileTheme'
 import MockBadge from '@components/Common/MockBadge'
@@ -179,25 +180,73 @@ export default function TeacherScheduleView() {
         }
       } catch (_) {}
     }
-    return INITIAL_SCHEDULE_ENTRIES
+    return CANONICAL_9A_SCHEDULE_30
   }, [scheduleVersion])
 
-  // Listen for schedule updates and publishes from Principal
+  // Listen for schedule updates and publishes from Principal & sync from /api/schedule
   useEffect(() => {
     const handleUpdate = () => {
       setScheduleVersion((v) => v + 1)
     }
+
+    const fetchRemote = async () => {
+      try {
+        const res = await fetch('/api/schedule', { cache: 'no-store' })
+        if (res.ok) {
+          const data = await res.json()
+          if (data && Array.isArray(data.schedule) && data.schedule.length > 0) {
+            try {
+              localStorage.setItem('oxonom_admin_schedule_30', JSON.stringify(data.schedule))
+              localStorage.setItem('oxonom_schedule_30', JSON.stringify(data.schedule))
+              localStorage.setItem('oxonom_teacher_schedule_30', JSON.stringify(data.schedule))
+              if (Array.isArray(data.periods)) {
+                localStorage.setItem('oxonom_admin_periods_30', JSON.stringify(data.periods))
+              }
+            } catch (_) {}
+            setScheduleVersion((v) => v + 1)
+          }
+        }
+      } catch (_) {}
+    }
+    fetchRemote()
+    const interval = setInterval(fetchRemote, 4000)
+
     window.addEventListener('storage', handleUpdate)
     window.addEventListener('oxonom_admin_schedule_updated', handleUpdate)
     window.addEventListener('oxonom_schedule_updated', handleUpdate)
     window.addEventListener('oxonom_schedule_published', handleUpdate)
+
     return () => {
+      clearInterval(interval)
       window.removeEventListener('storage', handleUpdate)
       window.removeEventListener('oxonom_admin_schedule_updated', handleUpdate)
       window.removeEventListener('oxonom_schedule_updated', handleUpdate)
       window.removeEventListener('oxonom_schedule_published', handleUpdate)
     }
   }, [])
+
+  // Dynamically determine period rows: only show periods that actually exist (no empty 7th period!)
+  const schedulePeriods = useMemo(() => {
+    const hasPeriod7 = allEntries.some((e) => e.period >= 7)
+    if (hasPeriod7) {
+      return MIDDLE_PERIODS
+    }
+    if (typeof window !== 'undefined') {
+      try {
+        const saved =
+          localStorage.getItem('oxonom_admin_periods_30') ||
+          localStorage.getItem('oxonom_periods_30') ||
+          localStorage.getItem('oxonom_admin_periods')
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed
+          }
+        }
+      } catch (_) {}
+    }
+    return MIDDLE_PERIODS.filter((p) => p.periodNumber <= 6)
+  }, [allEntries])
 
   // Filter entries based on scopeFilter (my_lessons vs all_school)
   const filteredEntries = useMemo(() => {
@@ -565,7 +614,7 @@ export default function TeacherScheduleView() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800/60 text-xs">
-                {MIDDLE_PERIODS.map((period) => (
+                {schedulePeriods.map((period) => (
                   <tr key={period.periodNumber} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors">
                     {/* Periyot & Saat Hücresi */}
                     <td className="p-2.5 text-center bg-gray-50/40 dark:bg-gray-900/40 border-r border-gray-100 dark:border-gray-800/60 shrink-0">

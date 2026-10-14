@@ -174,6 +174,29 @@ export default function StudentDashboardView() {
 
     syncAll()
 
+    // Fetch from /api/schedule for cross-browser, cross-device & incognito synchronization
+    const fetchRemoteSchedule = async () => {
+      try {
+        const res = await fetch('/api/schedule', { cache: 'no-store' })
+        if (res.ok) {
+          const data = await res.json()
+          if (data && Array.isArray(data.schedule) && data.schedule.length > 0) {
+            setWeeklySchedule(data.schedule)
+            try {
+              localStorage.setItem('oxonom_admin_schedule_30', JSON.stringify(data.schedule))
+              localStorage.setItem('oxonom_schedule_30', JSON.stringify(data.schedule))
+              if (Array.isArray(data.periods)) {
+                localStorage.setItem('oxonom_admin_periods_30', JSON.stringify(data.periods))
+                localStorage.setItem('oxonom_periods_30', JSON.stringify(data.periods))
+              }
+            } catch (_) {}
+          }
+        }
+      } catch (_) {}
+    }
+    fetchRemoteSchedule()
+    const interval = setInterval(fetchRemoteSchedule, 4000)
+
     window.addEventListener('oxonom_student_updated', syncAll)
     window.addEventListener('oxonom_assignments_updated', syncAll)
     window.addEventListener('oxonom_student_homeworks_updated', syncAll)
@@ -186,6 +209,7 @@ export default function StudentDashboardView() {
     window.addEventListener('storage', syncAll)
 
     return () => {
+      clearInterval(interval)
       window.removeEventListener('oxonom_student_updated', syncAll)
       window.removeEventListener('oxonom_assignments_updated', syncAll)
       window.removeEventListener('oxonom_student_homeworks_updated', syncAll)
@@ -198,6 +222,30 @@ export default function StudentDashboardView() {
       window.removeEventListener('storage', syncAll)
     }
   }, [])
+
+  // Dynamically determine period rows: only show periods that actually exist (no empty 7th period!)
+  const schedulePeriods = useMemo(() => {
+    const hasPeriod7 = weeklySchedule.some((e) => e.period >= 7)
+    if (hasPeriod7) {
+      return MIDDLE_PERIODS
+    }
+    if (typeof window !== 'undefined') {
+      try {
+        const saved =
+          localStorage.getItem('oxonom_admin_periods_30') ||
+          localStorage.getItem('oxonom_periods_30') ||
+          localStorage.getItem('oxonom_admin_periods')
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed
+          }
+        }
+      } catch (_) {}
+    }
+    // Default to 6 periods (30 hours/week) matching 9-A curriculum
+    return MIDDLE_PERIODS.filter((p) => p.periodNumber <= 6)
+  }, [weeklySchedule])
 
   // Today's Day Key in Turkish schedule format (mon, tue, wed, thu, fri)
   const todayKey: DayKey = useMemo(() => {
@@ -450,7 +498,7 @@ export default function StudentDashboardView() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 dark:divide-gray-800/60 text-xs">
-                      {MIDDLE_PERIODS.map((period) => (
+                      {schedulePeriods.map((period) => (
                         <tr key={period.periodNumber} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors">
                           {/* Saat ve Periyot Kolonu */}
                           <td className="p-2 text-center bg-gray-50/40 dark:bg-gray-900/40 border-r border-gray-100 dark:border-gray-800/60 shrink-0">

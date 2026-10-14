@@ -50,6 +50,7 @@ import { useLHSession } from '@components/Contexts/LHSessionContext'
 import { getStoredPrincipalProfile } from '@/lib/principal/principalProfileStorage'
 import MockBadge from '@components/Common/MockBadge'
 import { INITIAL_SCHEDULE_ENTRIES } from './MAdminScheduleClient'
+import { CANONICAL_9A_SCHEDULE_30 } from '@/lib/student/studentData'
 
 export interface MAdminCurriculumClientProps {
   orgSlug?: string
@@ -433,7 +434,7 @@ export const loadStoredSchedule = (orgId: number = 30): ScheduleEntry[] => {
       }
     } catch (_) {}
   }
-  return INITIAL_SCHEDULE_ENTRIES
+  return CANONICAL_9A_SCHEDULE_30
 }
 
 export default function MAdminCurriculumClient({
@@ -468,7 +469,7 @@ export default function MAdminCurriculumClient({
   // Workload monitor toggle
   const [isWorkloadExpanded, setIsWorkloadExpanded] = useState<boolean>(true)
 
-  // Dynamic periods (can be customized by principal - default 7 periods = 35 hours/week for Oxonom 9/A)
+  // Dynamic periods (can be customized by principal - default 6 periods = 30 hours/week for Oxonom 9/A)
   const [periods, setPeriods] = useState<PeriodSlot[]>(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -481,7 +482,7 @@ export default function MAdminCurriculumClient({
         }
       } catch (_) {}
     }
-    return MIDDLE_PERIODS // 7 periods/day = 35 hours/week for Oxonom 9/A
+    return PRIMARY_PERIODS // 6 periods/day = 30 hours/week for Oxonom 9/A
   })
 
   // Modals state
@@ -676,10 +677,28 @@ export default function MAdminCurriculumClient({
         localStorage.setItem('oxonom_admin_schedule_30', JSON.stringify(updated))
         localStorage.setItem('oxonom_schedule_30', JSON.stringify(updated))
         localStorage.setItem('oxonom_teacher_schedule_30', JSON.stringify(updated))
+        localStorage.setItem(`oxonom_admin_periods_${selectedOrgId}`, JSON.stringify(periods))
+        localStorage.setItem('oxonom_admin_periods_30', JSON.stringify(periods))
+        localStorage.setItem('oxonom_periods_30', JSON.stringify(periods))
         window.dispatchEvent(new CustomEvent('oxonom_admin_schedule_updated', { detail: updated }))
         window.dispatchEvent(new CustomEvent('oxonom_schedule_updated', { detail: updated }))
       } catch (_) {}
     }
+
+    // Server-side sync across incognito and separate browser windows
+    try {
+      fetch('/api/schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          schedule: updated,
+          periods,
+          classCode: selectedClass,
+          orgId: selectedOrgId,
+          publishedBy: principalName,
+        }),
+      }).catch(() => {})
+    } catch (_) {}
   }
 
   const persistPeriods = (updated: PeriodSlot[]) => {
@@ -687,6 +706,8 @@ export default function MAdminCurriculumClient({
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem(`oxonom_admin_periods_${selectedOrgId}`, JSON.stringify(updated))
+        localStorage.setItem('oxonom_admin_periods_30', JSON.stringify(updated))
+        localStorage.setItem('oxonom_periods_30', JSON.stringify(updated))
       } catch (_) {}
     }
   }
@@ -1099,7 +1120,7 @@ export default function MAdminCurriculumClient({
     return 'Canlıda Aktif'
   })
 
-  const handlePublishSchedule = () => {
+  const handlePublishSchedule = async () => {
     persistSchedule(scheduleList)
     const nowStr = new Date().toLocaleString('tr-TR', {
       day: 'numeric',
@@ -1112,9 +1133,26 @@ export default function MAdminCurriculumClient({
       try {
         localStorage.setItem('oxonom_schedule_last_published_at', nowStr)
         localStorage.setItem('oxonom_schedule_last_published_by', principalName)
+        localStorage.setItem('oxonom_admin_periods_30', JSON.stringify(periods))
+        localStorage.setItem('oxonom_periods_30', JSON.stringify(periods))
         window.dispatchEvent(new CustomEvent('oxonom_schedule_published', { detail: scheduleList }))
       } catch (_) {}
     }
+
+    try {
+      await fetch('/api/schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          schedule: scheduleList,
+          periods,
+          classCode: selectedClass,
+          orgId: selectedOrgId,
+          publishedBy: principalName,
+        }),
+      })
+    } catch (_) {}
+
     toast.success(
       `🎉 ${selectedClass} haftalık ders programı başarıyla kaydedildi ve tüm öğretmen ile öğrenci panellerinde anında yayınlandı!`,
       { duration: 4500, icon: '🚀' }

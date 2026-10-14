@@ -1,0 +1,158 @@
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
+import { NextResponse } from 'next/server'
+import fs from 'fs'
+import path from 'path'
+
+// Canonical 30-hour (6 periods/day x 5 days) MEB schedule for 9-A as authentic initial dataset
+export const CANONICAL_9A_SCHEDULE = [
+  // Pazartesi (6)
+  { id: 'sc-9a-mon-1', orgId: 30, day: 'mon', period: 1, classCode: '9-A', subject: 'Türk Dili ve Edebiyatı', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'blue', isSmartBoardActive: true },
+  { id: 'sc-9a-mon-2', orgId: 30, day: 'mon', period: 2, classCode: '9-A', subject: 'Türk Dili ve Edebiyatı', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'blue', isSmartBoardActive: true },
+  { id: 'sc-9a-mon-3', orgId: 30, day: 'mon', period: 3, classCode: '9-A', subject: 'Matematik', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'indigo', isSmartBoardActive: true },
+  { id: 'sc-9a-mon-4', orgId: 30, day: 'mon', period: 4, classCode: '9-A', subject: 'Matematik', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'indigo', isSmartBoardActive: true },
+  { id: 'sc-9a-mon-5', orgId: 30, day: 'mon', period: 5, classCode: '9-A', subject: 'Fizik & Fen Bilimleri', teacherName: 'Ebru TEKNECİ', roomName: 'Fen & Teknoloji Laboratuvarı', color: 'emerald', isSmartBoardActive: true },
+  { id: 'sc-9a-mon-6', orgId: 30, day: 'mon', period: 6, classCode: '9-A', subject: 'Fizik & Fen Bilimleri', teacherName: 'Ebru TEKNECİ', roomName: 'Fen & Teknoloji Laboratuvarı', color: 'emerald', isSmartBoardActive: true },
+
+  // Salı (6)
+  { id: 'sc-9a-tue-1', orgId: 30, day: 'tue', period: 1, classCode: '9-A', subject: 'Türk Dili ve Edebiyatı', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'blue', isSmartBoardActive: true },
+  { id: 'sc-9a-tue-2', orgId: 30, day: 'tue', period: 2, classCode: '9-A', subject: 'Türk Dili ve Edebiyatı', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'blue', isSmartBoardActive: true },
+  { id: 'sc-9a-tue-3', orgId: 30, day: 'tue', period: 3, classCode: '9-A', subject: 'Matematik', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'indigo', isSmartBoardActive: true },
+  { id: 'sc-9a-tue-4', orgId: 30, day: 'tue', period: 4, classCode: '9-A', subject: 'Matematik', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'indigo', isSmartBoardActive: true },
+  { id: 'sc-9a-tue-5', orgId: 30, day: 'tue', period: 5, classCode: '9-A', subject: 'Fizik & Fen Bilimleri', teacherName: 'Ebru TEKNECİ', roomName: 'Fen & Teknoloji Laboratuvarı', color: 'emerald', isSmartBoardActive: true },
+  { id: 'sc-9a-tue-6', orgId: 30, day: 'tue', period: 6, classCode: '9-A', subject: 'Fizik & Fen Bilimleri', teacherName: 'Ebru TEKNECİ', roomName: 'Fen & Teknoloji Laboratuvarı', color: 'emerald', isSmartBoardActive: true },
+
+  // Çarşamba (6)
+  { id: 'sc-9a-wed-1', orgId: 30, day: 'wed', period: 1, classCode: '9-A', subject: 'Türk Dili ve Edebiyatı', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'blue', isSmartBoardActive: true },
+  { id: 'sc-9a-wed-2', orgId: 30, day: 'wed', period: 2, classCode: '9-A', subject: 'Matematik', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'indigo', isSmartBoardActive: true },
+  { id: 'sc-9a-wed-3', orgId: 30, day: 'wed', period: 3, classCode: '9-A', subject: 'Matematik', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'indigo', isSmartBoardActive: true },
+  { id: 'sc-9a-wed-4', orgId: 30, day: 'wed', period: 4, classCode: '9-A', subject: 'Bilişim & Yazılım', teacherName: 'Ebru TEKNECİ', roomName: 'Bilişim & Kodlama Atölyesi', color: 'cyan', isSmartBoardActive: true },
+  { id: 'sc-9a-wed-5', orgId: 30, day: 'wed', period: 5, classCode: '9-A', subject: 'Bilişim & Yazılım', teacherName: 'Ebru TEKNECİ', roomName: 'Bilişim & Kodlama Atölyesi', color: 'cyan', isSmartBoardActive: true },
+  { id: 'sc-9a-wed-6', orgId: 30, day: 'wed', period: 6, classCode: '9-A', subject: 'Yabancı Dil (İngilizce)', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'purple', isSmartBoardActive: true },
+
+  // Perşembe (6)
+  { id: 'sc-9a-thu-1', orgId: 30, day: 'thu', period: 1, classCode: '9-A', subject: 'Bilişim & Yazılım', teacherName: 'Ebru TEKNECİ', roomName: 'Bilişim & Kodlama Atölyesi', color: 'cyan', isSmartBoardActive: true },
+  { id: 'sc-9a-thu-2', orgId: 30, day: 'thu', period: 2, classCode: '9-A', subject: 'Yabancı Dil (İngilizce)', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'purple', isSmartBoardActive: true },
+  { id: 'sc-9a-thu-3', orgId: 30, day: 'thu', period: 3, classCode: '9-A', subject: 'Yabancı Dil (İngilizce)', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'purple', isSmartBoardActive: true },
+  { id: 'sc-9a-thu-4', orgId: 30, day: 'thu', period: 4, classCode: '9-A', subject: 'Tarih', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'amber', isSmartBoardActive: true },
+  { id: 'sc-9a-thu-5', orgId: 30, day: 'thu', period: 5, classCode: '9-A', subject: 'Tarih', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'amber', isSmartBoardActive: true },
+  { id: 'sc-9a-thu-6', orgId: 30, day: 'thu', period: 6, classCode: '9-A', subject: 'Coğrafya', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'teal', isSmartBoardActive: true },
+
+  // Cuma (6)
+  { id: 'sc-9a-fri-1', orgId: 30, day: 'fri', period: 1, classCode: '9-A', subject: 'Yabancı Dil (İngilizce)', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'purple', isSmartBoardActive: true },
+  { id: 'sc-9a-fri-2', orgId: 30, day: 'fri', period: 2, classCode: '9-A', subject: 'Coğrafya', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'teal', isSmartBoardActive: true },
+  { id: 'sc-9a-fri-3', orgId: 30, day: 'fri', period: 3, classCode: '9-A', subject: 'Beden Eğitimi & Spor', teacherName: 'Ebru TEKNECİ', roomName: 'Kapalı Spor Salonu', color: 'orange', isSmartBoardActive: false },
+  { id: 'sc-9a-fri-4', orgId: 30, day: 'fri', period: 4, classCode: '9-A', subject: 'Beden Eğitimi & Spor', teacherName: 'Ebru TEKNECİ', roomName: 'Kapalı Spor Salonu', color: 'orange', isSmartBoardActive: false },
+  { id: 'sc-9a-fri-5', orgId: 30, day: 'fri', period: 5, classCode: '9-A', subject: 'Görsel Sanatlar & Atölye', teacherName: 'Ebru TEKNECİ', roomName: 'Görsel Sanatlar Atölyesi', color: 'pink', isSmartBoardActive: false },
+  { id: 'sc-9a-fri-6', orgId: 30, day: 'fri', period: 6, classCode: '9-A', subject: 'Müzik & Sahne Sanatları', teacherName: 'Ebru TEKNECİ', roomName: 'Müzik Odası', color: 'pink', isSmartBoardActive: true },
+]
+
+export const CANONICAL_6_PERIODS = [
+  { periodNumber: 1, time: '08:30 - 09:10' },
+  { periodNumber: 2, time: '09:25 - 10:05' },
+  { periodNumber: 3, time: '10:20 - 11:00' },
+  { periodNumber: 4, time: '11:15 - 11:55', isLunchAfter: true },
+  { periodNumber: 5, time: '12:45 - 13:25' },
+  { periodNumber: 6, time: '13:40 - 14:20' },
+]
+
+// Server-side state
+let globalScheduleState: {
+  schedule: any[]
+  periods: any[]
+  publishedAt: string
+  publishedBy: string
+} = {
+  schedule: CANONICAL_9A_SCHEDULE,
+  periods: CANONICAL_6_PERIODS,
+  publishedAt: new Date().toISOString(),
+  publishedBy: 'Dr. Uğur UĞURLU (Okul Müdürü)',
+}
+
+const TEMP_STORAGE_FILE = path.join('/tmp', 'oxonom_active_schedule.json')
+
+function loadFromTempFile() {
+  try {
+    if (fs.existsSync(TEMP_STORAGE_FILE)) {
+      const data = fs.readFileSync(TEMP_STORAGE_FILE, 'utf-8')
+      const parsed = JSON.parse(data)
+      if (parsed && Array.isArray(parsed.schedule) && parsed.schedule.length > 0) {
+        globalScheduleState = parsed
+      }
+    }
+  } catch (_) {}
+}
+
+function saveToTempFile(data: any) {
+  try {
+    fs.writeFileSync(TEMP_STORAGE_FILE, JSON.stringify(data), 'utf-8')
+  } catch (_) {}
+}
+
+// Initial load on server module initialization
+loadFromTempFile()
+
+export async function GET(request: Request) {
+  loadFromTempFile()
+
+  return NextResponse.json(
+    {
+      success: true,
+      schedule: globalScheduleState.schedule,
+      periods: globalScheduleState.periods,
+      publishedAt: globalScheduleState.publishedAt,
+      publishedBy: globalScheduleState.publishedBy,
+    },
+    {
+      status: 200,
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        Pragma: 'no-cache',
+        Expires: '0',
+      },
+    }
+  )
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json()
+    const { schedule, periods, publishedBy } = body
+
+    if (!Array.isArray(schedule) || schedule.length === 0) {
+      return NextResponse.json({ success: false, error: 'Geçersiz program verisi' }, { status: 400 })
+    }
+
+    const nowStr = new Date().toLocaleString('tr-TR', {
+      day: 'numeric',
+      month: 'long',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+
+    const effectivePeriods =
+      Array.isArray(periods) && periods.length > 0 ? periods : CANONICAL_6_PERIODS
+
+    globalScheduleState = {
+      schedule,
+      periods: effectivePeriods,
+      publishedAt: nowStr,
+      publishedBy: publishedBy || 'Dr. Uğur UĞURLU (Okul Müdürü)',
+    }
+
+    saveToTempFile(globalScheduleState)
+
+    return NextResponse.json({
+      success: true,
+      message: 'Ders programı başarıyla kaydedildi ve tüm kullanıcılara yayınlandı.',
+      totalHours: schedule.length,
+      publishedAt: nowStr,
+    })
+  } catch (error: any) {
+    return NextResponse.json(
+      { success: false, error: error?.message || 'Bilinmeyen hata' },
+      { status: 500 }
+    )
+  }
+}
