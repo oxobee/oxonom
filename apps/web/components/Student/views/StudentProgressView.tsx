@@ -103,54 +103,46 @@ export default function StudentProgressView({
   // Academic Improvement Analysis (Kötü veya kötüye giden dersler ve gelişim analizleri)
   const courseAnalysis = useMemo(() => {
     return courseGrades.map((c: any) => {
-      const e1 = Number(c.exam1) || 0
-      const e2 = Number(c.exam2) || e1
-      const perf = Number(c.performance) || 100
+      const e1 = c.exam1 !== undefined && c.exam1 !== null && c.exam1 !== '' ? Number(c.exam1) : 0
+      const e2 = c.exam2 !== undefined && c.exam2 !== null && c.exam2 !== '' ? Number(c.exam2) : e1
+      const perf = c.performance !== undefined && c.performance !== null && c.performance !== '' ? Number(c.performance) : e1
+      const avg = c.average !== undefined && c.average !== null && c.average !== ''
+        ? Number(c.average)
+        : Number(((e1 * 0.4) + (e2 * 0.4) + (perf * 0.2)).toFixed(1))
+
       const diff = e2 - e1
       const isDeclining = diff < 0
       const isImproving = diff > 0
       const isStable = diff === 0
+      const isCritical = avg < 50 || e1 < 50 || e2 < 50
+      const isWarning = avg < 70 || isDeclining
+      const needAttention = isCritical || isWarning
 
-      // Custom pedagogical diagnostic tips based on course
       let diagnosis = ''
       let recommendation = ''
-      let needAttention = false
 
-      if (c.courseName.includes('Bilişim')) {
-        if (isDeclining) {
-          needAttention = true
-          diagnosis = '2. Sınavda 1. sınava göre 2 puanlık düşüş tespit edildi. Özellikle algoritma akış diyagramları ve Python döngü bloklarında dalgınlık kaynaklı puan kaybı yaşandı.'
-          recommendation = 'Haftalık 1 saat ek Python algoritma tekrarı yapılması ve döngü yapıları test föyünün çözülmesi önerilir.'
-        } else {
-          diagnosis = 'Algoritmik düşünme becerisi ve kod yazım hızı güçlü seviyededir.'
-          recommendation = 'Modüler fonksiyon yapıları ve nesne yönelimli programlama konularına hazırlanılabilir.'
-        }
-      } else if (c.courseName.includes('İngilizce') || c.courseName.includes('Yabancı Dil')) {
-        if (isDeclining) {
-          needAttention = true
-          diagnosis = '2. Sınavda okuduğunu anlama (Reading Comprehension) ve ileri gramer zamanlarında küçük puan kaybı görüldü.'
-          recommendation = 'Haftada en az 3 adet B2 seviye okuma parçası analizi yapılması ve speaking kulüplerine aktif katılım tavsiye edilir.'
-        } else {
-          diagnosis = 'Kelime dağarcığı ve dil bilgisi hakimiyeti dönem ortalamasının oldukça üzerindedir.'
-          recommendation = 'Akademik metin yazımı ve sunum pratikleriyle İngilizce seviyesi pekiştirilebilir.'
-        }
-      } else if (c.courseName.includes('Matematik')) {
+      if (isCritical) {
+        diagnosis = `${c.courseName} dersinde sınav puanları (${e1} - ${e2}) ve dönem ortalaması (${avg}) kritik başarı sınırının altındadır. Temel konu ve kazanım eksikleri bulunmaktadır.`
+        recommendation = 'Ders öğretmeni ile acil birebir etüt planlanmalı, temel konu anlatımları ve soru çözümleri sıfırdan tekrar edilmelidir.'
+      } else if (isDeclining) {
+        diagnosis = `${c.courseName} dersinde 1. sınavdan (${e1}) 2. sınava (${e2}) ${Math.abs(diff)} puanlık düşüş tespit edilmiştir.`
+        recommendation = 'Son işlenen üniteler tekrar edilmeli, soru bankasından pekiştirme testleri çözülmeli ve etütlere katılım sağlanmalıdır.'
+      } else if (avg < 75) {
+        diagnosis = `${c.courseName} dersinde ortalama ${avg} puan olup hedeflenen başarı seviyesinin altındadır.`
+        recommendation = 'Haftalık soru çözüm sayısı artırılmalı ve takviye etüt programına dahil olunmalıdır.'
+      } else if (avg >= 85) {
         diagnosis = isImproving
-          ? '1. Sınavdan 2. Sınava +2 puanlık artışla istikrarlı yükseliş trendi yakalandı.'
-          : 'Matematik dersi ortalaması 98.0 seviyesinde üstün başarı göstermektedir.'
-        recommendation = 'Problem modelleme ve fonksiyon grafik çizimlerinde hız kazanmak için soru bankası etütlerine devam edilmeli.'
-      } else if (c.courseName.includes('Edebiyat')) {
-        diagnosis = '100 tam puan başarısıyla edebiyat tahlili ve kompozisyon alanında zümre birincisi.'
-        recommendation = 'Tanzimat dönemi ve Servet-i Fünun şiir tahlillerinde öncü araştırmalara devam edilebilir.'
+          ? `${c.courseName} dersinde 1. sınavdan (${e1}) 2. sınava (${e2}) +${diff} puanlık yükselişle güçlü başarı yakalandı.`
+          : `${c.courseName} dersi ortalaması ${avg} seviyesinde üstün akademik başarı göstermektedir.`
+        recommendation = 'Mevcut ders çalışma disiplini sürdürülmeli ve ileri düzey etüt / soru çözümleriyle pekiştirilmelidir.'
       } else {
-        diagnosis = isImproving
-          ? 'Sınavlar arası pozitif gelişim eğrisi devam etmektedir.'
-          : 'Ders başarısı hedef seviyenin üzerinde korunmaktadır.'
-        recommendation = 'Mevcut ders çalışma disiplininin sürdürülmesi ve ünite sonu değerlendirmelerinin çözülmesi önerilir.'
+        diagnosis = 'Ders başarısı hedef seviyenin üzerinde dengeli şekilde korunmaktadır.'
+        recommendation = 'Düzenli tekrar ve ünite sonu değerlendirme testleriyle başarı pekiştirilmelidir.'
       }
 
       return {
         ...c,
+        average: avg,
         exam1Num: e1,
         exam2Num: e2,
         perfNum: perf,
@@ -158,6 +150,7 @@ export default function StudentProgressView({
         isDeclining,
         isImproving,
         isStable,
+        isCritical,
         needAttention,
         diagnosis,
         recommendation,
@@ -167,7 +160,7 @@ export default function StudentProgressView({
 
   // Filter declining or attention-needed courses
   const attentionCourses = useMemo(() => {
-    return courseAnalysis.filter((c) => c.needAttention || c.isDeclining)
+    return courseAnalysis.filter((c) => c.needAttention)
   }, [courseAnalysis])
 
   // Homework stats
@@ -429,13 +422,27 @@ export default function StudentProgressView({
                       <div className="text-right">
                         <span
                           className={`inline-flex items-center gap-1 text-xs font-black px-2.5 py-1 rounded-xl ${
-                            isDown
+                            item.isCritical
                               ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400'
+                              : isDown
+                              ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400'
                               : 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400'
                           }`}
                         >
-                          {isDown ? <TrendingDown size={14} /> : <TrendingUp size={14} />}
-                          <span>{diff > 0 ? `+${diff}` : diff} Puan Değişim</span>
+                          {item.isCritical ? (
+                            <AlertTriangle size={14} />
+                          ) : isDown ? (
+                            <TrendingDown size={14} />
+                          ) : (
+                            <TrendingUp size={14} />
+                          )}
+                          <span>
+                            {item.isCritical
+                              ? `Kritik (${item.average} Ort)`
+                              : diff > 0
+                              ? `+${diff} Puan Değişim`
+                              : `${diff} Puan Değişim`}
+                          </span>
                         </span>
                       </div>
                     </div>
@@ -452,8 +459,10 @@ export default function StudentProgressView({
                         <div>
                           <div className="w-full h-2.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
                             <div
-                              style={{ width: `${item.exam1Num}%` }}
-                              className="h-full rounded-full bg-indigo-500"
+                              style={{ width: `${Math.max(2, Math.min(100, item.exam1Num))}%` }}
+                              className={`h-full rounded-full ${
+                                item.exam1Num < 50 ? 'bg-rose-500' : 'bg-indigo-500'
+                              }`}
                             />
                           </div>
                           <span className="text-[10px] text-gray-400 mt-0.5 block">1. Yazılı</span>
@@ -462,9 +471,13 @@ export default function StudentProgressView({
                         <div>
                           <div className="w-full h-2.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
                             <div
-                              style={{ width: `${item.exam2Num}%` }}
+                              style={{ width: `${Math.max(2, Math.min(100, item.exam2Num))}%` }}
                               className={`h-full rounded-full ${
-                                isDown ? 'bg-amber-500' : 'bg-emerald-500'
+                                item.exam2Num < 50
+                                  ? 'bg-rose-500'
+                                  : isDown
+                                  ? 'bg-amber-500'
+                                  : 'bg-emerald-500'
                               }`}
                             />
                           </div>
@@ -479,7 +492,7 @@ export default function StudentProgressView({
                         <AlertCircle
                           size={14}
                           className={`shrink-0 mt-0.5 ${
-                            isDown ? 'text-amber-500' : 'text-emerald-500'
+                            item.isCritical ? 'text-rose-500' : isDown ? 'text-amber-500' : 'text-emerald-500'
                           }`}
                         />
                         <span>{item.diagnosis}</span>
@@ -537,10 +550,10 @@ export default function StudentProgressView({
                   const e1 = c.exam1 !== undefined && c.exam1 !== null && c.exam1 !== '' ? c.exam1 : '-'
                   const e2 = c.exam2 !== undefined && c.exam2 !== null && c.exam2 !== '' ? c.exam2 : '-'
                   const perf = c.performance !== undefined && c.performance !== null && c.performance !== '' ? c.performance : '-'
-                  const oral = 100 // Sözlü katılım tam puan
+                  const oral = c.performance !== undefined && c.performance !== null && c.performance !== '' ? c.performance : (c.exam1 !== undefined ? c.exam1 : '-')
 
                   let calculatedAvg = c.average
-                  if (!calculatedAvg || isNaN(calculatedAvg)) {
+                  if (calculatedAvg === undefined || calculatedAvg === null || isNaN(Number(calculatedAvg))) {
                     const numE1 = Number(c.exam1) || 0
                     const numE2 = Number(c.exam2) || 0
                     const numPerf = Number(c.performance) || 0
@@ -548,6 +561,10 @@ export default function StudentProgressView({
                   } else {
                     calculatedAvg = Number(calculatedAvg).toFixed(1)
                   }
+
+                  const avgNum = Number(calculatedAvg)
+                  const isHigh = avgNum >= 85
+                  const isMid = avgNum >= 50 && avgNum < 85
 
                   return (
                     <tr key={courseTitle} className="hover:bg-gray-50/70 dark:hover:bg-[#131C31]/50 transition-colors">
@@ -557,7 +574,15 @@ export default function StudentProgressView({
                       <td className="py-3.5 text-center font-mono font-bold">{e2}</td>
                       <td className="py-3.5 text-center font-mono font-bold text-amber-600 dark:text-amber-400">{oral}</td>
                       <td className="py-3.5 text-center font-mono font-bold text-purple-600 dark:text-purple-400">{perf}</td>
-                      <td className="py-3.5 text-right font-black text-emerald-600 dark:text-emerald-400 text-sm font-mono">
+                      <td
+                        className={`py-3.5 text-right font-black text-sm font-mono ${
+                          isHigh
+                            ? 'text-emerald-600 dark:text-emerald-400'
+                            : isMid
+                            ? 'text-amber-600 dark:text-amber-400'
+                            : 'text-rose-600 dark:text-rose-400'
+                        }`}
+                      >
                         {calculatedAvg}
                       </td>
                     </tr>

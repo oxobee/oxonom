@@ -59,6 +59,33 @@ export default function TeacherProgressView() {
     return ALL_INITIAL_STUDENTS
   })
 
+  // Keep students reactive with storage and update events
+  useEffect(() => {
+    const handleSync = () => {
+      if (typeof window !== 'undefined') {
+        try {
+          const saved = localStorage.getItem('oxonom_m_students_v3')
+          if (saved) {
+            const parsed = JSON.parse(saved)
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setStudents(parsed)
+              setSelectedStudent((prev) => {
+                if (!prev) return null
+                return parsed.find((s: MStudentItem) => s.id === prev.id) || prev
+              })
+            }
+          }
+        } catch (_) {}
+      }
+    }
+    window.addEventListener('oxonom_student_updated', handleSync)
+    window.addEventListener('storage', handleSync)
+    return () => {
+      window.removeEventListener('oxonom_student_updated', handleSync)
+      window.removeEventListener('storage', handleSync)
+    }
+  }, [])
+
   // Selected student for detailed progress & guidance modal
   const [selectedStudent, setSelectedStudent] = useState<MStudentItem | null>(null)
   const [newGuidanceNote, setNewGuidanceNote] = useState('')
@@ -206,7 +233,11 @@ export default function TeacherProgressView() {
                 <div className="grid grid-cols-2 gap-2 pt-1 text-xs">
                   <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/60">
                     <span className="text-gray-400 text-[10px] block">Genel Başarı</span>
-                    <span className="font-black text-sm text-indigo-600 dark:text-indigo-400">{st.gpa}</span>
+                    <span className="font-black text-sm text-indigo-600 dark:text-indigo-400">
+                      {st.grades && st.grades.length > 0
+                        ? Number((st.grades.reduce((sum, g) => sum + (Number(g.average) || 0), 0) / st.grades.length).toFixed(1))
+                        : (st.gpa ?? 0)}
+                    </span>
                   </div>
                   <div className="p-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/60">
                     <span className="text-gray-400 text-[10px] block">Rehberlik Kaydı</span>
@@ -283,19 +314,29 @@ export default function TeacherProgressView() {
                       <span>Akademik Notlar & Başarı İstatistikleri</span>
                     </h4>
                     <span className="text-xs font-black text-indigo-600 dark:text-indigo-400">
-                      Genel Ortalama: {selectedStudent.gpa}
+                      Genel Ortalama: {selectedStudent.grades && selectedStudent.grades.length > 0
+                        ? Number((selectedStudent.grades.reduce((sum, g) => sum + (Number(g.average) || 0), 0) / selectedStudent.grades.length).toFixed(1))
+                        : (selectedStudent.gpa ?? 0)}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {(selectedStudent.grades || []).map((grade, idx) => {
-                      const diff = (grade.exam2 || grade.exam1) - (grade.exam1 || 0)
+                      const e1 = Number(grade.exam1) || 0
+                      const e2 = grade.exam2 !== undefined ? Number(grade.exam2) : e1
+                      const diff = e2 - e1
                       const isUp = diff >= 0
+                      const avgNum = Number(grade.average) || 0
+                      const isCritical = avgNum < 50
 
                       return (
                         <div
                           key={idx}
-                          className="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800/50 border border-gray-200/60 dark:border-gray-800/60 space-y-2"
+                          className={`p-3.5 rounded-2xl border space-y-2 transition-colors ${
+                            isCritical
+                              ? 'bg-rose-50/40 dark:bg-rose-950/20 border-rose-200/60 dark:border-rose-900/40'
+                              : 'bg-gray-50 dark:bg-gray-800/50 border border-gray-200/60 dark:border-gray-800/60'
+                          }`}
                         >
                           <div className="flex items-center justify-between text-xs">
                             <span className="font-extrabold text-gray-900 dark:text-white">{grade.courseName}</span>
@@ -306,15 +347,23 @@ export default function TeacherProgressView() {
                                 {isUp ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
                                 <span>{isUp ? `+${diff}` : diff}</span>
                               </span>
-                              <strong className="text-sm font-black text-gray-900 dark:text-white">{grade.average}</strong>
+                              <strong className={`text-sm font-black ${
+                                isCritical ? 'text-rose-600 dark:text-rose-400' : 'text-gray-900 dark:text-white'
+                              }`}>
+                                {grade.average}
+                              </strong>
                             </div>
                           </div>
 
                           {/* Graphical Bar */}
                           <div className="w-full h-2 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
                             <div
-                              style={{ width: `${Math.min(100, grade.average || 0)}%` }}
-                              className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-emerald-400"
+                              style={{ width: `${Math.max(2, Math.min(100, avgNum))}%` }}
+                              className={`h-full rounded-full ${
+                                isCritical
+                                  ? 'bg-rose-500'
+                                  : 'bg-gradient-to-r from-indigo-500 to-emerald-400'
+                              }`}
                             />
                           </div>
 

@@ -279,11 +279,28 @@ export default function TeacherAssessmentsView() {
     toast.success('Sınav kaydı silindi.')
   }
 
+  // Eligible students for currently grading exam
+  const gradingEligibleStudents = useMemo(() => {
+    if (!gradingExam) return []
+    return students.filter((s) => {
+      if (!gradingExam.className || gradingExam.className === 'all') return true
+      const target = gradingExam.className.replace(' Şubesi', '')
+      return s.className.includes(target)
+    })
+  }, [students, gradingExam])
+
   // Open Grading Modal
   const handleOpenGrading = (exam: SchoolExamItem) => {
     setGradingExam(exam)
     const initialScores: Record<string, number | string> = {}
-    classStudents.forEach((st) => {
+    
+    const targetStudents = students.filter((s) => {
+      if (!exam.className || exam.className === 'all') return true
+      const target = exam.className.replace(' Şubesi', '')
+      return s.className.includes(target)
+    })
+
+    targetStudents.forEach((st) => {
       // Look in exam.scores first
       if (exam.scores && exam.scores[st.id] !== undefined) {
         initialScores[st.id] = exam.scores[st.id]
@@ -291,12 +308,12 @@ export default function TeacherAssessmentsView() {
         // Fallback to student grades for this course
         const grade = st.grades?.find((g) => g.courseName === exam.courseName)
         if (grade) {
-          if (exam.type === 'oral' || (exam.examTypeLabel || '').includes('sözlü')) {
-            initialScores[st.id] = grade.performance || 100
+          if (exam.type === 'oral' || (exam.examTypeLabel || '').includes('sözlü') || exam.type === 'performance') {
+            initialScores[st.id] = grade.performance !== undefined ? grade.performance : 100
           } else if (exam.title.includes('2.') || (exam.period && exam.period > 2)) {
-            initialScores[st.id] = grade.exam2 ?? 98
+            initialScores[st.id] = grade.exam2 !== undefined ? grade.exam2 : 98
           } else {
-            initialScores[st.id] = grade.exam1 ?? 98
+            initialScores[st.id] = grade.exam1 !== undefined ? grade.exam1 : 98
           }
         } else {
           initialScores[st.id] = 100
@@ -349,9 +366,9 @@ export default function TeacherAssessmentsView() {
           cur.exam1 = studentScore
         }
 
-        const e1 = cur.exam1 || studentScore
-        const e2 = cur.exam2 || e1
-        const perf = cur.performance || e1
+        const e1 = cur.exam1 !== undefined && cur.exam1 !== null ? Number(cur.exam1) : studentScore
+        const e2 = cur.exam2 !== undefined && cur.exam2 !== null ? Number(cur.exam2) : e1
+        const perf = cur.performance !== undefined && cur.performance !== null ? Number(cur.performance) : e1
         cur.average = Number(((e1 * 0.4) + (e2 * 0.4) + (perf * 0.2)).toFixed(1))
         existingGrades[courseIndex] = cur
       } else {
@@ -366,13 +383,15 @@ export default function TeacherAssessmentsView() {
       }
 
       // Recalculate GPA
-      const totalAvg = existingGrades.reduce((sum, g) => sum + (g.average || 0), 0)
-      const newGpa = Number((totalAvg / existingGrades.length).toFixed(1))
+      const totalAvg = existingGrades.reduce((sum, g) => sum + (Number(g.average) || 0), 0)
+      const newGpa = Number((totalAvg / (existingGrades.length || 1)).toFixed(1))
+      const newRank = newGpa >= 85 ? 1 : newGpa >= 60 ? 14 : 30
 
       return {
         ...st,
         grades: existingGrades,
         gpa: newGpa,
+        classRank: newRank,
       }
     })
 
@@ -937,8 +956,11 @@ export default function TeacherAssessmentsView() {
 
               {/* Students List */}
               <div className="flex-1 overflow-y-auto p-5 space-y-3">
-                {classStudents.map((st, idx) => {
+                {gradingEligibleStudents.map((st, idx) => {
                   const currentScore = gradingScores[st.id] ?? ''
+                  const stGpa = st.grades && st.grades.length > 0
+                    ? Number((st.grades.reduce((sum, g) => sum + (Number(g.average) || 0), 0) / st.grades.length).toFixed(1))
+                    : (st.gpa ?? 0)
 
                   return (
                     <div
@@ -955,7 +977,7 @@ export default function TeacherAssessmentsView() {
                             <span className="text-[10px] text-gray-400 font-mono">No: {st.studentNo}</span>
                           </div>
                           <div className="text-[10px] text-gray-500 font-mono">
-                            Genel Ort: {st.gpa} • %{st.attendanceRate} Devam
+                            Genel Ort: {stGpa} • %{st.attendanceRate} Devam
                           </div>
                         </div>
                       </div>
@@ -963,12 +985,16 @@ export default function TeacherAssessmentsView() {
                       {/* Score Input & Quick Buttons */}
                       <div className="flex items-center gap-2 self-end sm:self-center">
                         <div className="flex items-center gap-1">
-                          {[100, 95, 90, 85].map((pts) => (
+                          {[100, 85, 70, 50, 1].map((pts) => (
                             <button
                               key={pts}
                               type="button"
                               onClick={() => setGradingScores((prev) => ({ ...prev, [st.id]: pts }))}
-                              className="px-2 py-1 rounded-lg text-[10px] font-black bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600 cursor-pointer transition-colors"
+                              className={`px-2 py-1 rounded-lg text-[10px] font-black border transition-colors cursor-pointer ${
+                                pts === 1
+                                  ? 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-500 hover:text-white dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800'
+                                  : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 hover:text-indigo-600'
+                              }`}
                             >
                               {pts}
                             </button>
@@ -1005,7 +1031,7 @@ export default function TeacherAssessmentsView() {
               {/* Footer */}
               <div className="p-4 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
                 <span className="text-xs text-gray-400 font-bold">
-                  {classStudents.length} Öğrenci Notlandırılıyor
+                  {gradingEligibleStudents.length} Öğrenci Notlandırılıyor
                 </span>
 
                 <div className="flex items-center gap-2">

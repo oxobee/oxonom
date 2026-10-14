@@ -194,25 +194,53 @@ export default function MStudentClient({
 
   const searchParams = useSearchParams()
 
-  // Students state with LocalStorage persistence (v3 ensures full 210 students)
+  // Students state with LocalStorage persistence
   const [students, setStudents] = useState<MStudentItem[]>(() => {
     if (typeof window !== 'undefined') {
       try {
         const saved = localStorage.getItem('oxonom_m_students_v3')
         if (saved) {
           const parsed = JSON.parse(saved)
-          if (Array.isArray(parsed) && parsed.length >= 210) return parsed
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed
         }
       } catch (_) {}
     }
     return ALL_INITIAL_STUDENTS
   })
 
+  // Listen to updates from teacher and student changes
+  useEffect(() => {
+    const handleUpdate = () => {
+      if (typeof window !== 'undefined') {
+        try {
+          const saved = localStorage.getItem('oxonom_m_students_v3')
+          if (saved) {
+            const parsed = JSON.parse(saved)
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setStudents(parsed)
+              setSelectedStudentForProfile((prev) => {
+                if (!prev) return null
+                return parsed.find((s: MStudentItem) => s.id === prev.id) || prev
+              })
+            }
+          }
+        } catch (_) {}
+      }
+    }
+    window.addEventListener('oxonom_student_updated', handleUpdate)
+    window.addEventListener('storage', handleUpdate)
+    return () => {
+      window.removeEventListener('oxonom_student_updated', handleUpdate)
+      window.removeEventListener('storage', handleUpdate)
+    }
+  }, [])
+
   const saveStudents = (newStudents: MStudentItem[]) => {
     setStudents(newStudents)
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem('oxonom_m_students_v3', JSON.stringify(newStudents))
+        window.dispatchEvent(new CustomEvent('oxonom_student_updated'))
       } catch (_) {}
     }
   }
@@ -881,67 +909,92 @@ export default function MStudentClient({
                     animate={{ opacity: 1, y: 0 }}
                     className="space-y-3.5"
                   >
-                    {/* Top Stat Cards */}
-                    <div className="grid grid-cols-3 gap-2.5">
-                      <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-800/60 text-center">
-                        <span className="text-[10px] text-amber-700 dark:text-amber-400 font-bold block">
-                          GNO
-                        </span>
-                        <span className="text-lg font-black text-amber-900 dark:text-amber-200">
-                          {selectedStudentForProfile.gpa}
-                        </span>
-                      </div>
-                      <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200/60 dark:border-purple-800/60 text-center">
-                        <span className="text-[10px] text-purple-700 dark:text-purple-400 font-bold block">
-                          Sıralama
-                        </span>
-                        <span className="text-lg font-black text-purple-900 dark:text-purple-200">
-                          #{selectedStudentForProfile.classRank}
-                        </span>
-                      </div>
-                      <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/60 text-center">
-                        <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold block">
-                          Ödevler
-                        </span>
-                        <span className="text-lg font-black text-emerald-900 dark:text-emerald-200">
-                          %100
-                        </span>
-                      </div>
-                    </div>
+                    {(() => {
+                      const profileGpa = selectedStudentForProfile.grades && selectedStudentForProfile.grades.length > 0
+                        ? Number((selectedStudentForProfile.grades.reduce((sum, g) => sum + (Number(g.average) || 0), 0) / selectedStudentForProfile.grades.length).toFixed(1))
+                        : (selectedStudentForProfile.gpa ?? 0)
+                      const profileRank = profileGpa >= 85 ? 1 : profileGpa >= 60 ? 14 : 30
 
-                    {/* Detailed Course Grades Table */}
-                    <div className="p-4 rounded-2xl bg-[#F6F8FC] dark:bg-[#131C31] border border-gray-100 dark:border-gray-800 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="font-extrabold text-[11px] text-gray-400 tracking-wider uppercase block">
-                          DERS BAZLI NOT VE BAŞARI DURUMU
-                        </span>
-                        <span className="text-[10px] text-gray-400 font-medium">1. Dönem</span>
-                      </div>
-
-                      <div className="space-y-2.5">
-                        {selectedStudentForProfile.grades?.map((g) => (
-                          <div
-                            key={g.courseName}
-                            className="p-3 rounded-xl bg-white dark:bg-[#161D2E] border border-gray-100 dark:border-gray-800 flex items-center justify-between"
-                          >
-                            <div className="min-w-0">
-                              <span className="font-bold text-xs text-gray-900 dark:text-white block">
-                                {g.courseName}
+                      return (
+                        <>
+                          {/* Top Stat Cards */}
+                          <div className="grid grid-cols-3 gap-2.5">
+                            <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-800/60 text-center">
+                              <span className="text-[10px] text-amber-700 dark:text-amber-400 font-bold block">
+                                GNO
                               </span>
-                              <span className="text-[10px] text-gray-400 block mt-0.5">
-                                Sınav 1: {g.exam1} · Sınav 2: {g.exam2} · Perf: {g.performance}
+                              <span className="text-lg font-black text-amber-900 dark:text-amber-200">
+                                {profileGpa}
                               </span>
                             </div>
-                            <div className="text-right">
-                              <span className="font-black text-sm text-[#059669] dark:text-[#34D399]">
-                                {g.average.toFixed(1)}
+                            <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200/60 dark:border-purple-800/60 text-center">
+                              <span className="text-[10px] text-purple-700 dark:text-purple-400 font-bold block">
+                                Sıralama
                               </span>
-                              <span className="text-[9px] text-gray-400 block">Ortalama</span>
+                              <span className="text-lg font-black text-purple-900 dark:text-purple-200">
+                                #{profileRank}
+                              </span>
+                            </div>
+                            <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/60 text-center">
+                              <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold block">
+                                Ödevler
+                              </span>
+                              <span className="text-lg font-black text-emerald-900 dark:text-emerald-200">
+                                %100
+                              </span>
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    </div>
+
+                          {/* Detailed Course Grades Table */}
+                          <div className="p-4 rounded-2xl bg-[#F6F8FC] dark:bg-[#131C31] border border-gray-100 dark:border-gray-800 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="font-extrabold text-[11px] text-gray-400 tracking-wider uppercase block">
+                                DERS BAZLI NOT VE BAŞARI DURUMU
+                              </span>
+                              <span className="text-[10px] text-gray-400 font-medium">1. Dönem</span>
+                            </div>
+
+                            <div className="space-y-2.5">
+                              {selectedStudentForProfile.grades?.map((g) => {
+                                const avgNum = Number(g.average) || 0
+                                const isHigh = avgNum >= 85
+                                const isMid = avgNum >= 50 && avgNum < 85
+
+                                return (
+                                  <div
+                                    key={g.courseName}
+                                    className="p-3 rounded-xl bg-white dark:bg-[#161D2E] border border-gray-100 dark:border-gray-800 flex items-center justify-between"
+                                  >
+                                    <div className="min-w-0">
+                                      <span className="font-bold text-xs text-gray-900 dark:text-white block">
+                                        {g.courseName}
+                                      </span>
+                                      <span className="text-[10px] text-gray-400 block mt-0.5">
+                                        Sınav 1: {g.exam1} · Sınav 2: {g.exam2} · Perf: {g.performance}
+                                      </span>
+                                    </div>
+                                    <div className="text-right">
+                                      <span
+                                        className={`font-black text-sm font-mono ${
+                                          isHigh
+                                            ? 'text-[#059669] dark:text-[#34D399]'
+                                            : isMid
+                                            ? 'text-amber-600 dark:text-amber-400'
+                                            : 'text-rose-600 dark:text-rose-400'
+                                        }`}
+                                      >
+                                        {avgNum.toFixed(1)}
+                                      </span>
+                                      <span className="text-[9px] text-gray-400 block">Ortalama</span>
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        </>
+                      )
+                    })()}
 
                     {/* Teacher Notes */}
                     <div className="p-4 rounded-2xl bg-[#F6F8FC] dark:bg-[#131C31] border border-gray-100 dark:border-gray-800 space-y-1.5">

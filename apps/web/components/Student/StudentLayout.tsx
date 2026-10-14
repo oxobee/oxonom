@@ -164,9 +164,24 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
             <div className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
               {profile.className} Şubesi · No: {profile.studentNo}
             </div>
-            <div className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 flex items-center gap-1">
+            <div
+              className={`text-[9px] font-bold mt-0.5 flex items-center gap-1 ${
+                profile.gpa >= 85
+                  ? 'text-emerald-600 dark:text-emerald-400'
+                  : profile.gpa >= 60
+                  ? 'text-indigo-600 dark:text-indigo-400'
+                  : 'text-rose-600 dark:text-rose-400'
+              }`}
+            >
               <Award size={10} />
-              <span>Sınıf 1.'si · Ort: {profile.gpa}</span>
+              <span>
+                {profile.gpa >= 85
+                  ? "Sınıf 1.'si"
+                  : profile.gpa >= 60
+                  ? `Sınıf ${profile.classRank}.'si`
+                  : `Sınıf ${profile.classRank}.'si (Kritik)`}{' '}
+                · Ort: {profile.gpa}
+              </span>
             </div>
           </div>
         </div>

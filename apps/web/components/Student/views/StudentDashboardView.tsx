@@ -554,7 +554,11 @@ export default function StudentDashboardView() {
               </div>
               <div className="text-xl font-extrabold">{profile.gpa} Ort.</div>
               <div className="text-[10px] text-emerald-300 font-semibold">
-                {profile.disciplineStatus.split('—')[1]?.trim() || 'Örnek Öğrenci Onur Belgesi'}
+                {profile.gpa >= 85
+                  ? (profile.disciplineStatus.split('—')[1]?.trim() || 'Örnek Öğrenci Onur Belgesi')
+                  : profile.gpa >= 60
+                  ? 'Gelişim Süreci Devam Ediyor'
+                  : 'Akademik Destek & Birebir Etüt'}
               </div>
             </div>
           </div>

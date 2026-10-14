@@ -550,25 +550,37 @@ export function getSynchronizedStudentProfile(): StudentProfile {
         ? studentRecord.grades
         : ALL_INITIAL_STUDENTS[0]?.grades || []
 
-    let calculatedGpa =
-      typeof studentRecord.gpa === 'number'
-        ? studentRecord.gpa
-        : studentRecord.gpa
-        ? Number(studentRecord.gpa)
-        : 98.8
-
-    if ((studentRecord.gpa === undefined || studentRecord.gpa === null) && grades.length > 0) {
+    let calculatedGpa = 0
+    if (grades.length > 0) {
       const totalAvg = grades.reduce((acc, g) => {
         let avg = g.average
-        if (!avg || isNaN(avg)) {
+        if (avg === undefined || avg === null || isNaN(Number(avg))) {
           const e1 = Number(g.exam1) || 0
           const e2 = Number(g.exam2) || 0
           const pf = Number(g.performance) || 0
           avg = Number(((e1 * 0.4) + (e2 * 0.4) + (pf * 0.2)).toFixed(1))
         }
-        return acc + avg
+        return acc + Number(avg)
       }, 0)
       calculatedGpa = Number((totalAvg / grades.length).toFixed(1))
+    } else if (typeof studentRecord.gpa === 'number') {
+      calculatedGpa = studentRecord.gpa
+    } else if (studentRecord.gpa) {
+      calculatedGpa = Number(studentRecord.gpa)
+    } else {
+      calculatedGpa = 0
+    }
+
+    // Dynamic Class Rank based on GPA
+    let classRank = studentRecord.classRank || 1
+    if (calculatedGpa < 50) {
+      classRank = 30
+    } else if (calculatedGpa < 70) {
+      classRank = 18
+    } else if (calculatedGpa < 85) {
+      classRank = 8
+    } else {
+      classRank = 1
     }
 
     // 4. Live Attendance Synchronization from teacher's attendance service
@@ -624,7 +636,7 @@ export function getSynchronizedStudentProfile(): StudentProfile {
       mentorTeacher,
       schoolName: studentRecord.schoolName || 'Oxonom Okulları',
       gpa: calculatedGpa,
-      classRank: studentRecord.classRank || 1,
+      classRank,
       attendanceRate,
       absentDays,
       parentName: studentRecord.parentName || 'Ebru UĞURLU',
@@ -658,6 +670,7 @@ export function getSynchronizedStudentAssessments(): StudentAssessment[] {
   grades.forEach((g, idx) => {
     // 1. Yazılı Sınav
     if (g.exam1 !== undefined && g.exam1 !== null && String(g.exam1) !== '') {
+      const scoreNum = Number(g.exam1)
       assessments.push({
         id: `exam1-${idx}-${g.courseName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
         title: `${g.courseName} 1. Yazılı Sınavı`,
@@ -669,19 +682,22 @@ export function getSynchronizedStudentAssessments(): StudentAssessment[] {
         durationMinutes: 40,
         location: `Derslik 101 (${profile.className})`,
         maxScore: 100,
-        score: Number(g.exam1),
+        score: scoreNum,
         isGraded: true,
         isPublished: true,
         teacherFeedback:
-          Number(g.exam1) >= 90
+          scoreNum >= 85
             ? `${g.teacherName || 'Öğretmen'}: Üstün akademik başarı ve konu hakimiyeti.`
-            : `${g.teacherName || 'Öğretmen'}: Başarılı, küçük eksikler tekrar edilmeli.`,
+            : scoreNum >= 50
+            ? `${g.teacherName || 'Öğretmen'}: Başarılı, küçük eksikler tekrar edilmeli.`
+            : `${g.teacherName || 'Öğretmen'}: Kritik seviye. Birebir etüt ve konu telafisi gereklidir.`,
         status: 'completed',
       })
     }
 
     // 2. Yazılı Sınav
     if (g.exam2 !== undefined && g.exam2 !== null && String(g.exam2) !== '') {
+      const scoreNum = Number(g.exam2)
       assessments.push({
         id: `exam2-${idx}-${g.courseName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
         title: `${g.courseName} 2. Yazılı Sınavı`,
@@ -693,19 +709,22 @@ export function getSynchronizedStudentAssessments(): StudentAssessment[] {
         durationMinutes: 40,
         location: `Derslik 101 (${profile.className})`,
         maxScore: 100,
-        score: Number(g.exam2),
+        score: scoreNum,
         isGraded: true,
         isPublished: true,
         teacherFeedback:
-          Number(g.exam2) >= 90
+          scoreNum >= 85
             ? `${g.teacherName || 'Öğretmen'}: Mükemmel kompozisyon ve tam puan.`
-            : `${g.teacherName || 'Öğretmen'}: Başarılı çalışma.`,
+            : scoreNum >= 50
+            ? `${g.teacherName || 'Öğretmen'}: Başarılı çalışma, konu tekrarı yapılmalı.`
+            : `${g.teacherName || 'Öğretmen'}: Kritik seviye. Birebir etüt ve konu telafisi gereklidir.`,
         status: 'completed',
       })
     }
 
     // 1. Performans Görevi
     if (g.performance !== undefined && g.performance !== null && String(g.performance) !== '') {
+      const scoreNum = Number(g.performance)
       assessments.push({
         id: `perf-${idx}-${g.courseName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
         title: `${g.courseName} 1. Performans Görevi`,
@@ -717,10 +736,15 @@ export function getSynchronizedStudentAssessments(): StudentAssessment[] {
         durationMinutes: 40,
         location: `Derslik 101 (${profile.className})`,
         maxScore: 100,
-        score: Number(g.performance),
+        score: scoreNum,
         isGraded: true,
         isPublished: true,
-        teacherFeedback: `${g.teacherName || 'Öğretmen'}: Ders içi katılım ve proje tam puanla onaylandı.`,
+        teacherFeedback:
+          scoreNum >= 85
+            ? `${g.teacherName || 'Öğretmen'}: Ders içi katılım ve proje üstün başarıyla tamamlandı.`
+            : scoreNum >= 50
+            ? `${g.teacherName || 'Öğretmen'}: Performans çalışması onaylandı.`
+            : `${g.teacherName || 'Öğretmen'}: Performans görevi beklentinin altında kalmıştır. Telafi çalışması gereklidir.`,
         status: 'completed',
         teacherName: g.teacherName || 'Ebru TEKNECİ',
       })

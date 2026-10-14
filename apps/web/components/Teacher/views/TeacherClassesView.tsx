@@ -24,8 +24,13 @@ import {
   BookOpen,
   ArrowRight,
   RotateCcw,
+  Edit3,
+  Save,
+  Check,
+  AlertCircle,
 } from 'lucide-react'
-import { ALL_INITIAL_STUDENTS, MStudentItem } from '@components/Mobile/MStudentClient'
+import toast from 'react-hot-toast'
+import { ALL_INITIAL_STUDENTS, MStudentItem, MStudentCourseGrade } from '@components/Mobile/MStudentClient'
 import MockBadge from '@components/Common/MockBadge'
 
 interface ClassOption {
@@ -37,30 +42,24 @@ interface ClassOption {
   avgGpa: number
 }
 
-const AVAILABLE_CLASSES: ClassOption[] = [
+const BASE_CLASSES: Omit<ClassOption, 'studentCount' | 'avgGpa'>[] = [
   {
     code: '9-A',
     name: '9-A Şubesi',
     branch: 'Türk Dili ve Edebiyatı · Rehberlik',
     teacher: 'Ebru TEKNECİ',
-    studentCount: 1,
-    avgGpa: 98.8,
   },
   {
     code: '9-B',
     name: '9-B Şubesi',
     branch: 'Türk Dili ve Edebiyatı',
     teacher: 'Ebru TEKNECİ',
-    studentCount: 0,
-    avgGpa: 0,
   },
   {
     code: '1-A',
     name: '1-A Şubesi',
     branch: 'Temel Eğitim & Sınıf Öğretmenliği',
     teacher: 'Ebru TEKNECİ',
-    studentCount: 0,
-    avgGpa: 0,
   },
 ]
 
@@ -68,10 +67,24 @@ export default function TeacherClassesView() {
   const searchParams = useSearchParams()
   const classFromQuery = searchParams.get('class')
 
+  // Reactive students list from persistent storage
+  const [students, setStudents] = useState<MStudentItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('oxonom_m_students_v3')
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed
+        }
+      } catch (_) {}
+    }
+    return ALL_INITIAL_STUDENTS
+  })
+
   // Selected Class State (null = prompt teacher to select class)
   const [selectedClass, setSelectedClass] = useState<string | null>(() => {
     if (classFromQuery) {
-      const match = AVAILABLE_CLASSES.find(
+      const match = BASE_CLASSES.find(
         (c) => c.code.toLowerCase() === classFromQuery.toLowerCase() || c.name.toLowerCase() === classFromQuery.toLowerCase()
       )
       if (match) return match.name
@@ -87,10 +100,42 @@ export default function TeacherClassesView() {
   const [selectedStudent, setSelectedStudent] = useState<MStudentItem | null>(null)
   const [activeProfileTab, setActiveProfileTab] = useState<'identity' | 'academic' | 'attendance' | 'parent'>('identity')
 
+  // Grade Editing State inside Student Profile
+  const [isEditingGrades, setIsEditingGrades] = useState(false)
+  const [editableGrades, setEditableGrades] = useState<MStudentCourseGrade[]>([])
+
+  // Keep students reactive with storage events
+  useEffect(() => {
+    const handleUpdate = () => {
+      if (typeof window !== 'undefined') {
+        try {
+          const saved = localStorage.getItem('oxonom_m_students_v3')
+          if (saved) {
+            const parsed = JSON.parse(saved)
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setStudents(parsed)
+              setSelectedStudent((prev) => {
+                if (!prev) return null
+                return parsed.find((s: MStudentItem) => s.id === prev.id) || prev
+              })
+            }
+          }
+        } catch (_) {}
+      }
+    }
+
+    window.addEventListener('oxonom_student_updated', handleUpdate)
+    window.addEventListener('storage', handleUpdate)
+    return () => {
+      window.removeEventListener('oxonom_student_updated', handleUpdate)
+      window.removeEventListener('storage', handleUpdate)
+    }
+  }, [])
+
   // Sync with searchParams if it changes
   useEffect(() => {
     if (classFromQuery) {
-      const match = AVAILABLE_CLASSES.find(
+      const match = BASE_CLASSES.find(
         (c) => c.code.toLowerCase() === classFromQuery.toLowerCase() || c.name.toLowerCase() === classFromQuery.toLowerCase()
       )
       if (match) {
@@ -99,17 +144,46 @@ export default function TeacherClassesView() {
     }
   }, [classFromQuery])
 
+  // Dynamic Class Options with live student counts and computed average GPAs
+  const availableClasses = useMemo(() => {
+    return BASE_CLASSES.map((cls) => {
+      const clsStudents = students.filter((st) => {
+        if (cls.code === '9-A' || cls.name === '9-A Şubesi') {
+          return st.className === '9-A Şubesi' || st.className.startsWith('9-A')
+        }
+        return st.className === cls.name || st.className === cls.code
+      })
+      const count = clsStudents.length
+      let avgGpa = 0
+      if (count > 0) {
+        const total = clsStudents.reduce((sum, st) => {
+          let stGpa = typeof st.gpa === 'number' ? st.gpa : Number(st.gpa) || 0
+          if (st.grades && st.grades.length > 0) {
+            const gradeSum = st.grades.reduce((s, g) => s + (Number(g.average) || 0), 0)
+            stGpa = Number((gradeSum / st.grades.length).toFixed(1))
+          }
+          return sum + stGpa
+        }, 0)
+        avgGpa = Number((total / count).toFixed(1))
+      }
+      return {
+        ...cls,
+        studentCount: count,
+        avgGpa,
+      }
+    })
+  }, [students])
+
   // Students for the active selected class
   const classStudents = useMemo(() => {
     if (!selectedClass) return []
-    return ALL_INITIAL_STUDENTS.filter((st) => {
-      // 9-A contains Erçil Uğurlu
+    return students.filter((st) => {
       if (selectedClass === '9-A Şubesi' || selectedClass === '9-A') {
         return st.className === '9-A Şubesi' || st.className.startsWith('9-A')
       }
       return st.className === selectedClass
     })
-  }, [selectedClass])
+  }, [students, selectedClass])
 
   // Filtered by search & status
   const filteredStudents = useMemo(() => {
@@ -127,7 +201,99 @@ export default function TeacherClassesView() {
     })
   }, [classStudents, statusFilter, searchQuery])
 
-  const currentClassInfo = AVAILABLE_CLASSES.find((c) => c.name === selectedClass || c.code === selectedClass)
+  // Compute selected student's real dynamic GPA
+  const selectedStudentGpa = useMemo(() => {
+    if (!selectedStudent) return 0
+    if (selectedStudent.grades && selectedStudent.grades.length > 0) {
+      const sum = selectedStudent.grades.reduce((acc, g) => acc + (Number(g.average) || 0), 0)
+      return Number((sum / selectedStudent.grades.length).toFixed(1))
+    }
+    return typeof selectedStudent.gpa === 'number' ? selectedStudent.gpa : (Number(selectedStudent.gpa) || 0)
+  }, [selectedStudent])
+
+  // Compute selected student's dynamic class rank
+  const selectedStudentRankText = useMemo(() => {
+    if (selectedStudentGpa >= 85) return 'Sınıf Sıralaması: 1 / 30 (Onur Derecesi)'
+    if (selectedStudentGpa >= 60) return 'Sınıf Sıralaması: 14 / 30 (Orta Düzey)'
+    return 'Sınıf Sıralaması: 30 / 30 (Kritik Takip / Destek Gerekli)'
+  }, [selectedStudentGpa])
+
+  // Initialize edit grades state when opening modal or tab
+  const handleStartEditingGrades = () => {
+    if (!selectedStudent) return
+    const current = (selectedStudent.grades || []).map((g) => ({ ...g }))
+    setEditableGrades(current)
+    setIsEditingGrades(true)
+  }
+
+  // Update a single field in editable grades
+  const handleGradeFieldChange = (index: number, field: 'exam1' | 'exam2' | 'performance', val: string) => {
+    setEditableGrades((prev) => {
+      const next = [...prev]
+      const cur = { ...next[index] }
+      const num = val === '' ? 0 : Math.min(100, Math.max(0, Number(val) || 0))
+      cur[field] = num
+      const e1 = cur.exam1 ?? 0
+      const e2 = cur.exam2 ?? e1
+      const perf = cur.performance ?? e1
+      cur.average = Number(((e1 * 0.4) + (e2 * 0.4) + (perf * 0.2)).toFixed(1))
+      next[index] = cur
+      return next
+    })
+  }
+
+  // Quick fill all scores (e.g. 1 point for user testing or 100)
+  const handleQuickFillAll = (score: number) => {
+    setEditableGrades((prev) => {
+      return prev.map((g) => {
+        const e1 = score
+        const e2 = score
+        const perf = score
+        const avg = Number(((e1 * 0.4) + (e2 * 0.4) + (perf * 0.2)).toFixed(1))
+        return {
+          ...g,
+          exam1: e1,
+          exam2: e2,
+          performance: perf,
+          average: avg,
+        }
+      })
+    })
+  }
+
+  // Save edited grades
+  const handleSaveEditedGrades = () => {
+    if (!selectedStudent) return
+
+    const totalAvg = editableGrades.reduce((acc, g) => acc + (Number(g.average) || 0), 0)
+    const newGpa = editableGrades.length > 0 ? Number((totalAvg / editableGrades.length).toFixed(1)) : 0
+    const newRank = newGpa >= 85 ? 1 : newGpa >= 60 ? 14 : 30
+
+    const updated = students.map((st) => {
+      if (st.id === selectedStudent.id) {
+        return {
+          ...st,
+          grades: editableGrades,
+          gpa: newGpa,
+          classRank: newRank,
+        }
+      }
+      return st
+    })
+
+    setStudents(updated)
+    setSelectedStudent((prev) => (prev ? { ...prev, grades: editableGrades, gpa: newGpa, classRank: newRank } : null))
+    setIsEditingGrades(false)
+
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('oxonom_m_students_v3', JSON.stringify(updated))
+        window.dispatchEvent(new CustomEvent('oxonom_student_updated'))
+      } catch (_) {}
+    }
+
+    toast.success(`📝 ${selectedStudent.name} akademik notları başarıyla kaydedildi! (Yeni Ort: ${newGpa})`)
+  }
 
   return (
     <div className="w-full max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 font-jakarta space-y-6">
@@ -148,7 +314,7 @@ export default function TeacherClassesView() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {AVAILABLE_CLASSES.map((cls) => {
+            {availableClasses.map((cls) => {
               const isLead = cls.code === '9-A'
 
               return (
@@ -315,9 +481,28 @@ export default function TeacherClassesView() {
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                           <span>Aktif Öğrenci</span>
                         </span>
-                        <span className="px-2 py-0.5 rounded-full bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 text-[11px] font-bold">
-                          Sınıf 1.'si (Ort: {st.gpa})
-                        </span>
+                        {(() => {
+                          let stGpa = typeof st.gpa === 'number' ? st.gpa : Number(st.gpa) || 0
+                          if (st.grades && st.grades.length > 0) {
+                            const sum = st.grades.reduce((acc, g) => acc + (Number(g.average) || 0), 0)
+                            stGpa = Number((sum / st.grades.length).toFixed(1))
+                          }
+                          const isHonors = stGpa >= 85
+                          const isWarning = stGpa < 60
+                          return (
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                                isHonors
+                                  ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300'
+                                  : isWarning
+                                  ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400'
+                                  : 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400'
+                              }`}
+                            >
+                              {isHonors ? "Sınıf 1.'si" : isWarning ? 'Kritik Seviye' : 'Akademik Başarı'} (Ort: {stGpa})
+                            </span>
+                          )
+                        })()}
                       </div>
 
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
@@ -497,26 +682,209 @@ export default function TeacherClassesView() {
                 )}
 
                 {activeProfileTab === 'academic' && (
-                  <div className="space-y-3 text-xs">
-                    <div className="p-3.5 rounded-2xl bg-indigo-50/60 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-800/50 flex items-center justify-between">
-                      <div>
-                        <div className="font-black text-sm text-indigo-900 dark:text-indigo-200">Genel Akademik Not Ortalaması</div>
-                        <div className="text-indigo-700 dark:text-indigo-300 text-[11px]">Sınıf Sıralaması: 1 / 30</div>
-                      </div>
-                      <div className="text-2xl font-black text-indigo-600 dark:text-indigo-400">{selectedStudent.gpa || 98.8}</div>
-                    </div>
-
-                    <div className="space-y-2">
-                      {selectedStudent.grades.map((gr, idx) => (
-                        <div key={idx} className="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200/60 dark:border-gray-800 flex items-center justify-between">
+                  <div className="space-y-4 text-xs">
+                    {!isEditingGrades ? (
+                      <>
+                        <div className="p-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                           <div>
-                            <div className="font-bold text-gray-900 dark:text-white">{gr.courseName}</div>
-                            <div className="text-[11px] text-gray-400">1. Sınav: {gr.exam1} • 2. Sınav: {gr.exam2} • Performans: {gr.performance}</div>
+                            <div className="font-black text-sm text-indigo-950 dark:text-indigo-200">
+                              Genel Akademik Not Ortalaması
+                            </div>
+                            <div className="text-indigo-700 dark:text-indigo-300 text-[11px] font-semibold mt-0.5">
+                              {selectedStudentRankText}
+                            </div>
                           </div>
-                          <span className="font-black text-sm text-emerald-600 dark:text-emerald-400">{gr.average}</span>
+
+                          <div className="flex items-center gap-4 self-end sm:self-auto">
+                            <div className="text-3xl font-black text-indigo-600 dark:text-indigo-400 font-mono">
+                              {selectedStudentGpa}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={handleStartEditingGrades}
+                              className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                            >
+                              <Edit3 size={13} />
+                              <span>Notları Düzenle</span>
+                            </button>
+                          </div>
                         </div>
-                      ))}
-                    </div>
+
+                        <div className="space-y-2">
+                          {(selectedStudent.grades || []).map((gr, idx) => {
+                            const avgNum = Number(gr.average) || 0
+                            const isHigh = avgNum >= 85
+                            const isMid = avgNum >= 50 && avgNum < 85
+                            const isLow = avgNum < 50
+
+                            return (
+                              <div
+                                key={idx}
+                                className={`p-3.5 rounded-2xl border flex items-center justify-between transition-colors ${
+                                  isLow
+                                    ? 'bg-rose-50/50 dark:bg-rose-950/20 border-rose-200/70 dark:border-rose-900/50'
+                                    : 'bg-gray-50 dark:bg-gray-800/60 border-gray-200/60 dark:border-gray-800'
+                                }`}
+                              >
+                                <div>
+                                  <div className="font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
+                                    <span>{gr.courseName}</span>
+                                    {isLow && (
+                                      <span className="text-[10px] px-2 py-0.5 rounded-md bg-rose-500 text-white font-bold">
+                                        Kritik Seviye
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="text-[11px] text-gray-500 dark:text-gray-400 font-mono mt-0.5">
+                                    1. Sınav: <strong>{gr.exam1}</strong> • 2. Sınav: <strong>{gr.exam2}</strong> • Performans: <strong>{gr.performance}</strong>
+                                  </div>
+                                </div>
+
+                                <div className="text-right">
+                                  <span
+                                    className={`font-black text-sm font-mono ${
+                                      isHigh
+                                        ? 'text-emerald-600 dark:text-emerald-400'
+                                        : isMid
+                                        ? 'text-amber-600 dark:text-amber-400'
+                                        : 'text-rose-600 dark:text-rose-400'
+                                    }`}
+                                  >
+                                    {gr.average}
+                                  </span>
+                                  <span className="text-[10px] text-gray-400 block">Ortalama</span>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </>
+                    ) : (
+                      /* ── INLINE GRADE EDITING MODE ── */
+                      <div className="space-y-4">
+                        <div className="p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div>
+                            <div className="font-black text-sm text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+                              <Edit3 size={15} />
+                              <span>Akademik Notları Düzenle</span>
+                            </div>
+                            <p className="text-[11px] text-amber-700 dark:text-amber-400 mt-0.5">
+                              Ders puanlarını değiştirin. Ortalamalar MEB formülüne (S1*0.4 + S2*0.4 + P*0.2) göre canlı hesaplanır.
+                            </p>
+                          </div>
+
+                          {/* Quick test buttons */}
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[10px] font-bold text-gray-500">Hızlı Doldur:</span>
+                            <button
+                              type="button"
+                              onClick={() => handleQuickFillAll(1)}
+                              className="px-2.5 py-1 rounded-lg bg-rose-500 hover:bg-rose-600 text-white font-extrabold text-[10px] cursor-pointer"
+                              title="Tüm notları 1 yaparak test et"
+                            >
+                              Tümünü 1 Yap
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleQuickFillAll(85)}
+                              className="px-2.5 py-1 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white font-extrabold text-[10px] cursor-pointer"
+                            >
+                              Tümünü 85 Yap
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleQuickFillAll(100)}
+                              className="px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-[10px] cursor-pointer"
+                            >
+                              Tümünü 100 Yap
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Editable courses grid */}
+                        <div className="space-y-3">
+                          {editableGrades.map((gr, idx) => (
+                            <div
+                              key={idx}
+                              className="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800/70 border border-gray-200/70 dark:border-gray-700 space-y-2.5"
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="font-extrabold text-gray-900 dark:text-white">
+                                  {gr.courseName}
+                                </span>
+                                <span className="text-xs font-black text-indigo-600 dark:text-indigo-400 font-mono">
+                                  Ders Ortalaması: {gr.average}
+                                </span>
+                              </div>
+
+                              <div className="grid grid-cols-3 gap-2">
+                                <div>
+                                  <label className="text-[10px] font-bold text-gray-400 block mb-1">
+                                    1. Sınav (%40)
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    max={100}
+                                    value={gr.exam1}
+                                    onChange={(e) => handleGradeFieldChange(idx, 'exam1', e.target.value)}
+                                    className="w-full h-8 px-2 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 font-mono font-bold text-xs text-center focus:ring-2 focus:ring-indigo-500"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="text-[10px] font-bold text-gray-400 block mb-1">
+                                    2. Sınav (%40)
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    max={100}
+                                    value={gr.exam2}
+                                    onChange={(e) => handleGradeFieldChange(idx, 'exam2', e.target.value)}
+                                    className="w-full h-8 px-2 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 font-mono font-bold text-xs text-center focus:ring-2 focus:ring-indigo-500"
+                                  />
+                                </div>
+
+                                <div>
+                                  <label className="text-[10px] font-bold text-gray-400 block mb-1">
+                                    Performans (%20)
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    max={100}
+                                    value={gr.performance}
+                                    onChange={(e) => handleGradeFieldChange(idx, 'performance', e.target.value)}
+                                    className="w-full h-8 px-2 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 font-mono font-bold text-xs text-center focus:ring-2 focus:ring-indigo-500"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Save / Cancel buttons */}
+                        <div className="flex items-center justify-between pt-2">
+                          <button
+                            type="button"
+                            onClick={() => setIsEditingGrades(false)}
+                            className="px-4 py-2 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
+                          >
+                            İptal Et
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={handleSaveEditedGrades}
+                            className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-[#0A0D15] font-black text-xs flex items-center gap-1.5 shadow-md shadow-emerald-500/20 cursor-pointer"
+                          >
+                            <Save size={15} />
+                            <span>Notları Kaydet & Ortalamayı Güncelle</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
