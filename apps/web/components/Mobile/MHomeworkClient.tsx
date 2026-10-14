@@ -40,6 +40,13 @@ import {
   Paperclip,
   User,
   FileCheck,
+  Trash2,
+  Pencil,
+  ShieldCheck,
+  Lock,
+  Unlock,
+  Settings,
+  AlertTriangle,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import MobileHeader from '@components/Mobile/MobileHeader'
@@ -51,6 +58,7 @@ import {
   DEFAULT_SCHOOL_ASSIGNMENTS,
   getStoredCustomAssignments,
   saveStoredCustomAssignment,
+  deleteStoredCustomAssignment,
   type SchoolAssignmentItem,
 } from '@services/school_assignments/school_assignments'
 import { normalizeClassCode } from '@services/demo/attendanceService'
@@ -80,6 +88,13 @@ export interface HomeworkItem {
   accentColor: 'rose' | 'blue' | 'emerald' | 'amber' | 'purple'
   max_score?: number
   teacher_name?: string
+  permissions?: {
+    allowLateSubmission?: boolean
+    allowResubmission?: boolean
+    allowFileUpload?: boolean
+    parentNotification?: boolean
+    accessScope?: 'CLASS' | 'INDIVIDUAL' | 'DRAFT'
+  }
 }
 
 interface SubmissionRecord {
@@ -326,6 +341,33 @@ export default function MHomeworkClient({
   const [createQuizQuestionCount, setCreateQuizQuestionCount] = useState(10)
   const [createQuizDifficulty, setCreateQuizDifficulty] = useState<'Kolay' | 'Orta' | 'İleri'>('Orta')
 
+  // ── Assignment Edit Modal State ──
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [editingHomework, setEditingHomework] = useState<HomeworkItem | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editSubject, setEditSubject] = useState('Türk Dili ve Edebiyatı')
+  const [editToolType, setEditToolType] = useState<'WHITEBOARD' | 'WORKSHEET' | 'QUIZ' | 'READING' | 'PROJECT'>('WORKSHEET')
+  const [editDueDate, setEditDueDate] = useState('2026-10-25T23:59')
+  const [editMaxScore, setEditMaxScore] = useState(100)
+  const [editDescription, setEditDescription] = useState('')
+  const [editTargetType, setEditTargetType] = useState<'CLASS' | 'INDIVIDUAL'>('CLASS')
+  const [editTargetStudentId, setEditTargetStudentId] = useState('s-1')
+  const [editTargetStudentName, setEditTargetStudentName] = useState('Erçil UĞURLU')
+
+  // ── Assignment Permissions (Yetkilendirme) Modal State ──
+  const [isPermissionModalOpen, setIsPermissionModalOpen] = useState(false)
+  const [permissionHomework, setPermissionHomework] = useState<HomeworkItem | null>(null)
+  const [permScope, setPermScope] = useState<'CLASS' | 'INDIVIDUAL' | 'DRAFT'>('CLASS')
+  const [permStudentId, setPermStudentId] = useState('s-1')
+  const [permAllowLate, setPermAllowLate] = useState(true)
+  const [permAllowResubmit, setPermAllowResubmit] = useState(true)
+  const [permAllowFileUpload, setPermAllowFileUpload] = useState(true)
+  const [permParentNotification, setPermParentNotification] = useState(true)
+
+  // ── Assignment Delete Modal State ──
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [deletingHomework, setDeletingHomework] = useState<HomeworkItem | null>(null)
+
   // Seed default authentic assignments if storage is empty
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -474,8 +516,12 @@ export default function MHomeworkClient({
   // Real merged school assignments (Custom created only for new accounts)
   const allSchoolHomeworks = useMemo(() => {
     const customList = getStoredCustomAssignments()
+    const rawDeleted = typeof window !== 'undefined' ? localStorage.getItem('oxonom_deleted_homework_ids') : null
+    const deletedIds: string[] = rawDeleted ? JSON.parse(rawDeleted) : []
+
     const convertedCustom: HomeworkItem[] = customList
       .filter((asg) => !asg.title?.includes('Ritmik Sayma') && !asg.title?.includes('1 Dk Hızlı Okuma'))
+      .filter((asg) => !deletedIds.includes(String(asg.id)) && !deletedIds.includes(asg.assignment_uuid))
       .map((asg) => {
         const className = asg.classes?.[0]?.name || '9-A Şubesi'
         const assignedMs = asg.creation_date ? new Date(asg.creation_date).getTime() : Date.now()
@@ -516,12 +562,15 @@ export default function MHomeworkClient({
           accentColor: asg.subject === 'Türkçe' || asg.subject.includes('Edebiyat') ? 'rose' : asg.subject === 'Hayat Bilgisi' ? 'emerald' : 'blue',
           max_score: asg.max_score || 100,
           teacher_name: asg.teacher_name || 'Ebru TEKNECİ',
+          permissions: asg.tool_data?.permissions,
         }
       })
 
     const combined: HomeworkItem[] = [...convertedCustom]
     INITIAL_HOMEWORKS.forEach((initHw) => {
       if (
+        !deletedIds.includes(initHw.id) &&
+        !deletedIds.includes(initHw.assignment_uuid || '') &&
         !combined.some(
           (c) =>
             c.id === initHw.id ||
@@ -759,6 +808,211 @@ export default function MHomeworkClient({
       icon: '📚',
       duration: 3000,
     })
+  }
+
+  // ── 1. Ödev Düzenleme Aksiyonları ──
+  const handleOpenEditModal = (hw: HomeworkItem) => {
+    setEditingHomework(hw)
+    setEditTitle(hw.title)
+    setEditSubject(hw.subject)
+    setEditToolType(((hw.tool_type as any) || (hw.category as any) || 'WORKSHEET') as any)
+    let dVal = '2026-10-25T23:59'
+    if (hw.dueTimestamp) {
+      const d = new Date(hw.dueTimestamp)
+      const yr = d.getFullYear()
+      const mo = String(d.getMonth() + 1).padStart(2, '0')
+      const da = String(d.getDate()).padStart(2, '0')
+      const hr = String(d.getHours()).padStart(2, '0')
+      const mi = String(d.getMinutes()).padStart(2, '0')
+      dVal = `${yr}-${mo}-${da}T${hr}:${mi}`
+    }
+    setEditDueDate(dVal)
+    setEditMaxScore(hw.max_score || 100)
+    setEditDescription(hw.description)
+    setEditTargetType(hw.target_type || 'CLASS')
+    setEditTargetStudentId(hw.target_student_id || 's-1')
+    setEditTargetStudentName(hw.target_student_name || 'Erçil UĞURLU')
+    setIsEditModalOpen(true)
+  }
+
+  const handleSaveEditHomework = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingHomework) return
+    if (!editTitle.trim()) {
+      toast.error('Lütfen geçerli bir ödev başlığı girin.')
+      return
+    }
+
+    const updatedAsg: SchoolAssignmentItem = {
+      id: Number(editingHomework.id.replace(/\D/g, '')) || Date.now(),
+      assignment_uuid: editingHomework.assignment_uuid || `asg_${editingHomework.id}`,
+      title: editTitle.trim(),
+      description: editDescription.trim() || 'Öğretmen tarafından güncellenen ödev.',
+      grade_level: '9. Sınıf',
+      grade_category: 'Lise (9-12)',
+      subject: editSubject,
+      tool_type: editToolType as any,
+      tool_data: {
+        ...(editingHomework.tool_data || {}),
+        targetType: editTargetType,
+        targetStudentId: editTargetType === 'INDIVIDUAL' ? editTargetStudentId : null,
+        targetStudentName: editTargetType === 'INDIVIDUAL' ? editTargetStudentName : null,
+        permissions: editingHomework.permissions,
+      },
+      classes: [{ id: 101, name: editingHomework.className || '9-A Şubesi', code: '9/A' }],
+      due_date: editDueDate || '2026-10-25T23:59:00',
+      max_score: Number(editMaxScore) || 100,
+      published: true,
+      teacher_name: editingHomework.teacher_name || 'Ebru TEKNECİ',
+      creation_date: new Date(editingHomework.assignedTimestamp || Date.now()).toISOString(),
+    }
+
+    saveStoredCustomAssignment(updatedAsg)
+
+    // Sync to student storage
+    if (typeof window !== 'undefined') {
+      try {
+        const studentKey = 'oxonom_student_homeworks_3001'
+        const existing = localStorage.getItem(studentKey)
+        const parsed = existing ? JSON.parse(existing) : []
+        const filtered = parsed.filter(
+          (p: any) => String(p.id) !== String(updatedAsg.id) && p.assignment_uuid !== updatedAsg.assignment_uuid
+        )
+        localStorage.setItem(studentKey, JSON.stringify([updatedAsg, ...filtered]))
+        window.dispatchEvent(new CustomEvent('oxonom_student_homeworks_updated', { detail: updatedAsg }))
+      } catch (_) {}
+    }
+
+    setAssignmentVersion((v) => v + 1)
+    toast.success(`"${editTitle}" ödevi başarıyla güncellendi!`, { icon: '✏️' })
+    setIsEditModalOpen(false)
+    setEditingHomework(null)
+  }
+
+  // ── 2. Ödev Yetkilendirme (Permissions) Aksiyonları ──
+  const handleOpenPermissionModal = (hw: HomeworkItem) => {
+    setPermissionHomework(hw)
+    setPermScope((hw.target_type as any) || 'CLASS')
+    setPermStudentId(hw.target_student_id || 's-1')
+    setPermAllowLate(hw.permissions?.allowLateSubmission ?? true)
+    setPermAllowResubmit(hw.permissions?.allowResubmission ?? true)
+    setPermAllowFileUpload(hw.permissions?.allowFileUpload ?? true)
+    setPermParentNotification(hw.permissions?.parentNotification ?? true)
+    setIsPermissionModalOpen(true)
+  }
+
+  const handleSavePermissions = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!permissionHomework) return
+
+    const targetStudent = ALL_INITIAL_STUDENTS.find((s) => s.id === permStudentId) || ALL_INITIAL_STUDENTS[0]
+    const permissionsObj = {
+      allowLateSubmission: permAllowLate,
+      allowResubmission: permAllowResubmit,
+      allowFileUpload: permAllowFileUpload,
+      parentNotification: permParentNotification,
+      accessScope: permScope,
+    }
+
+    const updatedAsg: SchoolAssignmentItem = {
+      id: Number(permissionHomework.id.replace(/\D/g, '')) || Date.now(),
+      assignment_uuid: permissionHomework.assignment_uuid || `asg_${permissionHomework.id}`,
+      title: permissionHomework.title,
+      description: permissionHomework.description,
+      grade_level: '9. Sınıf',
+      grade_category: 'Lise (9-12)',
+      subject: permissionHomework.subject,
+      tool_type: (permissionHomework.tool_type as any) || 'WORKSHEET',
+      tool_data: {
+        ...(permissionHomework.tool_data || {}),
+        targetType: permScope === 'DRAFT' ? 'CLASS' : permScope,
+        targetStudentId: permScope === 'INDIVIDUAL' ? targetStudent.id : null,
+        targetStudentName: permScope === 'INDIVIDUAL' ? targetStudent.name : null,
+        permissions: permissionsObj,
+      },
+      classes: [{ id: 101, name: permissionHomework.className || '9-A Şubesi', code: '9/A' }],
+      due_date: new Date(permissionHomework.dueTimestamp || Date.now() + 7 * 86400000).toISOString(),
+      max_score: permissionHomework.max_score || 100,
+      published: permScope !== 'DRAFT',
+      teacher_name: permissionHomework.teacher_name || 'Ebru TEKNECİ',
+      creation_date: new Date(permissionHomework.assignedTimestamp || Date.now()).toISOString(),
+    }
+
+    saveStoredCustomAssignment(updatedAsg)
+
+    // Sync to student storage
+    if (typeof window !== 'undefined') {
+      try {
+        const studentKey = 'oxonom_student_homeworks_3001'
+        const existing = localStorage.getItem(studentKey)
+        const parsed = existing ? JSON.parse(existing) : []
+        const filtered = parsed.filter(
+          (p: any) => String(p.id) !== String(updatedAsg.id) && p.assignment_uuid !== updatedAsg.assignment_uuid
+        )
+        if (permScope !== 'DRAFT') {
+          localStorage.setItem(studentKey, JSON.stringify([updatedAsg, ...filtered]))
+        } else {
+          localStorage.setItem(studentKey, JSON.stringify(filtered))
+        }
+        window.dispatchEvent(new CustomEvent('oxonom_student_homeworks_updated', { detail: updatedAsg }))
+      } catch (_) {}
+    }
+
+    setAssignmentVersion((v) => v + 1)
+    toast.success(`"${permissionHomework.title}" ödev erişim ve yetki ayarları güncellendi!`, { icon: '🛡️' })
+    setIsPermissionModalOpen(false)
+    setPermissionHomework(null)
+  }
+
+  // ── 3. Ödev Silme (Delete) Aksiyonları ──
+  const handleOpenDeleteModal = (hw: HomeworkItem) => {
+    setDeletingHomework(hw)
+    setIsDeleteModalOpen(true)
+  }
+
+  const handleConfirmDeleteHomework = () => {
+    if (!deletingHomework) return
+    const hwId = deletingHomework.id
+    const hwUuid = deletingHomework.assignment_uuid || deletingHomework.id
+
+    // 1. Delete from stored custom assignments
+    deleteStoredCustomAssignment(hwUuid)
+
+    // 2. Mark as deleted in localStorage so initial homeworks are also omitted
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('oxonom_deleted_homework_ids')
+        const deleted: string[] = raw ? JSON.parse(raw) : []
+        if (!deleted.includes(hwId)) deleted.push(hwId)
+        if (hwUuid && !deleted.includes(hwUuid)) deleted.push(hwUuid)
+        localStorage.setItem('oxonom_deleted_homework_ids', JSON.stringify(deleted))
+
+        // Clean from student storage
+        const studentKey = 'oxonom_student_homeworks_3001'
+        const existing = localStorage.getItem(studentKey)
+        if (existing) {
+          const parsed = JSON.parse(existing)
+          const updated = parsed.filter((p: any) => p.id !== hwId && p.assignment_uuid !== hwUuid)
+          localStorage.setItem(studentKey, JSON.stringify(updated))
+        }
+
+        window.dispatchEvent(new CustomEvent('oxonom_assignments_updated', { detail: { id: hwId } }))
+        window.dispatchEvent(new CustomEvent('oxonom_student_homeworks_updated', { detail: { id: hwId } }))
+      } catch (_) {}
+    }
+
+    // Switch selected homework if deleting the active one
+    const remaining = allSchoolHomeworks.filter((h) => h.id !== hwId && h.assignment_uuid !== hwUuid)
+    if (remaining.length > 0) {
+      setSelectedHomeworkId(remaining[0].id)
+    } else {
+      setSelectedHomeworkId('')
+    }
+
+    setAssignmentVersion((v) => v + 1)
+    toast.success(`"${deletingHomework.title}" ödevi başarıyla silindi.`, { icon: '🗑️' })
+    setIsDeleteModalOpen(false)
+    setDeletingHomework(null)
   }
 
   const isCurrentSubmitted = !!currentSubmissions[selectedStudent?.id]
@@ -1699,10 +1953,550 @@ export default function MHomeworkClient({
                               Son Teslim: {hw.dueDate}
                             </span>
                           </div>
+
+                          {/* Action & Permission Toolbar */}
+                          <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-white/5 mt-0.5 gap-2 flex-wrap">
+                            {/* Yetki Durumu Rozeti */}
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="h-[22px] inline-flex items-center gap-1 px-2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] font-bold">
+                                <ShieldCheck size={11} className="text-emerald-500" />
+                                <span>
+                                  {hw.target_type === 'INDIVIDUAL'
+                                    ? `Özel: ${hw.target_student_name || 'Öğrenci'}`
+                                    : 'Tüm Sınıf Yetkili'}
+                                </span>
+                              </span>
+                              {hw.permissions?.allowLateSubmission && (
+                                <span className="h-[22px] inline-flex items-center px-1.5 rounded-full bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-[9.5px] font-bold">
+                                  Geç Teslim İzinli
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Butonlar: Düzenle, Yetkiler, Sil */}
+                            <div className="flex items-center gap-1 shrink-0 ml-auto" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenPermissionModal(hw)}
+                                className="h-[27px] px-2 rounded-[9px] bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800 flex items-center gap-1 text-[11px] font-bold transition-colors cursor-pointer"
+                                title="Ödev Yetkilendirme & Erişim Ayarları"
+                              >
+                                <ShieldCheck size={12} strokeWidth={2.2} />
+                                <span>Yetkiler</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditModal(hw)}
+                                className="h-[27px] px-2 rounded-[9px] bg-gray-100 dark:bg-white/10 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 text-gray-700 dark:text-gray-300 hover:text-indigo-600 flex items-center gap-1 text-[11px] font-bold transition-colors cursor-pointer"
+                                title="Ödevi Düzenle"
+                              >
+                                <Pencil size={12} strokeWidth={2.2} />
+                                <span>Düzenle</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleOpenDeleteModal(hw)}
+                                className="h-[27px] px-2 rounded-[9px] bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 text-rose-600 dark:text-rose-400 border border-rose-200/80 dark:border-rose-900 flex items-center gap-1 text-[11px] font-bold transition-colors cursor-pointer"
+                                title="Ödevi Sil"
+                              >
+                                <Trash2 size={12} strokeWidth={2.2} />
+                                <span>Sil</span>
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       )
                     })
                   )}
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* ── MODAL: ÖDEV DÜZENLEME ── */}
+        <AnimatePresence>
+          {isEditModalOpen && editingHomework && (
+            <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsEditModalOpen(false)}
+                className="fixed inset-0 bg-black/65 backdrop-blur-xs"
+              />
+              <motion.div
+                initial={{ y: '100%', opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: '100%', opacity: 0 }}
+                transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+                className="relative w-full max-w-[480px] sm:max-w-2xl mx-auto bg-white dark:bg-[#111624] text-[#0F172A] dark:text-white rounded-t-[30px] sm:rounded-3xl p-5 sm:p-7 shadow-2xl z-10 flex flex-col max-h-[92vh] sm:max-h-[88vh] overflow-hidden pb-8 sm:pb-6"
+              >
+                <div className="w-12 h-1 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-2 shrink-0 sm:hidden" />
+
+                <div className="flex items-start justify-between gap-3 shrink-0 mb-4 pb-3 border-b border-gray-100 dark:border-white/10">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-[14px] bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                      <Pencil size={20} strokeWidth={2.2} />
+                    </div>
+                    <div>
+                      <h3 className="text-[17px] font-extrabold text-gray-900 dark:text-white leading-tight m-0">
+                        Ödevi Düzenle
+                      </h3>
+                      <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-0.5 m-0">
+                        {editingHomework.className} • Bilgileri güncelleyin
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditModalOpen(false)}
+                    className="w-8 h-8 rounded-full bg-gray-100 dark:bg-white/10 flex items-center justify-center text-gray-500 hover:text-black shrink-0 cursor-pointer"
+                  >
+                    <X size={15} />
+                  </button>
+                </div>
+
+                <form onSubmit={handleSaveEditHomework} className="flex-1 overflow-y-auto space-y-4 pr-1">
+                  <div>
+                    <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
+                      Ödev Başlığı
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      className="w-full h-11 px-3.5 text-xs font-semibold bg-gray-50 dark:bg-[#182033] border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:border-indigo-500 text-gray-900 dark:text-white"
+                      placeholder="Ödev başlığı..."
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
+                        Ders / Branş
+                      </label>
+                      <select
+                        value={editSubject}
+                        onChange={(e) => setEditSubject(e.target.value)}
+                        className="w-full h-11 px-3 text-xs font-semibold bg-gray-50 dark:bg-[#182033] border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:border-indigo-500 text-gray-900 dark:text-white"
+                      >
+                        <option value="Türk Dili ve Edebiyatı">Türk Dili ve Edebiyatı</option>
+                        <option value="Türkçe">Türkçe</option>
+                        <option value="Matematik">Matematik</option>
+                        <option value="Fen Bilimleri">Fen Bilimleri</option>
+                        <option value="Tarih">Tarih</option>
+                        <option value="Coğrafya">Coğrafya</option>
+                        <option value="İngilizce">İngilizce</option>
+                        <option value="Hayat Bilgisi">Hayat Bilgisi</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
+                        Ödev Formatı / Araç
+                      </label>
+                      <select
+                        value={editToolType}
+                        onChange={(e) => setEditToolType(e.target.value as any)}
+                        className="w-full h-11 px-3 text-xs font-semibold bg-gray-50 dark:bg-[#182033] border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:border-indigo-500 text-gray-900 dark:text-white"
+                      >
+                        <option value="WORKSHEET">Çalışma Kâğıdı / Metin</option>
+                        <option value="QUIZ">Çoktan Seçmeli Quiz</option>
+                        <option value="WHITEBOARD">Akıllı Tahta / Çizim</option>
+                        <option value="READING">Okuma & Tahlil</option>
+                        <option value="PROJECT">Dönem Projesi</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
+                      Ödev Açıklaması & Kazanım Yönergeleri
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={editDescription}
+                      onChange={(e) => setEditDescription(e.target.value)}
+                      className="w-full p-3 text-xs bg-gray-50 dark:bg-[#182033] border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:border-indigo-500 text-gray-900 dark:text-white leading-relaxed"
+                      placeholder="Öğrencinin yapması gerekenler..."
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
+                        Son Teslim Tarihi ve Saati
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={editDueDate}
+                        onChange={(e) => setEditDueDate(e.target.value)}
+                        className="w-full h-11 px-3 text-xs bg-gray-50 dark:bg-[#182033] border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:border-indigo-500 text-gray-900 dark:text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1">
+                        Maksimum Puan
+                      </label>
+                      <input
+                        type="number"
+                        min={10}
+                        max={100}
+                        value={editMaxScore}
+                        onChange={(e) => setEditMaxScore(Number(e.target.value))}
+                        className="w-full h-11 px-3 text-xs bg-gray-50 dark:bg-[#182033] border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:border-indigo-500 text-gray-900 dark:text-white"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Hedef Kitle Seçimi */}
+                  <div>
+                    <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1.5">
+                      Hedef Kitle
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setEditTargetType('CLASS')}
+                        className={`p-2.5 rounded-xl border text-xs font-bold text-left transition-colors cursor-pointer ${
+                          editTargetType === 'CLASS'
+                            ? 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-500 text-indigo-700 dark:text-indigo-300'
+                            : 'bg-white dark:bg-[#182033] border-gray-200 dark:border-gray-700 text-gray-600'
+                        }`}
+                      >
+                        <div>👥 Tüm Sınıf (9-A)</div>
+                        <div className="text-[10px] font-normal text-gray-400 mt-0.5">Sınıftaki herkese açık</div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setEditTargetType('INDIVIDUAL')}
+                        className={`p-2.5 rounded-xl border text-xs font-bold text-left transition-colors cursor-pointer ${
+                          editTargetType === 'INDIVIDUAL'
+                            ? 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-500 text-indigo-700 dark:text-indigo-300'
+                            : 'bg-white dark:bg-[#182033] border-gray-200 dark:border-gray-700 text-gray-600'
+                        }`}
+                      >
+                        <div>👤 Bireysel Öğrenci</div>
+                        <div className="text-[10px] font-normal text-gray-400 mt-0.5">Tek öğrenciye özel</div>
+                      </button>
+                    </div>
+
+                    {editTargetType === 'INDIVIDUAL' && (
+                      <div className="mt-2.5">
+                        <select
+                          value={editTargetStudentId}
+                          onChange={(e) => {
+                            setEditTargetStudentId(e.target.value)
+                            const sObj = ALL_INITIAL_STUDENTS.find((s) => s.id === e.target.value)
+                            if (sObj) setEditTargetStudentName(sObj.name)
+                          }}
+                          className="w-full h-11 px-3 text-xs bg-gray-50 dark:bg-[#182033] border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:border-indigo-500 text-gray-900 dark:text-white"
+                        >
+                          {ALL_INITIAL_STUDENTS.map((s) => (
+                            <option key={s.id} value={s.id}>
+                              {s.name} ({s.studentNo || s.id})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="pt-3 flex items-center justify-end gap-2 border-t border-gray-100 dark:border-white/10 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditModalOpen(false)}
+                      className="h-10 px-4 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                    >
+                      Vazgeç
+                    </button>
+                    <button
+                      type="submit"
+                      className="h-10 px-5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition-colors cursor-pointer shadow-xs shadow-indigo-500/20"
+                    >
+                      Değişiklikleri Kaydet
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* ── MODAL: ÖDEV YETKİLENDİRME & ERİŞİM AYARLARI ── */}
+        <AnimatePresence>
+          {isPermissionModalOpen && permissionHomework && (
+            <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsPermissionModalOpen(false)}
+                className="fixed inset-0 bg-black/65 backdrop-blur-xs"
+              />
+              <motion.div
+                initial={{ y: '100%', opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: '100%', opacity: 0 }}
+                transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+                className="relative w-full max-w-[480px] sm:max-w-xl mx-auto bg-white dark:bg-[#111624] text-[#0F172A] dark:text-white rounded-t-[30px] sm:rounded-3xl p-5 sm:p-7 shadow-2xl z-10 flex flex-col max-h-[92vh] sm:max-h-[88vh] overflow-hidden pb-8 sm:pb-6"
+              >
+                <div className="w-12 h-1 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-2 shrink-0 sm:hidden" />
+
+                <div className="flex items-start justify-between gap-3 shrink-0 mb-4 pb-3 border-b border-gray-100 dark:border-white/10">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-[14px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                      <ShieldCheck size={22} strokeWidth={2.2} />
+                    </div>
+                    <div>
+                      <h3 className="text-[17px] font-extrabold text-gray-900 dark:text-white leading-tight m-0">
+                        Ödev Yetkilendirme & Erişim Ayarları
+                      </h3>
+                      <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-0.5 m-0 line-clamp-1">
+                        {permissionHomework.title}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsPermissionModalOpen(false)}
+                    className="w-8 h-8 rounded-full bg-gray-100 dark:bg-white/10 flex items-center justify-center text-gray-500 hover:text-black shrink-0 cursor-pointer"
+                  >
+                    <X size={15} />
+                  </button>
+                </div>
+
+                <form onSubmit={handleSavePermissions} className="flex-1 overflow-y-auto space-y-4 pr-1">
+                  {/* Yetki Kapsamı */}
+                  <div>
+                    <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1.5">
+                      1. Erişim Yetkisi Kapsamı (Kimler Yetkili?)
+                    </label>
+                    <div className="space-y-2">
+                      <div
+                        onClick={() => setPermScope('CLASS')}
+                        className={`p-3 rounded-2xl border cursor-pointer transition-colors flex items-center justify-between ${
+                          permScope === 'CLASS'
+                            ? 'bg-emerald-50/60 dark:bg-emerald-950/40 border-emerald-500 text-emerald-900 dark:text-emerald-200'
+                            : 'bg-white dark:bg-[#182033] border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <Users size={18} className="text-emerald-600 shrink-0" />
+                          <div>
+                            <div className="text-xs font-bold">Tüm Sınıf Yetkili (9-A Şubesi)</div>
+                            <div className="text-[11px] text-gray-500 dark:text-gray-400">Şubedeki tüm öğrenciler ödevi görüntüler ve teslim eder</div>
+                          </div>
+                        </div>
+                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${permScope === 'CLASS' ? 'border-emerald-600 bg-emerald-600' : 'border-gray-300'}`}>
+                          {permScope === 'CLASS' && <Check size={11} className="text-white" />}
+                        </div>
+                      </div>
+
+                      <div
+                        onClick={() => setPermScope('INDIVIDUAL')}
+                        className={`p-3 rounded-2xl border cursor-pointer transition-colors flex items-center justify-between ${
+                          permScope === 'INDIVIDUAL'
+                            ? 'bg-indigo-50/60 dark:bg-indigo-950/40 border-indigo-500 text-indigo-900 dark:text-indigo-200'
+                            : 'bg-white dark:bg-[#182033] border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <User size={18} className="text-indigo-600 shrink-0" />
+                          <div>
+                            <div className="text-xs font-bold">Bireysel / Özel Yetkilendirme</div>
+                            <div className="text-[11px] text-gray-500 dark:text-gray-400">Yalnızca seçilen öğrenci için bireysel çalışma (BEP / Takviye)</div>
+                          </div>
+                        </div>
+                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${permScope === 'INDIVIDUAL' ? 'border-indigo-600 bg-indigo-600' : 'border-gray-300'}`}>
+                          {permScope === 'INDIVIDUAL' && <Check size={11} className="text-white" />}
+                        </div>
+                      </div>
+
+                      {permScope === 'INDIVIDUAL' && (
+                        <div className="pl-4 pt-1">
+                          <select
+                            value={permStudentId}
+                            onChange={(e) => setPermStudentId(e.target.value)}
+                            className="w-full h-10 px-3 text-xs bg-gray-50 dark:bg-[#182033] border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:border-indigo-500 text-gray-900 dark:text-white"
+                          >
+                            {ALL_INITIAL_STUDENTS.map((s) => (
+                              <option key={s.id} value={s.id}>
+                                {s.name} ({s.studentNo || s.id})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                      <div
+                        onClick={() => setPermScope('DRAFT')}
+                        className={`p-3 rounded-2xl border cursor-pointer transition-colors flex items-center justify-between ${
+                          permScope === 'DRAFT'
+                            ? 'bg-amber-50/60 dark:bg-amber-950/40 border-amber-500 text-amber-900 dark:text-amber-200'
+                            : 'bg-white dark:bg-[#182033] border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <Lock size={18} className="text-amber-600 shrink-0" />
+                          <div>
+                            <div className="text-xs font-bold">Zümre İncelemesi / Taslak Yetkisi</div>
+                            <div className="text-[11px] text-gray-500 dark:text-gray-400">Öğrencilere kapalı, sadece öğretmen panelinde görünür</div>
+                          </div>
+                        </div>
+                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${permScope === 'DRAFT' ? 'border-amber-600 bg-amber-600' : 'border-gray-300'}`}>
+                          {permScope === 'DRAFT' && <Check size={11} className="text-white" />}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Öğrenci Teslim & Gönderim Yetkileri */}
+                  <div className="pt-2">
+                    <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-2">
+                      2. Öğrenci Teslim & Gönderim Yetkileri
+                    </label>
+                    <div className="space-y-2">
+                      {/* Geç Teslim İzni */}
+                      <label className="p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-[#182033] flex items-center justify-between cursor-pointer">
+                        <div>
+                          <div className="text-xs font-bold text-gray-900 dark:text-white">Geç Teslim İzni</div>
+                          <div className="text-[11px] text-gray-500 dark:text-gray-400">Son teslim saatinden sonra mazeretli teslime izin ver</div>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={permAllowLate}
+                          onChange={(e) => setPermAllowLate(e.target.checked)}
+                          className="w-4 h-4 text-emerald-600 rounded cursor-pointer accent-emerald-600"
+                        />
+                      </label>
+
+                      {/* Yeniden Teslim / Düzenleme */}
+                      <label className="p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-[#182033] flex items-center justify-between cursor-pointer">
+                        <div>
+                          <div className="text-xs font-bold text-gray-900 dark:text-white">Yeniden Teslim & Düzeltme İzni</div>
+                          <div className="text-[11px] text-gray-500 dark:text-gray-400">Öğrenci teslim ettiği cevabı son tarihe kadar güncelleyebilsin</div>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={permAllowResubmit}
+                          onChange={(e) => setPermAllowResubmit(e.target.checked)}
+                          className="w-4 h-4 text-emerald-600 rounded cursor-pointer accent-emerald-600"
+                        />
+                      </label>
+
+                      {/* Harici Dosya / PDF Yükleme */}
+                      <label className="p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-[#182033] flex items-center justify-between cursor-pointer">
+                        <div>
+                          <div className="text-xs font-bold text-gray-900 dark:text-white">Harici Dosya / Defter Fotoğrafı İzni</div>
+                          <div className="text-[11px] text-gray-500 dark:text-gray-400">Öğrenci cihazından PDF veya fotoğraf ekleyebilsin</div>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={permAllowFileUpload}
+                          onChange={(e) => setPermAllowFileUpload(e.target.checked)}
+                          className="w-4 h-4 text-emerald-600 rounded cursor-pointer accent-emerald-600"
+                        />
+                      </label>
+
+                      {/* Veli Bildirimi */}
+                      <label className="p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-[#182033] flex items-center justify-between cursor-pointer">
+                        <div>
+                          <div className="text-xs font-bold text-gray-900 dark:text-white">Veli SMS & Bildirim Entegrasyonu</div>
+                          <div className="text-[11px] text-gray-500 dark:text-gray-400">Ödev teslim edilmediğinde veliye otomatik bildirim iletilsin</div>
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={permParentNotification}
+                          onChange={(e) => setPermParentNotification(e.target.checked)}
+                          className="w-4 h-4 text-emerald-600 rounded cursor-pointer accent-emerald-600"
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 flex items-center justify-end gap-2 border-t border-gray-100 dark:border-white/10 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setIsPermissionModalOpen(false)}
+                      className="h-10 px-4 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                    >
+                      Vazgeç
+                    </button>
+                    <button
+                      type="submit"
+                      className="h-10 px-5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors cursor-pointer shadow-xs shadow-emerald-500/20"
+                    >
+                      Yetkileri Kaydet
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* ── MODAL: ÖDEV SİLME ONAYI ── */}
+        <AnimatePresence>
+          {isDeleteModalOpen && deletingHomework && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="fixed inset-0 bg-black/65 backdrop-blur-xs"
+              />
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                className="relative w-full max-w-md bg-white dark:bg-[#111624] text-[#0F172A] dark:text-white rounded-3xl p-6 shadow-2xl z-10 space-y-4"
+              >
+                <div className="flex items-center gap-3 pb-3 border-b border-gray-100 dark:border-white/10">
+                  <div className="w-10 h-10 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 flex items-center justify-center shrink-0">
+                    <Trash2 size={20} strokeWidth={2.2} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-extrabold text-gray-900 dark:text-white leading-tight">
+                      Ödevi Sil
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      Bu işlem kalıcıdır ve geri alınamaz
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-rose-50/60 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 space-y-1.5">
+                  <div className="text-xs font-bold text-rose-900 dark:text-rose-200">
+                    &quot;{deletingHomework.title}&quot;
+                  </div>
+                  <p className="text-[11.5px] text-rose-700 dark:text-rose-300 leading-relaxed">
+                    Bu ödev ve öğrencilerin yapmış olduğu tüm teslim kayıtları sistemden kalıcı olarak silinecektir.
+                  </p>
+                </div>
+
+                <div className="pt-2 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsDeleteModalOpen(false)}
+                    className="h-10 px-4 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                  >
+                    Vazgeç
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleConfirmDeleteHomework}
+                    className="h-10 px-5 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white transition-colors cursor-pointer shadow-xs shadow-rose-500/20"
+                  >
+                    Evet, Kalıcı Olarak Sil
+                  </button>
                 </div>
               </motion.div>
             </div>
