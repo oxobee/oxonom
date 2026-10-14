@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   GraduationCap,
   Calendar,
@@ -28,7 +28,13 @@ import {
   Table,
   List,
   CalendarDays,
+  X,
+  FileText,
+  Trash2,
+  Plus,
+  Tag,
 } from 'lucide-react'
+import toast from 'react-hot-toast'
 import {
   DEFAULT_STUDENT_PROFILE,
   STUDENT_COURSES,
@@ -160,6 +166,134 @@ export default function StudentDashboardView() {
         return 'mon'
     }
   })
+
+  // Student Notes State (Synchronized with "Defterim ve Planlayıcım")
+  const [studentNotes, setStudentNotes] = useState<any[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('oxonom_student_notes_ercil')
+        if (raw) return JSON.parse(raw)
+      } catch (_) {}
+    }
+    return []
+  })
+
+  // Lesson Note Modal State
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false)
+  const [selectedLessonNoteTarget, setSelectedLessonNoteTarget] = useState<{
+    lesson: ScheduleEntry
+    dayLabel: string
+    dayKey: string
+    periodNumber: number
+    periodTime: string
+  } | null>(null)
+  const [noteTitle, setNoteTitle] = useState('')
+  const [noteContent, setNoteContent] = useState('')
+  const [noteCategory, setNoteCategory] = useState('Ders Notu')
+
+  // Sync listener for notes from other tabs or Planner
+  useEffect(() => {
+    const handleNotesSync = () => {
+      try {
+        const raw = localStorage.getItem('oxonom_student_notes_ercil')
+        if (raw) setStudentNotes(JSON.parse(raw))
+      } catch (_) {}
+    }
+    window.addEventListener('storage', handleNotesSync)
+    window.addEventListener('oxonom_student_notes_updated', handleNotesSync)
+    return () => {
+      window.removeEventListener('storage', handleNotesSync)
+      window.removeEventListener('oxonom_student_notes_updated', handleNotesSync)
+    }
+  }, [])
+
+  const getLessonNotes = (dayKey: string, periodNumber: number, subjectName: string) => {
+    return studentNotes.filter((n) => {
+      if (n.lessonKey === `${dayKey}-${periodNumber}`) return true
+      if (
+        n.course &&
+        n.course.toLowerCase() === subjectName.toLowerCase() &&
+        n.lessonInfo &&
+        n.lessonInfo.includes(`${periodNumber}. Ders`)
+      ) {
+        return true
+      }
+      return false
+    })
+  }
+
+  const handleOpenLessonNoteModal = (
+    lesson: ScheduleEntry,
+    dayLabel: string,
+    dayKey: string,
+    periodNumber: number,
+    periodTime: string
+  ) => {
+    const subject = (lesson as any)?.subjectName || lesson?.subject || 'Ders'
+    setSelectedLessonNoteTarget({
+      lesson,
+      dayLabel,
+      dayKey,
+      periodNumber,
+      periodTime,
+    })
+    setNoteTitle(`${subject} — ${dayLabel} ${periodNumber}. Ders`)
+    setNoteContent('')
+    setNoteCategory('Ders Notu')
+    setIsNoteModalOpen(true)
+  }
+
+  const handleSaveLessonNote = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedLessonNoteTarget) return
+    if (!noteTitle.trim() || !noteContent.trim()) {
+      toast.error('Lütfen not başlığı ve not içeriği giriniz.')
+      return
+    }
+
+    const subject =
+      (selectedLessonNoteTarget.lesson as any)?.subjectName ||
+      selectedLessonNoteTarget.lesson?.subject ||
+      'Ders'
+
+    const newNote = {
+      id: `sn-${Date.now()}`,
+      title: noteTitle.trim(),
+      course: subject,
+      date: new Date().toLocaleDateString('tr-TR', { day: '2-digit', month: 'long', year: 'numeric' }),
+      content: noteContent.trim(),
+      category: noteCategory,
+      lessonKey: `${selectedLessonNoteTarget.dayKey}-${selectedLessonNoteTarget.periodNumber}`,
+      lessonInfo: `${selectedLessonNoteTarget.dayLabel} · ${selectedLessonNoteTarget.periodNumber}. Ders (${selectedLessonNoteTarget.periodTime})`,
+      teacherName: selectedLessonNoteTarget.lesson.teacherName || '',
+      roomName: selectedLessonNoteTarget.lesson.roomName || '',
+    }
+
+    const updated = [newNote, ...studentNotes]
+    setStudentNotes(updated)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('oxonom_student_notes_ercil', JSON.stringify(updated))
+      window.dispatchEvent(new Event('oxonom_student_notes_updated'))
+    }
+
+    toast.success(`"${subject}" ders notu kaydedildi ve Defterim/Planlayıcım alanına eklendi!`, {
+      icon: '📝',
+      duration: 4000,
+    })
+
+    setNoteContent('')
+    setIsNoteModalOpen(false)
+  }
+
+  const handleDeleteLessonNote = (noteId: string) => {
+    const updated = studentNotes.filter((n) => n.id !== noteId)
+    setStudentNotes(updated)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('oxonom_student_notes_ercil', JSON.stringify(updated))
+      window.dispatchEvent(new Event('oxonom_student_notes_updated'))
+    }
+    toast.success('Not silindi.')
+  }
 
   useEffect(() => {
     const syncAll = () => {
@@ -609,29 +743,50 @@ export default function StudentDashboardView() {
                             const subjectName = (match as any)?.subjectName || match?.subject || ''
                             const style = match ? getStudentDashboardSubjectColor(subjectName, (match as any).color) : null
 
+                            const lessonNotes = match ? getLessonNotes(day.key, period.periodNumber, subjectName) : []
+                            const hasNotes = lessonNotes.length > 0
+
                             return (
                               <td
                                 key={day.key}
                                 className="p-1 align-top border-r last:border-r-0 border-gray-100 dark:border-gray-800/60"
                               >
                                 {match ? (
-                                  <Link
-                                    href="/student/courses?tab=schedule"
-                                    className={`block p-1.5 rounded-xl border transition-all hover:shadow-xs hover:scale-[1.01] ${style?.bg} ${style?.border} ${style?.text}`}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenLessonNoteModal(match, day.label, day.key, period.periodNumber, period.time)}
+                                    className={`w-full text-left block p-1.5 rounded-xl border transition-all hover:shadow-md hover:scale-[1.01] cursor-pointer relative group ${style?.bg} ${style?.border} ${style?.text}`}
                                   >
-                                    <div className="font-black text-[10px] leading-tight truncate">
-                                      {subjectName}
+                                    <div className="flex items-start justify-between gap-1">
+                                      <div className="font-black text-[10px] leading-tight truncate flex-1">
+                                        {subjectName}
+                                      </div>
+                                      {hasNotes && (
+                                        <span
+                                          title={`${lessonNotes.length} Not Kayıtlı`}
+                                          className="shrink-0 px-1 py-0.2 rounded bg-amber-500 text-white font-black text-[8px] flex items-center gap-0.5 shadow-xs"
+                                        >
+                                          <FileText size={8} />
+                                          <span>{lessonNotes.length}</span>
+                                        </span>
+                                      )}
                                     </div>
                                     <div className="text-[9px] opacity-90 truncate mt-0.5">
                                       {match.teacherName || 'Öğretmen'}
                                     </div>
                                     <div className="flex items-center justify-between text-[8px] opacity-75 mt-0.5">
                                       <span className="truncate">{match.roomName?.split('(')[0]?.trim() || '9-A'}</span>
-                                      {match.isSmartBoardActive && (
-                                        <span title="Akıllı Tahta Aktif">📺</span>
+                                      {hasNotes ? (
+                                        <span className="font-bold text-[8px] text-amber-600 dark:text-amber-400">
+                                          Not Var
+                                        </span>
+                                      ) : (
+                                        <span className="opacity-0 group-hover:opacity-100 text-[8px] transition-opacity font-bold">
+                                          + Not Ekle
+                                        </span>
                                       )}
                                     </div>
-                                  </Link>
+                                  </button>
                                 ) : (
                                   <div className="w-full h-12 rounded-xl border border-dashed border-gray-200 dark:border-gray-800/80 flex flex-col items-center justify-center text-gray-400 text-[9px] font-bold">
                                     <span>Boş</span>
@@ -691,11 +846,16 @@ export default function StudentDashboardView() {
                         MIDDLE_PERIODS.find((p) => p.periodNumber === item.period)?.time ||
                         (item as any).timeSlot ||
                         '09:25 - 10:05'
+                      const subjectName = (item as any).subjectName || item.subject || 'Ders'
+                      const dayLabel = DAYS_LIST.find((d) => d.key === selectedScheduleDay)?.label || 'Seçili Gün'
+                      const lessonNotes = getLessonNotes(selectedScheduleDay, item.period, subjectName)
+                      const hasNotes = lessonNotes.length > 0
 
                       return (
                         <div
                           key={item.id || idx}
-                          className="p-3.5 rounded-2xl bg-gray-50 dark:bg-[#131C31] border border-gray-200/60 dark:border-gray-800/60 flex items-center justify-between gap-3 hover:border-cyan-400/50 hover:bg-gray-100/50 dark:hover:bg-[#17223b] transition-all"
+                          onClick={() => handleOpenLessonNoteModal(item, dayLabel, selectedScheduleDay, item.period, periodTime)}
+                          className="p-3.5 rounded-2xl bg-gray-50 dark:bg-[#131C31] border border-gray-200/60 dark:border-gray-800/60 flex items-center justify-between gap-3 hover:border-indigo-400/50 hover:bg-gray-100/50 dark:hover:bg-[#17223b] transition-all cursor-pointer group"
                         >
                           <div className="flex items-center gap-3 min-w-0">
                             <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 text-blue-600 dark:text-cyan-400 border border-blue-500/20 flex flex-col items-center justify-center font-bold text-xs shrink-0">
@@ -705,12 +865,12 @@ export default function StudentDashboardView() {
                             <div className="min-w-0">
                               <div className="flex items-center gap-2">
                                 <span className="text-xs font-extrabold text-gray-900 dark:text-white truncate">
-                                  {(item as any).subjectName || item.subject || 'Ders'}
+                                  {subjectName}
                                 </span>
-                                {item.isSmartBoardActive && (
-                                  <span className="hidden md:inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
-                                    <Tv size={10} />
-                                    <span>Akıllı Tahta</span>
+                                {hasNotes && (
+                                  <span className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                                    <FileText size={10} />
+                                    <span>{lessonNotes.length} Not Kayıtlı</span>
                                   </span>
                                 )}
                               </div>
@@ -1119,6 +1279,208 @@ export default function StudentDashboardView() {
           </div>
         </div>
       </div>
+
+      {/* ── MODAL: DERS NOTU EKLEME VE GÖRÜNTÜLEME MODALI ── */}
+      <AnimatePresence>
+        {isNoteModalOpen && selectedLessonNoteTarget && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 font-jakarta select-none">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsNoteModalOpen(false)}
+              className="fixed inset-0 bg-black/70 backdrop-blur-xs"
+            />
+
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 15 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 15 }}
+              className="relative w-full max-w-lg bg-white dark:bg-[#0E1526] rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl z-10 overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              {/* Modal Header */}
+              <div className="p-4 sm:p-5 border-b border-gray-100 dark:border-gray-800/80 flex items-center justify-between gap-3 bg-gradient-to-r from-indigo-50/50 via-white to-indigo-50/30 dark:from-indigo-950/20 dark:via-[#0E1526] dark:to-indigo-950/10">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                    <FileText size={20} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-sm font-black text-gray-900 dark:text-white truncate">
+                        {(selectedLessonNoteTarget.lesson as any)?.subjectName ||
+                          selectedLessonNoteTarget.lesson?.subject ||
+                          'Ders Notu'}
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                        {selectedLessonNoteTarget.dayLabel} · {selectedLessonNoteTarget.periodNumber}. Ders
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                      {selectedLessonNoteTarget.periodTime} · {selectedLessonNoteTarget.lesson.teacherName || 'Öğretmen'} · {selectedLessonNoteTarget.lesson.roomName || 'Derslik 9-A'}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsNoteModalOpen(false)}
+                  className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* Modal Body: Scrollable */}
+              <div className="p-4 sm:p-5 overflow-y-auto space-y-4">
+                {/* Existing Notes for this Lesson */}
+                {(() => {
+                  const subject =
+                    (selectedLessonNoteTarget.lesson as any)?.subjectName ||
+                    selectedLessonNoteTarget.lesson?.subject ||
+                    'Ders'
+                  const existingNotes = getLessonNotes(
+                    selectedLessonNoteTarget.dayKey,
+                    selectedLessonNoteTarget.periodNumber,
+                    subject
+                  )
+
+                  if (existingNotes.length === 0) return null
+
+                  return (
+                    <div className="space-y-2 p-3.5 rounded-2xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/50">
+                      <div className="flex items-center justify-between text-xs font-black text-amber-900 dark:text-amber-200">
+                        <span className="flex items-center gap-1.5">
+                          <BookOpen size={14} className="text-amber-600" />
+                          <span>Bu Derse Ait Kayıtlı Notlar ({existingNotes.length})</span>
+                        </span>
+                        <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400">
+                          Defterim & Planlayıcım ile Eşitlendi
+                        </span>
+                      </div>
+
+                      <div className="space-y-2 pt-1 max-h-48 overflow-y-auto pr-1">
+                        {existingNotes.map((nt: any) => (
+                          <div
+                            key={nt.id}
+                            className="p-2.5 rounded-xl bg-white dark:bg-[#131C31] border border-amber-200/80 dark:border-amber-900/60 flex items-start justify-between gap-2 shadow-xs"
+                          >
+                            <div className="space-y-1 min-w-0 flex-1">
+                              <div className="flex items-center justify-between">
+                                <h5 className="text-xs font-extrabold text-gray-900 dark:text-white truncate">
+                                  {nt.title}
+                                </h5>
+                                <span className="text-[10px] text-gray-400 shrink-0 font-medium ml-2">
+                                  {nt.date}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-gray-600 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
+                                {nt.content}
+                              </p>
+                              {nt.category && (
+                                <span className="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                                  #{nt.category}
+                                </span>
+                              )}
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteLessonNote(nt.id)}
+                              title="Notu Sil"
+                              className="text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 p-1 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors shrink-0"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })()}
+
+                {/* Add New Note Form */}
+                <form onSubmit={handleSaveLessonNote} className="space-y-3.5">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center justify-between">
+                      <span>Not Başlığı</span>
+                      <span className="text-[10px] text-gray-400 font-normal">Zorunlu</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={noteTitle}
+                      onChange={(e) => setNoteTitle(e.target.value)}
+                      placeholder="Örn: 3. Ders Konu Tekrarı & Önemli Formüller"
+                      className="w-full h-10 px-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 text-xs font-semibold text-gray-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500/40"
+                    />
+                  </div>
+
+                  {/* Kategori Seçici */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-700 dark:text-gray-300">
+                      Not Kategorisi
+                    </label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {['Ders Notu', 'Önemli Soru', 'Ödev Hatırlatıcısı', 'Sınav Notu'].map((cat) => (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => setNoteCategory(cat)}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                            noteCategory === cat
+                              ? 'bg-indigo-600 text-white shadow-xs'
+                              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                          }`}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center justify-between">
+                      <span>Ders Notu İçeriği</span>
+                      <span className="text-[10px] text-gray-400 font-normal">Zorunlu</span>
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={noteContent}
+                      onChange={(e) => setNoteContent(e.target.value)}
+                      placeholder="Bu ders sırasında öğretmenin tahtaya yazdığı önemli formülleri, çözülen soruları veya hatırlatıcıları buraya yaz..."
+                      className="w-full p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 text-xs text-gray-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500/40 leading-relaxed resize-none"
+                    />
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-indigo-50/50 dark:bg-indigo-950/30 border border-indigo-200/50 dark:border-indigo-800/40 flex items-center gap-2 text-[11px] text-indigo-700 dark:text-indigo-300">
+                    <FileText size={15} className="shrink-0 text-indigo-500" />
+                    <span>
+                      Bu not otomatik olarak <strong>Defterim ve Planlayıcım</strong> alanına kaydedilecek ve ilgili ders kartında <strong>Not Var</strong> rozetiyle gösterilecektir.
+                    </span>
+                  </div>
+
+                  {/* Buttons */}
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+                    <button
+                      type="button"
+                      onClick={() => setIsNoteModalOpen(false)}
+                      className="px-4 py-2 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      Kapat
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm shadow-indigo-600/30 transition-all cursor-pointer"
+                    >
+                      <Plus size={14} />
+                      <span>Notu Kaydet ve Ekle</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

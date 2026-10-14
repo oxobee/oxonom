@@ -675,9 +675,6 @@ export default function TeacherScheduleView() {
                               </div>
                               <div className="flex items-center justify-between text-[9px] opacity-75 mt-1">
                                 <span className="truncate">{match.roomName.split('(')[0].trim()}</span>
-                                {match.isSmartBoardActive && (
-                                  <span title="Akıllı Tahta Aktif">📺</span>
-                                )}
                               </div>
                             </div>
                           ) : (

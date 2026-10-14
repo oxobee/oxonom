@@ -467,7 +467,7 @@ export default function LiveClassRadar({
             <div className="flex items-center gap-3">
               <h2 className="text-lg sm:text-xl font-black tracking-tight text-white flex items-center gap-2">
                 <Radio className="text-indigo-400 animate-pulse" size={20} />
-                <span>{titleOverride || 'Anlık Canlı Ders Takip Radarı'}</span>
+                <span>{titleOverride || 'Canlı Ders Takibi'}</span>
               </h2>
 
               <span className="px-2 py-0.5 rounded-lg text-xs font-black bg-indigo-500/30 text-indigo-200 border border-indigo-400/30">
@@ -487,7 +487,7 @@ export default function LiveClassRadar({
               <Clock size={16} className="text-cyan-300" />
               <div className="text-right">
                 <div className="text-[9.5px] uppercase font-bold text-cyan-200 leading-none">
-                  {timeMode === 'realtime' ? 'Gerçek Saat' : 'Simüle Saat'}
+                  Gerçek Saat
                 </div>
                 <div className="text-base sm:text-lg font-black font-mono tracking-wider text-white">
                   {formattedClock}
@@ -513,366 +513,182 @@ export default function LiveClassRadar({
                 ))}
               </div>
             )}
-
-            {/* Time Mode / Demo Stepper Toggle */}
-            <div className="flex items-center gap-1 bg-white/10 backdrop-blur-md p-1 rounded-2xl border border-white/15 text-[11px]">
-              <button
-                onClick={() => setTimeMode('realtime')}
-                title="Sistem saatine dön"
-                className={`px-2.5 py-1 rounded-xl font-bold transition-all ${
-                  timeMode === 'realtime'
-                    ? 'bg-emerald-600 text-white shadow-sm'
-                    : 'text-gray-300 hover:text-white hover:bg-white/10'
-                }`}
-              >
-                Gerçek Zaman
-              </button>
-
-              <button
-                onClick={() => {
-                  setTimeMode('simulated')
-                  // Toggle presets: 08:45 (P1) -> 10:35 (P3) -> 12:15 (Lunch) -> 13:00 (P5)
-                  if (simulatedMinutes === 10 * 60 + 35) {
-                    setSimulatedMinutes(12 * 60 + 15) // lunch
-                  } else if (simulatedMinutes === 12 * 60 + 15) {
-                    setSimulatedMinutes(8 * 60 + 45) // P1
-                  } else {
-                    setSimulatedMinutes(10 * 60 + 35) // P3
-                  }
-                }}
-                title="Ders akışını farklı saatlerde test et"
-                className={`px-2.5 py-1 rounded-xl font-bold transition-all flex items-center gap-1 ${
-                  timeMode === 'simulated'
-                    ? 'bg-purple-600 text-white shadow-sm'
-                    : 'text-gray-300 hover:text-white hover:bg-white/10'
-                }`}
-              >
-                <SlidersHorizontal size={12} />
-                <span>Test Saati</span>
-              </button>
-            </div>
           </div>
         </div>
       </div>
 
-      {/* ── TOP GRAPHIC AREA: MEVCUT DERSİN İŞ SÜRESİ & RADAR GÖSTERGESİ ── */}
+      {/* ── TOP GRAPHIC AREA: MEVCUT DERSİN İŞ SÜRESİ & DETAYLARI ── */}
       <div className="p-4 sm:p-6 bg-gradient-to-b from-gray-50/70 to-white dark:from-[#0E1526] dark:to-[#121A2F] border-b border-gray-200/80 dark:border-gray-800/80">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-center">
-          {/* SOL: RADIAL SVG CIRCULAR GAUGE (İş Süresi & İlerleme Oranı) */}
-          <div className="lg:col-span-4 flex items-center justify-center p-3 sm:p-4 rounded-3xl bg-white dark:bg-[#131C31] border border-gray-200/80 dark:border-gray-800/80 shadow-xs">
-            <div className="relative flex items-center justify-center">
-              {/* SVG Radial Meter */}
-              <svg className="w-36 h-36 sm:w-44 sm:h-44 transform -rotate-90">
-                {/* Background Ring */}
-                <circle
-                  cx="50%"
-                  cy="50%"
-                  r={radius}
-                  className="stroke-gray-100 dark:stroke-gray-800"
-                  strokeWidth="10"
-                  fill="transparent"
-                />
-                {/* Progress Ring with Smooth DashOffset */}
-                <circle
-                  cx="50%"
-                  cy="50%"
-                  r={radius}
-                  className="transition-all duration-700 ease-out"
-                  stroke={
-                    liveState.status === 'in_lesson'
-                      ? activeSubjectTheme.accent
-                      : liveState.status === 'lunch_break' || liveState.status === 'recess_break'
-                      ? '#f59e0b'
-                      : '#10b981'
-                  }
-                  strokeWidth="11"
-                  strokeDasharray={circumference}
-                  strokeDashoffset={strokeDashoffset}
-                  strokeLinecap="round"
-                  fill="transparent"
-                />
-              </svg>
-
-              {/* Center Content */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-2">
-                <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                  {liveState.status === 'in_lesson'
-                    ? 'İş Süresi'
-                    : liveState.status === 'recess_break' || liveState.status === 'lunch_break'
-                    ? 'Mola Süresi'
-                    : 'Günün Durumu'}
+        <div className="w-full space-y-4">
+          {/* Header: Status Pill + Countdown Timer */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-gray-100 dark:border-gray-800">
+            <div className="flex items-center gap-2">
+              {liveState.status === 'in_lesson' ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-500 text-white shadow-sm shadow-emerald-500/30 animate-pulse">
+                  <span className="w-2 h-2 rounded-full bg-white" />
+                  <span>Şu Anda İşleniyor</span>
                 </span>
+              ) : liveState.status === 'recess_break' ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-500 text-white shadow-sm shadow-amber-500/30">
+                  <Coffee size={14} />
+                  <span>Teneffüs Arası</span>
+                </span>
+              ) : liveState.status === 'lunch_break' ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-orange-500 text-white shadow-sm shadow-orange-500/30">
+                  <Utensils size={14} />
+                  <span>Öğle Arası</span>
+                </span>
+              ) : liveState.status === 'before_school' ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-blue-500 text-white shadow-sm">
+                  <Bell size={14} />
+                  <span>Ders Öncesi Hazırlık</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-purple-600 text-white shadow-sm">
+                  <CheckCircle2 size={14} />
+                  <span>Dersler Bitti</span>
+                </span>
+              )}
 
-                <div className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white leading-none my-0.5">
-                  %{liveState.elapsedPercent}
-                </div>
+              <span className="text-xs font-extrabold text-gray-500 dark:text-gray-400">
+                {liveState.label}
+              </span>
+            </div>
 
-                <div className="text-[11px] font-mono font-bold text-indigo-600 dark:text-cyan-400">
+            {/* Countdown badge: Ne kadar süre sonra sonraki derse geçileceği */}
+            <div className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/50 px-3.5 py-1.5 rounded-2xl border border-indigo-200/80 dark:border-indigo-800/80 shrink-0">
+              <Clock size={16} className="text-indigo-600 dark:text-indigo-400" />
+              <div className="text-right">
+                <span className="text-[10px] uppercase font-bold text-indigo-700 dark:text-indigo-300 block leading-tight">
                   {liveState.status === 'in_lesson'
-                    ? `${liveState.elapsedMinutes} / 40 dk`
-                    : liveState.status === 'recess_break' || liveState.status === 'lunch_break'
-                    ? `${liveState.elapsedMinutes} / ${liveState.breakDuration} dk`
-                    : `${liveState.elapsedMinutes} dk`}
-                </div>
+                    ? 'Teneffüse Kalan Süre'
+                    : liveState.status === 'before_school'
+                    ? 'Ders Ziline Kalan'
+                    : 'Sonraki Derse Kalan'}
+                </span>
+                <span className="text-sm sm:text-base font-black font-mono text-indigo-950 dark:text-indigo-100">
+                  {formatCountdown(liveState.remainingSeconds)}
+                </span>
               </div>
             </div>
           </div>
 
-          {/* SAĞ: MEVCUT DERSİN DETAYLARI, İLERLEME ÇUBUĞU & GERİ SAYIM SAYACI */}
-          <div className="lg:col-span-8 space-y-4">
-            {/* Header: Status Pill + Countdown Timer */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-gray-100 dark:border-gray-800">
-              <div className="flex items-center gap-2">
-                {liveState.status === 'in_lesson' ? (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-500 text-white shadow-sm shadow-emerald-500/30 animate-pulse">
-                    <span className="w-2 h-2 rounded-full bg-white" />
-                    <span>Şu Anda İşleniyor</span>
-                  </span>
-                ) : liveState.status === 'recess_break' ? (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-500 text-white shadow-sm shadow-amber-500/30">
-                    <Coffee size={14} />
-                    <span>Teneffüs Arası</span>
-                  </span>
-                ) : liveState.status === 'lunch_break' ? (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-orange-500 text-white shadow-sm shadow-orange-500/30">
-                    <Utensils size={14} />
-                    <span>Öğle Arası</span>
-                  </span>
-                ) : liveState.status === 'before_school' ? (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-blue-500 text-white shadow-sm">
-                    <Bell size={14} />
-                    <span>Ders Öncesi Hazırlık</span>
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-purple-600 text-white shadow-sm">
-                    <CheckCircle2 size={14} />
-                    <span>Dersler Bitti</span>
-                  </span>
-                )}
-
-                <span className="text-xs font-extrabold text-gray-500 dark:text-gray-400">
-                  {liveState.label}
-                </span>
-              </div>
-
-              {/* Countdown badge: Ne kadar süre sonra sonraki derse geçileceği */}
-              <div className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/50 px-3.5 py-1.5 rounded-2xl border border-indigo-200/80 dark:border-indigo-800/80 shrink-0">
-                <Clock size={16} className="text-indigo-600 dark:text-indigo-400" />
-                <div className="text-right">
-                  <span className="text-[10px] uppercase font-bold text-indigo-700 dark:text-indigo-300 block leading-tight">
-                    {liveState.status === 'in_lesson'
-                      ? 'Teneffüse Kalan Süre'
-                      : liveState.status === 'before_school'
-                      ? 'Ders Ziline Kalan'
-                      : 'Sonraki Derse Kalan'}
-                  </span>
-                  <span className="text-sm sm:text-base font-black font-mono text-indigo-950 dark:text-indigo-100">
-                    {formatCountdown(liveState.remainingSeconds)}
+          {/* Active Lesson / Break Title & Info */}
+          <div className="space-y-1">
+            {liveState.status === 'in_lesson' && liveState.activeLesson ? (
+              <>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">
+                    {liveState.activeLesson.subject}
+                  </h3>
+                  <span
+                    className={`text-xs font-black px-2.5 py-0.5 rounded-lg text-white ${activeSubjectTheme.badge}`}
+                  >
+                    {liveState.activePeriod?.period}. Ders ({liveState.activePeriod?.startTime} -{' '}
+                    {liveState.activePeriod?.endTime})
                   </span>
                 </div>
-              </div>
-            </div>
 
-            {/* Active Lesson / Break Title & Info */}
-            <div className="space-y-1">
-              {liveState.status === 'in_lesson' && liveState.activeLesson ? (
-                <>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">
-                      {liveState.activeLesson.subject}
-                    </h3>
-                    <span
-                      className={`text-xs font-black px-2.5 py-0.5 rounded-lg text-white ${activeSubjectTheme.badge}`}
-                    >
-                      {liveState.activePeriod?.period}. Ders ({liveState.activePeriod?.startTime} -{' '}
-                      {liveState.activePeriod?.endTime})
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-300 flex-wrap pt-1">
-                    <span className="flex items-center gap-1 font-semibold">
-                      <GraduationCap size={15} className="text-indigo-500" />
-                      <span>Öğretmen: {liveState.activeLesson.teacherName}</span>
-                    </span>
-                    <span>·</span>
-                    <span className="flex items-center gap-1 font-semibold">
-                      <MapPin size={14} className="text-emerald-500" />
-                      <span>{liveState.activeLesson.roomName || `Derslik ${selectedClass}`}</span>
-                    </span>
-                    <span>·</span>
-                    <span className="flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
-                      <Tv size={14} />
-                      <span>Akıllı Tahta Aktif (PANO-901)</span>
-                    </span>
-                  </div>
-                </>
-              ) : liveState.status === 'recess_break' || liveState.status === 'lunch_break' ? (
-                <>
-                  <h3 className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 flex items-center gap-2">
-                    {liveState.status === 'lunch_break' ? <Utensils size={24} /> : <Coffee size={24} />}
-                    <span>{liveState.label}</span>
-                  </h3>
-                  <p className="text-xs text-gray-600 dark:text-gray-300">
-                    Sıradaki ders:{' '}
-                    <span className="font-extrabold text-indigo-600 dark:text-indigo-400">
-                      {liveState.nextPeriod?.period}. Ders {liveState.nextLesson?.subject}
-                    </span>{' '}
-                    ({liveState.nextPeriod?.startTime}) — Dersliğinize geçmek için hazırlanabilirsiniz.
-                  </p>
-                </>
-              ) : liveState.status === 'before_school' ? (
-                <>
-                  <h3 className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400">
-                    Sabah Hazırlığı ve Ders Öncesi
-                  </h3>
-                  <p className="text-xs text-gray-600 dark:text-gray-300">
-                    Günün ilk dersi:{' '}
-                    <span className="font-bold text-gray-900 dark:text-white">
-                      1. Ders {liveState.nextLesson?.subject || 'Derslik Hazırlığı'}
-                    </span>{' '}
-                    saat 08:30&apos;da başlayacak.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <h3 className="text-xl sm:text-2xl font-black text-purple-600 dark:text-purple-400">
-                    Bugünkü 6 Ders Başarıyla Tamamlandı 🎉
-                  </h3>
-                  <p className="text-xs text-gray-600 dark:text-gray-300">
-                    Tüm dersler MEB müfredatına uygun olarak işlendi. Yarının programını ve ödevlerinizi kontrol edebilirsiniz.
-                  </p>
-                </>
-              )}
-            </div>
-
-            {/* Linear Progress Bar with Milestones */}
-            <div className="space-y-1.5 pt-1">
-              <div className="flex items-center justify-between text-[11px] font-bold text-gray-500 dark:text-gray-400">
-                <span>Geçen: {liveState.elapsedMinutes} dk</span>
-                <span className="font-extrabold text-gray-900 dark:text-white">
-                  {liveState.status === 'in_lesson' ? 'Ders İlerleme Çubuğu' : 'Zaman Akışı'}
-                </span>
-                <span>Kalan: {liveState.remainingMinutes} dk</span>
-              </div>
-
-              {/* Bar track */}
-              <div className="h-3.5 w-full bg-gray-200/80 dark:bg-gray-800 rounded-full overflow-hidden p-0.5 relative">
-                <motion.div
-                  className={`h-full rounded-full transition-all duration-500 ${
-                    liveState.status === 'in_lesson'
-                      ? 'bg-gradient-to-r from-indigo-500 via-cyan-500 to-emerald-500 shadow-sm'
-                      : liveState.status === 'lunch_break' || liveState.status === 'recess_break'
-                      ? 'bg-gradient-to-r from-amber-400 to-orange-500'
-                      : 'bg-emerald-500'
-                  }`}
-                  style={{ width: `${liveState.elapsedPercent}%` }}
-                />
-              </div>
-
-              {/* Milestones labels */}
-              <div className="flex justify-between text-[10px] text-gray-400 px-1 font-mono">
-                <span>0 dk</span>
-                <span>10 dk</span>
-                <span>20 dk</span>
-                <span>30 dk</span>
-                <span>40 dk</span>
-              </div>
-            </div>
-
-            {/* Quick Action Buttons according to Role */}
-            <div className="flex items-center gap-2 pt-1 flex-wrap">
-              {role === 'student' && (
-                <>
-                  <button
-                    onClick={() => alert('Akıllı Tahta PANO-901 yayınına bağlanıldı. Notlar senkronize.')}
-                    className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
-                  >
+                <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-300 flex-wrap pt-1">
+                  <span className="flex items-center gap-1 font-semibold">
+                    <GraduationCap size={15} className="text-indigo-500" />
+                    <span>Öğretmen: {liveState.activeLesson.teacherName}</span>
+                  </span>
+                  <span>·</span>
+                  <span className="flex items-center gap-1 font-semibold">
+                    <MapPin size={14} className="text-emerald-500" />
+                    <span>{liveState.activeLesson.roomName || `Derslik ${selectedClass}`}</span>
+                  </span>
+                  <span>·</span>
+                  <span className="flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
                     <Tv size={14} />
-                    <span>Tahtaya Bağlan</span>
-                  </button>
+                    <span>Akıllı Tahta Aktif</span>
+                  </span>
+                </div>
+              </>
+            ) : liveState.status === 'recess_break' || liveState.status === 'lunch_break' ? (
+              <>
+                <h3 className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                  {liveState.status === 'lunch_break' ? <Utensils size={24} /> : <Coffee size={24} />}
+                  <span>{liveState.label}</span>
+                </h3>
+                <p className="text-xs text-gray-600 dark:text-gray-300">
+                  Sıradaki ders:{' '}
+                  <span className="font-extrabold text-indigo-600 dark:text-indigo-400">
+                    {liveState.nextPeriod?.period}. Ders {liveState.nextLesson?.subject}
+                  </span>{' '}
+                  ({liveState.nextPeriod?.startTime}) — Dersliğinize geçmek için hazırlanabilirsiniz.
+                </p>
+              </>
+            ) : liveState.status === 'before_school' ? (
+              <>
+                <h3 className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400">
+                  Sabah Hazırlığı ve Ders Öncesi
+                </h3>
+                <p className="text-xs text-gray-600 dark:text-gray-300">
+                  Günün ilk dersi:{' '}
+                  <span className="font-bold text-gray-900 dark:text-white">
+                    1. Ders {liveState.nextLesson?.subject || 'Derslik Hazırlığı'}
+                  </span>{' '}
+                  saat 08:30&apos;da başlayacak.
+                </p>
+              </>
+            ) : (
+              <>
+                <h3 className="text-xl sm:text-2xl font-black text-purple-600 dark:text-purple-400">
+                  Bugünkü 6 Ders Başarıyla Tamamlandı 🎉
+                </h3>
+                <p className="text-xs text-gray-600 dark:text-gray-300">
+                  Tüm dersler MEB müfredatına uygun olarak işlendi. Yarının programını kontrol edebilirsiniz.
+                </p>
+              </>
+            )}
+          </div>
 
-                  <Link
-                    href="/student/courses"
-                    className="px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-xs font-bold flex items-center gap-1.5 transition-all"
-                  >
-                    <BookOpen size={14} />
-                    <span>Ders Notları & PDF</span>
-                  </Link>
+          {/* Linear Progress Bar with Milestones */}
+          <div className="space-y-1.5 pt-1">
+            <div className="flex items-center justify-between text-[11px] font-bold text-gray-500 dark:text-gray-400">
+              <span>Geçen: {liveState.elapsedMinutes} dk</span>
+              <span className="font-extrabold text-gray-900 dark:text-white">
+                {liveState.status === 'in_lesson' ? 'Ders İlerleme Çubuğu' : 'Zaman Akışı'}
+              </span>
+              <span>Kalan: {liveState.remainingMinutes} dk</span>
+            </div>
 
-                  <Link
-                    href="/student/assignments"
-                    className="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center gap-1.5 border border-emerald-200/60 dark:border-emerald-800/60 transition-all"
-                  >
-                    <CheckCircle2 size={14} />
-                    <span>Bugünün Ödevleri</span>
-                  </Link>
-                </>
-              )}
+            {/* Bar track */}
+            <div className="h-3.5 w-full bg-gray-200/80 dark:bg-gray-800 rounded-full overflow-hidden p-0.5 relative">
+              <motion.div
+                className={`h-full rounded-full transition-all duration-500 ${
+                  liveState.status === 'in_lesson'
+                    ? 'bg-gradient-to-r from-indigo-500 via-cyan-500 to-emerald-500 shadow-sm'
+                    : liveState.status === 'lunch_break' || liveState.status === 'recess_break'
+                    ? 'bg-gradient-to-r from-amber-400 to-orange-500'
+                    : 'bg-emerald-500'
+                }`}
+                style={{ width: `${liveState.elapsedPercent}%` }}
+              />
+            </div>
 
-              {role === 'teacher' && (
-                <>
-                  <Link
-                    href="/teacher/attendance"
-                    className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
-                  >
-                    <Users size={14} />
-                    <span>Ders Yoklamasını Al</span>
-                  </Link>
-
-                  <Link
-                    href="/teacher/smartboard"
-                    className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
-                  >
-                    <Tv size={14} />
-                    <span>Akıllı Tahtayı Başlat</span>
-                  </Link>
-
-                  <Link
-                    href="/teacher/schedule"
-                    className="px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-xs font-bold flex items-center gap-1.5 transition-all"
-                  >
-                    <Calendar size={14} />
-                    <span>Haftalık Programım</span>
-                  </Link>
-                </>
-              )}
-
-              {role === 'principal' && (
-                <>
-                  <Link
-                    href="/principal/schedule"
-                    className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
-                  >
-                    <Calendar size={14} />
-                    <span>Tüm Okul Ders Programı</span>
-                  </Link>
-
-                  <Link
-                    href="/principal/curriculum"
-                    className="px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 text-xs font-bold flex items-center gap-1.5 transition-all"
-                  >
-                    <SlidersHorizontal size={14} />
-                    <span>Müfredat & Ders Dağıtımı</span>
-                  </Link>
-                </>
-              )}
+            {/* Milestones labels */}
+            <div className="flex justify-between text-[10px] text-gray-400 px-1 font-mono">
+              <span>0 dk</span>
+              <span>10 dk</span>
+              <span>20 dk</span>
+              <span>30 dk</span>
+              <span>40 dk</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* ── İNFOGRAFİK VE ANİMASYONLU GÜNLÜK AKIŞ STEPPER (1-6. DERSLER & ARALAR) ── */}
-      {/* Kural: Geçmiş dersler silik, güncel ders canlı, gelecek dersler farklı renklerde */}
       <div className="p-4 sm:p-6 space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm sm:text-base font-black text-gray-900 dark:text-white flex items-center gap-2">
               <Sparkles size={17} className="text-amber-500" />
-              <span>Günün Ders Akışı ve Zaman Çizelgesi (MEB 6 Ders Standardı)</span>
+              <span>Canlı Ders Akışı</span>
             </h3>
-            <p className="text-[11px] text-gray-500 dark:text-gray-400">
-              Her ders 40 dakika olup, geçmiş dersler silik, anlık ders canlı animasyonla ve gelecek dersler renkli olarak gösterilir.
-            </p>
           </div>
 
           <span className="text-xs font-mono font-bold text-gray-400 hidden sm:inline-block">
@@ -1017,19 +833,6 @@ export default function LiveClassRadar({
                     )}
                   </div>
                 </div>
-
-                {/* Break Indicator between periods (e.g. Teneffüs or Öğle Arası) */}
-                {periodConfig.isLunchAfter && (
-                  <div className="md:col-span-2 xl:col-span-3 py-2 px-4 rounded-2xl bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-orange-500/10 border border-orange-500/30 flex items-center justify-between text-xs font-bold text-orange-700 dark:text-orange-300">
-                    <div className="flex items-center gap-2">
-                      <Utensils size={16} className="text-orange-500" />
-                      <span>🍽️ 4. Ders Sonrası: 50 Dakika Öğle Arası & Yemek Saati (11:55 - 12:45)</span>
-                    </div>
-                    <span className="text-[11px] font-mono text-orange-600 dark:text-orange-400">
-                      50 Dk Dinlenme
-                    </span>
-                  </div>
-                )}
               </React.Fragment>
             )
           })}
