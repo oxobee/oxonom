@@ -34,6 +34,10 @@ import {
   UserCheck,
   UserX,
   BarChart2,
+  Table,
+  Printer,
+  Eye,
+  FileSpreadsheet,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import MobileHeader from '@components/Mobile/MobileHeader'
@@ -45,6 +49,7 @@ import {
 import { useLHSession } from '@components/Contexts/LHSessionContext'
 import { getStoredPrincipalProfile } from '@/lib/principal/principalProfileStorage'
 import MockBadge from '@components/Common/MockBadge'
+import { INITIAL_SCHEDULE_ENTRIES } from './MAdminScheduleClient'
 
 export interface MAdminCurriculumClientProps {
   orgSlug?: string
@@ -395,6 +400,42 @@ const INITIAL_OXONOM_COURSES: CurriculumCourse[] = [
   },
 ]
 
+export const normalizeClassCode = (code: string = ''): string =>
+  code.replace(/[\/\-\s_]/g, '').toLowerCase()
+
+export const loadStoredSchedule = (orgId: number = 30): ScheduleEntry[] => {
+  if (typeof window !== 'undefined') {
+    try {
+      const savedOrg = localStorage.getItem(`oxonom_admin_schedule_${orgId}`)
+      if (savedOrg) {
+        const parsed = JSON.parse(savedOrg)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      }
+      const saved30 = localStorage.getItem('oxonom_admin_schedule_30')
+      if (saved30) {
+        const parsed = JSON.parse(saved30)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      }
+      const saved1 = localStorage.getItem('oxonom_admin_schedule_1')
+      if (saved1) {
+        const parsed = JSON.parse(saved1)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      }
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i)
+        if (k && k.startsWith('oxonom_admin_schedule_') && !k.includes('revisions')) {
+          const val = localStorage.getItem(k)
+          if (val) {
+            const parsed = JSON.parse(val)
+            if (Array.isArray(parsed) && parsed.length > 0) return parsed
+          }
+        }
+      }
+    } catch (_) {}
+  }
+  return INITIAL_SCHEDULE_ENTRIES
+}
+
 export default function MAdminCurriculumClient({
   orgSlug,
   hideHeader = false,
@@ -405,11 +446,20 @@ export default function MAdminCurriculumClient({
   const user = session?.data?.user
 
   const [selectedOrgId, setSelectedOrgId] = useState<number>(30)
-  const [selectedClass, setSelectedClass] = useState<string>('9/A')
+  const [selectedClass, setSelectedClass] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('oxonom_curriculum_selected_class')
+        if (saved) return saved
+      } catch (_) {}
+    }
+    return '9/A'
+  })
   const [activeDay, setActiveDay] = useState<DayKey>('mon')
 
-  // Main View Tab: 'distribute' (Sürükle-Bırak Haftalık Çizelge) | 'catalog' (Ders Tanımları & Saatler)
-  const [activeTab, setActiveTab] = useState<'distribute' | 'catalog'>('distribute')
+  // Main View Tab: 'schedule' (Mevcut Onaylı Haftalık Çizelge) | 'distribute' (Sürükle-Bırak Dağıtım & Takvim) | 'catalog' (Ders Tanımları & Saatler)
+  const [activeTab, setActiveTab] = useState<'schedule' | 'distribute' | 'catalog'>('schedule')
+  const [scheduleViewMode, setScheduleViewMode] = useState<'matrix' | 'daily'>('matrix')
 
   // Selected Active Course for 1-Tap Quick-Drop placement
   const [selectedCourseForDrop, setSelectedCourseForDrop] = useState<CurriculumCourse | null>(null)
@@ -418,18 +468,20 @@ export default function MAdminCurriculumClient({
   // Workload monitor toggle
   const [isWorkloadExpanded, setIsWorkloadExpanded] = useState<boolean>(true)
 
-  // Dynamic periods (can be customized by principal)
+  // Dynamic periods (can be customized by principal - default 7 periods = 35 hours/week for Oxonom 9/A)
   const [periods, setPeriods] = useState<PeriodSlot[]>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const savedPeriods = localStorage.getItem(`oxonom_admin_periods_30`)
+        const savedPeriods =
+          localStorage.getItem(`oxonom_admin_periods_30`) ||
+          localStorage.getItem('oxonom_admin_periods')
         if (savedPeriods) {
           const parsed = JSON.parse(savedPeriods)
           if (Array.isArray(parsed) && parsed.length > 0) return parsed
         }
       } catch (_) {}
     }
-    return PRIMARY_PERIODS // 6 periods/day = 30 hours/week
+    return MIDDLE_PERIODS // 7 periods/day = 35 hours/week for Oxonom 9/A
   })
 
   // Modals state
@@ -524,17 +576,26 @@ export default function MAdminCurriculumClient({
 
   // Schedule Entries State
   const [scheduleList, setScheduleList] = useState<ScheduleEntry[]>(() => {
+    return loadStoredSchedule(selectedOrgId)
+  })
+
+  // Ensure initial schedule is persisted to localStorage on mount so teacher and student see it immediately
+  useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
-        const savedSchedule = localStorage.getItem(`oxonom_admin_schedule_${selectedOrgId}`)
-        if (savedSchedule) {
-          const parsedSchedule = JSON.parse(savedSchedule)
-          if (Array.isArray(parsedSchedule)) return parsedSchedule
+        const saved =
+          localStorage.getItem(`oxonom_admin_schedule_${selectedOrgId}`) ||
+          localStorage.getItem('oxonom_admin_schedule_30')
+        if (!saved) {
+          localStorage.setItem(`oxonom_admin_schedule_${selectedOrgId}`, JSON.stringify(INITIAL_SCHEDULE_ENTRIES))
+          localStorage.setItem('oxonom_admin_schedule_30', JSON.stringify(INITIAL_SCHEDULE_ENTRIES))
+          localStorage.setItem('oxonom_schedule_30', JSON.stringify(INITIAL_SCHEDULE_ENTRIES))
+          window.dispatchEvent(new CustomEvent('oxonom_admin_schedule_updated', { detail: INITIAL_SCHEDULE_ENTRIES }))
+          window.dispatchEvent(new CustomEvent('oxonom_schedule_updated', { detail: INITIAL_SCHEDULE_ENTRIES }))
         }
       } catch (_) {}
     }
-    return []
-  })
+  }, [selectedOrgId])
 
   // Principal Profile Dynamic Identity
   const [principalName, setPrincipalName] = useState<string>(() => {
@@ -562,23 +623,40 @@ export default function MAdminCurriculumClient({
     }
   }, [])
 
-  // Reload data on external storage changes
+  // Reload data on external storage changes and schedule events
   useEffect(() => {
     const handleSync = () => {
       if (typeof window !== 'undefined') {
         try {
           const savedT = localStorage.getItem(`oxonom_admin_teachers_${selectedOrgId}`)
           if (savedT) setTeachersList(JSON.parse(savedT))
+          const loaded = loadStoredSchedule(selectedOrgId)
+          setScheduleList(loaded)
         } catch (_) {}
       }
     }
     window.addEventListener('storage', handleSync)
     window.addEventListener('oxonom_teachers_updated', handleSync)
+    window.addEventListener('oxonom_admin_schedule_updated', handleSync)
+    window.addEventListener('oxonom_schedule_updated', handleSync)
     return () => {
       window.removeEventListener('storage', handleSync)
       window.removeEventListener('oxonom_teachers_updated', handleSync)
+      window.removeEventListener('oxonom_admin_schedule_updated', handleSync)
+      window.removeEventListener('oxonom_schedule_updated', handleSync)
     }
   }, [selectedOrgId])
+
+  // Helper to handle class selection and persistence
+  const handleSelectClass = (cls: string) => {
+    setSelectedClass(cls)
+    setSelectedCourseForDrop(null)
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('oxonom_curriculum_selected_class', cls)
+      } catch (_) {}
+    }
+  }
 
   // Helpers to persist
   const persistCourses = (updated: CurriculumCourse[]) => {
@@ -596,6 +674,8 @@ export default function MAdminCurriculumClient({
       try {
         localStorage.setItem(`oxonom_admin_schedule_${selectedOrgId}`, JSON.stringify(updated))
         localStorage.setItem('oxonom_admin_schedule_30', JSON.stringify(updated))
+        localStorage.setItem('oxonom_schedule_30', JSON.stringify(updated))
+        localStorage.setItem('oxonom_teacher_schedule_30', JSON.stringify(updated))
         window.dispatchEvent(new CustomEvent('oxonom_admin_schedule_updated', { detail: updated }))
         window.dispatchEvent(new CustomEvent('oxonom_schedule_updated', { detail: updated }))
       } catch (_) {}
@@ -611,12 +691,29 @@ export default function MAdminCurriculumClient({
     }
   }
 
-  // Ensure selectedClass is valid
+  // Ensure selectedClass is valid and matches available classes without resetting to 1/A
   useEffect(() => {
-    if (availableClasses.length > 0 && !availableClasses.includes(selectedClass)) {
-      setSelectedClass(availableClasses[0])
+    if (availableClasses.length > 0) {
+      const isMatch = availableClasses.some(
+        (c) => normalizeClassCode(c) === normalizeClassCode(selectedClass)
+      )
+      if (!isMatch) {
+        // Find if any available class has existing entries in scheduleList
+        const matchingWithSchedule = availableClasses.find((c) =>
+          scheduleList.some(
+            (e) => normalizeClassCode(e.classCode) === normalizeClassCode(c)
+          )
+        )
+        if (matchingWithSchedule) {
+          handleSelectClass(matchingWithSchedule)
+        } else if (availableClasses.includes('9/A')) {
+          handleSelectClass('9/A')
+        } else {
+          handleSelectClass(availableClasses[0])
+        }
+      }
     }
-  }, [availableClasses, selectedClass])
+  }, [availableClasses, scheduleList])
 
   // ── FILTERED COURSES POOL (STRICTLY BY SELECTED CLASS) ──
   // User Rule: "program oluşturulurken ilk önce sınıf seçilmeli sınıflara göre ders havuzları filtrelenmeli"
@@ -624,7 +721,7 @@ export default function MAdminCurriculumClient({
     return coursesList.filter((c) => {
       if (c.orgId !== selectedOrgId) return false
       if (c.targetClass) {
-        return c.targetClass.trim() === selectedClass.trim()
+        return normalizeClassCode(c.targetClass) === normalizeClassCode(selectedClass)
       }
       return true
     })
@@ -634,9 +731,7 @@ export default function MAdminCurriculumClient({
   const classEntries = useMemo(() => {
     return scheduleList.filter((e) => {
       if (e.orgId !== selectedOrgId) return false
-      const eNorm = e.classCode.replace(/[\/-]/, '/').toLowerCase()
-      const selNorm = selectedClass.replace(/[\/-]/, '/').toLowerCase()
-      return eNorm === selNorm
+      return normalizeClassCode(e.classCode) === normalizeClassCode(selectedClass)
     })
   }, [scheduleList, selectedOrgId, selectedClass])
 
@@ -708,7 +803,7 @@ export default function MAdminCurriculumClient({
         e.orgId === selectedOrgId &&
         e.day === day &&
         e.period === period &&
-        e.classCode !== selectedClass &&
+        normalizeClassCode(e.classCode) !== normalizeClassCode(selectedClass) &&
         (e.activeTeacherName || e.teacherName) === courseToAssign.branchTeacher &&
         !e.isTeacherOnLeave
     )
@@ -719,7 +814,7 @@ export default function MAdminCurriculumClient({
         e.orgId === selectedOrgId &&
         e.day === day &&
         e.period === period &&
-        e.classCode !== selectedClass &&
+        normalizeClassCode(e.classCode) !== normalizeClassCode(selectedClass) &&
         e.roomName === courseToAssign.requiredRoom
     )
 
@@ -768,7 +863,11 @@ export default function MAdminCurriculumClient({
     }
 
     const existingIndex = scheduleList.findIndex(
-      (e) => e.orgId === selectedOrgId && e.classCode === selectedClass && e.day === day && e.period === period
+      (e) =>
+        e.orgId === selectedOrgId &&
+        normalizeClassCode(e.classCode) === normalizeClassCode(selectedClass) &&
+        e.day === day &&
+        e.period === period
     )
 
     const newEntry: ScheduleEntry = {
@@ -804,7 +903,13 @@ export default function MAdminCurriculumClient({
   // Remove slot
   const handleRemoveSlot = (day: DayKey, period: number) => {
     const updated = scheduleList.filter(
-      (e) => !(e.orgId === selectedOrgId && e.classCode === selectedClass && e.day === day && e.period === period)
+      (e) =>
+        !(
+          e.orgId === selectedOrgId &&
+          normalizeClassCode(e.classCode) === normalizeClassCode(selectedClass) &&
+          e.day === day &&
+          e.period === period
+        )
     )
     persistSchedule(updated)
     toast.success('Ders saati boşaltıldı.')
@@ -856,7 +961,11 @@ export default function MAdminCurriculumClient({
 
     // Other classes' entries for conflict prevention
     const otherClassesEntries = scheduleList.filter(
-      (e) => !(e.orgId === selectedOrgId && e.classCode === selectedClass)
+      (e) =>
+        !(
+          e.orgId === selectedOrgId &&
+          normalizeClassCode(e.classCode) === normalizeClassCode(selectedClass)
+        )
     )
 
     const newEntries: ScheduleEntry[] = []
@@ -954,7 +1063,11 @@ export default function MAdminCurriculumClient({
   // Clear weekly schedule
   const handleClearWeek = () => {
     const updated = scheduleList.filter(
-      (e) => !(e.orgId === selectedOrgId && e.classCode === selectedClass)
+      (e) =>
+        !(
+          e.orgId === selectedOrgId &&
+          normalizeClassCode(e.classCode) === normalizeClassCode(selectedClass)
+        )
     )
     persistSchedule(updated)
     toast.success(`${selectedClass} haftalık ders programı temizlendi.`)
@@ -962,7 +1075,9 @@ export default function MAdminCurriculumClient({
 
   // Clear all courses and restart
   const handleClearAllCourses = () => {
-    const updated = coursesList.filter((c) => c.targetClass !== selectedClass)
+    const updated = coursesList.filter(
+      (c) => normalizeClassCode(c.targetClass) !== normalizeClassCode(selectedClass)
+    )
     persistCourses(updated)
     handleClearWeek()
     toast.success(`${selectedClass} sınıfına ait tüm dersler silindi.`)
@@ -1203,15 +1318,12 @@ export default function MAdminCurriculumClient({
 
               <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
                 {availableClasses.map((cls) => {
-                  const isSelected = selectedClass === cls
+                  const isSelected = normalizeClassCode(selectedClass) === normalizeClassCode(cls)
                   return (
                     <button
                       key={cls}
                       type="button"
-                      onClick={() => {
-                        setSelectedClass(cls)
-                        setSelectedCourseForDrop(null)
-                      }}
+                      onClick={() => handleSelectClass(cls)}
                       className={`min-w-[70px] px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer text-center shrink-0 ${
                         isSelected
                           ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg ring-2 ring-emerald-400/50 scale-105'
@@ -1328,9 +1440,22 @@ export default function MAdminCurriculumClient({
           </div>
         </section>
 
-        {/* ── 4. SEKMELER (SÜRÜKLE-BIRAK DAĞITIM / DERS HAVUZU KATALOĞU) ── */}
+        {/* ── 4. SEKMELER (MEVCUT PROGRAM / SÜRÜKLE-BIRAK DAĞITIM / DERS HAVUZU KATALOĞU) ── */}
         <section className="px-3">
           <div className="flex items-center p-1 rounded-2xl bg-gray-200/60 dark:bg-gray-800/60 text-xs font-bold gap-1">
+            <button
+              type="button"
+              onClick={() => setActiveTab('schedule')}
+              className={`flex-1 py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                activeTab === 'schedule'
+                  ? 'bg-white dark:bg-[#111827] text-emerald-600 dark:text-emerald-400 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              <Calendar size={14} />
+              <span>Mevcut Haftalık Program</span>
+            </button>
+
             <button
               type="button"
               onClick={() => setActiveTab('distribute')}
@@ -1341,7 +1466,7 @@ export default function MAdminCurriculumClient({
               }`}
             >
               <Wand2 size={14} />
-              <span>Sürükle - Bırak Dağıtım & Takvim</span>
+              <span>Programı Düzenle & Slot Dağıtımı</span>
             </button>
 
             <button
@@ -1354,16 +1479,370 @@ export default function MAdminCurriculumClient({
               }`}
             >
               <Layers size={14} />
-              <span>Sınıf Ders Havuzu & Tanımlar</span>
+              <span>Sınıf Ders Kataloğu</span>
             </button>
           </div>
         </section>
 
         {/* ════════════════════════════════════════════════════════════
-            SEKME 1: HAFTALIK DERS PROGRAMI & SÜRÜKLE-BIRAK DAĞITIM
+            SEKME 1: MEVCUT GÜNCEL & ONAYLI HAFTALIK DERS PROGRAMI
+           ════════════════════════════════════════════════════════════ */}
+        {activeTab === 'schedule' && (
+          <div className="space-y-3">
+            <section className="px-3">
+              <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-[#111827] border border-gray-200/90 dark:border-gray-800/80 shadow-sm space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100 dark:border-gray-800">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs font-black">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        2026-2027 Güncel & Onaylı Haftalık Ders Programı (Aktif)
+                      </span>
+                      <MockBadge size="xs" />
+                    </div>
+                    <h3 className="text-sm font-black text-gray-900 dark:text-white flex items-center gap-2 mt-1">
+                      <span>{selectedClass} Şubesi Haftalık Ders Çizelgesi</span>
+                      <span className="text-xs font-bold text-gray-400">
+                        ({classEntries.length} / {targetWeeklyHours} Saat)
+                      </span>
+                    </h3>
+                    <p className="text-[11px] text-gray-400">
+                      Onaylayan: <strong className="text-gray-700 dark:text-gray-300">{principalName}</strong> (Okul Müdürü) · Öğretmen ve Öğrenci Panelleri ile Anlık Senkronize
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('distribute')}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black shadow-xs transition-all cursor-pointer"
+                    >
+                      <Edit3 size={13} />
+                      <span>Programı Düzenle / Yeni Ders Ekle</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSmartAutoFill}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-bold transition-all cursor-pointer"
+                    >
+                      <Wand2 size={13} className="text-emerald-500" />
+                      <span>Otomatik Doldur</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => typeof window !== 'undefined' && window.print()}
+                      className="p-2 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-gray-900 dark:hover:text-white cursor-pointer"
+                      title="Yazdır / PDF"
+                    >
+                      <Printer size={15} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* View mode toggle (Matrix vs Daily) */}
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-extrabold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                    <BookOpen size={14} className="text-emerald-500" />
+                    <span>Görünüm Modu:</span>
+                  </div>
+
+                  <div className="flex items-center p-0.5 rounded-xl bg-gray-100 dark:bg-gray-800/80 text-[11px] font-bold">
+                    <button
+                      type="button"
+                      onClick={() => setScheduleViewMode('matrix')}
+                      className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
+                        scheduleViewMode === 'matrix'
+                          ? 'bg-white dark:bg-[#111827] text-emerald-600 dark:text-emerald-400 shadow-xs'
+                          : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <Table size={13} />
+                      <span>Haftalık Tam Matris Tablosu</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setScheduleViewMode('daily')}
+                      className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
+                        scheduleViewMode === 'daily'
+                          ? 'bg-white dark:bg-[#111827] text-emerald-600 dark:text-emerald-400 shadow-xs'
+                          : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <Clock size={13} />
+                      <span>Günlük Akış</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Schedule Content */}
+            {classEntries.length === 0 ? (
+              <section className="px-3">
+                <div className="p-8 rounded-3xl bg-white dark:bg-[#111827] border border-dashed border-gray-300 dark:border-gray-800 text-center space-y-3">
+                  <Calendar size={36} className="mx-auto text-gray-400" />
+                  <h4 className="text-sm font-black text-gray-800 dark:text-white">
+                    {selectedClass} sınıfı için henüz haftalık ders programı oluşturulmamış
+                  </h4>
+                  <p className="text-xs text-gray-400 max-w-md mx-auto">
+                    Ders havuzundaki dersleri öğretmen mesai saatleri ve derslik kapasitelerine göre 0 çakışma ile hemen otomatik oluşturabilir veya manuel olarak dağıtabilirsiniz.
+                  </p>
+                  <div className="pt-2 flex flex-wrap items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleSmartAutoFill}
+                      className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black text-xs flex items-center gap-2 shadow-md cursor-pointer hover:brightness-110"
+                    >
+                      <Wand2 size={15} />
+                      <span>Akıllı Otomatik Program Oluştur (35 Saat)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('distribute')}
+                      className="px-4 py-2.5 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold text-xs cursor-pointer hover:bg-gray-200"
+                    >
+                      <span>Manuel Ders Dağıtımına Başla</span>
+                    </button>
+                  </div>
+                </div>
+              </section>
+            ) : scheduleViewMode === 'matrix' ? (
+              /* ── MATRİS TABLOSU (5 GÜN × 7 SAAT YAN YANA TAM TABLO) ── */
+              <section className="px-3">
+                <div className="rounded-3xl bg-white dark:bg-[#111827] border border-gray-200/90 dark:border-gray-800/80 shadow-sm overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse min-w-[700px]">
+                      <thead>
+                        <tr className="bg-gray-50/80 dark:bg-gray-800/50 border-b border-gray-200/80 dark:border-gray-800 text-[11px] font-black text-gray-600 dark:text-gray-300">
+                          <th className="p-3 w-28 text-center shrink-0">Saat / Periyot</th>
+                          {DAYS_LIST.map((d) => (
+                            <th key={d.key} className="p-3 text-center">
+                              <div>{d.label}</div>
+                              <div className="text-[9px] font-medium text-gray-400">
+                                {classEntries.filter((e) => e.day === d.key).length} Ders
+                              </div>
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 dark:divide-gray-800/60 text-xs">
+                        {periods.map((slot) => (
+                          <tr key={slot.periodNumber} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors">
+                            {/* Periyot & Saat Hücresi */}
+                            <td className="p-2.5 text-center bg-gray-50/40 dark:bg-gray-900/40 border-r border-gray-100 dark:border-gray-800/60 shrink-0">
+                              <div className="font-black text-gray-900 dark:text-white">
+                                {slot.periodNumber}. Ders
+                              </div>
+                              <div className="text-[10px] text-gray-400 font-mono mt-0.5">
+                                {slot.time}
+                              </div>
+                            </td>
+
+                            {/* Günler */}
+                            {DAYS_LIST.map((day) => {
+                              const entry = classEntries.find(
+                                (e) => e.day === day.key && e.period === slot.periodNumber
+                              )
+                              const style = entry ? getColorStyle(entry.color) : null
+
+                              return (
+                                <td
+                                  key={day.key}
+                                  className="p-1.5 align-top border-r last:border-r-0 border-gray-100 dark:border-gray-800/60"
+                                >
+                                  {entry ? (
+                                    <div
+                                      onClick={() =>
+                                        setSelectedSlotForAction({
+                                          entry,
+                                          day: day.key,
+                                          period: slot.periodNumber,
+                                        })
+                                      }
+                                      className={`p-2 rounded-2xl border transition-all cursor-pointer hover:shadow-md hover:scale-[1.01] ${style?.bg} ${style?.border} ${style?.text}`}
+                                    >
+                                      <div className="font-black text-[11px] leading-tight">
+                                        {entry.subject}
+                                      </div>
+                                      <div className="flex items-center gap-1 mt-1 text-[10px] opacity-90">
+                                        <span>{entry.activeTeacherName || entry.teacherName}</span>
+                                        {entry.isTeacherOnLeave && (
+                                          <span className="text-[8px] font-black px-1 rounded bg-amber-500 text-white">
+                                            Yedek
+                                          </span>
+                                        )}
+                                      </div>
+                                      <div className="flex items-center justify-between text-[9px] opacity-75 mt-1">
+                                        <span className="truncate">{entry.roomName.split('(')[0].trim()}</span>
+                                        {entry.isSmartBoardActive && (
+                                          <span title="Akıllı Tahta Aktif">📺</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setActiveDay(day.key)
+                                        setActiveTab('distribute')
+                                      }}
+                                      className="w-full h-16 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-800 hover:border-emerald-400 hover:bg-emerald-50/20 text-gray-400 hover:text-emerald-600 text-[10px] font-bold flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer"
+                                    >
+                                      <Plus size={12} />
+                                      <span>Boş</span>
+                                    </button>
+                                  )}
+                                </td>
+                              )
+                            })}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </section>
+            ) : (
+              /* ── GÜNLÜK AKIŞ GÖRÜNÜMÜ ── */
+              <div className="space-y-3">
+                <section className="px-3">
+                  <div className="grid grid-cols-5 gap-1.5">
+                    {DAYS_LIST.map((day) => {
+                      const isActive = activeDay === day.key
+                      const dayCount = classEntries.filter((e) => e.day === day.key).length
+                      return (
+                        <button
+                          key={day.key}
+                          type="button"
+                          onClick={() => setActiveDay(day.key)}
+                          className={`py-2.5 px-1 rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer ${
+                            isActive
+                              ? 'bg-emerald-600 text-white shadow-md ring-2 ring-emerald-400/40 scale-102'
+                              : 'bg-white dark:bg-[#111827] border border-gray-200/90 dark:border-gray-800/80 text-gray-700 dark:text-gray-300'
+                          }`}
+                        >
+                          <span className="text-[10px] font-bold opacity-80">{day.shortLabel}</span>
+                          <span className="text-xs font-black">{day.label.slice(0, 3)}</span>
+                          <span className={`text-[9px] mt-0.5 font-bold px-1.5 rounded-full ${isActive ? 'bg-white/20' : 'text-gray-400'}`}>
+                            {dayCount}/{periods.length}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </section>
+
+                <section className="px-3 space-y-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {periods.map((slot) => {
+                      const entry = activeDayEntries.find((e) => e.period === slot.periodNumber)
+                      const style = entry ? getColorStyle(entry.color) : null
+
+                      return (
+                        <div
+                          key={slot.periodNumber}
+                          onClick={() => {
+                            if (entry) {
+                              setSelectedSlotForAction({
+                                entry,
+                                day: activeDay,
+                                period: slot.periodNumber,
+                              })
+                            }
+                          }}
+                          className={`p-3.5 rounded-2xl border transition-all ${
+                            entry
+                              ? `bg-white dark:bg-[#111827] border-gray-200/90 dark:border-gray-800/80 shadow-xs cursor-pointer hover:border-emerald-500`
+                              : 'border-2 border-dashed border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div
+                                className={`w-10 h-10 rounded-2xl flex flex-col items-center justify-center shrink-0 ${
+                                  entry
+                                    ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-black'
+                                    : 'bg-gray-100 dark:bg-gray-800 text-gray-500 font-bold'
+                                }`}
+                              >
+                                <span className="text-[9px] uppercase leading-none opacity-80">DERS</span>
+                                <span className="text-base font-black leading-none mt-0.5">{slot.periodNumber}</span>
+                              </div>
+
+                              <div className="min-w-0">
+                                {entry ? (
+                                  <>
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <span className="text-xs font-black text-gray-900 dark:text-white">
+                                        {entry.subject}
+                                      </span>
+                                      {entry.isTeacherOnLeave ? (
+                                        <span className="text-[9px] font-black px-1.5 py-0.2 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                                          <UserCheck size={9} />
+                                          <span>Yedek: {entry.activeTeacherName}</span>
+                                        </span>
+                                      ) : (
+                                        <span
+                                          className={`text-[9px] font-extrabold px-1.5 py-0.2 rounded-md border ${style?.bg} ${style?.text} ${style?.border}`}
+                                        >
+                                          {entry.activeTeacherName || entry.teacherName}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-1.5 mt-1 text-[10px] text-gray-400">
+                                      <span>⏰ {slot.time}</span>
+                                      <span>·</span>
+                                      <span className="font-semibold text-gray-600 dark:text-gray-300">{entry.roomName}</span>
+                                    </div>
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="text-xs font-bold text-gray-400">Boş Ders Saati</div>
+                                    <div className="text-[10px] text-gray-400 mt-0.5">⏰ {slot.time}</div>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+
+                            {entry && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleRemoveSlot(activeDay, slot.periodNumber)
+                                }}
+                                className="w-7 h-7 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-400 hover:text-rose-500 flex items-center justify-center cursor-pointer transition-colors"
+                                title="Dersi Boşalt"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </section>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ════════════════════════════════════════════════════════════
+            SEKME 2: HAFTALIK DERS PROGRAMI & SÜRÜKLE-BIRAK DAĞITIM
            ════════════════════════════════════════════════════════════ */}
         {activeTab === 'distribute' && (
           <div className="space-y-3">
+            <div className="px-3 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setActiveTab('schedule')}
+                className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+              >
+                <ArrowRight size={13} className="rotate-180" />
+                <span>Onaylı Haftalık Programı Görüntüle</span>
+              </button>
+            </div>
             {/* A. SEÇİLİ SINIFIN DERS HAVUZU */}
             <section className="px-3">
               <div className="p-4 rounded-3xl bg-white dark:bg-[#111827] border border-gray-200/90 dark:border-gray-800/80 shadow-sm">

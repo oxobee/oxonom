@@ -810,9 +810,13 @@ export function getSynchronizedClassWeeklySchedule(classCode: string = '9-A'): S
   if (typeof window !== 'undefined') {
     try {
       const raw30 = localStorage.getItem('oxonom_admin_schedule_30')
+      const rawSchedule = localStorage.getItem('oxonom_schedule_30')
       const raw1 = localStorage.getItem('oxonom_admin_schedule_1')
       if (raw30) {
         const parsed = JSON.parse(raw30)
+        if (Array.isArray(parsed) && parsed.length > 0) entries = parsed
+      } else if (rawSchedule) {
+        const parsed = JSON.parse(rawSchedule)
         if (Array.isArray(parsed) && parsed.length > 0) entries = parsed
       } else if (raw1) {
         const parsed = JSON.parse(raw1)
@@ -820,7 +824,7 @@ export function getSynchronizedClassWeeklySchedule(classCode: string = '9-A'): S
       } else {
         for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i)
-          if (key && key.startsWith('oxonom_admin_schedule_') && !key.includes('revisions')) {
+          if (key && (key.startsWith('oxonom_admin_schedule_') || key.startsWith('oxonom_schedule_')) && !key.includes('revisions')) {
             const raw = localStorage.getItem(key)
             if (raw) {
               const parsed = JSON.parse(raw)
@@ -835,10 +839,16 @@ export function getSynchronizedClassWeeklySchedule(classCode: string = '9-A'): S
     } catch (_) {}
   }
 
-  const target = classCode.toLowerCase()
+  const normTarget = classCode.replace(/[\/\-\s_]/g, '').toLowerCase()
   const filtered = entries.filter((e) => {
-    const c = String((e as any).classCode || (e as any).classroom || '').toLowerCase()
-    return c.includes(target) || c.includes('9-a') || c.includes('9/a') || c.includes('9a')
+    const rawClass = String((e as any).classCode || (e as any).classroom || '')
+    const normEntry = rawClass.replace(/[\/\-\s_]/g, '').toLowerCase()
+    return (
+      normEntry === normTarget ||
+      normEntry.includes(normTarget) ||
+      normTarget.includes(normEntry) ||
+      (normTarget.startsWith('9') && normEntry.startsWith('9'))
+    )
   })
 
   return filtered.length > 0 ? filtered : INITIAL_SCHEDULE_ENTRIES

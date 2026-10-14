@@ -113,9 +113,13 @@ export default function TeacherScheduleView() {
   // Filter entries based on scopeFilter (my_lessons vs all_school)
   const filteredEntries = useMemo(() => {
     if (scopeFilter === 'my_lessons') {
-      return allEntries.filter(
-        (e) => e.teacherName.toLowerCase().includes('ebru') || e.teacherName === teacherName
-      )
+      return allEntries.filter((e) => {
+        const activeName = ((e as any).activeTeacherName || e.teacherName || '').toLowerCase()
+        return (
+          activeName.includes('ebru') ||
+          (e.teacherName === teacherName && !(e as any).isTeacherOnLeave)
+        )
+      })
     }
     return allEntries
   }, [allEntries, scopeFilter])
@@ -129,9 +133,13 @@ export default function TeacherScheduleView() {
 
   // Calculate teacher's total weekly hours
   const teacherWeeklyHours = useMemo(() => {
-    return allEntries.filter(
-      (e) => e.teacherName.toLowerCase().includes('ebru') || e.teacherName === teacherName
-    ).length
+    return allEntries.filter((e) => {
+      const activeName = ((e as any).activeTeacherName || e.teacherName || '').toLowerCase()
+      return (
+        activeName.includes('ebru') ||
+        (e.teacherName === teacherName && !(e as any).isTeacherOnLeave)
+      )
+    }).length
   }, [allEntries])
 
   return (
