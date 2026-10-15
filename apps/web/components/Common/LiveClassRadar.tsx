@@ -432,95 +432,55 @@ export default function LiveClassRadar({
     <div
       className={`rounded-3xl bg-white dark:bg-[#0E1526] border border-gray-200/90 dark:border-gray-800/90 shadow-md overflow-hidden relative ${className}`}
     >
-      {/* ── AMBIENT GRADIENT HEADER BAR ── */}
-      <div className="relative bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-4.5 sm:p-5 lg:p-6 overflow-hidden">
-        {/* Animated background glow */}
-        <div className="absolute -top-24 -right-24 w-72 h-72 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none animate-pulse" />
-        <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-cyan-500/20 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* ── LIGHT MINIMAL HEADER BAR ── */}
+      <div className="relative bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-white dark:from-[#111A2E] dark:via-[#131D33] dark:to-[#111A2E] border-b border-blue-100/70 dark:border-blue-900/40 p-4 sm:p-5 overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           {/* Title & Live Status */}
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10.5px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping shrink-0" />
-                <span>Canlı Akış & Radar</span>
-              </span>
-
-              {isWeekend ? (
-                <span className="text-[10.5px] font-bold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                  Hafta Sonu Dinlenmesi
-                </span>
-              ) : (
-                <span className="text-[10.5px] font-bold px-2 py-0.5 rounded-md bg-white/10 text-cyan-200 border border-white/15">
-                  {formattedDateStr}
-                </span>
-              )}
-
-              {timeMode === 'simulated' && (
-                <span className="text-[10.5px] font-extrabold px-2 py-0.5 rounded-md bg-purple-500/30 text-purple-200 border border-purple-500/40">
-                  Demo Saat Modu ({formattedClock})
-                </span>
-              )}
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <div className="w-8 h-8 rounded-xl bg-[#1D77FF]/10 text-[#1D77FF] flex items-center justify-center shrink-0">
+              <Radio size={16} className="animate-pulse" />
             </div>
 
-            <div className="flex items-center gap-3">
-              <h2 className="text-lg sm:text-xl font-black tracking-tight text-white flex items-center gap-2">
-                <Radio className="text-indigo-400 animate-pulse" size={20} />
-                <span>{titleOverride || 'Canlı Ders Takibi'}</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-base sm:text-lg font-black tracking-tight text-slate-900 dark:text-white">
+                {titleOverride || 'Canlı Ders Takibi'}
               </h2>
-
-              <span className="px-2 py-0.5 rounded-lg text-xs font-black bg-indigo-500/30 text-indigo-200 border border-indigo-400/30">
+              <span className="px-2.5 py-0.5 rounded-lg text-[11px] font-black bg-blue-100/70 dark:bg-blue-900/40 text-[#1D77FF] dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/40">
                 {selectedClass} Şubesi
               </span>
+              {timeMode === 'simulated' && (
+                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
+                  Demo ({formattedClock})
+                </span>
+              )}
             </div>
-
-            <p className="text-xs text-indigo-200/80 max-w-xl">
-              MEB 30 saatlik resmi haftalık program senkronizasyonu ile gerçek zamanlı ders süresi, kalan zaman ve akıllı tahta takibi.
-            </p>
           </div>
 
-          {/* Clock & Controls Pill */}
-          <div className="flex items-center gap-3 shrink-0 self-start md:self-auto flex-wrap">
-            {/* Live Clock Display */}
-            <div className="bg-white/10 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-white/15 flex items-center gap-2.5 shadow-inner">
-              <Clock size={16} className="text-cyan-300" />
-              <div className="text-right">
-                <div className="text-[9.5px] uppercase font-bold text-cyan-200 leading-none">
-                  Gerçek Saat
-                </div>
-                <div className="text-base sm:text-lg font-black font-mono tracking-wider text-white">
-                  {formattedClock}
-                </div>
-              </div>
+          {/* Principal Classroom Switcher */}
+          {(showClassSelector || role === 'principal') && (
+            <div className="bg-white dark:bg-[#15213B] p-1 rounded-2xl border border-blue-100/80 dark:border-blue-900/40 flex items-center gap-1 shadow-xs self-start sm:self-auto">
+              {CLASS_LIST.map((cls) => (
+                <button
+                  key={cls}
+                  onClick={() => setSelectedClass(cls)}
+                  className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all ${
+                    selectedClass === cls
+                      ? 'bg-[#1D77FF] text-white shadow-xs'
+                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  {cls}
+                </button>
+              ))}
             </div>
-
-            {/* Principal Classroom Switcher */}
-            {(showClassSelector || role === 'principal') && (
-              <div className="bg-white/10 backdrop-blur-md p-1 rounded-2xl border border-white/15 flex items-center gap-1">
-                {CLASS_LIST.map((cls) => (
-                  <button
-                    key={cls}
-                    onClick={() => setSelectedClass(cls)}
-                    className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all ${
-                      selectedClass === cls
-                        ? 'bg-indigo-600 text-white shadow-sm'
-                        : 'text-indigo-200 hover:text-white hover:bg-white/10'
-                    }`}
-                  >
-                    {cls}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
 
       {/* ── TOP GRAPHIC AREA: MEVCUT DERSİN İŞ SÜRESİ & DETAYLARI ── */}
       <div className="p-4 sm:p-6 bg-gradient-to-b from-gray-50/70 to-white dark:from-[#0E1526] dark:to-[#121A2F] border-b border-gray-200/80 dark:border-gray-800/80">
         <div className="w-full space-y-4">
-          {/* Header: Status Pill + Countdown Timer */}
+          {/* Header: Status Pill + Harmonious Countdown Timer */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-gray-100 dark:border-gray-800">
             <div className="flex items-center gap-2">
               {liveState.status === 'in_lesson' ? (
@@ -555,18 +515,18 @@ export default function LiveClassRadar({
               </span>
             </div>
 
-            {/* Countdown badge: Ne kadar süre sonra sonraki derse geçileceği */}
-            <div className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-950/50 px-3.5 py-1.5 rounded-2xl border border-indigo-200/80 dark:border-indigo-800/80 shrink-0">
-              <Clock size={16} className="text-indigo-600 dark:text-indigo-400" />
-              <div className="text-right">
-                <span className="text-[10px] uppercase font-bold text-indigo-700 dark:text-indigo-300 block leading-tight">
+            {/* Harmonious Countdown Badge: Ders ziline / sonraki derse kalan süre */}
+            <div className="flex items-center gap-2.5 bg-gradient-to-r from-blue-50 to-indigo-50/80 dark:from-[#15213B] dark:to-[#1A2849] px-4 py-2 rounded-2xl border border-blue-200/70 dark:border-blue-800/60 shadow-xs shrink-0 self-start sm:self-auto">
+              <Clock size={16} className="text-[#1D77FF] dark:text-blue-400" />
+              <div>
+                <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block leading-tight">
                   {liveState.status === 'in_lesson'
-                    ? 'Teneffüse Kalan Süre'
+                    ? 'Teneffüse Kalan'
                     : liveState.status === 'before_school'
                     ? 'Ders Ziline Kalan'
                     : 'Sonraki Derse Kalan'}
                 </span>
-                <span className="text-sm sm:text-base font-black font-mono text-indigo-950 dark:text-indigo-100">
+                <span className="text-sm sm:text-base font-black font-mono text-[#1D77FF] dark:text-blue-300 tracking-wider">
                   {formatCountdown(liveState.remainingSeconds)}
                 </span>
               </div>

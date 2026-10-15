@@ -170,7 +170,14 @@ export default function StudentDashboardView() {
   const [guidanceNotes, setGuidanceNotes] = useState<GuidanceNoteItem[]>([])
   const [weeklySchedule, setWeeklySchedule] = useState<ScheduleEntry[]>([])
   const [submissions, setSubmissions] = useState<Record<string, StudentSubmission>>({})
-  const [scheduleViewMode, setScheduleViewMode] = useState<'matrix' | 'list'>('matrix')
+  // Timetable view mode: default is 'list' on mobile as requested, 'matrix' on desktop (>=1024px)
+  const [scheduleViewMode, setScheduleViewMode] = useState<'matrix' | 'list'>('list')
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
+      setScheduleViewMode('matrix')
+    }
+  }, [])
 
   // Active day selection in the weekly schedule tabs
   const [selectedScheduleDay, setSelectedScheduleDay] = useState<DayKey>(() => {
@@ -572,7 +579,50 @@ export default function StudentDashboardView() {
     return 'İyi akşamlar'
   }, [])
 
-  // Core actual courses of 9-A curriculum (100% REAL DATA, NO MOCK)
+  // Dynamic Academic Standing Theme based on real GPA
+  const academicStatusTheme = useMemo(() => {
+    const gpa = profile.gpa || 0
+    if (gpa === 0) {
+      return {
+        cardBg: 'bg-slate-50 dark:bg-slate-800/40',
+        cardBorder: 'border-slate-200 dark:border-slate-700/60',
+        avatarBg: 'from-slate-400 to-slate-600',
+        scoreColor: 'text-slate-600 dark:text-slate-300',
+        statusColor: 'text-slate-500 dark:text-slate-400',
+        statusLabel: 'Not Girişi Sürecinde',
+      }
+    }
+    if (gpa < 50) {
+      return {
+        cardBg: 'bg-rose-50/90 dark:bg-rose-950/40',
+        cardBorder: 'border-rose-200 dark:border-rose-800/60',
+        avatarBg: 'from-rose-500 to-red-600',
+        scoreColor: 'text-rose-600 dark:text-rose-400',
+        statusColor: 'text-rose-600 dark:text-rose-400',
+        statusLabel: 'Kritik Seviye / Destek Gerekli',
+      }
+    }
+    if (gpa < 75) {
+      return {
+        cardBg: 'bg-blue-50/90 dark:bg-blue-950/40',
+        cardBorder: 'border-blue-200 dark:border-blue-800/60',
+        avatarBg: 'from-blue-500 to-indigo-600',
+        scoreColor: 'text-[#1D77FF] dark:text-blue-400',
+        statusColor: 'text-blue-600 dark:text-blue-400',
+        statusLabel: 'Orta Düzey / Geliştirilebilir',
+      }
+    }
+    return {
+      cardBg: 'bg-emerald-50/90 dark:bg-emerald-950/40',
+      cardBorder: 'border-emerald-200 dark:border-emerald-800/60',
+      avatarBg: 'from-emerald-500 to-teal-600',
+      scoreColor: 'text-emerald-600 dark:text-emerald-400',
+      statusColor: 'text-emerald-600 dark:text-emerald-400',
+      statusLabel: 'Yüksek Başarı / Takdir Seviyesi',
+    }
+  }, [profile.gpa])
+
+  // Core actual courses of 9-A curriculum (100% REAL DATA, NO MOCK) with richer, distinguishable pastel tones
   const realCoreCourses = [
     {
       id: 'turk-dili-ve-edebiyati',
@@ -580,9 +630,9 @@ export default function StudentDashboardView() {
       teacher: 'Ebru TEKNECİ',
       hours: '5 Saat / Hafta',
       icon: Headphones,
-      bg: 'bg-[#FAF5FF] dark:bg-[#1E192E]',
-      border: 'border-purple-100 dark:border-purple-900/30',
-      iconBg: 'bg-purple-500/15 text-purple-600 dark:text-purple-400',
+      bg: 'bg-[#EDE9FE] dark:bg-[#2E1065]/40',
+      border: 'border-[#DDD6FE] dark:border-purple-800/60',
+      iconBg: 'bg-purple-600/15 text-purple-700 dark:text-purple-300',
     },
     {
       id: 'matematik',
@@ -590,9 +640,9 @@ export default function StudentDashboardView() {
       teacher: 'Ebru TEKNECİ',
       hours: '6 Saat / Hafta',
       icon: Mic,
-      bg: 'bg-[#FFF1F2] dark:bg-[#2A161B]',
-      border: 'border-rose-100 dark:border-rose-900/30',
-      iconBg: 'bg-rose-500/15 text-rose-600 dark:text-rose-400',
+      bg: 'bg-[#FFE4E6] dark:bg-[#881337]/40',
+      border: 'border-[#FECDD3] dark:border-rose-800/60',
+      iconBg: 'bg-rose-600/15 text-rose-700 dark:text-rose-300',
     },
     {
       id: 'bilisim-ve-kodlama',
@@ -600,9 +650,9 @@ export default function StudentDashboardView() {
       teacher: 'Ebru TEKNECİ',
       hours: '2 Saat / Hafta',
       icon: Lightbulb,
-      bg: 'bg-[#F0FDF4] dark:bg-[#13261C]',
-      border: 'border-emerald-100 dark:border-emerald-900/30',
-      iconBg: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
+      bg: 'bg-[#DCFCE7] dark:bg-[#052E16]/40',
+      border: 'border-[#BBF7D0] dark:border-emerald-800/60',
+      iconBg: 'bg-emerald-600/15 text-emerald-700 dark:text-emerald-300',
     },
     {
       id: 'yabanci-dil',
@@ -610,9 +660,9 @@ export default function StudentDashboardView() {
       teacher: 'Yabancı Dil Zümresi',
       hours: '4 Saat / Hafta',
       icon: Compass,
-      bg: 'bg-[#FFFBEB] dark:bg-[#261E10]',
-      border: 'border-amber-100 dark:border-amber-900/30',
-      iconBg: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
+      bg: 'bg-[#FEF3C7] dark:bg-[#78350F]/40',
+      border: 'border-[#FDE68A] dark:border-amber-800/60',
+      iconBg: 'bg-amber-600/15 text-amber-700 dark:text-amber-300',
     },
   ]
 
@@ -630,26 +680,39 @@ export default function StudentDashboardView() {
         {/* ── LEFT MAIN COLUMN (lg:col-span-8) ── */}
         <div className="lg:col-span-8 space-y-6 lg:space-y-7 min-w-0 w-full">
           {/* ── SKY-BLUE HERO CARD (Lingora Style Banner with 3D Popping Owl Mascot) ── */}
-          <div className="relative mt-10 sm:mt-14 lg:mt-20 rounded-[28px] sm:rounded-[32px] bg-gradient-to-r from-[#D9EBFF] via-[#E8F3FF] to-[#D5E9FF] dark:from-[#132247] dark:via-[#192D5C] dark:to-[#132247] border border-blue-100/90 dark:border-blue-900/50 p-5 sm:p-8 pt-7 sm:pt-8 shadow-[0_12px_40px_rgba(29,119,255,0.08)]">
-            {/* Mobile 3D Mascot: Positioned on the top-right, cap protruding 36px above the top border */}
-            <div className="sm:hidden absolute -top-9 right-3 w-28 h-28 z-20 pointer-events-none select-none">
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="relative mt-12 xs:mt-16 sm:mt-18 lg:mt-24 rounded-[28px] sm:rounded-[32px] bg-gradient-to-r from-[#D9EBFF] via-[#E8F3FF] to-[#D5E9FF] dark:from-[#132247] dark:via-[#192D5C] dark:to-[#132247] border border-blue-100/90 dark:border-blue-900/50 p-5 sm:p-8 pt-7 sm:pt-8 shadow-[0_12px_40px_rgba(29,119,255,0.08)]"
+          >
+            {/* Mobile 3D Mascot: Substantially larger, proportional, cap popping high above the top border */}
+            <motion.div
+              animate={{ y: [0, -6, 0] }}
+              transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }}
+              className="sm:hidden absolute -top-12 xs:-top-16 right-0 xs:right-2 w-36 h-36 xs:w-44 xs:h-44 z-20 pointer-events-none select-none"
+            >
               <img
                 src="/oxonom-hero-owl.png"
                 alt="Oxonom Maskot"
-                className="w-full h-full object-contain filter drop-shadow-[0_12px_20px_rgba(0,0,0,0.18)]"
+                className="w-full h-full object-contain filter drop-shadow-[0_16px_24px_rgba(0,0,0,0.20)]"
               />
-            </div>
+            </motion.div>
 
             {/* Desktop/Tablet 3D Mascot: Large size with graduation cap popping high above the upper border */}
-            <div className="hidden sm:block absolute right-4 lg:right-8 xl:right-12 -top-14 sm:-top-18 lg:-top-22 xl:-top-24 w-52 h-52 sm:w-60 sm:h-60 lg:w-72 lg:h-72 xl:w-80 xl:h-80 z-20 pointer-events-none select-none">
+            <motion.div
+              animate={{ y: [0, -8, 0] }}
+              transition={{ repeat: Infinity, duration: 4.5, ease: 'easeInOut' }}
+              className="hidden sm:block absolute right-4 lg:right-8 xl:right-12 -top-16 sm:-top-20 lg:-top-24 xl:-top-26 w-56 h-56 sm:w-64 sm:h-64 lg:w-76 lg:h-76 xl:w-84 xl:h-84 z-20 pointer-events-none select-none"
+            >
               <img
                 src="/oxonom-hero-owl.png"
                 alt="Oxonom Maskot"
-                className="w-full h-full object-contain filter drop-shadow-[0_20px_30px_rgba(0,0,0,0.22)]"
+                className="w-full h-full object-contain filter drop-shadow-[0_22px_36px_rgba(0,0,0,0.24)]"
               />
-            </div>
+            </motion.div>
 
-            <div className="relative z-10 flex flex-col justify-between pr-24 sm:pr-0 max-w-md sm:max-w-sm lg:max-w-md xl:max-w-lg space-y-3 sm:space-y-4">
+            <div className="relative z-10 flex flex-col justify-between pr-32 xs:pr-40 sm:pr-0 max-w-md sm:max-w-sm lg:max-w-md xl:max-w-lg space-y-3 sm:space-y-4">
               {/* Active Class Pill */}
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 dark:bg-slate-900/90 text-[11px] font-black text-slate-700 dark:text-slate-200 shadow-xs border border-blue-100/80 dark:border-blue-900/60 self-start">
                 <span className="text-sm">🇹🇷</span>
@@ -677,24 +740,28 @@ export default function StudentDashboardView() {
 
               {/* Action Buttons */}
               <div className="pt-1 flex items-center gap-2.5 sm:gap-3 flex-wrap">
-                <Link
-                  href="/student/courses"
-                  className="inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-[#1D77FF] hover:bg-blue-600 active:scale-95 text-white font-black text-xs sm:text-sm shadow-lg shadow-blue-500/30 transition-all hover:shadow-xl hover:shadow-blue-500/40"
-                >
-                  <span>Dersine Devam Et</span>
-                  <ArrowRight size={15} />
-                </Link>
+                <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                  <Link
+                    href="/student/courses"
+                    className="inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-[#1D77FF] hover:bg-blue-600 text-white font-black text-xs sm:text-sm shadow-lg shadow-blue-500/30 transition-all hover:shadow-xl hover:shadow-blue-500/40"
+                  >
+                    <span>Dersine Devam Et</span>
+                    <ArrowRight size={15} />
+                  </Link>
+                </motion.div>
 
-                <Link
-                  href="/student/assignments"
-                  className="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-full bg-white/80 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-sm border border-blue-100/80 dark:border-blue-900/40 shadow-xs transition-all"
-                >
-                  <BookOpen size={14} className="text-[#1D77FF]" />
-                  <span>Ödevler ({pendingAssignments.length})</span>
-                </Link>
+                <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                  <Link
+                    href="/student/assignments"
+                    className="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-full bg-white/80 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-sm border border-blue-100/80 dark:border-blue-900/40 shadow-xs transition-all"
+                  >
+                    <BookOpen size={14} className="text-[#1D77FF]" />
+                    <span>Ödevler ({pendingAssignments.length})</span>
+                  </Link>
+                </motion.div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* ── "KALDIĞIN YERDEN DEVAM ET" / AKTİF VE SIRADAKİ DERS ── */}
           <div className="space-y-3.5">
@@ -712,7 +779,11 @@ export default function StudentDashboardView() {
             </div>
 
             {/* Real Active Lesson Card */}
-            <div className="p-4 sm:p-5 rounded-[28px] bg-white dark:bg-[#111A2E] border border-blue-100/80 dark:border-blue-900/40 shadow-[0_8px_30px_rgb(29,119,255,0.04)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <motion.div
+              whileHover={{ y: -2 }}
+              transition={{ duration: 0.2 }}
+              className="p-4 sm:p-5 rounded-[28px] bg-white dark:bg-[#111A2E] border border-blue-100/80 dark:border-blue-900/40 shadow-[0_8px_30px_rgb(29,119,255,0.04)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+            >
               <div className="flex items-center gap-4 min-w-0">
                 <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-tr from-blue-500 to-indigo-600 text-white flex items-center justify-center font-black text-xl shrink-0 shadow-md shadow-blue-500/20">
                   <GraduationCap size={28} />
@@ -740,20 +811,22 @@ export default function StudentDashboardView() {
                 </div>
               </div>
 
-              <Link
-                href="/student/courses"
-                className="w-full sm:w-auto px-6 py-3 rounded-full bg-[#1D77FF] hover:bg-blue-600 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-blue-500/25 shrink-0 transition-transform active:scale-95"
-              >
-                <Play size={14} className="fill-white" />
-                <span>Derse Git</span>
-              </Link>
-            </div>
+              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="w-full sm:w-auto">
+                <Link
+                  href="/student/courses"
+                  className="w-full sm:w-auto px-6 py-3 rounded-full bg-[#1D77FF] hover:bg-blue-600 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-blue-500/25 shrink-0 transition-all"
+                >
+                  <Play size={14} className="fill-white" />
+                  <span>Derse Git</span>
+                </Link>
+              </motion.div>
+            </motion.div>
 
             {/* Live Class Radar integrated seamlessly */}
             <LiveClassRadar role="student" initialClassCode={profile.className || '9-A'} />
           </div>
 
-          {/* ── "BECERİLERİNİ GELİŞTİR" / GERÇEK DERSLER (100% REAL DATA) ── */}
+          {/* ── "BECERİLERİNİ GELİŞTİR" / GERÇEK DERSLER (100% REAL DATA, 2 SÜTUN MOBİL) ── */}
           <div className="space-y-3.5">
             <div className="flex items-center justify-between">
               <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">
@@ -768,33 +841,43 @@ export default function StudentDashboardView() {
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
-              {realCoreCourses.map((c) => {
+            {/* 2 Sütun Mobil, 4 Sütun Masaüstü */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+              {realCoreCourses.map((c, idx) => {
                 const Icon = c.icon
                 return (
-                  <Link
+                  <motion.div
                     key={c.id}
-                    href={`/student/courses/${c.id}`}
-                    className={`p-4 rounded-[24px] ${c.bg} border ${c.border} hover:shadow-md transition-all group flex flex-col justify-between`}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05, duration: 0.3 }}
+                    whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                    className="h-full"
                   >
-                    <div className="flex items-center justify-between mb-3">
-                      <div className={`w-10 h-10 rounded-2xl ${c.iconBg} flex items-center justify-center group-hover:scale-105 transition-transform`}>
-                        <Icon size={20} />
+                    <Link
+                      href={`/student/courses/${c.id}`}
+                      className={`h-full p-3 sm:p-4 rounded-[22px] sm:rounded-[24px] ${c.bg} border ${c.border} hover:shadow-md transition-all group flex flex-col justify-between`}
+                    >
+                      <div className="flex items-center justify-between mb-2 sm:mb-3">
+                        <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl ${c.iconBg} flex items-center justify-center group-hover:scale-105 transition-transform`}>
+                          <Icon size={18} className="sm:hidden" />
+                          <Icon size={20} className="hidden sm:block" />
+                        </div>
+                        <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 dark:text-slate-400">{c.hours}</span>
                       </div>
-                      <span className="text-[10px] font-bold text-slate-400">{c.hours}</span>
-                    </div>
-                    <div>
-                      <div className="text-xs font-black text-slate-900 dark:text-white leading-tight">
-                        {c.name}
+                      <div>
+                        <div className="text-[11.5px] sm:text-xs font-black text-slate-900 dark:text-white leading-tight line-clamp-2">
+                          {c.name}
+                        </div>
+                        <div className="text-[9.5px] sm:text-[10px] text-slate-600 dark:text-slate-400 font-semibold mt-1 truncate">
+                          {c.teacher}
+                        </div>
                       </div>
-                      <div className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold mt-1">
-                        {c.teacher}
+                      <div className="pt-2 flex justify-end">
+                        <ArrowRight size={13} className="text-[#1D77FF] group-hover:translate-x-1 transition-transform" />
                       </div>
-                    </div>
-                    <div className="pt-2 flex justify-end">
-                      <ArrowRight size={13} className="text-[#1D77FF] group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </Link>
+                    </Link>
+                  </motion.div>
                 )
               })}
             </div>
@@ -928,11 +1011,11 @@ export default function StudentDashboardView() {
               </Link>
             </div>
 
-            {/* Official Student Standing Row */}
-            <div className="p-4 rounded-2xl bg-[#EAF2FF] dark:bg-[#1A2849] border border-[#1D77FF]/30 space-y-2">
+            {/* Dynamic Color-Coded Official Student Standing Row */}
+            <div className={`p-4 rounded-2xl ${academicStatusTheme.cardBg} border ${academicStatusTheme.cardBorder} space-y-2 transition-all`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#1D77FF] to-cyan-400 text-white font-black text-xs flex items-center justify-center">
+                  <div className={`w-9 h-9 rounded-full bg-gradient-to-tr ${academicStatusTheme.avatarBg} text-white font-black text-xs flex items-center justify-center shadow-xs`}>
                     {profile.firstName.slice(0, 1)}
                     {profile.lastName.slice(0, 1)}
                   </div>
@@ -947,19 +1030,19 @@ export default function StudentDashboardView() {
                 </div>
 
                 <div className="text-right">
-                  <div className="text-sm font-black text-[#1D77FF]">
+                  <div className={`text-sm font-black ${academicStatusTheme.scoreColor}`}>
                     {profile.gpa > 0 ? `${profile.gpa} Ort.` : '0.0 Ort.'}
                   </div>
-                  <div className="text-[10px] font-bold text-slate-500">
+                  <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400">
                     Sınıf {profile.classRank}.'si
                   </div>
                 </div>
               </div>
 
-              <div className="pt-2 border-t border-blue-200/50 dark:border-blue-900/50 flex items-center justify-between text-[11px]">
-                <span className="text-slate-500 dark:text-slate-400">Resmi Sicil & Statü:</span>
-                <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                  {profile.disciplineStatus.split('—')[0]?.trim() || 'Temiz Sicil'}
+              <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between text-[11px]">
+                <span className="text-slate-500 dark:text-slate-400">Akademik Durum:</span>
+                <span className={`font-bold ${academicStatusTheme.statusColor}`}>
+                  {academicStatusTheme.statusLabel}
                 </span>
               </div>
             </div>

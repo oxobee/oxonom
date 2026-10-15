@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 import {
   TrendingUp,
   TrendingDown,
@@ -294,16 +295,21 @@ export default function StudentProgressView({
   }, [profile.gpa, profile.classRank, profile.className, profile.studentNo])
 
   return (
-    <div className="p-4 lg:p-8 max-w-7xl mx-auto space-y-6 font-jakarta">
+    <div className="w-full max-w-full overflow-x-hidden p-3.5 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 font-jakarta select-none">
       {/* ── HEADER BANNER ── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 rounded-3xl p-6 shadow-sm">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+        className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 rounded-[28px] sm:rounded-3xl p-4.5 sm:p-6 shadow-sm"
+      >
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold mb-2">
             <TrendingUp size={14} />
             <span>Akademik Gelişim & Bireysel Teşhis</span>
           </div>
           <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl lg:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
               Gelişimim ve Akademik Durumum
             </h1>
           </div>
@@ -314,8 +320,8 @@ export default function StudentProgressView({
 
         {/* Student Badge Pill */}
         <div className="flex items-center gap-3">
-          <div className="p-3.5 px-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200/60 dark:border-indigo-800/60 flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-indigo-600 text-white font-black text-sm flex items-center justify-center shadow-sm">
+          <div className="p-3 sm:p-3.5 px-3.5 sm:px-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200/60 dark:border-indigo-800/60 flex items-center gap-3">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-[#1D77FF] text-white font-black text-sm flex items-center justify-center shadow-xs">
               {profile.firstName.slice(0, 1)}
               {profile.lastName.slice(0, 1)}
             </div>
@@ -329,17 +335,21 @@ export default function StudentProgressView({
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
-      {/* ── KPI METRICS CARDS (GERÇEK DİNAMİK VERİLERLE) ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* ── KPI METRICS CARDS (GERÇEK DİNAMİK VERİLERLE, 2 SÜTUN MOBİL) ── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
         {/* 1. GPA */}
-        <div className="p-5 rounded-3xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 shadow-xs space-y-1">
-          <div className="text-[11px] text-gray-400 font-bold uppercase">Genel Not Ortalaması</div>
-          <div className="text-2xl font-black text-gray-900 dark:text-white">
+        <motion.div
+          whileHover={{ y: -3 }}
+          transition={{ duration: 0.2 }}
+          className="p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 shadow-xs space-y-1"
+        >
+          <div className="text-[10px] sm:text-[11px] text-gray-400 font-bold uppercase truncate">Genel Not Ortalaması</div>
+          <div className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">
             {profile.gpa > 0 ? profile.gpa : '-'} {profile.gpa > 0 && <span className="text-xs font-normal text-gray-400">/ 100</span>}
           </div>
-          <div className={`text-[11px] font-bold flex items-center gap-1 ${
+          <div className={`text-[10.5px] sm:text-[11px] font-bold flex items-center gap-1 truncate ${
             profile.gpa >= 85
               ? 'text-emerald-600 dark:text-emerald-400'
               : profile.gpa >= 70
@@ -348,50 +358,62 @@ export default function StudentProgressView({
               ? 'text-amber-600 dark:text-amber-400'
               : 'text-rose-600 dark:text-rose-400'
           }`}>
-            <Award size={13} />
-            <span>{academicLevelMeta.label}</span>
+            <Award size={13} className="shrink-0" />
+            <span className="truncate">{academicLevelMeta.label}</span>
           </div>
-        </div>
+        </motion.div>
 
         {/* 2. Sınıf Sıralaması */}
-        <div className="p-5 rounded-3xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 shadow-xs space-y-1">
-          <div className="text-[11px] text-gray-400 font-bold uppercase">Sınıf Başarı Sırası</div>
-          <div className={`text-2xl font-black ${
-            profile.classRank <= 3 ? 'text-cyan-600 dark:text-cyan-400' : profile.classRank <= 15 ? 'text-indigo-600 dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'
+        <motion.div
+          whileHover={{ y: -3 }}
+          transition={{ duration: 0.2 }}
+          className="p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 shadow-xs space-y-1"
+        >
+          <div className="text-[10px] sm:text-[11px] text-gray-400 font-bold uppercase truncate">Sınıf Başarı Sırası</div>
+          <div className={`text-xl sm:text-2xl font-black ${
+            profile.classRank <= 3 ? 'text-cyan-600 dark:text-cyan-400' : profile.classRank <= 15 ? 'text-[#1D77FF] dark:text-indigo-400' : 'text-rose-600 dark:text-rose-400'
           }`}>
             {profile.classRank}. Sıra <span className="text-xs font-normal text-gray-400">({profile.className})</span>
           </div>
-          <div className="text-[11px] text-gray-500 font-semibold truncate">
+          <div className="text-[10.5px] sm:text-[11px] text-gray-500 font-semibold truncate">
             {academicLevelMeta.rankCaption}
           </div>
-        </div>
+        </motion.div>
 
         {/* 3. Devamlılık */}
-        <div className="p-5 rounded-3xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 shadow-xs space-y-1">
-          <div className="text-[11px] text-gray-400 font-bold uppercase">Ders Katılım Oranı</div>
-          <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
+        <motion.div
+          whileHover={{ y: -3 }}
+          transition={{ duration: 0.2 }}
+          className="p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 shadow-xs space-y-1"
+        >
+          <div className="text-[10px] sm:text-[11px] text-gray-400 font-bold uppercase truncate">Ders Katılım Oranı</div>
+          <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400">
             %{profile.attendanceRate}
           </div>
-          <div className="text-[11px] text-gray-500 font-semibold flex items-center gap-1">
-            <CheckCircle2 size={13} className={profile.absentDays === 0 ? 'text-emerald-500' : 'text-amber-500'} />
-            <span>{profile.absentDays === 0 ? '0 Gün Devamsızlık (Kusursuz)' : `${profile.absentDays} Gün Devamsızlık`}</span>
+          <div className="text-[10.5px] sm:text-[11px] text-gray-500 font-semibold flex items-center gap-1 truncate">
+            <CheckCircle2 size={13} className={`shrink-0 ${profile.absentDays === 0 ? 'text-emerald-500' : 'text-amber-500'}`} />
+            <span className="truncate">{profile.absentDays === 0 ? '0 Gün (Kusursuz)' : `${profile.absentDays} Gün Devamsızlık`}</span>
           </div>
-        </div>
+        </motion.div>
 
         {/* 4. Ödev Teslim Oranı */}
-        <div className="p-5 rounded-3xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 shadow-xs space-y-1">
-          <div className="text-[11px] text-gray-400 font-bold uppercase">Ödev Teslim Başarısı</div>
-          <div className="text-2xl font-black text-indigo-600 dark:text-indigo-400">
+        <motion.div
+          whileHover={{ y: -3 }}
+          transition={{ duration: 0.2 }}
+          className="p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 shadow-xs space-y-1"
+        >
+          <div className="text-[10px] sm:text-[11px] text-gray-400 font-bold uppercase truncate">Ödev Teslim Başarısı</div>
+          <div className="text-xl sm:text-2xl font-black text-[#1D77FF] dark:text-indigo-400">
             %{homeworkStats.rate}
           </div>
-          <div className="text-[11px] text-indigo-600 dark:text-indigo-400 font-bold flex items-center gap-1">
-            <FileText size={13} />
-            <span>
-              {homeworkStats.completed} / {homeworkStats.total} Teslim
-              {homeworkStats.homeworkScoreAvg !== null && ` • Ort: ${homeworkStats.homeworkScoreAvg}`}
+          <div className="text-[10.5px] sm:text-[11px] text-[#1D77FF] dark:text-indigo-400 font-bold flex items-center gap-1 truncate">
+            <FileText size={13} className="shrink-0" />
+            <span className="truncate">
+              {homeworkStats.completed}/{homeworkStats.total} Teslim
+              {homeworkStats.homeworkScoreAvg !== null && ` • ${homeworkStats.homeworkScoreAvg} Ort`}
             </span>
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* ── TAB NAVİGASYON ── */}
@@ -573,54 +595,56 @@ export default function StudentProgressView({
                       </div>
                     </div>
 
-                    {/* Sınavlar Karşılaştırma Grafiği (1. Sınav vs 2. Sınav) */}
-                    <div className="space-y-1.5 pt-1">
-                      <div className="flex items-center justify-between text-[11px] font-bold text-gray-500 dark:text-gray-400">
-                        <span>1. Sınav: {item.exam1Num !== null ? `${item.exam1Num} Puan` : 'Girilmedi'}</span>
-                        <span>2. Sınav: {item.exam2Num !== null ? `${item.exam2Num} Puan` : 'Girilmedi'}</span>
-                      </div>
-
-                      {/* Visual Graphic Bars */}
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <div className="w-full h-2.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                            <div
-                              style={{ width: `${item.exam1Num !== null ? Math.max(3, Math.min(100, item.exam1Num)) : 0}%` }}
-                              className={`h-full rounded-full transition-all duration-500 ${
-                                item.exam1Num === null
-                                  ? 'bg-transparent'
-                                  : item.exam1Num < 50
-                                  ? 'bg-rose-500'
-                                  : 'bg-indigo-500'
-                              }`}
-                            />
-                          </div>
-                          <span className="text-[10px] text-gray-400 mt-0.5 block font-mono">
-                            {item.exam1Num !== null ? `${item.exam1Num} / 100` : 'Girilmedi'}
-                          </span>
+                    {/* Sınavlar Karşılaştırma Grafiği (1. Sınav vs 2. Sınav) - Sadece Sınav Varsa Görünür */}
+                    {(item.exam1Num !== null || item.exam2Num !== null) && (
+                      <div className="space-y-1.5 pt-1">
+                        <div className="flex items-center justify-between text-[11px] font-bold text-gray-500 dark:text-gray-400">
+                          <span>1. Sınav: {item.exam1Num !== null ? `${item.exam1Num} Puan` : 'Girilmedi'}</span>
+                          <span>2. Sınav: {item.exam2Num !== null ? `${item.exam2Num} Puan` : 'Girilmedi'}</span>
                         </div>
 
-                        <div>
-                          <div className="w-full h-2.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                            <div
-                              style={{ width: `${item.exam2Num !== null ? Math.max(3, Math.min(100, item.exam2Num)) : 0}%` }}
-                              className={`h-full rounded-full transition-all duration-500 ${
-                                item.exam2Num === null
-                                  ? 'bg-transparent'
-                                  : item.exam2Num < 50
-                                  ? 'bg-rose-500'
-                                  : isDown
-                                  ? 'bg-amber-500'
-                                  : 'bg-emerald-500'
-                              }`}
-                            />
+                        {/* Visual Graphic Bars */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <div className="w-full h-2.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                              <div
+                                style={{ width: `${item.exam1Num !== null ? Math.max(3, Math.min(100, item.exam1Num)) : 0}%` }}
+                                className={`h-full rounded-full transition-all duration-500 ${
+                                  item.exam1Num === null
+                                    ? 'bg-transparent'
+                                    : item.exam1Num < 50
+                                    ? 'bg-rose-500'
+                                    : 'bg-[#1D77FF]'
+                                }`}
+                              />
+                            </div>
+                            <span className="text-[10px] text-gray-400 mt-0.5 block font-mono">
+                              {item.exam1Num !== null ? `${item.exam1Num} / 100` : 'Girilmedi'}
+                            </span>
                           </div>
-                          <span className="text-[10px] text-gray-400 mt-0.5 block font-mono">
-                            {item.exam2Num !== null ? `${item.exam2Num} / 100` : 'Girilmedi'}
-                          </span>
+
+                          <div>
+                            <div className="w-full h-2.5 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                              <div
+                                style={{ width: `${item.exam2Num !== null ? Math.max(3, Math.min(100, item.exam2Num)) : 0}%` }}
+                                className={`h-full rounded-full transition-all duration-500 ${
+                                  item.exam2Num === null
+                                    ? 'bg-transparent'
+                                    : item.exam2Num < 50
+                                    ? 'bg-rose-500'
+                                    : isDown
+                                    ? 'bg-amber-500'
+                                    : 'bg-emerald-500'
+                                }`}
+                              />
+                            </div>
+                            <span className="text-[10px] text-gray-400 mt-0.5 block font-mono">
+                              {item.exam2Num !== null ? `${item.exam2Num} / 100` : 'Girilmedi'}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    )}
 
                     {/* Diagnostic Advice */}
                     <div className="p-3 rounded-xl bg-white dark:bg-[#121826] border border-gray-200/50 dark:border-gray-700/50 space-y-1.5 text-xs">
@@ -670,15 +694,84 @@ export default function StudentProgressView({
             </span>
           </div>
 
-          {/* Dikey Çubuk Bar Grafiği (Dersler Karşılaştırması) */}
-          <div className="space-y-3">
+          {/* Ders Başarı Grafikleri: MOBİLDE YATAY PERFORMANS KARTLARI, MASAÜSTÜNDE DİKEY KARŞILAŞTIRMA */}
+          <div className="space-y-4">
             <h3 className="text-xs font-black uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
-              <Activity size={14} className="text-indigo-500" />
+              <Activity size={14} className="text-[#1D77FF]" />
               <span>Ders Ortalamaları Başarı Grafiği (0 - 100 Puan)</span>
             </h3>
 
-            <div className="p-6 rounded-2xl bg-gray-50/70 dark:bg-gray-800/30 border border-gray-200/60 dark:border-gray-800/60">
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-3 items-end min-h-[220px] pt-8">
+            {/* ── MOBİL GÖRÜNÜM: Yatay Kartlar ve Canlı İlerleme Çubukları (Taşmasız, %100 Uyumlu) ── */}
+            <div className="block sm:hidden space-y-2.5">
+              {courseAnalysis.map((c) => {
+                const score = c.average !== null ? c.average : null
+                const percent = score !== null ? Math.max(4, Math.min(100, score)) : 0
+                const theme =
+                  score === null
+                    ? { bg: 'bg-gray-50 dark:bg-gray-800/40', bar: 'bg-gray-300 dark:bg-gray-600', text: 'text-gray-500', pill: 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300', status: 'Girilmedi' }
+                    : score >= 85
+                    ? { bg: 'bg-emerald-50/50 dark:bg-emerald-950/20', bar: 'bg-gradient-to-r from-emerald-500 to-teal-400', text: 'text-emerald-700 dark:text-emerald-300', pill: 'bg-emerald-500 text-white', status: 'Takdir Seviyesi' }
+                    : score >= 70
+                    ? { bg: 'bg-blue-50/50 dark:bg-blue-950/20', bar: 'bg-gradient-to-r from-blue-500 to-indigo-500', text: 'text-blue-700 dark:text-blue-300', pill: 'bg-blue-500 text-white', status: 'Başarılı' }
+                    : score >= 50
+                    ? { bg: 'bg-amber-50/50 dark:bg-amber-950/20', bar: 'bg-gradient-to-r from-amber-500 to-orange-400', text: 'text-amber-700 dark:text-amber-300', pill: 'bg-amber-500 text-white', status: 'Geçer Seviye' }
+                    : { bg: 'bg-rose-50/50 dark:bg-rose-950/20', bar: 'bg-gradient-to-r from-rose-500 to-red-500', text: 'text-rose-700 dark:text-rose-300', pill: 'bg-rose-500 text-white', status: 'Kritik Seviye' }
+
+                return (
+                  <div
+                    key={c.courseName}
+                    className={`p-3.5 rounded-2xl border border-gray-200/70 dark:border-gray-800/70 ${theme.bg} space-y-2.5`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-black text-gray-900 dark:text-white truncate">
+                          {c.courseName}
+                        </div>
+                        <div className="text-[10px] text-gray-400 truncate">
+                          {c.teacherName || 'Ders Öğretmeni'}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className={`text-[10.5px] font-black px-2 py-0.5 rounded-lg ${theme.pill}`}>
+                          {score !== null ? `${score} Ort` : 'Girilmedi'}
+                        </span>
+                        <span className={`text-[9.5px] font-bold ${theme.text}`}>
+                          {theme.status}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Horizontal Animated Gauge Bar */}
+                    <div className="space-y-1">
+                      <div className="w-full h-2.5 rounded-full bg-gray-200/80 dark:bg-gray-700/80 overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${percent}%` }}
+                          transition={{ duration: 0.8, ease: 'easeOut' }}
+                          className={`h-full rounded-full ${theme.bar}`}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between text-[9px] text-gray-400 font-mono">
+                        <span>0 Puan</span>
+                        {c.exam1Num !== null || c.exam2Num !== null ? (
+                          <span className="text-slate-600 dark:text-slate-300 font-sans font-semibold">
+                            {c.exam1Num !== null && `1. Sınav: ${c.exam1Num}`}
+                            {c.exam1Num !== null && c.exam2Num !== null && ' · '}
+                            {c.exam2Num !== null && `2. Sınav: ${c.exam2Num}`}
+                          </span>
+                        ) : null}
+                        <span>100 Puan</span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* ── MASAÜSTÜ GÖRÜNÜMÜ: Dikey Bar Karşılaştırması ── */}
+            <div className="hidden sm:block p-6 rounded-2xl bg-gray-50/70 dark:bg-gray-800/30 border border-gray-200/60 dark:border-gray-800/60">
+              <div className="grid grid-cols-4 md:grid-cols-8 gap-3 items-end min-h-[220px] pt-8">
                 {courseAnalysis.map((c) => {
                   const score = c.average !== null ? c.average : 0
                   const heightPercent = c.average !== null ? Math.max(8, Math.min(100, score)) : 4
@@ -702,9 +795,11 @@ export default function StudentProgressView({
 
                       {/* Bar Container */}
                       <div className="w-full max-w-[36px] h-36 bg-gray-200/70 dark:bg-gray-700/60 rounded-xl overflow-hidden flex flex-col justify-end p-1">
-                        <div
-                          style={{ height: `${heightPercent}%` }}
-                          className={`w-full rounded-lg transition-all duration-700 ${
+                        <motion.div
+                          initial={{ height: 0 }}
+                          animate={{ height: `${heightPercent}%` }}
+                          transition={{ duration: 0.8, ease: 'easeOut' }}
+                          className={`w-full rounded-lg transition-all ${
                             c.average === null
                               ? 'bg-gray-300 dark:bg-gray-600'
                               : c.average >= 85
@@ -770,8 +865,8 @@ export default function StudentProgressView({
             </span>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+          <div className="w-full max-w-full overflow-x-auto touch-pan-x custom-scrollbar">
+            <table className="w-full text-left text-xs min-w-[580px]">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-gray-800 text-[11px] text-gray-400 font-bold">
                   <th className="pb-3">Ders Adı</th>
