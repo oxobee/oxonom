@@ -31,12 +31,15 @@ interface StudentPlannerViewProps {
   initialTab?: 'all' | 'calendar' | 'notes' | 'tasks'
 }
 
-interface StudentNote {
+export interface StudentNote {
   id: string
   title: string
   course: string
   date: string
   content: string
+  bookId?: number | string
+  bookTitle?: string
+  pageNumber?: number
 }
 
 const INITIAL_NOTES: StudentNote[] = [
@@ -47,6 +50,9 @@ const INITIAL_NOTES: StudentNote[] = [
     date: '11 Ekim 2026',
     content:
       'Fâilâtün fâilâtün fâilün kalıbı gazellerde sıkça kullanılır. Açık hece (nokta), kapalı hece (çizgi) ile gösterilir. İmale heceyi uzatma, zihaf ise kısaltmadır.',
+    bookId: 80,
+    bookTitle: '9. Sınıf Türk Dili ve Edebiyatı Ders Kitabı',
+    pageNumber: 42,
   },
   {
     id: 'note-2',
@@ -55,6 +61,9 @@ const INITIAL_NOTES: StudentNote[] = [
     date: '09 Ekim 2026',
     content:
       'ax² + bx + c = 0 için Δ = b² - 4ac. Δ > 0 ise iki farklı reel kök vardır. Δ = 0 ise çakışık tek kök. Δ < 0 ise reel kök yoktur.',
+    bookId: 79,
+    bookTitle: '9. Sınıf Matematik Ders Kitabı',
+    pageNumber: 88,
   },
 ]
 
@@ -108,14 +117,25 @@ export default function StudentPlannerView({ initialTab = 'all' }: StudentPlanne
       const sync = () => {
         setAssessments(getSynchronizedStudentAssessments())
       }
+      const syncNotesAndTasks = () => {
+        try {
+          const rawNotes = localStorage.getItem('oxonom_student_notes_ercil')
+          if (rawNotes) setNotes(JSON.parse(rawNotes))
+          setTasks(getStoredPlannerTasks())
+        } catch (_) {}
+      }
       window.addEventListener('oxonom_student_updated', sync)
       window.addEventListener('oxonom_teacher_profile_updated', sync)
       window.addEventListener('oxonom_exam_calendar_updated', sync)
+      window.addEventListener('oxonom_student_notes_updated', syncNotesAndTasks)
+      window.addEventListener('oxonom_student_planner_tasks_updated', syncNotesAndTasks)
       window.addEventListener('storage', sync)
       return () => {
         window.removeEventListener('oxonom_student_updated', sync)
         window.removeEventListener('oxonom_teacher_profile_updated', sync)
         window.removeEventListener('oxonom_exam_calendar_updated', sync)
+        window.removeEventListener('oxonom_student_notes_updated', syncNotesAndTasks)
+        window.removeEventListener('oxonom_student_planner_tasks_updated', syncNotesAndTasks)
         window.removeEventListener('storage', sync)
       }
     }
@@ -324,6 +344,19 @@ export default function StudentPlannerView({ initialTab = 'all' }: StudentPlanne
                         <span>·</span>
                         <span>{task.dueDate}</span>
                       </div>
+                      {task.bookTitle && (
+                        <div className="mt-1">
+                          <Link
+                            href={`/student/library?bookId=${task.bookId}&page=${task.pageNumber || 1}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 hover:bg-cyan-500/20 transition-colors"
+                          >
+                            <BookOpen size={10} />
+                            <span>{task.bookTitle} · Sayfa {task.pageNumber || 1}</span>
+                            <span className="text-[9px] underline ml-0.5">Kitapta Aç →</span>
+                          </Link>
+                        </div>
+                      )}
                     </div>
                   </button>
 
@@ -418,6 +451,19 @@ export default function StudentPlannerView({ initialTab = 'all' }: StudentPlanne
                   <p className="text-[11px] text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
                     {note.content}
                   </p>
+
+                  {note.bookTitle && (
+                    <div className="pt-1">
+                      <Link
+                        href={`/student/library?bookId=${note.bookId}&page=${note.pageNumber || 1}`}
+                        className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-colors"
+                      >
+                        <BookOpen size={11} />
+                        <span>{note.bookTitle} · Sayfa {note.pageNumber}</span>
+                        <span className="text-[9px] underline ml-1 font-semibold">Kitapta Aç →</span>
+                      </Link>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

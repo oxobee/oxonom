@@ -130,17 +130,17 @@ export const STUDENT_MENU_CONFIG: StudentMenuItem[] = [
   },
   {
     id: 'library',
-    label: 'Eğitim Kütüphanesi',
+    label: 'Kitaplık',
     path: '/student/library',
-    icon: BookmarkCheck,
+    icon: BookOpen,
     status: 'active',
     sortOrder: 6,
     category: 'learning',
-    description: 'Ders notları, özet PDF kaynakları, sunumlar ve ders videoları arşivi.',
+    description: 'MEB ders kitapları, etkileşimli dijital kitaplar ve okuma arşivi.',
     children: [
-      { id: 'library-documents', label: 'Dokümanlar & PDF', path: '/student/library/documents', status: 'active' },
-      { id: 'library-videos', label: 'Video Dersler', path: '/student/library/videos', status: 'active' },
-      { id: 'library-favorites', label: 'Favorilerim', path: '/student/library/favorites', status: 'active' },
+      { id: 'library-all', label: 'Tüm Kitaplar', path: '/student/library', status: 'active' },
+      { id: 'library-reading', label: 'Devam Edenler', path: '/student/library?status=in_progress', status: 'active' },
+      { id: 'library-favorites', label: 'Favorilerim', path: '/student/library?status=favorites', status: 'active' },
     ],
   },
   {

@@ -522,6 +522,9 @@ export interface PlannerTask {
   dueDate: string
   completed: boolean
   priority: 'low' | 'medium' | 'high'
+  bookId?: number | string
+  bookTitle?: string
+  pageNumber?: number
 }
 
 export const INITIAL_PLANNER_TASKS: PlannerTask[] = [
