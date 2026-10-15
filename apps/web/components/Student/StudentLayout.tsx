@@ -39,6 +39,7 @@ import {
 } from '@/lib/student/studentData'
 import HeaderLiveClock from '@components/Common/HeaderLiveClock'
 import { useMobileTheme } from '@components/Mobile/useMobileTheme'
+import OxonomPlusModal from '@components/Student/modals/OxonomPlusModal'
 
 // Real 3D Owl Mascot Icon matching user's uploaded corporate mascot
 export function OxoMascotIcon({ className = 'w-9 h-9' }: { className?: string }) {
@@ -65,6 +66,7 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
   const { theme, toggleTheme } = useMobileTheme()
 
   const [isMoreSheetOpen, setIsMoreSheetOpen] = useState(false)
+  const [isPlusModalOpen, setIsPlusModalOpen] = useState(false)
   const [profile, setProfile] = useState<StudentProfile>(DEFAULT_STUDENT_PROFILE)
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -174,8 +176,8 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
           </button>
         </div>
 
-        {/* 10 Navigation Items — Pill Design with Soft Active State */}
-        <nav className="flex-1 overflow-y-auto px-4 py-3 space-y-1 custom-scrollbar">
+        {/* Navigation Items — Clean Pill Design without scrollbar */}
+        <nav className="flex-1 overflow-y-auto px-4 py-3 space-y-1 scrollbar-none">
           {STUDENT_MENU_CONFIG.map((item) => {
             const Icon = item.icon
             const active = isCurrentPathActive(item.path)
@@ -216,26 +218,34 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
           })}
         </nav>
 
-        {/* Oxonom Plus / PRO Promo Card (matching Lingora Plus) */}
+        {/* Oxonom Plus / PRO Promo Card (Opens Animated Modal) */}
         <div className="px-4 pb-2">
-          <div className="p-3.5 rounded-3xl bg-gradient-to-b from-[#FFF9EE] via-[#F4F8FF] to-[#EDF4FF] dark:from-[#19243E] dark:to-[#121B30] border border-amber-200/50 dark:border-blue-900/40 relative overflow-hidden shadow-xs">
-            <div className="flex items-center gap-2 mb-1.5">
-              <div className="w-6 h-6 rounded-lg bg-amber-400/20 text-amber-500 flex items-center justify-center shrink-0">
-                <Crown size={14} className="fill-amber-400 text-amber-500" />
+          <div
+            onClick={() => setIsPlusModalOpen(true)}
+            className="p-3.5 rounded-3xl bg-gradient-to-b from-[#FFF9EE] via-[#F4F8FF] to-[#EDF4FF] dark:from-[#19243E] dark:to-[#121B30] border border-amber-300/60 dark:border-amber-500/30 relative overflow-hidden shadow-xs cursor-pointer hover:border-amber-400 transition-all group"
+          >
+            <div className="flex items-center justify-between gap-2 mb-1.5">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg bg-amber-400/20 text-amber-500 flex items-center justify-center shrink-0">
+                  <Crown size={14} className="fill-amber-400 text-amber-500" />
+                </div>
+                <span className="text-xs font-black text-slate-800 dark:text-slate-100">
+                  Oxonom Plus
+                </span>
               </div>
-              <span className="text-xs font-black text-slate-800 dark:text-slate-100">
-                Oxonom Plus
+              <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-500 text-white font-black shadow-xs">
+                199 ₺
               </span>
             </div>
             <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-snug mb-2.5">
-              Tüm ders kayıtları, soru havuzları ve yapay zeka rehberliği elinin altında!
+              <span className="line-through text-slate-400">899 ₺</span> yerine tüm ders kitapları, yapay zekâ ve soru havuzu elinin altında!
             </p>
-            <Link
-              href="/student/learn"
-              className="w-full py-2 rounded-xl bg-[#1D77FF] hover:bg-blue-600 text-white font-extrabold text-[11px] text-center block shadow-sm shadow-blue-500/20 transition-all hover:scale-[1.01] active:scale-[0.98]"
+            <button
+              type="button"
+              className="w-full py-2 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white font-extrabold text-[11px] text-center block shadow-sm shadow-orange-500/20 transition-all group-hover:scale-[1.01] active:scale-[0.98] cursor-pointer"
             >
-              Keşfet & Yükselt
-            </Link>
+              Plus&apos;ı Keşfet
+            </button>
           </div>
         </div>
 
@@ -298,99 +308,73 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
 
       {/* ── MAIN CONTENT WORKSPACE ── */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen lg:pl-[270px] xl:pl-[280px]">
-        {/* Desktop Top Header Bar (lg+) — Lingora Style with Search & Gamified Badges */}
-        <header className="hidden lg:flex items-center justify-between h-20 px-8 border-b border-blue-100/60 dark:border-blue-950/40 bg-white/70 dark:bg-[#111A2E]/70 backdrop-blur-xl sticky top-0 z-20 select-none">
+        {/* Desktop Top Header Bar (lg+) — Sleek & Minimal */}
+        <header className="hidden lg:flex items-center justify-between h-16 px-8 border-b border-blue-100/60 dark:border-blue-950/40 bg-white/80 dark:bg-[#111A2E]/80 backdrop-blur-xl sticky top-0 z-20 select-none">
           {/* Rounded Pill Search Input */}
-          <div className="relative w-80 xl:w-96">
-            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <div className="relative w-72 xl:w-80">
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Ders, ödev, konu veya sınav ara..."
-              className="w-full h-11 pl-10 pr-4 rounded-2xl bg-[#F4F7FC] dark:bg-[#16233F] border border-blue-100/80 dark:border-blue-900/50 text-xs font-semibold text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1D77FF]/30 transition-all"
+              placeholder="Ders, ödev, konu veya kitap ara..."
+              className="w-full h-9 pl-9 pr-4 rounded-xl bg-[#F4F7FC] dark:bg-[#16233F] border border-blue-100/80 dark:border-blue-900/50 text-xs font-semibold text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1D77FF]/30 transition-all"
             />
           </div>
 
-          {/* Right Status Counters & Badges (Streak 🔥, Gems 💎, Notifications 🔔, Clock) */}
-          <div className="flex items-center gap-3">
-            {/* Live Clock */}
+          {/* Right Status (Minimal Clock, Notification, Theme, Profile) */}
+          <div className="flex items-center gap-2.5">
             <HeaderLiveClock theme="cyan" variant="desktop" />
 
-            {/* Real Academic GPA Badge */}
-            <div
-              className="h-10 px-3.5 rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200/60 dark:border-indigo-800/40 flex items-center gap-2 text-xs font-black text-indigo-600 dark:text-indigo-400 shadow-xs cursor-default hover:scale-105 transition-transform"
-              title="Dönem Genel Not Ortalaması"
-            >
-              <Award size={16} className="text-indigo-600 dark:text-indigo-400" />
-              <span>{profile.gpa > 0 ? `${profile.gpa} Ort.` : '0.0 Ort.'}</span>
-            </div>
-
-            {/* Real Attendance Rate Badge */}
-            <div
-              className="h-10 px-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/40 flex items-center gap-2 text-xs font-black text-emerald-600 dark:text-emerald-400 shadow-xs cursor-default hover:scale-105 transition-transform"
-              title="Resmi Devam Oranı"
-            >
-              <TrendingUp size={16} className="text-emerald-600 dark:text-emerald-400" />
-              <span>%{profile.attendanceRate} Devam</span>
-            </div>
-
-            {/* Notification Bell 🔔 */}
+            {/* Notification Bell */}
             <Link
               href="/student/communication"
-              className="relative w-10 h-10 rounded-2xl bg-white dark:bg-[#16233F] border border-blue-100/80 dark:border-blue-900/50 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-[#1D77FF] dark:hover:text-[#1D77FF] transition-colors shadow-xs"
+              className="relative w-9 h-9 rounded-xl bg-slate-50 dark:bg-[#16233F] border border-blue-100/60 dark:border-blue-900/40 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-[#1D77FF] dark:hover:text-[#5BA0FF] transition-colors"
               title="Duyurular & Bildirimler"
             >
-              <Bell size={17} />
-              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-[#111A2E]" />
+              <Bell size={16} />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-[#111A2E]" />
             </Link>
 
             {/* Quick Theme Switch */}
             <button
               type="button"
               onClick={toggleTheme}
-              className="w-10 h-10 rounded-2xl bg-white dark:bg-[#16233F] border border-blue-100/80 dark:border-blue-900/50 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-amber-500 dark:hover:text-yellow-400 transition-colors shadow-xs cursor-pointer"
+              className="w-9 h-9 rounded-xl bg-slate-50 dark:bg-[#16233F] border border-blue-100/60 dark:border-blue-900/40 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-amber-500 dark:hover:text-yellow-400 transition-colors cursor-pointer"
               title="Temayı Değiştir"
             >
-              {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
             </button>
           </div>
         </header>
 
-        {/* ── MOBILE HEADER (<lg) — Modernized with Oxo Brand & Real Badges ── */}
-        <header className="lg:hidden sticky top-0 z-30 bg-white/90 dark:bg-[#111A2E]/90 backdrop-blur-xl border-b border-blue-100/70 dark:border-blue-950/50 px-4 py-3 flex items-center justify-between select-none">
-          <div className="flex items-center gap-2.5">
-            <OxoMascotIcon className="w-8 h-8" />
-            <div>
-              <div className="text-xs font-black text-slate-900 dark:text-white leading-tight">
-                Oxonom Edu
-              </div>
-              <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500">
-                {profile.name} ({profile.className})
-              </div>
+        {/* ── MOBILE HEADER (<lg) — Sleek, Minimal, Notch Safe ── */}
+        <header
+          className="lg:hidden sticky top-0 z-30 bg-white/90 dark:bg-[#111A2E]/90 backdrop-blur-xl border-b border-blue-100/70 dark:border-blue-950/50 px-4 pb-2.5 flex items-center justify-between select-none"
+          style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.65rem)' }}
+        >
+          <div className="flex items-center gap-2">
+            <OxoMascotIcon className="w-7 h-7" />
+            <div className="text-xs font-black text-slate-900 dark:text-white leading-none">
+              Oxonom Edu
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Live Clock compact */}
             <HeaderLiveClock theme="cyan" variant="mobile" />
 
-            {/* Real GPA compact */}
-            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 text-[11px] font-black">
-              <Award size={12} />
-              <span>{profile.gpa > 0 ? `${profile.gpa}` : '0.0'}</span>
-            </div>
-
-            {/* Real Attendance compact */}
-            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 text-[11px] font-black">
-              <TrendingUp size={12} />
-              <span>%{profile.attendanceRate}</span>
-            </div>
+            <Link
+              href="/student/communication"
+              className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center"
+              title="Bildirimler"
+            >
+              <Bell size={14} />
+            </Link>
 
             <button
               type="button"
               onClick={toggleTheme}
-              className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center"
+              className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center cursor-pointer"
               title="Temayı Değiştir"
             >
               {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
@@ -479,13 +463,13 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
               className="relative w-full max-w-lg bg-white dark:bg-[#111A2E] rounded-t-[32px] shadow-2xl border border-blue-100 dark:border-blue-900/40 max-h-[85vh] flex flex-col z-10 overflow-hidden pb-[env(safe-area-inset-bottom)]"
             >
               {/* Header */}
-              <div className="p-5 border-b border-blue-50 dark:border-blue-950/50 flex items-center justify-between">
+              <div className="p-4 sm:p-5 border-b border-blue-50 dark:border-blue-950/50 flex items-center justify-between">
                 <div>
                   <h3 className="text-base font-black text-slate-900 dark:text-white">
                     Öğrenci Modülleri
                   </h3>
                   <p className="text-[11px] text-slate-400 mt-0.5">
-                    Sınavlar, kütüphane, gelişim ve planlayıcı
+                    Kitaplık, sınavlar, gelişim ve planlayıcı
                   </p>
                 </div>
                 <button
@@ -497,8 +481,37 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
                 </button>
               </div>
 
+              {/* Mobile Oxonom Plus Promo Card in Drawer */}
+              <div className="px-4 pt-3">
+                <div
+                  onClick={() => {
+                    setIsMoreSheetOpen(false)
+                    setIsPlusModalOpen(true)
+                  }}
+                  className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-blue-500/10 border border-amber-400/50 flex items-center justify-between cursor-pointer shadow-xs active:scale-[0.98] transition-transform"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-400 to-amber-500 text-white flex items-center justify-center shadow-xs shrink-0">
+                      <Crown size={18} className="fill-white" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <span>Oxonom Plus</span>
+                        <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-amber-500 text-white font-black">
+                          199 ₺
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                        <span className="line-through text-slate-400">899 ₺</span> yerine %78 indirim fırsatı
+                      </div>
+                    </div>
+                  </div>
+                  <ChevronRight size={17} className="text-amber-500 shrink-0" />
+                </div>
+              </div>
+
               {/* Modules Grid */}
-              <div className="flex-1 overflow-y-auto p-4 grid grid-cols-2 gap-2.5 custom-scrollbar">
+              <div className="flex-1 overflow-y-auto p-4 grid grid-cols-2 gap-2.5 scrollbar-none">
                 {MORE_ITEMS.map((item) => {
                   const Icon = item.icon
                   const active = isCurrentPathActive(item.path)
@@ -568,6 +581,12 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
           </div>
         )}
       </AnimatePresence>
+
+      {/* ── OXONOM PLUS ANIMATED PROMO MODAL ── */}
+      <OxonomPlusModal
+        isOpen={isPlusModalOpen}
+        onClose={() => setIsPlusModalOpen(false)}
+      />
     </div>
   )
 }

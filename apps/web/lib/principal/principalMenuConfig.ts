@@ -156,6 +156,17 @@ export const PRINCIPAL_MENU_CONFIG: PrincipalMenuItem[] = [
     category: 'academic',
     description: 'Okul geneli devamsızlık analizleri, akademik başarı grafikleri ve resmi e-Okul çıktıları.',
   },
+  {
+    id: 'library-management',
+    label: 'Kitaplık Yönetimi',
+    path: '/principal/library',
+    icon: BookOpen,
+    status: 'active',
+    sortOrder: 8.5,
+    category: 'academic',
+    badge: 'Müfredat',
+    description: 'Sınıf bazında MEB ders kitaplarının öğrenciye gösterilme ve gizlenme ayarları.',
+  },
 
   // ── 5. DONANIM & AKILLI SİSTEM ──
   {

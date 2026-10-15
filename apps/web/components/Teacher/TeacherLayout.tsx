@@ -175,8 +175,8 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
           </div>
         </div>
 
-        {/* Ordered Navigation Categories */}
-        <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-1 custom-scrollbar">
+        {/* Ordered Navigation Categories without scrollbar */}
+        <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-1 scrollbar-none">
           {visibleMenuItems.map((item) => {
             const Icon = item.icon
             const active = isCurrentPathActive(item.path)
@@ -252,11 +252,11 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
 
       {/* ── MAIN CONTENT WORKSPACE ── */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen">
-        {/* Desktop Top Header Bar (lg+) */}
+        {/* Desktop Top Header Bar (lg+) — Sleek & Minimal */}
         <header className="hidden lg:flex items-center justify-between h-16 px-8 border-b border-gray-200/80 dark:border-gray-800/80 bg-white/80 dark:bg-[#0E1526]/80 backdrop-blur-md sticky top-0 z-20">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 text-xs">
-              <span className="text-gray-400 font-medium">Öğretmen Portalı</span>
+              <span className="text-gray-400 font-medium">Öğretmen</span>
               <ChevronRight size={13} className="text-gray-400" />
               <span className="font-extrabold text-gray-900 dark:text-white">
                 {currentItem?.label || 'Dersler & Yoklama'}
@@ -264,36 +264,31 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Live Clock & Date matching theme (Indigo) */}
+          <div className="flex items-center gap-2.5">
+            {/* Live Clock minimal */}
             <HeaderLiveClock theme="indigo" variant="desktop" />
-
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-xs font-bold border border-indigo-500/20">
-              <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-              <span>Öğretmen Çevrimiçi</span>
-            </div>
 
             <Link
               href="/teacher/schedule"
-              className="h-9 px-3.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold text-xs flex items-center gap-1.5 transition-colors border border-gray-200/60 dark:border-gray-700/60"
+              className="h-9 px-3 rounded-xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold text-xs flex items-center gap-1.5 transition-colors border border-gray-200/60 dark:border-gray-700/60"
             >
               <Calendar size={13} />
-              <span>Ders Programım</span>
+              <span>Program</span>
             </Link>
 
             <button
               type="button"
               onClick={() => setIsConnectBoardModalOpen(true)}
-              className="h-9 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs shadow-emerald-500/20 cursor-pointer"
+              className="h-9 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs shadow-emerald-500/20 cursor-pointer"
             >
               <QrCode size={14} />
-              <span>Akıllı Tahta QR</span>
+              <span>Tahta QR</span>
             </button>
 
             <button
               type="button"
               onClick={toggleTheme}
-              className="w-9 h-9 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center transition-colors cursor-pointer border border-gray-200/60 dark:border-gray-700/60"
+              className="w-9 h-9 rounded-xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 flex items-center justify-center transition-colors cursor-pointer border border-gray-200/60 dark:border-gray-700/60"
               title="Temayı Değiştir"
             >
               {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
@@ -301,10 +296,13 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
           </div>
         </header>
 
-        {/* ── MOBILE HEADER (<lg) ── */}
-        <header className="lg:hidden sticky top-0 z-30 bg-white/95 dark:bg-[#0E1526]/95 backdrop-blur-md border-b border-gray-200/80 dark:border-gray-800/80 px-4 py-3 flex items-center justify-between">
+        {/* ── MOBILE HEADER (<lg) — Sleek, Minimal & Notch Safe ── */}
+        <header
+          className="lg:hidden sticky top-0 z-30 bg-white/95 dark:bg-[#0E1526]/95 backdrop-blur-md border-b border-gray-200/80 dark:border-gray-800/80 px-4 pb-2.5 flex items-center justify-between"
+          style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 0.65rem)' }}
+        >
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-800 flex items-center justify-center text-white shadow-xs font-black text-sm">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-600 to-indigo-800 flex items-center justify-center text-white shadow-xs font-black text-xs">
               OX
             </div>
             <div>
@@ -318,7 +316,6 @@ export default function TeacherLayout({ children }: TeacherLayoutProps) {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Live Clock & Date matching theme (Mobile Compact) */}
             <HeaderLiveClock theme="indigo" variant="mobile" />
 
             <button

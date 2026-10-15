@@ -46,6 +46,10 @@ import {
   getStoredStudentNotes,
   type BookReadingProgress,
 } from '@/lib/student/studentLibraryStorage'
+import {
+  isBookVisibleForStudent,
+  getHiddenBookIds,
+} from '@/lib/student/libraryVisibilityStorage'
 import { getSynchronizedStudentProfile } from '@/lib/student/studentData'
 import MobileBookReader from '@/components/Student/library/MobileBookReader'
 
@@ -109,6 +113,9 @@ export default function StudentLibraryView({
   // Image load error cache (fallback to stylish placeholder)
   const [imgErrors, setImgErrors] = useState<Record<number, boolean>>({})
 
+  // Principal hidden book IDs
+  const [hiddenBookIds, setHiddenBookIds] = useState<number[]>([])
+
   // Initialize Student Data & Storage Cache
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -122,17 +129,20 @@ export default function StudentLibraryView({
       setFavorites(getFavoriteBookIds())
       setReadLater(getReadLaterBookIds())
       setTotalNotesCount(getStoredStudentNotes().length)
+      setHiddenBookIds(getHiddenBookIds())
 
       // Sync on external updates
       const handleProgressUpdate = () => setReadingProgress(getAllReadingProgress())
       const handleFavUpdate = () => setFavorites(getFavoriteBookIds())
       const handleReadLaterUpdate = () => setReadLater(getReadLaterBookIds())
       const handleNotesUpdate = () => setTotalNotesCount(getStoredStudentNotes().length)
+      const handleVisibilityUpdate = () => setHiddenBookIds(getHiddenBookIds())
 
       window.addEventListener('oxonom_reading_progress_updated', handleProgressUpdate)
       window.addEventListener('oxonom_book_favorites_updated', handleFavUpdate)
       window.addEventListener('oxonom_book_readlater_updated', handleReadLaterUpdate)
       window.addEventListener('oxonom_student_notes_updated', handleNotesUpdate)
+      window.addEventListener('oxonom_library_visibility_updated', handleVisibilityUpdate)
 
       // Query param parsing for direct link from Defterim/Planlayıcım
       try {
@@ -160,6 +170,7 @@ export default function StudentLibraryView({
         window.removeEventListener('oxonom_book_favorites_updated', handleFavUpdate)
         window.removeEventListener('oxonom_book_readlater_updated', handleReadLaterUpdate)
         window.removeEventListener('oxonom_student_notes_updated', handleNotesUpdate)
+        window.removeEventListener('oxonom_library_visibility_updated', handleVisibilityUpdate)
       }
     }
   }, [initialBookId, initialPage])
@@ -168,16 +179,22 @@ export default function StudentLibraryView({
   const availableSubjects = useMemo(() => {
     const set = new Set<string>()
     MEB_TEXTBOOKS_CATALOG.forEach((book) => {
+      // Exclude hidden books from subject list
+      if (!isBookVisibleForStudent(book.id, book.gradeName)) return
       if (selectedGrade === 'all' || book.gradeName === selectedGrade) {
         if (book.subject) set.add(book.subject)
       }
     })
     return Array.from(set).sort((a, b) => a.localeCompare(b, 'tr-TR'))
-  }, [selectedGrade])
+  }, [selectedGrade, hiddenBookIds])
 
   // Filter & Sort Logic
   const filteredBooks = useMemo(() => {
     return MEB_TEXTBOOKS_CATALOG.filter((book) => {
+      // 0. Principal Visibility Filter: If hidden by school administration, DO NOT list!
+      if (!isBookVisibleForStudent(book.id, book.gradeName)) {
+        return false
+      }
       // 1. Grade Filter
       if (selectedGrade !== 'all' && book.gradeName !== selectedGrade) {
         return false
@@ -271,6 +288,7 @@ export default function StudentLibraryView({
     favorites,
     readLater,
     studentGrade,
+    hiddenBookIds,
   ])
 
   // Aggregate Stats
@@ -281,9 +299,10 @@ export default function StudentLibraryView({
       if (p.status === 'in_progress') inProg++
       if (p.status === 'completed') completed++
     })
+    const visibleCatalog = MEB_TEXTBOOKS_CATALOG.filter((b) => isBookVisibleForStudent(b.id, b.gradeName))
     return {
-      total: MEB_TEXTBOOKS_CATALOG.length,
-      gradeTotal: MEB_TEXTBOOKS_CATALOG.filter((b) => b.gradeName === studentGrade).length,
+      total: visibleCatalog.length,
+      gradeTotal: visibleCatalog.filter((b) => b.gradeName === studentGrade).length,
       inProgress: inProg,
       completed,
       favoritesCount: favorites.length,

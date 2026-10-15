@@ -2724,6 +2724,21 @@ button, nav, [role="button"], [data-nav-item], header {
   padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6.5rem) !important;
 }
 
+/* Hide scrollbar on web sidebars & horizontal chip bars */
+.scrollbar-none::-webkit-scrollbar,
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+.scrollbar-none,
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
 
-
-
+/* Notch and safe area helpers for iPhone Dynamic Island */
+.safe-notch-pt {
+  padding-top: max(12px, env(safe-area-inset-top, 12px));
+  padding-top: calc(env(safe-area-inset-top, 0px) + 0.65rem);
+}

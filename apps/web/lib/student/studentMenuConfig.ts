@@ -49,17 +49,7 @@ export const STUDENT_MENU_CONFIG: StudentMenuItem[] = [
     category: 'main',
     description: 'Günlük ders akışı, sıradaki ders, bekleyen ödevler ve öğrenci genel görünümü.',
   },
-  {
-    id: 'live-class',
-    label: 'Canlı Ders & Radar',
-    path: '/student/live-class',
-    icon: Radio,
-    status: 'active',
-    sortOrder: 2,
-    badge: 'CANLI',
-    category: 'main',
-    description: 'Gerçek zamanlı ders iş süresi, kalan zaman sayacı, akıllı tahta bağlantısı ve infografik akış.',
-  },
+
   {
     id: 'courses',
     label: 'Derslerim',
