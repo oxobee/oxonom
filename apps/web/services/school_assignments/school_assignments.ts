@@ -12,18 +12,94 @@ import {
 import { createBoard } from '@services/boards/boards'
 
 export const CUSTOM_ASSIGNMENTS_STORAGE_KEY = 'oxonom_custom_school_assignments_v2'
+export const DELETED_ASSIGNMENTS_STORAGE_KEY = 'oxonom_deleted_homework_ids'
+
+export type QuizQuestionType = 'multiple_choice' | 'true_false' | 'short_answer' | 'matching'
+
+export interface QuizQuestionOption {
+  id: string
+  label: string // 'A', 'B', 'C', 'D', 'E'
+  text: string
+}
+
+export interface MatchingPair {
+  id: string
+  left: string
+  right: string
+}
+
+export interface QuizQuestion {
+  id: string
+  questionNumber: number
+  type: QuizQuestionType
+  prompt: string
+  points: number
+  options?: QuizQuestionOption[]
+  correctOptionId?: string
+  correctBoolean?: boolean
+  sampleAnswer?: string
+  matchingPairs?: MatchingPair[]
+  explanation?: string
+}
+
+export function getDeletedHomeworkIds(): string[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = localStorage.getItem(DELETED_ASSIGNMENTS_STORAGE_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : []
+  } catch (_) {
+    return []
+  }
+}
+
+export function markHomeworkAsDeleted(idOrUuid: string): void {
+  if (typeof window === 'undefined' || !idOrUuid) return
+  try {
+    const current = getDeletedHomeworkIds()
+    if (!current.includes(idOrUuid)) {
+      current.push(idOrUuid)
+      localStorage.setItem(DELETED_ASSIGNMENTS_STORAGE_KEY, JSON.stringify(current))
+    }
+  } catch (_) {}
+}
 
 export function getStoredCustomAssignments(orgId?: number): SchoolAssignmentItem[] {
   if (typeof window === 'undefined') return []
   try {
+    const deletedIds = new Set(getDeletedHomeworkIds())
     const raw = localStorage.getItem(CUSTOM_ASSIGNMENTS_STORAGE_KEY)
     if (!raw) return []
     const parsed = JSON.parse(raw)
     if (!Array.isArray(parsed)) return []
-    return parsed
+    return parsed.filter(
+      (a) => !deletedIds.has(String(a.id)) && !deletedIds.has(String(a.assignment_uuid))
+    )
   } catch (e) {
     return []
   }
+}
+
+export async function fetchAssignmentsFromServer(): Promise<SchoolAssignmentItem[]> {
+  try {
+    const res = await fetch('/api/assignments', { cache: 'no-store' })
+    if (res.ok) {
+      const data = await res.json()
+      if (data.success && Array.isArray(data.assignments)) {
+        if (typeof window !== 'undefined') {
+          // Update local cache
+          localStorage.setItem(CUSTOM_ASSIGNMENTS_STORAGE_KEY, JSON.stringify(data.assignments))
+          window.dispatchEvent(new CustomEvent('oxonom_assignments_updated', { detail: data.assignments }))
+          window.dispatchEvent(new CustomEvent('oxonom_student_homeworks_updated', { detail: data.assignments }))
+        }
+        return data.assignments
+      }
+    }
+  } catch (err) {
+    console.warn('[school_assignments] fetchAssignmentsFromServer error:', err)
+  }
+  return getStoredCustomAssignments()
 }
 
 export function saveStoredCustomAssignment(asg: SchoolAssignmentItem): void {
@@ -35,7 +111,22 @@ export function saveStoredCustomAssignment(asg: SchoolAssignmentItem): void {
     )
     const updated = [asg, ...filtered]
     localStorage.setItem(CUSTOM_ASSIGNMENTS_STORAGE_KEY, JSON.stringify(updated))
+
+    // Remove from deleted list if saving an updated version
+    const deleted = getDeletedHomeworkIds().filter(
+      (id) => id !== String(asg.id) && id !== asg.assignment_uuid
+    )
+    localStorage.setItem(DELETED_ASSIGNMENTS_STORAGE_KEY, JSON.stringify(deleted))
+
+    // Send to server API in background
+    fetch('/api/assignments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ assignment: asg }),
+    }).catch((err) => console.warn('Background server save failed:', err))
+
     window.dispatchEvent(new CustomEvent('oxonom_assignments_updated', { detail: asg }))
+    window.dispatchEvent(new CustomEvent('oxonom_student_homeworks_updated', { detail: asg }))
   } catch (e) {
     console.warn('Failed to save custom assignment to storage:', e)
   }
@@ -44,13 +135,41 @@ export function saveStoredCustomAssignment(asg: SchoolAssignmentItem): void {
 export function deleteStoredCustomAssignment(assignmentUuid: string): void {
   if (typeof window === 'undefined') return
   try {
+    // 1. Mark in deleted IDs so initial homeworks and defaults are never resurrected
+    markHomeworkAsDeleted(assignmentUuid)
+
+    // 2. Remove from local stored custom list
     const current = getStoredCustomAssignments()
     const updated = current.filter(
       (a) => a.assignment_uuid !== assignmentUuid && String(a.id) !== assignmentUuid
     )
     localStorage.setItem(CUSTOM_ASSIGNMENTS_STORAGE_KEY, JSON.stringify(updated))
+
+    // 3. Remove from student specific cache
+    const studentKey = 'oxonom_student_homeworks_3001'
+    const studentRaw = localStorage.getItem(studentKey)
+    if (studentRaw) {
+      try {
+        const parsed = JSON.parse(studentRaw)
+        const filtered = parsed.filter(
+          (p: any) => p.assignment_uuid !== assignmentUuid && String(p.id) !== assignmentUuid
+        )
+        localStorage.setItem(studentKey, JSON.stringify(filtered))
+      } catch (_) {}
+    }
+
+    // 4. Send delete to server API
+    fetch(`/api/assignments?id=${encodeURIComponent(assignmentUuid)}`, {
+      method: 'DELETE',
+    }).catch((err) => console.warn('Background server delete failed:', err))
+
     window.dispatchEvent(
       new CustomEvent('oxonom_assignments_updated', {
+        detail: { assignment_uuid: assignmentUuid },
+      })
+    )
+    window.dispatchEvent(
+      new CustomEvent('oxonom_student_homeworks_updated', {
         detail: { assignment_uuid: assignmentUuid },
       })
     )
@@ -69,6 +188,7 @@ export interface SchoolAssignmentItem {
   subject: string
   tool_type: 'WHITEBOARD' | 'WORKSHEET' | 'QUIZ' | 'READING' | 'PROJECT'
   tool_data?: Record<string, any>
+  quiz_questions?: QuizQuestion[]
   board_uuid?: string
   usergroup_ids?: number[]
   classes?: { id: number; name: string; code?: string }[]

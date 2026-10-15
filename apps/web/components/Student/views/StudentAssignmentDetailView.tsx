@@ -27,6 +27,7 @@ import {
   saveStudentSubmission,
   type StudentSubmission,
 } from '@/lib/student/studentData'
+import StudentInteractiveQuizSolver from '@components/Student/views/StudentInteractiveQuizSolver'
 import toast from 'react-hot-toast'
 
 interface StudentAssignmentDetailViewProps {
@@ -92,15 +93,15 @@ export default function StudentAssignmentDetailView({
         content: responseText.trim(),
         fileName: selectedFileName || undefined,
         status: 'submitted',
-        score: 100, // Pre-graded exemplary work for Erçil
-        feedback: 'Harika bir çalışma, tebrik ederim! Çözüm adımların ve açıklamaların çok net.',
+        score: undefined, // Real state: waiting for teacher evaluation
+        feedback: undefined,
       }
 
       saveStudentSubmission(newSub)
       setSubmission(newSub)
       setIsSubmitting(false)
-      toast.success('Ödeviniz başarıyla öğretmeninize iletildi!')
-    }, 600)
+      toast.success('Ödeviniz başarıyla öğretmeninize iletildi! Değerlendirme bekleniyor.')
+    }, 400)
   }
 
   if (!assignment) {
@@ -193,8 +194,26 @@ export default function StudentAssignmentDetailView({
         )}
       </div>
 
-      {/* Submission Status or Submission Form */}
-      {submission ? (
+      {/* Interactive Quiz Solver or Standard Submission */}
+      {Boolean(
+        assignment.tool_type === 'QUIZ' ||
+          (assignment.quiz_questions && assignment.quiz_questions.length > 0) ||
+          (assignment.tool_data?.quizQuestions && assignment.tool_data.quizQuestions.length > 0)
+      ) ? (
+        <StudentInteractiveQuizSolver
+          assignment={assignment}
+          questions={
+            assignment.quiz_questions && assignment.quiz_questions.length > 0
+              ? assignment.quiz_questions
+              : assignment.tool_data?.quizQuestions || []
+          }
+          existingSubmission={submission}
+          onSubmit={(newSub) => {
+            saveStudentSubmission(newSub)
+            setSubmission(newSub)
+          }}
+        />
+      ) : submission ? (
         <div className="p-6 lg:p-8 rounded-3xl bg-white dark:bg-[#0E1526] border border-emerald-500/30 shadow-xs space-y-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">

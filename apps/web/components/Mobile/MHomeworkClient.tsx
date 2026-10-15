@@ -59,8 +59,13 @@ import {
   getStoredCustomAssignments,
   saveStoredCustomAssignment,
   deleteStoredCustomAssignment,
+  fetchAssignmentsFromServer,
+  markHomeworkAsDeleted,
+  getDeletedHomeworkIds,
   type SchoolAssignmentItem,
+  type QuizQuestion,
 } from '@services/school_assignments/school_assignments'
+import QuizQuestionBuilder, { DEFAULT_TEMPLATE_QUESTIONS } from './QuizQuestionBuilder'
 import { normalizeClassCode } from '@services/demo/attendanceService'
 
 export interface HomeworkItem {
@@ -72,6 +77,7 @@ export interface HomeworkItem {
   category: 'READING' | 'MATH' | 'SCIENCE' | 'LIFE_STUDIES' | 'ART' | 'ENGLISH' | 'WHITEBOARD' | 'WORKSHEET' | 'QUIZ' | string
   tool_type?: 'WHITEBOARD' | 'WORKSHEET' | 'QUIZ' | 'READING' | 'PROJECT'
   tool_data?: Record<string, any>
+  quiz_questions?: QuizQuestion[]
   target_type?: 'CLASS' | 'INDIVIDUAL'
   target_student_id?: string
   target_student_name?: string
@@ -176,6 +182,7 @@ const INITIAL_HOMEWORKS: HomeworkItem[] = [
     assignedTimestamp: Date.now() - 3 * 86400000,
     dueTimestamp: Date.now() + 2 * 86400000,
     description: '15 soruluk çoktan seçmeli paragraf analiz ve akıl yürütme tarama testi.',
+    quiz_questions: DEFAULT_TEMPLATE_QUESTIONS,
     period: 'this_week',
     periodLabel: 'Bu Hafta',
     accentColor: 'blue',
@@ -340,6 +347,8 @@ export default function MHomeworkClient({
   const [createReadingQuestions, setCreateReadingQuestions] = useState('')
   const [createQuizQuestionCount, setCreateQuizQuestionCount] = useState(10)
   const [createQuizDifficulty, setCreateQuizDifficulty] = useState<'Kolay' | 'Orta' | 'İleri'>('Orta')
+  const [createQuizQuestions, setCreateQuizQuestions] = useState<QuizQuestion[]>(DEFAULT_TEMPLATE_QUESTIONS)
+  const [editQuizQuestions, setEditQuizQuestions] = useState<QuizQuestion[]>([])
 
   // ── Assignment Edit Modal State ──
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -371,47 +380,9 @@ export default function MHomeworkClient({
   // Seed default authentic assignments if storage is empty
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      try {
-        const stored = getStoredCustomAssignments()
-        if (stored.length === 0) {
-          const defaults: SchoolAssignmentItem[] = [
-            {
-              id: 1001,
-              assignment_uuid: 'asg_dede_korkut_okuma',
-              title: 'Dede Korkut Hikâyeleri Metin Tahlili & Karakter İncelemesi',
-              description: 'Dede Korkut destanlarından "Dirse Han Oğlu Boğaç Han" boyunun ana fikri, olay örgüsü ve kültürel motiflerinin tahlili.',
-              grade_level: '9. Sınıf',
-              grade_category: 'Lise (9-12)',
-              subject: 'Türk Dili ve Edebiyatı',
-              tool_type: 'READING',
-              classes: [{ id: 101, name: '9-A Şubesi', code: '9/A' }],
-              due_date: '2026-10-18T23:59:00',
-              max_score: 100,
-              published: true,
-              teacher_name: 'Ebru TEKNECİ',
-              creation_date: '2026-10-06T09:00:00',
-            },
-            {
-              id: 1002,
-              assignment_uuid: 'asg_edebi_sanatlar_tahta',
-              title: 'Edebi Sanatlar & Teşbih-Mecaz Kavram Haritası Çizimi',
-              description: 'Divan ve Halk edebiyatında kullanılan teşbih, istiare ve mecaz-ı mürsel sanatlarını gösteren interaktif kavram haritası.',
-              grade_level: '9. Sınıf',
-              grade_category: 'Lise (9-12)',
-              subject: 'Türk Dili ve Edebiyatı',
-              tool_type: 'WHITEBOARD',
-              classes: [{ id: 101, name: '9-A Şubesi', code: '9/A' }],
-              due_date: '2026-10-20T23:59:00',
-              max_score: 100,
-              published: true,
-              teacher_name: 'Ebru TEKNECİ',
-              creation_date: '2026-10-08T10:00:00',
-            },
-          ]
-          defaults.forEach((d) => saveStoredCustomAssignment(d))
-          setAssignmentVersion((v) => v + 1)
-        }
-      } catch (_) {}
+      fetchAssignmentsFromServer()
+        .then(() => setAssignmentVersion((v) => v + 1))
+        .catch(() => {})
     }
   }, [])
 
@@ -445,7 +416,7 @@ export default function MHomeworkClient({
       if (createReadingQuestions) parts.push(`Tahlil Soruları: ${createReadingQuestions}`)
       if (parts.length > 0) detailedDesc = `${parts.join(' · ')}${detailedDesc ? `\n\n${detailedDesc}` : ''}`
     } else if (createToolType === 'QUIZ') {
-      detailedDesc = `Soru Sayısı: ${createQuizQuestionCount} · Seviye: ${createQuizDifficulty}${detailedDesc ? `\n\n${detailedDesc}` : ''}`
+      detailedDesc = `Soru Sayısı: ${createQuizQuestions.length} Soru · Seviye: ${createQuizDifficulty}${detailedDesc ? `\n\n${detailedDesc}` : ''}`
     } else if (createToolType === 'WHITEBOARD') {
       detailedDesc = `Tuval Tipi: ${createWhiteboardCanvasType} · Konu: ${createWhiteboardTopic}${detailedDesc ? `\n\n${detailedDesc}` : ''}`
     } else if (createToolType === 'WORKSHEET' && createWorksheetFileName) {
@@ -462,6 +433,7 @@ export default function MHomeworkClient({
       grade_category: 'Lise (9-12)',
       subject: createSubject,
       tool_type: createToolType,
+      quiz_questions: createToolType === 'QUIZ' ? createQuizQuestions : undefined,
       tool_data: {
         targetType: createTargetType,
         targetStudentId: isIndividual ? targetStudent.id : null,
@@ -470,8 +442,9 @@ export default function MHomeworkClient({
         readingBook: createReadingBook || null,
         readingPages: createReadingPages || null,
         readingQuestions: createReadingQuestions || null,
-        quizQuestionCount: createQuizQuestionCount || null,
+        quizQuestionCount: createQuizQuestions.length,
         quizDifficulty: createQuizDifficulty || null,
+        quizQuestions: createToolType === 'QUIZ' ? createQuizQuestions : undefined,
         whiteboardTopic: createWhiteboardTopic || null,
         whiteboardCanvasType: createWhiteboardCanvasType || null,
       },
@@ -546,6 +519,7 @@ export default function MHomeworkClient({
           category: (asg.tool_type as any) || 'WHITEBOARD',
           tool_type: asg.tool_type,
           tool_data: asg.tool_data,
+          quiz_questions: asg.quiz_questions || asg.tool_data?.quizQuestions,
           target_type: (asg.tool_data?.targetType as any) || 'CLASS',
           target_student_id: asg.tool_data?.targetStudentId || undefined,
           target_student_name: asg.tool_data?.targetStudentName || undefined,
@@ -832,6 +806,11 @@ export default function MHomeworkClient({
     setEditTargetType(hw.target_type || 'CLASS')
     setEditTargetStudentId(hw.target_student_id || 's-1')
     setEditTargetStudentName(hw.target_student_name || 'Erçil UĞURLU')
+    const hwQuestions =
+      hw.quiz_questions ||
+      (hw.tool_data?.quizQuestions as QuizQuestion[]) ||
+      DEFAULT_TEMPLATE_QUESTIONS
+    setEditQuizQuestions(hwQuestions)
     setIsEditModalOpen(true)
   }
 
@@ -852,12 +831,15 @@ export default function MHomeworkClient({
       grade_category: 'Lise (9-12)',
       subject: editSubject,
       tool_type: editToolType as any,
+      quiz_questions: editToolType === 'QUIZ' ? editQuizQuestions : undefined,
       tool_data: {
         ...(editingHomework.tool_data || {}),
         targetType: editTargetType,
         targetStudentId: editTargetType === 'INDIVIDUAL' ? editTargetStudentId : null,
         targetStudentName: editTargetType === 'INDIVIDUAL' ? editTargetStudentName : null,
         permissions: editingHomework.permissions,
+        quizQuestions: editToolType === 'QUIZ' ? editQuizQuestions : undefined,
+        quizQuestionCount: editToolType === 'QUIZ' ? editQuizQuestions.length : undefined,
       },
       classes: [{ id: 101, name: editingHomework.className || '9-A Şubesi', code: '9/A' }],
       due_date: editDueDate || '2026-10-25T23:59:00',
@@ -2154,6 +2136,15 @@ export default function MHomeworkClient({
                     </div>
                   </div>
 
+                  {/* Test & Quiz Parametreleri (Sorular & Şıklar) */}
+                  {editToolType === 'QUIZ' && (
+                    <QuizQuestionBuilder
+                      questions={editQuizQuestions}
+                      onChange={setEditQuizQuestions}
+                      maxScore={Number(editMaxScore) || 100}
+                    />
+                  )}
+
                   {/* Hedef Kitle Seçimi */}
                   <div>
                     <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block mb-1.5">
@@ -2904,57 +2895,11 @@ export default function MHomeworkClient({
                   )}
 
                   {createToolType === 'QUIZ' && (
-                    <div className="p-3.5 rounded-2xl bg-sky-50/50 dark:bg-sky-950/30 border border-sky-200/70 dark:border-sky-800/50 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-sky-900 dark:text-sky-200 flex items-center gap-1.5">
-                          <HelpCircle size={15} className="text-sky-600 dark:text-sky-400" />
-                          <span>Test & Quiz Parametreleri</span>
-                        </span>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-100 dark:bg-sky-900/60 text-sky-700 dark:text-sky-300">
-                          Çoktan Seçmeli
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2.5">
-                        <div className="space-y-1">
-                          <label className="text-[11px] font-bold text-gray-700 dark:text-gray-300">
-                            Soru Sayısı
-                          </label>
-                          <select
-                            value={createQuizQuestionCount}
-                            onChange={(e) => setCreateQuizQuestionCount(Number(e.target.value))}
-                            className="w-full h-10 px-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-bold text-gray-900 dark:text-white"
-                          >
-                            <option value={5}>5 Soru (Hızlı Tarama)</option>
-                            <option value={10}>10 Soru (Kazanım Testi)</option>
-                            <option value={15}>15 Soru (Ünite Değerlendirme)</option>
-                            <option value={20}>20 Soru (Genel Deneme)</option>
-                          </select>
-                        </div>
-
-                        <div className="space-y-1">
-                          <label className="text-[11px] font-bold text-gray-700 dark:text-gray-300">
-                            Zorluk Seviyesi
-                          </label>
-                          <div className="grid grid-cols-3 gap-1">
-                            {(['Kolay', 'Orta', 'İleri'] as const).map((lvl) => (
-                              <button
-                                key={lvl}
-                                type="button"
-                                onClick={() => setCreateQuizDifficulty(lvl)}
-                                className={`h-10 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
-                                  createQuizDifficulty === lvl
-                                    ? 'bg-sky-500 text-white shadow-xs'
-                                    : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'
-                                }`}
-                              >
-                                {lvl}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                    <QuizQuestionBuilder
+                      questions={createQuizQuestions}
+                      onChange={setCreateQuizQuestions}
+                      maxScore={Number(createMaxScore) || 100}
+                    />
                   )}
 
                   {/* Son Teslim Tarihi & Puan */}

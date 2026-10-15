@@ -1,8 +1,10 @@
 import {
   CUSTOM_ASSIGNMENTS_STORAGE_KEY,
   getStoredCustomAssignments,
+  getDeletedHomeworkIds,
   DEFAULT_SCHOOL_ASSIGNMENTS,
   type SchoolAssignmentItem,
+  type QuizQuestion,
 } from '@services/school_assignments/school_assignments'
 import {
   DAYS_LIST,
@@ -432,13 +434,38 @@ export interface StudentSubmission {
 
 export function getStudentSubmissions(): Record<string, StudentSubmission> {
   if (typeof window === 'undefined') return {}
+  const res: Record<string, StudentSubmission> = {}
   try {
     const raw = localStorage.getItem(SUBMISSIONS_STORAGE_KEY)
-    if (!raw) return {}
-    return JSON.parse(raw)
-  } catch (_) {
-    return {}
-  }
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      Object.assign(res, parsed)
+    }
+  } catch (_) {}
+
+  // Merge live teacher evaluations from m_homework_submissions_v2
+  try {
+    const teacherRaw = localStorage.getItem('m_homework_submissions_v2')
+    if (teacherRaw) {
+      const parsedTeacher = JSON.parse(teacherRaw)
+      Object.entries(parsedTeacher).forEach(([hwId, subs]: [string, any]) => {
+        const studentSub = subs?.['s-1'] || subs?.['101']
+        if (studentSub) {
+          res[hwId] = {
+            assignmentId: hwId,
+            submittedAt: studentSub.submittedAt || new Date().toLocaleDateString('tr-TR'),
+            content: res[hwId]?.content || 'Çalışma teslim edildi.',
+            fileName: res[hwId]?.fileName,
+            status: studentSub.score !== undefined ? 'graded' : 'submitted',
+            score: studentSub.score,
+            feedback: studentSub.feedback,
+          }
+        }
+      })
+    }
+  } catch (_) {}
+
+  return res
 }
 
 export function saveStudentSubmission(sub: StudentSubmission): void {
@@ -447,6 +474,22 @@ export function saveStudentSubmission(sub: StudentSubmission): void {
     const current = getStudentSubmissions()
     current[sub.assignmentId] = sub
     localStorage.setItem(SUBMISSIONS_STORAGE_KEY, JSON.stringify(current))
+
+    // Bridge into teacher storage m_homework_submissions_v2 so teacher sees it immediately
+    try {
+      const teacherRaw = localStorage.getItem('m_homework_submissions_v2')
+      const teacherData = teacherRaw ? JSON.parse(teacherRaw) : {}
+      if (!teacherData[sub.assignmentId]) teacherData[sub.assignmentId] = {}
+      teacherData[sub.assignmentId]['s-1'] = {
+        studentId: 's-1',
+        score: sub.score ?? 100,
+        feedback: sub.feedback || 'Öğrenci teslimi alındı.',
+        submittedAt: sub.submittedAt || new Date().toLocaleString('tr-TR'),
+        status: 'submitted',
+      }
+      localStorage.setItem('m_homework_submissions_v2', JSON.stringify(teacherData))
+    } catch (_) {}
+
     window.dispatchEvent(new CustomEvent('oxonom_student_submission_updated', { detail: sub }))
   } catch (_) {}
 }
@@ -1009,8 +1052,20 @@ export function getSynchronizedClassWeeklySchedule(classCode: string = '9-A'): S
 export function getSynchronizedStudentAssignments(): SchoolAssignmentItem[] {
   let storedCustom: SchoolAssignmentItem[] = []
   let studentHomeworks: SchoolAssignmentItem[] = []
+  const deletedIds = new Set<string>()
 
   if (typeof window !== 'undefined') {
+    try {
+      getDeletedHomeworkIds().forEach((id) => deletedIds.add(String(id)))
+      const rawDel = localStorage.getItem('oxonom_deleted_homework_ids')
+      if (rawDel) {
+        const parsedDel = JSON.parse(rawDel)
+        if (Array.isArray(parsedDel)) {
+          parsedDel.forEach((id: string) => deletedIds.add(String(id)))
+        }
+      }
+    } catch (_) {}
+
     try {
       storedCustom = getStoredCustomAssignments()
     } catch (_) {}
@@ -1023,7 +1078,7 @@ export function getSynchronizedStudentAssignments(): SchoolAssignmentItem[] {
     } catch (_) {}
   }
 
-  // Teacher 9-A defaults
+  // Teacher 9-A initial curriculum assignments
   const teacherDefaults: SchoolAssignmentItem[] = [
     {
       id: 1001,
@@ -1040,6 +1095,11 @@ export function getSynchronizedStudentAssignments(): SchoolAssignmentItem[] {
       published: true,
       teacher_name: 'Ebru TEKNECİ',
       creation_date: '2026-10-06T09:00:00',
+      tool_data: {
+        readingBook: 'Dede Korkut Kitabı',
+        readingPages: 'Sayfa 15-42',
+        readingQuestions: '1) Boğaç Han boyunun teması nedir? 2) Dirse Han ve hatununun fedakarlığı neyi simgeler?',
+      },
     },
     {
       id: 1002,
@@ -1050,18 +1110,23 @@ export function getSynchronizedStudentAssignments(): SchoolAssignmentItem[] {
       grade_category: 'Lise (9-12)',
       subject: 'Türk Dili ve Edebiyatı',
       tool_type: 'WHITEBOARD',
+      board_uuid: 'board_edebi_sanatlar_9a',
       classes: [{ id: 101, name: '9-A Şubesi', code: '9/A' }],
       due_date: '2026-10-20T23:59:00',
       max_score: 100,
       published: true,
       teacher_name: 'Ebru TEKNECİ',
       creation_date: '2026-10-08T10:00:00',
+      tool_data: {
+        whiteboardTopic: 'Teşbih, İstiare ve Mecaz Sanatları Şeması',
+        whiteboardCanvasType: 'İnteraktif Çizim Tuvali',
+      },
     },
     {
       id: 1003,
       assignment_uuid: 'asg_paragraf_anlam_test',
       title: 'Sözcükte Anlam & Paragrafta Ana Düşünce Değerlendirme Quiz',
-      description: '15 soruluk çoktan seçmeli paragraf analiz ve akıl yürütme tarama testi.',
+      description: 'Çoktan seçmeli, doğru-yanlış, eşleştirme ve kısa cevaplı sorular içeren interaktif tarama testi.',
       grade_level: '9. Sınıf',
       grade_category: 'Lise (9-12)',
       subject: 'Türk Dili ve Edebiyatı',
@@ -1072,12 +1137,64 @@ export function getSynchronizedStudentAssignments(): SchoolAssignmentItem[] {
       published: true,
       teacher_name: 'Ebru TEKNECİ',
       creation_date: '2026-10-09T11:00:00',
+      quiz_questions: [
+        {
+          id: 'q-1',
+          questionNumber: 1,
+          type: 'multiple_choice',
+          prompt: '“Yazar, olayları bir kamera sessizliğiyle aktarmak yerine karakterlerinin iç dünyasındaki fırtınaları kelimelere dökmüştür.” Bu cümlede yazarın öne çıkan özelliği aşağıdakilerden hangisidir?',
+          points: 25,
+          options: [
+            { id: 'A', label: 'A', text: 'Olayları kronolojik sırayla belgesel gibi aktarması' },
+            { id: 'B', label: 'B', text: 'Ruhsal tahlil ve iç çatışmaları derinlemesine işlemesi' },
+            { id: 'C', label: 'C', text: 'Sadece dış gözleme dayalı betimlemeler yapması' },
+            { id: 'D', label: 'D', text: 'Mekân tasvirlerine odaklanıp insanı arka plana atması' },
+          ],
+          correctOptionId: 'B',
+          explanation: 'Karakterlerin iç dünyasındaki fırtınalar, bireyin psikolojik ve ruhsal boyutunu derinlemesine ele almayı ifade eder.',
+        },
+        {
+          id: 'q-2',
+          questionNumber: 2,
+          type: 'true_false',
+          prompt: 'Dede Korkut Hikâyelerinde olağanüstü mitolojik motifler ile gerçekçi tarihsel unsurlar bir arada bulunur ve eser nazım-nesir (şiir-düzyazı) karışık olarak kaleme alınmıştır.',
+          points: 25,
+          correctBoolean: true,
+          explanation: 'Dede Korkut destansı anlatılarında olaylar düzyazı, duygular şiir biçimindedir.',
+        },
+        {
+          id: 'q-3',
+          questionNumber: 3,
+          type: 'matching',
+          prompt: 'Aşağıdaki edebi sanatları uygun şiir dizeleriyle eşleştiriniz.',
+          points: 25,
+          matchingPairs: [
+            { id: 'm-1', left: 'Teşbih (Benzetme)', right: 'Kükremiş sel gibiyim, bendimi çiğner aşarım.' },
+            { id: 'm-2', left: 'Teşhis (Kişileştirme)', right: 'Rüzgâr hüzünle fısıldıyordu kırık penceremde.' },
+            { id: 'm-3', left: 'Tezat (Karşıtlık)', right: 'Ağlarım çağlar gibi, gülerim güller gibi.' },
+          ],
+          explanation: 'Kükremiş sel benzetme, rüzgârın fısıldaması kişileştirme, ağlamak-gülmek tezattır.',
+        },
+        {
+          id: 'q-4',
+          questionNumber: 4,
+          type: 'short_answer',
+          prompt: 'Bir edebi metinde anlatıcının olayları her şeyi bilen, kahramanların geçmişini, geleceğini ve gizli düşüncelerini sezen bakış açısına ne ad verilir?',
+          points: 25,
+          sampleAnswer: 'İlahi (Hakim / Tanrısal) Bakış Açısı',
+          explanation: 'Kahramanların aklından geçenleri ve geleceği bilen anlatıcı ilahi bakış açısına sahiptir.',
+        },
+      ],
+      tool_data: {
+        quizQuestionCount: 4,
+        quizDifficulty: 'Orta',
+      },
     },
     {
       id: 1004,
       assignment_uuid: 'asg_kumeler_mantik_calisma',
-      title: 'Kümeler, Önermeler ve Bileşik Önermeler Problem Çalışması',
-      description: 'Kümelerde kesişim, birleşim ve mantık önermeleri ile modelleme çalışma föyü.',
+      title: 'Kümeler, Önermeler ve Mantık Çalışma Föyü',
+      description: 'Doğruluk tabloları ve küme işlemleri içeren analitik matematik çalışma föyü.',
       grade_level: '9. Sınıf',
       grade_category: 'Lise (9-12)',
       subject: 'Matematik',
@@ -1088,15 +1205,22 @@ export function getSynchronizedStudentAssignments(): SchoolAssignmentItem[] {
       published: true,
       teacher_name: 'Ebru TEKNECİ',
       creation_date: '2026-10-10T14:00:00',
+      tool_data: {
+        attachedFileName: '9A_Matematik_Mantık_ve_Kümeler_Çalışma_Föyü.pdf',
+      },
     },
   ]
 
-  // Combine custom assignments, student homeworks, teacher defaults, and global defaults
+  // Filter teacherDefaults to remove deleted ones
+  const activeTeacherDefaults = teacherDefaults.filter(
+    (t) => !deletedIds.has(String(t.id)) && !deletedIds.has(String(t.assignment_uuid))
+  )
+
+  // Custom and updated assignments take highest precedence
   const pool = [
-    ...studentHomeworks,
-    ...storedCustom,
-    ...teacherDefaults,
-    ...(DEFAULT_SCHOOL_ASSIGNMENTS as any),
+    ...storedCustom.filter((c) => !deletedIds.has(String(c.id)) && !deletedIds.has(String(c.assignment_uuid))),
+    ...studentHomeworks.filter((s) => !deletedIds.has(String(s.id)) && !deletedIds.has(String(s.assignment_uuid))),
+    ...activeTeacherDefaults,
   ]
 
   // Deduplicate pool by assignment_uuid or id
@@ -1107,7 +1231,12 @@ export function getSynchronizedStudentAssignments(): SchoolAssignmentItem[] {
     const key = String(asg.assignment_uuid || asg.id)
     if (!seenIds.has(key)) {
       seenIds.add(key)
-      uniquePool.push(asg)
+      // Ensure quiz questions are accessible
+      const qQuestions = asg.quiz_questions || asg.tool_data?.quizQuestions
+      uniquePool.push({
+        ...asg,
+        quiz_questions: qQuestions || asg.quiz_questions,
+      })
     }
   }
 

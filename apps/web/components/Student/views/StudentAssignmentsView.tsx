@@ -51,13 +51,20 @@ export default function StudentAssignmentsView() {
       }
       sync()
 
+      // Fetch fresh assignments from server database
+      import('@services/school_assignments/school_assignments').then(({ fetchAssignmentsFromServer }) => {
+        fetchAssignmentsFromServer().then(() => sync()).catch(() => {})
+      })
+
       window.addEventListener('oxonom_assignments_updated', sync)
+      window.addEventListener('oxonom_student_homeworks_updated', sync)
       window.addEventListener('oxonom_student_submission_updated', sync)
       window.addEventListener('oxonom_student_updated', sync)
       window.addEventListener('storage', sync)
 
       return () => {
         window.removeEventListener('oxonom_assignments_updated', sync)
+        window.removeEventListener('oxonom_student_homeworks_updated', sync)
         window.removeEventListener('oxonom_student_submission_updated', sync)
         window.removeEventListener('oxonom_student_updated', sync)
         window.removeEventListener('storage', sync)
