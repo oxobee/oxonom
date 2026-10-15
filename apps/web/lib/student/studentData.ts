@@ -479,18 +479,36 @@ export function saveStudentSubmission(sub: StudentSubmission): void {
     try {
       const teacherRaw = localStorage.getItem('m_homework_submissions_v2')
       const teacherData = teacherRaw ? JSON.parse(teacherRaw) : {}
-      if (!teacherData[sub.assignmentId]) teacherData[sub.assignmentId] = {}
-      teacherData[sub.assignmentId]['s-1'] = {
+      const record = {
         studentId: 's-1',
         score: sub.score ?? 100,
-        feedback: sub.feedback || 'Öğrenci teslimi alındı.',
+        feedback: sub.feedback || (sub.content ? `Öğrenci Yanıtı: ${sub.content}` : 'Ödev teslimi alındı.'),
         submittedAt: sub.submittedAt || new Date().toLocaleString('tr-TR'),
         status: 'submitted',
       }
+
+      if (!teacherData[sub.assignmentId]) teacherData[sub.assignmentId] = {}
+      teacherData[sub.assignmentId]['s-1'] = record
+
+      // Also bridge under canonical aliases if known
+      const allAsgs = getSynchronizedStudentAssignments()
+      const found = allAsgs.find((a: any) => String(a.assignment_uuid) === sub.assignmentId || String(a.id) === sub.assignmentId)
+      if (found) {
+        if (found.id) {
+          if (!teacherData[found.id]) teacherData[found.id] = {}
+          teacherData[found.id]['s-1'] = record
+        }
+        if (found.assignment_uuid) {
+          if (!teacherData[found.assignment_uuid]) teacherData[found.assignment_uuid] = {}
+          teacherData[found.assignment_uuid]['s-1'] = record
+        }
+      }
+
       localStorage.setItem('m_homework_submissions_v2', JSON.stringify(teacherData))
     } catch (_) {}
 
     window.dispatchEvent(new CustomEvent('oxonom_student_submission_updated', { detail: sub }))
+    window.dispatchEvent(new CustomEvent('oxonom_student_homeworks_updated', { detail: sub }))
   } catch (_) {}
 }
 

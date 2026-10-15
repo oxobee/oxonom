@@ -127,17 +127,6 @@ export const PRINCIPAL_MENU_CONFIG: PrincipalMenuItem[] = [
 
   // ── 4. AKADEMİK & DERS PROGRAMI ──
   {
-    id: 'live-class',
-    label: 'Canlı Ders Radarı',
-    path: '/principal/live-class',
-    icon: Radio,
-    status: 'active',
-    sortOrder: 5,
-    badge: 'CANLI',
-    category: 'academic',
-    description: 'Şube bazlı anlık ders iş süreleri, zil senkronizasyonu ve MEB haftalık program denetimi.',
-  },
-  {
     id: 'curriculum',
     label: 'Haftalık Ders Programı',
     path: '/principal/curriculum',

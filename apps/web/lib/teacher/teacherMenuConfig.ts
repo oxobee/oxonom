@@ -60,7 +60,6 @@ export const TEACHER_MENU_CONFIG: TeacherMenuItem[] = [
     sortOrder: 2,
     description: 'Haftalık ve günlük ders programı, sınıf saatleri, ders kazanımları ve tahtayla başlatma.',
     children: [
-      { id: 'schedule-live', label: 'Canlı Ders Radarı', path: '/teacher/live-class', status: 'active', description: 'Gerçek zamanlı ders iş süresi ve akış radarı' },
       { id: 'schedule-daily', label: 'Günlük Program', path: '/teacher/schedule/daily', status: 'active', description: 'Bugünün ders saatleri ve sınıfları' },
       { id: 'schedule-weekly', label: 'Haftalık Program', path: '/teacher/schedule/weekly', status: 'active', description: 'Tüm haftanın ders dağılımı' },
       { id: 'schedule-lesson-plans', label: 'Ders Planları', path: '/teacher/schedule/lesson-plans', status: 'active', description: 'Kazanım ve günlük ders planları' },

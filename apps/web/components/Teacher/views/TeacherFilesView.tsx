@@ -962,34 +962,37 @@ export default function TeacherFilesView() {
 
                 {/* Quick Select Board IDs */}
                 <div>
-                  <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 block mb-1.5">
-                    Hızlı Seçim (Kayıtlı & Çevrim İçi Tahtalar):
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { id: 'PANO-9A', label: '9/A Şubesi (1. Kat)', active: true },
-                      { id: 'PANO-9B', label: '9/B Şubesi (1. Kat)', active: true },
-                      { id: 'TAHTA-901', label: 'Çalışma Tahtam', active: true },
-                      { id: 'PANO-FEN', label: 'Fen Laboratuvarı', active: false },
-                    ].map((b) => (
-                      <button
-                        key={b.id}
-                        type="button"
-                        onClick={() => setTargetBoardId(b.id)}
-                        className={`p-2 rounded-xl border text-left transition-colors cursor-pointer ${
-                          targetBoardId === b.id
-                            ? 'bg-teal-50 dark:bg-teal-950/50 border-teal-500 text-teal-800 dark:text-teal-200 font-bold'
-                            : 'bg-white dark:bg-[#161D2E] border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-mono text-xs font-black">{b.id}</span>
-                          <span className={`w-2 h-2 rounded-full ${b.active ? 'bg-emerald-500' : 'bg-gray-300'}`} />
-                        </div>
-                        <div className="text-[10px] text-gray-400 truncate mt-0.5">{b.label}</div>
-                      </button>
-                    ))}
-                  </div>
+                    <label className="text-[11px] font-bold text-gray-500 dark:text-gray-400 block mb-1.5 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span>Hızlı Seçim (Yalnızca Açık & Çevrim İçi Tahtalar):</span>
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {[
+                        { id: 'PANO-9A', label: '9/A Şubesi (1. Kat)', active: true },
+                        { id: 'PANO-9B', label: '9/B Şubesi (1. Kat)', active: true },
+                        { id: 'TAHTA-901', label: 'Çalışma Tahtam', active: true },
+                        { id: 'PANO-FEN', label: 'Fen Laboratuvarı', active: false },
+                      ]
+                        .filter((b) => b.active)
+                        .map((b) => (
+                          <button
+                            key={b.id}
+                            type="button"
+                            onClick={() => setTargetBoardId(b.id)}
+                            className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                              targetBoardId === b.id
+                                ? 'bg-teal-50 dark:bg-teal-950/50 border-teal-500 text-teal-800 dark:text-teal-200 font-bold shadow-xs ring-2 ring-teal-500/20'
+                                : 'bg-white dark:bg-[#161D2E] border-emerald-500/30 hover:border-emerald-500 text-gray-700 dark:text-gray-300'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-mono text-xs font-black">{b.id}</span>
+                              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                            </div>
+                            <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium truncate mt-0.5">{b.label}</div>
+                          </button>
+                        ))}
+                    </div>
                 </div>
 
                 {/* Placement Mode */}

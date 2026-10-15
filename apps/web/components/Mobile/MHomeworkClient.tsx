@@ -109,6 +109,8 @@ interface SubmissionRecord {
   feedback: string
   submittedAt: string
   status: 'submitted' | 'late' | 'not_submitted'
+  content?: string
+  fileName?: string
 }
 
 const DEFAULT_TEMPLATES = [
@@ -239,44 +241,83 @@ const DEFAULT_INITIAL_SUBMISSIONS: Record<string, Record<string, SubmissionRecor
       feedback: 'Harika bir metin tahlili! Kültürel motifleri ve karakter çatışmalarını çok derinlikli analiz etmişsin. Tebrik ederim.',
       submittedAt: '10.10.2026 16:30',
       status: 'submitted',
+      content: 'Dede Korkut hikâyelerinden Dirse Han Oğlu Boğaç Han boyunun teması, kahramanlık ve erdem çatışması açısından incelenmiştir.',
     },
   },
-  'hw-whiteboard-1': {
-    's-1': {
-      studentId: 's-1',
-      score: 98,
-      feedback: 'Kavram haritası tasarımı ve edebi sanat örnekleri kusursuz düzeyde. Çok özenli bir çalışma.',
-      submittedAt: '11.10.2026 14:15',
-      status: 'submitted',
-    },
-  },
-  'hw-quiz-1': {
-    's-1': {
-      studentId: 's-1',
-      score: 95,
-      feedback: '15 soruda 14 doğru ile üstün başarı. Paragrafta yardımcı düşünceler konusu pekiştirildi.',
-      submittedAt: '11.10.2026 19:40',
-      status: 'submitted',
-    },
-  },
-  'hw-worksheet-1': {
-    's-1': {
-      studentId: 's-1',
-      score: 100,
-      feedback: 'Tanzimat dönemi tahlili ve kompozisyon dili oldukça akıcı ve edebi. Eline sağlık.',
-      submittedAt: '12.10.2026 11:20',
-      status: 'submitted',
-    },
-  },
-  'hw-math-1': {
-    's-1': {
-      studentId: 's-1',
-      score: 96,
-      feedback: 'Mantık kuralları ve küme kesişim işlemleri adım adım doğru çözülmüş.',
-      submittedAt: '11.10.2026 17:05',
-      status: 'submitted',
-    },
-  },
+}
+
+export function getMergedSubmissions(homeworks?: HomeworkItem[]): Record<string, Record<string, SubmissionRecord>> {
+  const result: Record<string, Record<string, SubmissionRecord>> = {}
+
+  // 1. Initial submissions baseline
+  Object.keys(DEFAULT_INITIAL_SUBMISSIONS).forEach((key) => {
+    result[key] = { ...DEFAULT_INITIAL_SUBMISSIONS[key] }
+  })
+
+  if (typeof window === 'undefined') return result
+
+  // 2. Read teacher storage
+  try {
+    const teacherRaw = localStorage.getItem('m_homework_submissions_v2')
+    if (teacherRaw) {
+      const parsed = JSON.parse(teacherRaw)
+      if (parsed && typeof parsed === 'object') {
+        Object.keys(parsed).forEach((k) => {
+          result[k] = { ...(result[k] || {}), ...parsed[k] }
+        })
+      }
+    }
+  } catch (_) {}
+
+  // 3. Read live student submissions from oxonom_student_submissions_ercil
+  try {
+    const studentRaw = localStorage.getItem('oxonom_student_submissions_ercil')
+    if (studentRaw) {
+      const parsed = JSON.parse(studentRaw)
+      if (parsed && typeof parsed === 'object') {
+        Object.entries(parsed).forEach(([asgId, sSub]: [string, any]) => {
+          if (!sSub) return
+          const record: SubmissionRecord = {
+            studentId: 's-1',
+            score: sSub.score !== undefined && sSub.score !== null ? Number(sSub.score) : 100,
+            feedback: sSub.feedback || (sSub.content ? `Öğrenci Yanıtı: ${sSub.content}` : 'Ödev teslim edildi.'),
+            submittedAt: sSub.submittedAt || new Date().toLocaleString('tr-TR'),
+            status: 'submitted',
+            content: sSub.content,
+            fileName: sSub.fileName,
+          }
+
+          if (!result[asgId]) result[asgId] = {}
+          result[asgId]['s-1'] = record
+
+          if (homeworks && homeworks.length > 0) {
+            const match = homeworks.find(
+              (hw) =>
+                hw.id === asgId ||
+                hw.assignment_uuid === asgId ||
+                String(hw.id) === String(asgId) ||
+                String(hw.assignment_uuid) === String(asgId) ||
+                (hw.tool_type === 'QUIZ' && (asgId.includes('quiz') || asgId.includes('test'))) ||
+                (hw.tool_type === 'WHITEBOARD' && (asgId.includes('tahta') || asgId.includes('haritasi'))) ||
+                (hw.tool_type === 'READING' && (asgId.includes('okuma') || asgId.includes('tahlil')))
+            )
+            if (match) {
+              if (match.id) {
+                if (!result[match.id]) result[match.id] = {}
+                result[match.id]['s-1'] = record
+              }
+              if (match.assignment_uuid) {
+                if (!result[match.assignment_uuid]) result[match.assignment_uuid] = {}
+                result[match.assignment_uuid]['s-1'] = record
+              }
+            }
+          }
+        })
+      }
+    }
+  } catch (_) {}
+
+  return result
 }
 
 export interface MHomeworkClientProps {
@@ -575,19 +616,28 @@ export default function MHomeworkClient({
 
   // Submissions Map: Record<homeworkId, Record<studentId, SubmissionRecord>>
   const [allSubmissions, setAllSubmissions] = useState<Record<string, Record<string, SubmissionRecord>>>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('m_homework_submissions_v2')
-        if (saved) {
-          const parsed = JSON.parse(saved)
-          if (Object.keys(parsed).length > 0) return parsed
-        }
-      } catch (err) {
-        console.warn('Could not restore submissions from localStorage:', err)
-      }
-    }
-    return DEFAULT_INITIAL_SUBMISSIONS
+    return getMergedSubmissions(INITIAL_HOMEWORKS)
   })
+
+  // Live real-time sync with student submissions across tabs and storage events
+  useEffect(() => {
+    const syncSubmissions = () => {
+      setAllSubmissions(getMergedSubmissions(allSchoolHomeworks))
+    }
+    syncSubmissions()
+
+    window.addEventListener('oxonom_student_submission_updated', syncSubmissions)
+    window.addEventListener('oxonom_student_homeworks_updated', syncSubmissions)
+    window.addEventListener('oxonom_assignments_updated', syncSubmissions)
+    window.addEventListener('storage', syncSubmissions)
+
+    return () => {
+      window.removeEventListener('oxonom_student_submission_updated', syncSubmissions)
+      window.removeEventListener('oxonom_student_homeworks_updated', syncSubmissions)
+      window.removeEventListener('oxonom_assignments_updated', syncSubmissions)
+      window.removeEventListener('storage', syncSubmissions)
+    }
+  }, [allSchoolHomeworks])
 
   // Sync active homework when selectedHomeworkId changes (returns null if empty)
   const currentHomework = useMemo(() => {
@@ -595,10 +645,12 @@ export default function MHomeworkClient({
     return allSchoolHomeworks.find((hw) => hw.id === selectedHomeworkId) || allSchoolHomeworks[0]
   }, [allSchoolHomeworks, selectedHomeworkId])
 
-  // Current Homework's Submissions Map
+  // Current Homework's Submissions Map (checks both ID and assignment_uuid)
   const currentSubmissions = useMemo(() => {
     if (!currentHomework) return {}
-    return allSubmissions[currentHomework.id] || {}
+    const byId = allSubmissions[currentHomework.id] || {}
+    const byUuid = currentHomework.assignment_uuid ? (allSubmissions[currentHomework.assignment_uuid] || {}) : {}
+    return { ...byId, ...byUuid }
   }, [allSubmissions, currentHomework])
 
   // Grading form state for the currently active student
@@ -624,6 +676,7 @@ export default function MHomeworkClient({
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem('m_homework_submissions_v2', JSON.stringify(newAll))
+        window.dispatchEvent(new CustomEvent('oxonom_homework_evaluations_updated', { detail: newAll }))
       } catch (err) {
         console.warn('Failed to save submissions:', err)
       }
@@ -703,9 +756,30 @@ export default function MHomeworkClient({
     const updatedAll = {
       ...allSubmissions,
       [currentHomework.id]: updatedHwSubmissions,
+      ...(currentHomework.assignment_uuid ? { [currentHomework.assignment_uuid]: updatedHwSubmissions } : {}),
     }
 
     saveAllSubmissions(updatedAll)
+
+    // Bridge into student submissions storage if grading Erçil (s-1)
+    if (selectedStudent.id === 's-1') {
+      try {
+        const raw = localStorage.getItem('oxonom_student_submissions_ercil')
+        const currentStudentSubs = raw ? JSON.parse(raw) : {}
+        const key = currentHomework.assignment_uuid || currentHomework.id
+        currentStudentSubs[key] = {
+          assignmentId: key,
+          submittedAt: timeFormatted,
+          content: currentFeedback || 'Öğretmen değerlendirdi.',
+          status: 'graded',
+          score: currentScore,
+          feedback: currentFeedback,
+        }
+        localStorage.setItem('oxonom_student_submissions_ercil', JSON.stringify(currentStudentSubs))
+        window.dispatchEvent(new CustomEvent('oxonom_student_submission_updated', { detail: currentStudentSubs[key] }))
+      } catch (_) {}
+    }
+
     toast.success(`${selectedStudent.name} için ${currentScore} puan ve geri bildirim kaydedildi!`, {
       icon: '🎉',
       duration: 3500,
@@ -1047,12 +1121,12 @@ export default function MHomeworkClient({
             <div className="mx-4 mt-3 bg-white dark:bg-[#121826] border border-gray-200/90 dark:border-gray-800 rounded-2xl sm:rounded-3xl p-3.5 sm:p-4.5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
               {/* Sol: Başlık ve Bilgi */}
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-blue-500/15 border border-blue-500/30 text-[#1D77FF] dark:text-blue-400 flex items-center justify-center shrink-0">
                   <BookOpenCheck size={22} strokeWidth={2.2} />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-[#1D77FF] dark:text-blue-400">
                       Ödev & Değerlendirme Portalı
                     </span>
                     <span className="text-gray-300 dark:text-gray-700">•</span>
@@ -1075,7 +1149,7 @@ export default function MHomeworkClient({
                   className="flex-1 sm:flex-none h-11 px-3.5 sm:px-4 rounded-xl bg-gray-100 hover:bg-gray-200/80 dark:bg-gray-800 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs active:scale-95 group"
                   title="Sınıf / Şube Değiştir"
                 >
-                  <Users size={16} className="text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
+                  <Users size={16} className="text-[#1D77FF] dark:text-blue-400 group-hover:scale-110 transition-transform" />
                   <span>{selectedBranch}</span>
                   <ChevronDown size={14} className="text-gray-400 group-hover:text-gray-700 dark:group-hover:text-white transition-colors" />
                 </button>
@@ -1084,22 +1158,22 @@ export default function MHomeworkClient({
                 <button
                   type="button"
                   onClick={() => setIsHomeworkModalOpen(true)}
-                  className="flex-1 sm:flex-none h-11 px-3.5 sm:px-4 rounded-xl bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs active:scale-95 group"
+                  className="flex-1 sm:flex-none h-11 px-3.5 sm:px-4 rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs active:scale-95 group"
                   title="Bu sınıfa ait ödevleri seç ve tarihsel filtrele"
                 >
-                  <BookOpenCheck size={16} className="text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform" />
+                  <BookOpenCheck size={16} className="text-[#1D77FF] dark:text-blue-400 group-hover:scale-110 transition-transform" />
                   <span>Ödev Seç</span>
-                  <span className="px-1.5 py-0.5 rounded-full bg-indigo-200/70 dark:bg-indigo-900/80 text-[10px] font-black text-indigo-800 dark:text-indigo-200">
+                  <span className="px-1.5 py-0.5 rounded-full bg-blue-200/70 dark:bg-blue-900/80 text-[10px] font-black text-blue-800 dark:text-blue-200">
                     {classHomeworks.length}
                   </span>
-                  <ChevronDown size={14} className="text-indigo-400 group-hover:text-indigo-700 dark:group-hover:text-indigo-200 transition-colors" />
+                  <ChevronDown size={14} className="text-blue-400 group-hover:text-blue-700 dark:group-hover:text-blue-200 transition-colors" />
                 </button>
 
-                {/* 3. Yeni Ödev Ver Butonu (Geniş, Yüksek Görünürlüklü Yeşil Buton) */}
+                {/* 3. Yeni Ödev Ver Butonu (Geniş, Yüksek Görünürlüklü Mavi Buton) */}
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(true)}
-                  className="w-full sm:w-auto h-11 px-4 sm:px-5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-[#0A0D15] text-xs sm:text-sm font-black flex items-center justify-center gap-2 shadow-md shadow-emerald-500/25 active:scale-95 transition-all cursor-pointer border border-emerald-400 group"
+                  className="w-full sm:w-auto h-11 px-4 sm:px-5 rounded-xl bg-[#1D77FF] hover:bg-blue-600 text-white text-xs sm:text-sm font-black flex items-center justify-center gap-2 shadow-md shadow-blue-500/25 active:scale-95 transition-all cursor-pointer border border-blue-400 group"
                   title="9/A Şubesine Yeni Ödev Tanımla"
                 >
                   <Plus size={16} strokeWidth={2.5} className="group-hover:rotate-90 transition-transform duration-200" />
@@ -1108,43 +1182,52 @@ export default function MHomeworkClient({
               </div>
             </div>
 
-            {/* ── HERO / AKTİF ÖDEV KARTI ── */}
+            {/* ── HERO / AKTİF ÖDEV KARTI (Vibrant Blue Gradient) ── */}
             <motion.section
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
-              className="mx-4 mt-3 bg-[#0A0D15] text-white rounded-[24px] sm:rounded-[28px] p-5 sm:p-6 flex flex-col gap-4 shadow-xl border border-white/10 relative overflow-hidden"
-              style={{
-                backgroundImage:
-                  'radial-gradient(circle at 100% 0%,rgba(255,255,255,.12) 0%,rgba(255,255,255,0) 55%),linear-gradient(45deg,rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(-45deg,rgba(255,255,255,.04) 1px,transparent 1px)',
-                backgroundSize: 'auto,26px 26px,26px 26px',
-              }}
+              className="mx-4 mt-3 bg-gradient-to-br from-[#1E4FD8] via-[#1D77FF] to-[#0A58D0] dark:from-[#0E1A38] dark:via-[#162D63] dark:to-[#0F224D] text-white rounded-[26px] sm:rounded-[30px] p-5 sm:p-6 flex flex-col gap-4.5 shadow-[0_16px_45px_rgba(29,119,255,0.18)] border border-blue-400/30 dark:border-blue-800/40 relative overflow-hidden"
             >
+              {/* Animated Background Subtle Concentric Circles */}
+              <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full pointer-events-none opacity-25">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 42, repeat: Infinity, ease: 'linear' }}
+                  className="w-full h-full relative"
+                >
+                  <div className="absolute inset-0 rounded-full border border-cyan-200/40" />
+                  <div className="absolute inset-6 rounded-full border border-white/20 border-dashed" />
+                  <div className="absolute inset-12 rounded-full border border-cyan-200/30" />
+                </motion.div>
+              </div>
+              <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-br from-cyan-400/20 to-transparent rounded-full blur-2xl pointer-events-none" />
+
               {/* Header: Title & Meta Badges */}
-              <div className="flex items-start gap-3.5">
-                <div className="w-11 h-11 rounded-2xl bg-[#34D399]/15 border border-[#34D399]/35 text-[#34D399] flex items-center justify-center shrink-0 mt-0.5">
+              <div className="flex items-start gap-3.5 relative z-10">
+                <div className="w-11 h-11 rounded-2xl bg-white/20 border border-white/30 text-white flex items-center justify-center shrink-0 mt-0.5 backdrop-blur-md">
                   <FileText size={22} strokeWidth={1.9} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10.5px] font-extrabold uppercase tracking-wide">
+                    <span className="px-2.5 py-0.5 rounded-full bg-white/20 text-white border border-white/30 text-[10.5px] font-extrabold uppercase tracking-wide backdrop-blur-md">
                       {currentHomework.subject}
                     </span>
-                    <span className="px-2.5 py-0.5 rounded-full bg-white/10 text-gray-300 border border-white/10 text-[10.5px] font-bold">
+                    <span className="px-2.5 py-0.5 rounded-full bg-cyan-400/25 text-cyan-100 border border-cyan-300/40 text-[10.5px] font-bold">
                       {currentHomework.category}
                     </span>
                     {currentHomework.target_type === 'INDIVIDUAL' ? (
-                      <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10.5px] font-bold flex items-center gap-1">
+                      <span className="px-2.5 py-0.5 rounded-full bg-white/15 text-white/95 border border-white/25 text-[10.5px] font-bold flex items-center gap-1">
                         <User size={11} />
                         <span>Bireysel: {currentHomework.target_student_name || 'Öğrenci'}</span>
                       </span>
                     ) : (
-                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10.5px] font-bold flex items-center gap-1">
+                      <span className="px-2.5 py-0.5 rounded-full bg-white/15 text-white/95 border border-white/25 text-[10.5px] font-bold flex items-center gap-1">
                         <Users size={11} />
                         <span>Tüm Sınıf (9/A)</span>
                       </span>
                     )}
-                    <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10.5px] font-bold flex items-center gap-1">
+                    <span className="px-2.5 py-0.5 rounded-full bg-amber-400/25 text-amber-200 border border-amber-300/40 text-[10.5px] font-bold flex items-center gap-1">
                       <Clock size={11} />
                       <span>Son Teslim: {currentHomework.dueDate}</span>
                     </span>
@@ -1153,59 +1236,63 @@ export default function MHomeworkClient({
                   <button
                     type="button"
                     onClick={() => setIsHomeworkModalOpen(true)}
-                    className="text-left group flex items-start gap-1 w-full cursor-pointer"
+                    className="text-left group flex items-center gap-2 w-full cursor-pointer"
                     title="Ödevi değiştirmek için tıklayın"
                   >
-                    <h1 className="text-base sm:text-xl leading-snug font-extrabold tracking-tight text-white m-0 group-hover:text-emerald-300 transition-colors">
+                    <h1 className="text-base sm:text-xl leading-snug font-extrabold tracking-tight text-white m-0 group-hover:text-cyan-200 transition-colors">
                       {currentHomework.title} — Teslim ve Değerlendirme
                     </h1>
+                    <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/15 group-hover:bg-white/25 text-white/90 text-[10px] font-bold transition-all border border-white/20">
+                      <ArrowUpDown size={10} />
+                      <span>Değiştir</span>
+                    </span>
                   </button>
                 </div>
               </div>
 
-              <p className="text-xs sm:text-[13px] leading-relaxed text-[#B4BDCC] m-0">
+              <p className="text-xs sm:text-[13px] leading-relaxed text-blue-100/90 m-0 relative z-10">
                 {currentHomework.description}
               </p>
 
-          {/* 4 Stat Boxes */}
-          <div className="grid grid-cols-4 gap-2 pt-1">
-            <div className="bg-white/7 border border-white/12 rounded-[14px] py-2 px-1 text-center">
-              <div className="text-[19px] font-extrabold text-white leading-tight">
-                {stats.total}
-              </div>
-              <div className="text-[9px] font-bold tracking-wider text-[#B4BDCC] mt-1">
-                TOPLAM
-              </div>
-            </div>
+              {/* 4 Stat Boxes (Clean contrast & frosted glass) */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1 relative z-10">
+                <div className="bg-white/12 dark:bg-black/25 backdrop-blur-md border border-white/20 rounded-[18px] py-3 px-2 text-center shadow-xs">
+                  <div className="text-[22px] font-black text-white leading-tight">
+                    {stats.total}
+                  </div>
+                  <div className="text-[10px] font-extrabold tracking-wider text-blue-100/80 mt-1">
+                    TOPLAM ÖĞRENCİ
+                  </div>
+                </div>
 
-            <div className="bg-white/7 border border-white/12 rounded-[14px] py-2 px-1 text-center">
-              <div className="text-[19px] font-extrabold text-[#6EE7B7] leading-tight">
-                {stats.onTime}
-              </div>
-              <div className="text-[9px] font-bold tracking-wider text-[#B4BDCC] mt-1">
-                ZAMANINDA
-              </div>
-            </div>
+                <div className="bg-emerald-500/15 dark:bg-emerald-950/40 backdrop-blur-md border border-emerald-400/35 rounded-[18px] py-3 px-2 text-center shadow-xs">
+                  <div className="text-[22px] font-black text-[#A7F3D0] leading-tight">
+                    {stats.onTime}
+                  </div>
+                  <div className="text-[10px] font-extrabold tracking-wider text-emerald-200 mt-1">
+                    ZAMANINDA TESLİM
+                  </div>
+                </div>
 
-            <div className="bg-white/7 border border-white/12 rounded-[14px] py-2 px-1 text-center">
-              <div className="text-[19px] font-extrabold text-[#FCD34D] leading-tight">
-                {stats.late}
-              </div>
-              <div className="text-[9px] font-bold tracking-wider text-[#B4BDCC] mt-1">
-                GEÇ
-              </div>
-            </div>
+                <div className="bg-amber-500/15 dark:bg-amber-950/40 backdrop-blur-md border border-amber-400/35 rounded-[18px] py-3 px-2 text-center shadow-xs">
+                  <div className="text-[22px] font-black text-[#FDE68A] leading-tight">
+                    {stats.late}
+                  </div>
+                  <div className="text-[10px] font-extrabold tracking-wider text-amber-200 mt-1">
+                    GEÇ TESLİM
+                  </div>
+                </div>
 
-            <div className="bg-white/7 border border-white/12 rounded-[14px] py-2 px-1 text-center">
-              <div className="text-[19px] font-extrabold text-[#FCA5A5] leading-tight">
-                {stats.notSubmitted}
+                <div className="bg-rose-500/15 dark:bg-rose-950/40 backdrop-blur-md border border-rose-400/35 rounded-[18px] py-3 px-2 text-center shadow-xs">
+                  <div className="text-[22px] font-black text-[#FECDD3] leading-tight">
+                    {stats.notSubmitted}
+                  </div>
+                  <div className="text-[10px] font-extrabold tracking-wider text-rose-200 mt-1">
+                    TESLİM BEKLEYEN
+                  </div>
+                </div>
               </div>
-              <div className="text-[9px] font-bold tracking-wider text-[#B4BDCC] mt-1">
-                ETMEYEN
-              </div>
-            </div>
-          </div>
-        </motion.section>
+            </motion.section>
 
         {/* ── MAIN CONTENT SECTIONS (RESPONSIVE WEB 2-COLUMN GRID) ── */}
         <main className="flex-1 px-4 py-4">
@@ -1528,27 +1615,125 @@ export default function MHomeworkClient({
 
         {/* SAĞ SÜTUN (7/12): ÖĞRENCİ YANITI, AKILLI TAHTA ÇÖZÜMÜ & DEĞERLENDİRME */}
         <div className="lg:col-span-7 space-y-4">
-          {/* ── 5. SECTION: ÖĞRENCİ YANITI & ÇÖZÜM ── */}
+          {/* ── 5. SECTION: ÖĞRENCİ YANITI & ÇÖZÜM (AUTHENTIC & LIVE SYNCED) ── */}
           <section className="bg-white dark:bg-[#111624] border border-[#E7EBF2] dark:border-white/10 rounded-[22px] p-4 shadow-sm flex flex-col gap-3.5">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 text-[12px] font-extrabold tracking-wider text-[#0F172A] dark:text-white">
-                <FileText size={18} className="text-[#4338CA] dark:text-indigo-400" />
-                <span>ÖĞRENCİ YANITI & ÇÖZÜM</span>
+                <FileText size={18} className="text-[#1D77FF] dark:text-blue-400" />
+                <span>ÖĞRENCİ YANITI & ÇÖZÜM DETAYI</span>
               </div>
 
-              <span className="h-[26px] inline-flex items-center px-2.5 rounded-[13px] bg-[#ECEBFD] dark:bg-indigo-950/60 text-[#3730A3] dark:text-indigo-300 text-[10px] font-extrabold whitespace-nowrap">
-                Kategori: {currentHomework.category}
+              <span className="h-[26px] inline-flex items-center px-2.5 rounded-[13px] bg-blue-50 dark:bg-blue-950/60 text-[#1D77FF] dark:text-blue-300 text-[10px] font-extrabold whitespace-nowrap border border-blue-200/50 dark:border-blue-800/50">
+                {currentHomework.tool_type || currentHomework.category}
               </span>
             </div>
 
-            <div className="flex items-center gap-2.5 bg-[#FDF6E3] dark:bg-amber-950/40 border border-[#F5D9A8] dark:border-amber-800/80 rounded-[16px] p-3 text-[#92400E] dark:text-amber-300 text-[12.5px] font-bold">
-              <Volume2 size={18} className="shrink-0" />
-              <span>Öğrenci ses kaydı iletmedi.</span>
-            </div>
+            {/* Öğrenci Teslim Durum Özeti */}
+            {isCurrentSubmitted ? (
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between gap-2 p-3 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-bold">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <span>Ödev Başarıyla Teslim Edildi</span>
+                  </div>
+                  <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                    {currentSubmissions[selectedStudent?.id]?.submittedAt}
+                  </span>
+                </div>
 
-            <div className="bg-[#F6F8FC] dark:bg-[#161c2d] border border-[#E1E6EE] dark:border-white/5 rounded-[16px] p-3.5 text-[#5B6577] dark:text-gray-400 text-[13px] italic leading-relaxed">
-              Öğrenci henüz sisteme bir yanıt veya açıklama notu iletmedi.
-            </div>
+                {/* Ekli Dosya Varsa */}
+                {currentSubmissions[selectedStudent?.id]?.fileName && (
+                  <div className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-8 h-8 rounded-xl bg-blue-500/15 text-[#1D77FF] flex items-center justify-center shrink-0">
+                        <FileText size={16} />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="block text-xs font-bold text-gray-900 dark:text-white truncate">
+                          {currentSubmissions[selectedStudent?.id]?.fileName}
+                        </span>
+                        <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                          Öğrenci Tarafından Yüklenen Belge
+                        </span>
+                      </div>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-lg bg-blue-500 text-white text-[10.5px] font-bold shrink-0">
+                      Ekli Dosya
+                    </span>
+                  </div>
+                )}
+
+                {/* Yanıt İçeriği (Quiz Sonucu veya Metin) */}
+                {(() => {
+                  const content = currentSubmissions[selectedStudent?.id]?.content || currentSubmissions[selectedStudent?.id]?.feedback
+                  if (!content) return null
+
+                  // Try parse as Quiz Answers JSON
+                  let parsedQuiz: Record<string, any> | null = null
+                  try {
+                    const parsed = JSON.parse(content)
+                    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                      parsedQuiz = parsed
+                    }
+                  } catch (_) {}
+
+                  if (parsedQuiz) {
+                    const keys = Object.keys(parsedQuiz)
+                    return (
+                      <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#151c2e] border border-slate-200 dark:border-white/10 space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-black text-gray-900 dark:text-white">
+                            İnteraktif Sınav / Test Cevapları
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-[10.5px] font-black">
+                            {keys.length} Soru Yanıtlandı
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          {keys.map((k, idx) => (
+                            <div key={k} className="p-2 rounded-xl bg-white dark:bg-white/5 border border-gray-100 dark:border-white/5 flex items-center justify-between">
+                              <span className="font-bold text-gray-600 dark:text-gray-400">Soru {idx + 1}:</span>
+                              <span className="font-black text-[#1D77FF] dark:text-cyan-300">
+                                {typeof parsedQuiz![k] === 'boolean'
+                                  ? parsedQuiz![k] ? 'Doğru' : 'Yanlış'
+                                  : typeof parsedQuiz![k] === 'object'
+                                  ? 'Eşleştirildi'
+                                  : String(parsedQuiz![k])}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  }
+
+                  return (
+                    <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#151c2e] border border-slate-200 dark:border-white/10 space-y-1.5">
+                      <span className="block text-[11px] font-black uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                        Öğrenci Yanıtı & Çözüm Metni:
+                      </span>
+                      <p className="text-xs text-gray-800 dark:text-gray-200 leading-relaxed whitespace-pre-wrap font-medium">
+                        {content}
+                      </p>
+                    </div>
+                  )
+                })()}
+              </div>
+            ) : (
+              <div className="p-4 rounded-2xl bg-rose-50/70 dark:bg-rose-950/30 border border-dashed border-rose-300 dark:border-rose-900/60 flex flex-col items-center justify-center gap-2 text-center">
+                <div className="w-9 h-9 rounded-full bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+                  <AlertCircle size={18} />
+                </div>
+                <div className="space-y-0.5">
+                  <span className="block text-xs font-bold text-rose-800 dark:text-rose-300">
+                    Öğrenci Henüz Ödev Göndermedi
+                  </span>
+                  <p className="text-[11px] text-rose-600/80 dark:text-rose-400 max-w-xs leading-relaxed">
+                    {selectedStudent?.name} bu görevi henüz teslim etmedi. Öğrenci kendi portalından ödevi teslim ettiğinde yanıtları ve ekleri anında burada görüntülenecektir.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Whiteboard solution button — opens specific board in new tab */}
             {currentHomework.board_uuid ? (
@@ -1731,7 +1916,7 @@ export default function MHomeworkClient({
                 {/* Modal Header */}
                 <div className="flex items-start justify-between gap-3 shrink-0 mb-3">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-[14px] bg-[#0A0D15] dark:bg-white/10 text-[#34D399] flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 rounded-[14px] bg-blue-500/15 border border-blue-500/30 text-[#1D77FF] dark:text-blue-400 flex items-center justify-center shrink-0">
                       <BookOpenCheck size={20} strokeWidth={2.2} />
                     </div>
                     <div>
@@ -1761,7 +1946,7 @@ export default function MHomeworkClient({
                       setIsHomeworkModalOpen(false)
                       setIsCreateModalOpen(true)
                     }}
-                    className="w-full py-2.5 px-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-[#0A0D15] font-extrabold text-xs flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer"
+                    className="w-full py-2.5 px-3 rounded-2xl bg-[#1D77FF] hover:bg-blue-600 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-md shadow-blue-500/25 transition-all cursor-pointer"
                   >
                     <Plus size={15} strokeWidth={2.5} />
                     <span>+ Yeni Ödev Oluştur (9/A Şubesi)</span>
@@ -1862,7 +2047,11 @@ export default function MHomeworkClient({
                   ) : (
                     classHomeworks.map((hw) => {
                       const isSelected = hw.id === currentHomework?.id
-                      const subCount = Object.keys(allSubmissions[hw.id] || {}).length
+                      const hwSubs = {
+                        ...(allSubmissions[hw.id] || {}),
+                        ...(hw.assignment_uuid ? allSubmissions[hw.assignment_uuid] || {} : {}),
+                      }
+                      const subCount = Object.keys(hwSubs).length
 
                       // Tag Colors
                       const tagClass =
@@ -1880,7 +2069,7 @@ export default function MHomeworkClient({
                           onClick={() => handleSelectHomework(hw)}
                           className={`p-3.5 rounded-[18px] flex flex-col gap-2.5 cursor-pointer transition-all ${
                             isSelected
-                              ? 'border-[1.5px] border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/30 shadow-xs'
+                              ? 'border-[1.5px] border-[#1D77FF] bg-blue-50/60 dark:bg-blue-950/40 shadow-xs'
                               : 'border border-gray-200 dark:border-white/10 bg-white dark:bg-[#161c2d] hover:border-gray-300'
                           }`}
                         >
@@ -1907,7 +2096,7 @@ export default function MHomeworkClient({
                             </div>
 
                             {isSelected ? (
-                              <span className="h-[22px] inline-flex items-center gap-1 px-2 rounded-full bg-emerald-500 text-white text-[10.5px] font-extrabold shadow-xs">
+                              <span className="h-[22px] inline-flex items-center gap-1 px-2 rounded-full bg-[#1D77FF] text-white text-[10.5px] font-extrabold shadow-xs">
                                 <Check size={11} strokeWidth={2.5} />
                                 <span>Aktif</span>
                               </span>

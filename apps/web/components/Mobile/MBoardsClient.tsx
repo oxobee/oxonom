@@ -95,10 +95,13 @@ export default function MBoardsClient({
         if (saved) {
           const parsed = JSON.parse(saved)
           if (Array.isArray(parsed)) {
-            // Filter out old synthetic demo boards
-            const clean = parsed.filter(
-              (b: any) => !b.teacherName?.includes('Özlem') && !b.id?.startsWith('b-')
-            )
+            // Filter out old synthetic demo boards and sanitize localhost URLs
+            const clean = parsed
+              .filter((b: any) => !b.teacherName?.includes('Özlem'))
+              .map((b: any) => ({
+                ...b,
+                url: b.url ? b.url.replace(/https?:\/\/localhost:3000/, '') : `/board/${b.id}`,
+              }))
             return clean
           }
         }
@@ -554,7 +557,7 @@ export default function MBoardsClient({
                     {/* Bottom Actions: Tahtayı Aç + Ayarlar */}
                     <div className="flex items-center gap-2 pt-1">
                       <Link
-                        href={b.url.startsWith('http') ? b.url : `/board/${b.id}`}
+                        href={b.url?.includes('localhost:3000') ? b.url.replace(/https?:\/\/localhost:3000/, '') : (b.url || `/board/${b.id}`)}
                         className="flex-1 h-[48px] rounded-[16px] bg-white hover:bg-gray-100 text-[#0A0D15] text-[13px] font-extrabold flex items-center justify-center gap-2 active:scale-98 transition-all shadow-md"
                       >
                         <span>Tahtayı Aç</span>
@@ -916,7 +919,7 @@ export default function MBoardsClient({
                     studentCount: 30,
                     className: '9-A Şubesi',
                     isOpen: true,
-                    url: `http://localhost:3000/board/custom_${Date.now()}`,
+                    url: `/board/custom_${Date.now()}`,
                     isPublic: true,
                     hasPin: newHasPin,
                     pinCode: newHasPin ? (newPinCode || '1234') : undefined,

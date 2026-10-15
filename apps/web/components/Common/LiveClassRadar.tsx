@@ -617,10 +617,10 @@ export default function LiveClassRadar({
               <motion.div
                 className={`h-full rounded-full transition-all duration-500 ${
                   liveState.status === 'in_lesson'
-                    ? 'bg-gradient-to-r from-indigo-500 via-cyan-500 to-emerald-500 shadow-sm'
+                    ? 'bg-gradient-to-r from-[#1D77FF] via-blue-500 to-indigo-600 shadow-sm shadow-blue-500/30'
                     : liveState.status === 'lunch_break' || liveState.status === 'recess_break'
                     ? 'bg-gradient-to-r from-amber-400 to-orange-500'
-                    : 'bg-emerald-500'
+                    : 'bg-[#1D77FF]'
                 }`}
                 style={{ width: `${liveState.elapsedPercent}%` }}
               />
