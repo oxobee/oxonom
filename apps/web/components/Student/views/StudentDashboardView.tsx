@@ -679,71 +679,115 @@ export default function StudentDashboardView() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start w-full min-w-0">
         {/* ── LEFT MAIN COLUMN (lg:col-span-8) ── */}
         <div className="lg:col-span-8 space-y-6 lg:space-y-7 min-w-0 w-full">
-          {/* ── SKY-BLUE HERO CARD (Lingora Style Banner with 3D Popping Owl Mascot) ── */}
+          {/* ── VIBRANT GRADIENT BLUE HERO CARD (Animated Subtle Patterns & Balanced Layout) ── */}
           <motion.div
-            initial={{ opacity: 0, y: 15 }}
+            initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="relative mt-12 xs:mt-16 sm:mt-18 lg:mt-24 rounded-[28px] sm:rounded-[32px] bg-gradient-to-r from-[#D9EBFF] via-[#E8F3FF] to-[#D5E9FF] dark:from-[#132247] dark:via-[#192D5C] dark:to-[#132247] border border-blue-100/90 dark:border-blue-900/50 p-5 sm:p-8 pt-7 sm:pt-8 shadow-[0_12px_40px_rgba(29,119,255,0.08)]"
+            className="relative mt-2 sm:mt-4 lg:mt-6 rounded-[28px] sm:rounded-[32px] bg-gradient-to-br from-[#1E4FD8] via-[#1D77FF] to-[#0A58D0] dark:from-[#0E1A38] dark:via-[#162D63] dark:to-[#0F224D] border border-blue-400/30 dark:border-blue-800/40 p-5 sm:p-8 pt-6 sm:pt-8 text-white shadow-[0_16px_45px_rgba(29,119,255,0.18)] overflow-hidden"
           >
-            {/* Mobile 3D Mascot: Substantially larger, proportional, cap popping high above the top border */}
-            <motion.div
-              animate={{ y: [0, -6, 0] }}
-              transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }}
-              className="sm:hidden absolute -top-12 xs:-top-16 right-0 xs:right-2 w-36 h-36 xs:w-44 xs:h-44 z-20 pointer-events-none select-none"
-            >
-              <img
-                src="/oxonom-hero-owl.png"
-                alt="Oxonom Maskot"
-                className="w-full h-full object-contain filter drop-shadow-[0_16px_24px_rgba(0,0,0,0.20)]"
-              />
-            </motion.div>
+            {/* ── SUBTLE NON-DISTRACTING ANIMATED PATTERNS (Göz yormayan yumuşak desenler) ── */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-[28px] sm:rounded-[32px]">
+              {/* Soft SVG Dot Matrix Pattern */}
+              <svg
+                className="absolute inset-0 w-full h-full opacity-10 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <defs>
+                  <pattern id="hero-pattern-dots" width="28" height="28" patternUnits="userSpaceOnUse">
+                    <circle cx="2" cy="2" r="1.25" fill="currentColor" />
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#hero-pattern-dots)" />
+              </svg>
 
-            {/* Desktop/Tablet 3D Mascot: Large size with graduation cap popping high above the upper border */}
+              {/* Gentle Floating Ambient Glow Orbs */}
+              <motion.div
+                animate={{
+                  x: [0, 20, 0],
+                  y: [0, -15, 0],
+                  scale: [1, 1.06, 1],
+                }}
+                transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
+                className="absolute -top-16 -right-16 w-64 h-64 bg-cyan-400/20 rounded-full blur-3xl pointer-events-none"
+              />
+              <motion.div
+                animate={{
+                  x: [0, -20, 0],
+                  y: [0, 15, 0],
+                  scale: [1, 1.08, 1],
+                }}
+                transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+                className="absolute -bottom-16 -left-16 w-72 h-72 bg-blue-300/20 rounded-full blur-3xl pointer-events-none"
+              />
+
+              {/* Subtle Floating Geometric Tech Elements */}
+              <motion.div
+                animate={{ y: [0, -8, 0], rotate: [0, 25, 0], opacity: [0.12, 0.25, 0.12] }}
+                transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+                className="absolute top-10 right-20 hidden md:block w-14 h-14 rounded-2xl border border-white/20 pointer-events-none"
+              />
+              <motion.div
+                animate={{ y: [0, 10, 0], rotate: [0, -20, 0], opacity: [0.1, 0.22, 0.1] }}
+                transition={{ duration: 7.5, repeat: Infinity, ease: 'easeInOut', delay: 1.5 }}
+                className="absolute bottom-8 right-36 hidden md:block w-10 h-10 rounded-full border border-cyan-300/25 pointer-events-none"
+              />
+            </div>
+
+            {/* Desktop Mascot Only (Mobilde kuş kesinlikle gösterilmez, sadece geniş ekranlar) */}
             <motion.div
               animate={{ y: [0, -8, 0] }}
               transition={{ repeat: Infinity, duration: 4.5, ease: 'easeInOut' }}
-              className="hidden sm:block absolute right-4 lg:right-8 xl:right-12 -top-16 sm:-top-20 lg:-top-24 xl:-top-26 w-56 h-56 sm:w-64 sm:h-64 lg:w-76 lg:h-76 xl:w-84 xl:h-84 z-20 pointer-events-none select-none"
+              className="hidden sm:block absolute right-4 lg:right-8 xl:right-12 -top-10 sm:-top-14 lg:-top-18 xl:-top-20 w-44 h-44 sm:w-52 sm:h-52 lg:w-64 lg:h-64 xl:w-72 xl:h-72 z-20 pointer-events-none select-none"
             >
               <img
                 src="/oxonom-hero-owl.png"
                 alt="Oxonom Maskot"
-                className="w-full h-full object-contain filter drop-shadow-[0_22px_36px_rgba(0,0,0,0.24)]"
+                className="w-full h-full object-contain filter drop-shadow-[0_20px_32px_rgba(0,0,0,0.28)]"
               />
             </motion.div>
 
-            <div className="relative z-10 flex flex-col justify-between pr-32 xs:pr-40 sm:pr-0 max-w-md sm:max-w-sm lg:max-w-md xl:max-w-lg space-y-3 sm:space-y-4">
-              {/* Active Class Pill */}
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 dark:bg-slate-900/90 text-[11px] font-black text-slate-700 dark:text-slate-200 shadow-xs border border-blue-100/80 dark:border-blue-900/60 self-start">
-                <span className="text-sm">🇹🇷</span>
-                <span>{profile.className} Sınıfı • Aktif Dönem</span>
-                <ChevronRight size={13} className="text-slate-400" />
+            {/* Content Container (Mobilde tam genişlik, masaüstünde maskot payı) */}
+            <div className="relative z-10 flex flex-col justify-between w-full max-w-full sm:max-w-md lg:max-w-lg xl:max-w-xl space-y-3.5 sm:space-y-4">
+              {/* Header Badges Row */}
+              <div className="flex items-center gap-2 flex-wrap self-start">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-black text-white border border-white/30 shadow-xs">
+                  <span className="text-xs">🇹🇷</span>
+                  <span>{profile.className} Sınıfı • Aktif Dönem</span>
+                  <ChevronRight size={13} className="text-white/70" />
+                </div>
+
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-sm text-[10.5px] font-bold text-blue-100 border border-white/20">
+                  <Calendar size={12} className="text-cyan-300" />
+                  <span>2026-2027 MEB Müfredatı</span>
+                </span>
               </div>
 
+              {/* Title & Greeting */}
               <div>
-                <h1 className="text-xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight">
                   {greeting},{' '}
-                  <span className="text-[#1D77FF] dark:text-[#5BA0FF]">{profile.firstName}!</span> 👋
+                  <span className="text-cyan-200 drop-shadow-sm">{profile.firstName}!</span> 👋
                 </h1>
-                <p className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 mt-1.5 leading-relaxed">
+                <p className="text-xs sm:text-sm font-medium text-blue-100/90 mt-1.5 leading-relaxed">
                   Bugün {profile.className} şubesinde seni bekleyen{' '}
-                  <span className="font-bold text-slate-900 dark:text-white">
+                  <strong className="font-extrabold text-white underline decoration-cyan-300/60 decoration-2 underline-offset-2">
                     {todayClassesCount} ders saati
-                  </span>{' '}
+                  </strong>{' '}
                   ve{' '}
-                  <span className="font-bold text-slate-900 dark:text-white">
+                  <strong className="font-extrabold text-white underline decoration-amber-300/60 decoration-2 underline-offset-2">
                     {pendingAssignments.length} aktif ödev
-                  </span>{' '}
+                  </strong>{' '}
                   bulunuyor.
                 </p>
               </div>
 
-              {/* Action Buttons */}
+              {/* Action Buttons & Quick Stats */}
               <div className="pt-1 flex items-center gap-2.5 sm:gap-3 flex-wrap">
                 <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                   <Link
                     href="/student/courses"
-                    className="inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-[#1D77FF] hover:bg-blue-600 text-white font-black text-xs sm:text-sm shadow-lg shadow-blue-500/30 transition-all hover:shadow-xl hover:shadow-blue-500/40"
+                    className="inline-flex items-center justify-center gap-2 px-6 py-2.5 sm:py-3 rounded-full bg-white hover:bg-blue-50 text-[#1D77FF] font-black text-xs sm:text-sm shadow-lg shadow-black/15 transition-all"
                   >
                     <span>Dersine Devam Et</span>
                     <ArrowRight size={15} />
@@ -753,9 +797,9 @@ export default function StudentDashboardView() {
                 <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                   <Link
                     href="/student/assignments"
-                    className="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-full bg-white/80 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-sm border border-blue-100/80 dark:border-blue-900/40 shadow-xs transition-all"
+                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 sm:py-3 rounded-full bg-white/15 hover:bg-white/25 text-white backdrop-blur-md font-bold text-xs sm:text-sm border border-white/25 shadow-xs transition-all"
                   >
-                    <BookOpen size={14} className="text-[#1D77FF]" />
+                    <BookOpen size={14} className="text-cyan-200" />
                     <span>Ödevler ({pendingAssignments.length})</span>
                   </Link>
                 </motion.div>

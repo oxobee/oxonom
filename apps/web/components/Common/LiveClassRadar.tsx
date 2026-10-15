@@ -480,7 +480,7 @@ export default function LiveClassRadar({
       {/* ── TOP GRAPHIC AREA: MEVCUT DERSİN İŞ SÜRESİ & DETAYLARI ── */}
       <div className="p-4 sm:p-6 bg-gradient-to-b from-gray-50/70 to-white dark:from-[#0E1526] dark:to-[#121A2F] border-b border-gray-200/80 dark:border-gray-800/80">
         <div className="w-full space-y-4">
-          {/* Header: Status Pill + Harmonious Countdown Timer */}
+          {/* Header: Status Pill + Live Lesson State Info (Countdown timer removed per user request) */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-gray-100 dark:border-gray-800">
             <div className="flex items-center gap-2">
               {liveState.status === 'in_lesson' ? (
@@ -501,7 +501,7 @@ export default function LiveClassRadar({
               ) : liveState.status === 'before_school' ? (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-blue-500 text-white shadow-sm">
                   <Bell size={14} />
-                  <span>Ders Öncesi Hazırlık</span>
+                  <span>Canlı Ders Henüz Başlamadı</span>
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-purple-600 text-white shadow-sm">
@@ -515,22 +515,18 @@ export default function LiveClassRadar({
               </span>
             </div>
 
-            {/* Harmonious Countdown Badge: Ders ziline / sonraki derse kalan süre */}
-            <div className="flex items-center gap-2.5 bg-gradient-to-r from-blue-50 to-indigo-50/80 dark:from-[#15213B] dark:to-[#1A2849] px-4 py-2 rounded-2xl border border-blue-200/70 dark:border-blue-800/60 shadow-xs shrink-0 self-start sm:self-auto">
-              <Clock size={16} className="text-[#1D77FF] dark:text-blue-400" />
-              <div>
-                <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block leading-tight">
-                  {liveState.status === 'in_lesson'
-                    ? 'Teneffüse Kalan'
-                    : liveState.status === 'before_school'
-                    ? 'Ders Ziline Kalan'
-                    : 'Sonraki Derse Kalan'}
-                </span>
-                <span className="text-sm sm:text-base font-black font-mono text-[#1D77FF] dark:text-blue-300 tracking-wider">
-                  {formatCountdown(liveState.remainingSeconds)}
-                </span>
+            {/* Live Lesson Status Indicator (No countdown timer) */}
+            {liveState.status === 'in_lesson' ? (
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800/50 text-xs font-black shadow-xs shrink-0 self-start sm:self-auto">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Canlı Ders Devam Ediyor</span>
               </div>
-            </div>
+            ) : (
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-slate-100/80 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/60 text-xs font-bold shadow-xs shrink-0 self-start sm:self-auto">
+                <Clock size={15} className="text-[#1D77FF]" />
+                <span className="font-extrabold text-slate-800 dark:text-slate-200">Canlı ders henüz başlamadı</span>
+              </div>
+            )}
           </div>
 
           {/* Active Lesson / Break Title & Info */}
@@ -582,8 +578,9 @@ export default function LiveClassRadar({
               </>
             ) : liveState.status === 'before_school' ? (
               <>
-                <h3 className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400">
-                  Sabah Hazırlığı ve Ders Öncesi
+                <h3 className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400 flex items-center gap-2">
+                  <Clock size={22} className="text-[#1D77FF]" />
+                  <span>Canlı ders henüz başlamadı</span>
                 </h3>
                 <p className="text-xs text-gray-600 dark:text-gray-300">
                   Günün ilk dersi:{' '}
