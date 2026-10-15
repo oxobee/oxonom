@@ -229,8 +229,8 @@ export const CANONICAL_SCHOOL_EXAMS: SchoolExamItem[] = [
     teacherName: 'Ebru TEKNECİ',
     scope: 'Giriş Ünitesi, Edebiyatın Sanatlarla İlişkisi, İletişim Ögeleri ve Hikaye Tahlili',
     isPublished: true,
-    status: 'completed',
-    scores: { 's-1': 98 },
+    status: 'upcoming',
+    scores: {},
   },
   {
     id: 'exam-mat-1',
@@ -247,8 +247,8 @@ export const CANONICAL_SCHOOL_EXAMS: SchoolExamItem[] = [
     teacherName: 'Ebru TEKNECİ',
     scope: 'Önermeler, Bileşik Önermeler ve Kümelerde İşlemler',
     isPublished: true,
-    status: 'completed',
-    scores: { 's-1': 96 },
+    status: 'upcoming',
+    scores: {},
   },
   {
     id: 'exam-ede-sozlu-1',
@@ -265,8 +265,8 @@ export const CANONICAL_SCHOOL_EXAMS: SchoolExamItem[] = [
     teacherName: 'Ebru TEKNECİ',
     scope: 'Ezbere şiir okuma, tonlama ve vurgu, divan şiiri ahenk tahlili',
     isPublished: true,
-    status: 'completed',
-    scores: { 's-1': 100 },
+    status: 'upcoming',
+    scores: {},
   },
   {
     id: 'exam-mat-perf-1',
@@ -283,8 +283,8 @@ export const CANONICAL_SCHOOL_EXAMS: SchoolExamItem[] = [
     teacherName: 'Ebru TEKNECİ',
     scope: 'Günlük hayat problemlerinin fonksiyonlarla modellenmesi ve grafik çizimi',
     isPublished: true,
-    status: 'completed',
-    scores: { 's-1': 100 },
+    status: 'upcoming',
+    scores: {},
   },
   {
     id: 'exam-ede-quiz-1',

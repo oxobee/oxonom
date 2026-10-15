@@ -226,6 +226,25 @@ export default function GlobalLoginClient() {
           localStorage.removeItem('oxonom_active_admin_session')
           localStorage.removeItem('oxonom_teacher_profile')
           localStorage.setItem('oxonom_current_role', 'student')
+
+          let currentGpa = 0
+          let currentRank = 1
+          let currentStatus = 'Temiz Sicil'
+          try {
+            const rawM = localStorage.getItem('oxonom_m_students_v3')
+            if (rawM) {
+              const parsedM = JSON.parse(rawM)
+              if (Array.isArray(parsedM)) {
+                const found = parsedM.find((s: any) => s.id === 's-1' || s.studentNo === '101')
+                if (found) {
+                  if (typeof found.gpa === 'number') currentGpa = found.gpa
+                  if (typeof found.classRank === 'number') currentRank = found.classRank
+                  if (found.disciplineStatus) currentStatus = found.disciplineStatus
+                }
+              }
+            }
+          } catch (_) {}
+
           localStorage.setItem(
             'oxonom_student_profile',
             JSON.stringify({
@@ -244,8 +263,8 @@ export default function GlobalLoginClient() {
               gradeLevel: '9. Sınıf',
               mentorTeacher: 'Ebru TEKNECİ (Türk Dili ve Edebiyatı)',
               schoolName: 'Oxonom Okulları',
-              gpa: 98.8,
-              classRank: 1,
+              gpa: currentGpa,
+              classRank: currentRank,
               attendanceRate: 100,
               absentDays: 0,
               parentName: 'Ebru UĞURLU',
@@ -256,7 +275,7 @@ export default function GlobalLoginClient() {
               secondParentRelation: 'Baba (Kurum Müdürü)',
               emergencyPhone: '+90 532 999 2200',
               address: 'Caddebostan Mah. Bağdat Cad. No: 142/5 Kadıköy / İstanbul',
-              disciplineStatus: 'Temiz Sicil — Üstün Başarı Onur Belgesi',
+              disciplineStatus: currentStatus,
             })
           )
         }

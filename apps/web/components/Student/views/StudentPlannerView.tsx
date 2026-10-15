@@ -61,8 +61,13 @@ const INITIAL_NOTES: StudentNote[] = [
 export default function StudentPlannerView({ initialTab = 'all' }: StudentPlannerViewProps) {
   const [activeTab, setActiveTab] = useState<'all' | 'calendar' | 'notes' | 'tasks'>(initialTab)
   const [tasks, setTasks] = useState<PlannerTask[]>([])
+  const [assessments, setAssessments] = useState<StudentAssessment[]>(() => {
+    if (typeof window !== 'undefined') {
+      return getSynchronizedStudentAssessments()
+    }
+    return []
+  })
   const [notes, setNotes] = useState<StudentNote[]>(INITIAL_NOTES)
-  const [assessments, setAssessments] = useState<StudentAssessment[]>(STUDENT_ASSESSMENTS)
   const [examFilter, setExamFilter] = useState<'all' | 'upcoming' | 'completed'>('all')
 
   // New task form state
@@ -89,7 +94,23 @@ export default function StudentPlannerView({ initialTab = 'all' }: StudentPlanne
         .then((r) => r.json())
         .then((d) => {
           if (d.success && Array.isArray(d.exams) && d.exams.length > 0) {
-            localStorage.setItem('oxonom_school_exam_calendar', JSON.stringify(d.exams))
+            try {
+              const localRaw = localStorage.getItem('oxonom_school_exam_calendar')
+              if (!localRaw) {
+                localStorage.setItem('oxonom_school_exam_calendar', JSON.stringify(d.exams))
+              } else {
+                const localExams = JSON.parse(localRaw)
+                if (Array.isArray(localExams)) {
+                  const merged = [...localExams]
+                  d.exams.forEach((se: any) => {
+                    if (!merged.some((le: any) => le.id === se.id)) {
+                      merged.push(se)
+                    }
+                  })
+                  localStorage.setItem('oxonom_school_exam_calendar', JSON.stringify(merged))
+                }
+              }
+            } catch (_) {}
             setAssessments(getSynchronizedStudentAssessments())
           }
         })
@@ -513,7 +534,7 @@ export default function StudentPlannerView({ initialTab = 'all' }: StudentPlanne
                             }`}
                           >
                             {isCompleted
-                              ? `Not: ${exam.score ?? 100}/100`
+                              ? (exam.score !== undefined ? `Not: ${exam.score}/100` : 'Tamamlandı')
                               : isQuiz
                               ? 'Mini Quiz'
                               : 'Yazılı Sınav'}

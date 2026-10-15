@@ -309,14 +309,14 @@ export default function TeacherAssessmentsView() {
         const grade = st.grades?.find((g) => g.courseName === exam.courseName)
         if (grade) {
           if (exam.type === 'oral' || (exam.examTypeLabel || '').includes('sözlü') || exam.type === 'performance') {
-            initialScores[st.id] = grade.performance !== undefined ? grade.performance : 100
+            initialScores[st.id] = grade.performance !== undefined && grade.performance !== null ? grade.performance : ''
           } else if (exam.title.includes('2.') || (exam.period && exam.period > 2)) {
-            initialScores[st.id] = grade.exam2 !== undefined ? grade.exam2 : 98
+            initialScores[st.id] = grade.exam2 !== undefined && grade.exam2 !== null ? grade.exam2 : ''
           } else {
-            initialScores[st.id] = grade.exam1 !== undefined ? grade.exam1 : 98
+            initialScores[st.id] = grade.exam1 !== undefined && grade.exam1 !== null ? grade.exam1 : ''
           }
         } else {
-          initialScores[st.id] = 100
+          initialScores[st.id] = ''
         }
       }
     })

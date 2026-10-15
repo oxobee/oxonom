@@ -47,14 +47,6 @@ interface StudentProgressViewProps {
   initialTab?: ProgressTabType | string
 }
 
-const FALLBACK_COURSES = [
-  { courseName: 'Türk Dili ve Edebiyatı', teacherName: 'Ebru TEKNECİ', exam1: 98, exam2: 100, performance: 100, average: 99.3 },
-  { courseName: 'Matematik', teacherName: 'Ebru TEKNECİ', exam1: 96, exam2: 98, performance: 100, average: 98.0 },
-  { courseName: 'Bilişim & Kodlama', teacherName: 'Ebru TEKNECİ', exam1: 100, exam2: 98, performance: 100, average: 99.0 },
-  { courseName: 'Yabancı Dil (İngilizce)', teacherName: 'Yabancı Dil Zümresi', exam1: 100, exam2: 98, performance: 100, average: 99.3 },
-  { courseName: 'Fizik & Fen Bilimleri', teacherName: 'Fen Zümresi', exam1: 95, exam2: 98, performance: 100, average: 97.6 },
-]
-
 export default function StudentProgressView({
   initialTab = 'all',
 }: StudentProgressViewProps) {
@@ -97,7 +89,7 @@ export default function StudentProgressView({
 
   // Grades list
   const courseGrades = useMemo(() => {
-    return (profile.grades && profile.grades.length > 0) ? profile.grades : FALLBACK_COURSES
+    return profile.grades && profile.grades.length > 0 ? profile.grades : []
   }, [profile.grades])
 
   // Academic Improvement Analysis (Kötü veya kötüye giden dersler ve gelişim analizleri)

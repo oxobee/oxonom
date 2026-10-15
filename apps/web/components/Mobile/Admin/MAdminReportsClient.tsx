@@ -112,21 +112,60 @@ export default function MAdminReportsClient({
   // ── DATA: CLASS SUCCESS RANKINGS ──
   const classData = useMemo(() => {
     if (selectedOrgId === 30) {
+      let avg = 0
+      let topSub = 'Türk Dili ve Edebiyatı'
+      let riskCount = 0
+      let awardCounts = { takdir: 0, tesekkur: 0, normal: 1 }
+      let subjects = [
+        { name: 'Türk Dili ve Edebiyatı', avg: 0 },
+        { name: 'Matematik', avg: 0 },
+        { name: 'Bilişim & Kodlama', avg: 0 },
+      ]
+
+      if (typeof window !== 'undefined') {
+        try {
+          const rawM = localStorage.getItem('oxonom_m_students_v3')
+          if (rawM) {
+            const parsed = JSON.parse(rawM)
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              const s = parsed.find((st: any) => st.className?.includes('9-A') || st.className?.includes('9/A')) || parsed[0]
+              if (s) {
+                if (s.grades && s.grades.length > 0) {
+                  const valid = s.grades.filter((g: any) => g.average !== undefined && g.average !== null && !isNaN(Number(g.average)))
+                  if (valid.length > 0) {
+                    avg = Number((valid.reduce((sum: number, g: any) => sum + Number(g.average), 0) / valid.length).toFixed(1))
+                    subjects = valid.map((g: any) => ({ name: g.courseName, avg: Number(g.average) }))
+                    const best = [...valid].sort((a: any, b: any) => Number(b.average) - Number(a.average))[0]
+                    if (best) topSub = `${best.courseName} (${best.average})`
+                  }
+                } else if (typeof s.gpa === 'number') {
+                  avg = s.gpa
+                }
+                if (avg < 50) {
+                  riskCount = 1
+                  awardCounts = { takdir: 0, tesekkur: 0, normal: 0 }
+                } else if (avg >= 85) {
+                  awardCounts = { takdir: 1, tesekkur: 0, normal: 0 }
+                } else if (avg >= 70) {
+                  awardCounts = { takdir: 0, tesekkur: 1, normal: 0 }
+                }
+              }
+            }
+          }
+        } catch (_) {}
+      }
+
       return [
         {
           code: '9/A',
           teacher: 'Ebru TEKNECİ',
           students: 1,
-          average: 98.8,
+          average: avg,
           attendanceRate: 100,
-          topSubject: 'Türk Dili ve Edebiyatı (99.3)',
-          riskCount: 0,
-          awardCounts: { takdir: 1, tesekkur: 0, normal: 0 },
-          subjects: [
-            { name: 'Türk Dili ve Edebiyatı', avg: 99.3 },
-            { name: 'Matematik', avg: 98.0 },
-            { name: 'Bilişim & Kodlama', avg: 99.0 },
-          ],
+          topSubject: topSub,
+          riskCount,
+          awardCounts,
+          subjects,
         },
       ]
     }

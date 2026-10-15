@@ -76,7 +76,7 @@ export const DEFAULT_STUDENT_PROFILE: StudentProfile = {
   gradeLevel: '9. Sınıf',
   mentorTeacher: 'Ebru TEKNECİ (Türk Dili ve Edebiyatı)',
   schoolName: 'Oxonom Okulları',
-  gpa: 98.8,
+  gpa: 0,
   classRank: 1,
   attendanceRate: 100,
   absentDays: 0,
@@ -88,7 +88,7 @@ export const DEFAULT_STUDENT_PROFILE: StudentProfile = {
   secondParentRelation: 'Baba (Kurum Müdürü)',
   emergencyPhone: '+90 532 999 2200',
   address: 'Caddebostan Mah. Bağdat Cad. No: 142/5 Kadıköy / İstanbul',
-  disciplineStatus: 'Temiz Sicil — Üstün Başarı Onur Belgesi',
+  disciplineStatus: 'Temiz Sicil — Örnek Öğrenci',
 }
 
 export interface StudentCourse {
@@ -257,11 +257,10 @@ export const STUDENT_ASSESSMENTS: StudentAssessment[] = [
     durationMinutes: 40,
     location: 'Derslik 101 (9-A)',
     maxScore: 100,
-    score: 98,
-    isGraded: true,
+    score: undefined,
+    isGraded: false,
     isPublished: true,
-    teacherFeedback: 'Edebi metin tahlili ve şiir bilgisi sorularında üstün başarı gösterilmiştir.',
-    status: 'completed',
+    status: 'upcoming',
   },
   {
     id: 'as-2',
@@ -273,11 +272,10 @@ export const STUDENT_ASSESSMENTS: StudentAssessment[] = [
     durationMinutes: 40,
     location: 'Derslik 101 (9-A)',
     maxScore: 100,
-    score: 100,
-    isGraded: true,
+    score: undefined,
+    isGraded: false,
     isPublished: true,
-    teacherFeedback: 'Kusursuz kompozisyon ve tam puan.',
-    status: 'completed',
+    status: 'upcoming',
   },
   {
     id: 'as-3',
@@ -289,11 +287,10 @@ export const STUDENT_ASSESSMENTS: StudentAssessment[] = [
     durationMinutes: 40,
     location: 'Derslik 101 (9-A)',
     maxScore: 100,
-    score: 96,
-    isGraded: true,
+    score: undefined,
+    isGraded: false,
     isPublished: true,
-    teacherFeedback: 'Kümeler ve önermeler bölümleri eksiksiz, işlem adımları çok düzenli.',
-    status: 'completed',
+    status: 'upcoming',
   },
   {
     id: 'as-4',
@@ -305,11 +302,10 @@ export const STUDENT_ASSESSMENTS: StudentAssessment[] = [
     durationMinutes: 40,
     location: 'Derslik 101 (9-A)',
     maxScore: 100,
-    score: 98,
-    isGraded: true,
+    score: undefined,
+    isGraded: false,
     isPublished: true,
-    teacherFeedback: 'Denklem kurma ve problem çözme metodolojisi harika.',
-    status: 'completed',
+    status: 'upcoming',
   },
   {
     id: 'as-5',
@@ -321,11 +317,10 @@ export const STUDENT_ASSESSMENTS: StudentAssessment[] = [
     durationMinutes: 40,
     location: 'Bilişim Atölyesi',
     maxScore: 100,
-    score: 100,
-    isGraded: true,
+    score: undefined,
+    isGraded: false,
     isPublished: true,
-    teacherFeedback: 'Akıllı tahta entegrasyonu ve kod yazım temizliği mükemmel.',
-    status: 'completed',
+    status: 'upcoming',
   },
   {
     id: 'as-6',
@@ -337,11 +332,10 @@ export const STUDENT_ASSESSMENTS: StudentAssessment[] = [
     durationMinutes: 40,
     location: 'Derslik 101 (9-A)',
     maxScore: 100,
-    score: 100,
-    isGraded: true,
+    score: undefined,
+    isGraded: false,
     isPublished: true,
-    teacherFeedback: 'Native-level writing and vocabulary structure.',
-    status: 'completed',
+    status: 'upcoming',
   },
   {
     id: 'as-7',
@@ -551,18 +545,30 @@ export function getSynchronizedStudentProfile(): StudentProfile {
         : ALL_INITIAL_STUDENTS[0]?.grades || []
 
     let calculatedGpa = 0
-    if (grades.length > 0) {
-      const totalAvg = grades.reduce((acc, g) => {
+    const gradedCourses = grades.filter((g) => {
+      const hasE1 = g.exam1 !== undefined && g.exam1 !== null && String(g.exam1) !== ''
+      const hasE2 = g.exam2 !== undefined && g.exam2 !== null && String(g.exam2) !== ''
+      const hasPf = g.performance !== undefined && g.performance !== null && String(g.performance) !== ''
+      const hasAvg = g.average !== undefined && g.average !== null && !isNaN(Number(g.average)) && String(g.average) !== ''
+      return hasE1 || hasE2 || hasPf || hasAvg
+    })
+
+    if (gradedCourses.length > 0) {
+      const totalAvg = gradedCourses.reduce((acc, g) => {
+        const e1 = g.exam1 !== undefined && g.exam1 !== null && String(g.exam1) !== '' ? Number(g.exam1) : null
+        const e2 = g.exam2 !== undefined && g.exam2 !== null && String(g.exam2) !== '' ? Number(g.exam2) : null
+        const pf = g.performance !== undefined && g.performance !== null && String(g.performance) !== '' ? Number(g.performance) : null
+
         let avg = g.average
-        if (avg === undefined || avg === null || isNaN(Number(avg))) {
-          const e1 = Number(g.exam1) || 0
-          const e2 = Number(g.exam2) || 0
-          const pf = Number(g.performance) || 0
-          avg = Number(((e1 * 0.4) + (e2 * 0.4) + (pf * 0.2)).toFixed(1))
+        if (avg === undefined || avg === null || isNaN(Number(avg)) || String(avg) === '') {
+          const v1 = e1 ?? (e2 ?? pf ?? 0)
+          const v2 = e2 ?? (e1 ?? pf ?? 0)
+          const vp = pf ?? (e1 ?? e2 ?? 0)
+          avg = Number(((v1 * 0.4) + (v2 * 0.4) + (vp * 0.2)).toFixed(1))
         }
         return acc + Number(avg)
       }, 0)
-      calculatedGpa = Number((totalAvg / grades.length).toFixed(1))
+      calculatedGpa = Number((totalAvg / gradedCourses.length).toFixed(1))
     } else if (typeof studentRecord.gpa === 'number') {
       calculatedGpa = studentRecord.gpa
     } else if (studentRecord.gpa) {
@@ -573,14 +579,27 @@ export function getSynchronizedStudentProfile(): StudentProfile {
 
     // Dynamic Class Rank based on GPA
     let classRank = studentRecord.classRank || 1
-    if (calculatedGpa < 50) {
-      classRank = 30
-    } else if (calculatedGpa < 70) {
-      classRank = 18
-    } else if (calculatedGpa < 85) {
-      classRank = 8
+    if (calculatedGpa > 0) {
+      if (calculatedGpa < 50) {
+        classRank = 30
+      } else if (calculatedGpa < 70) {
+        classRank = 18
+      } else if (calculatedGpa < 85) {
+        classRank = 8
+      } else {
+        classRank = 1
+      }
     } else {
-      classRank = 1
+      classRank = studentRecord.classRank || 1
+    }
+
+    let disciplineStatus = studentRecord.disciplineStatus || 'Temiz Sicil'
+    if (calculatedGpa >= 85) {
+      disciplineStatus = 'Temiz Sicil — Üstün Başarı Onur Belgesi'
+    } else if (calculatedGpa >= 60) {
+      disciplineStatus = 'Temiz Sicil — Başarı Takip Sürecinde'
+    } else if (calculatedGpa > 0) {
+      disciplineStatus = 'Temiz Sicil — Akademik Destek ve Etüt Takibinde'
     }
 
     // 4. Live Attendance Synchronization from teacher's attendance service
@@ -647,7 +666,7 @@ export function getSynchronizedStudentProfile(): StudentProfile {
       secondParentRelation: studentRecord.secondParentRelation || 'Baba (Kurum Müdürü)',
       emergencyPhone: studentRecord.emergencyPhone || '+90 532 999 2200',
       address: studentRecord.address || 'Caddebostan Mah. Bağdat Cad. No: 142/5 Kadıköy / İstanbul',
-      disciplineStatus: studentRecord.disciplineStatus || 'Temiz Sicil — Üstün Başarı Onur Belgesi',
+      disciplineStatus,
       specialHealthNote: studentRecord.specialHealthNote,
       notes: studentRecord.notes,
       guidanceNotes: (studentRecord.guidanceNotes as any) || [],
@@ -789,15 +808,32 @@ export function getSynchronizedStudentAssessments(): StudentAssessment[] {
           ? 'Deneme Sınavı'
           : 'Yazılı Sınav')
 
-      // Find if we have an existing assessment matching this title and course
-      const existing = assessments.find(
-        (a) =>
-          a.id === ce.id ||
-          (a.courseName.toLowerCase().includes(ce.courseName.toLowerCase()) &&
-            a.title.toLowerCase().includes(ce.title.toLowerCase()))
-      )
+      // Find if we have an existing assessment matching this course and exam order / type
+      const existing = assessments.find((a) => {
+        if (a.id === ce.id) return true
+        const sameCourse =
+          a.courseName.toLowerCase().includes(ce.courseName.toLowerCase()) ||
+          ce.courseName.toLowerCase().includes(a.courseName.toLowerCase())
+        if (!sameCourse) return false
+
+        const is1st =
+          (a.title.includes('1.') || a.id.startsWith('exam1-')) &&
+          (ce.title.includes('1.') || ce.id.includes('1'))
+        const is2nd =
+          (a.title.includes('2.') || a.id.startsWith('exam2-')) &&
+          (ce.title.includes('2.') || ce.id.includes('2'))
+        const isPerf =
+          (a.type === 'performance' || a.id.startsWith('perf-')) &&
+          (ce.type === 'performance' ||
+            ce.type === 'oral' ||
+            (ce.examTypeLabel || '').includes('Performans') ||
+            (ce.examTypeLabel || '').includes('Sözlü'))
+
+        return is1st || is2nd || isPerf
+      })
 
       if (existing) {
+        existing.id = ce.id || existing.id
         existing.date = ce.date || existing.date
         existing.time = ce.time || existing.time
         existing.location = ce.location || existing.location
@@ -812,6 +848,29 @@ export function getSynchronizedStudentAssessments(): StudentAssessment[] {
           existing.status = 'completed'
         }
       } else {
+        const courseGrade = grades.find(
+          (g) =>
+            g.courseName.toLowerCase().includes(ce.courseName.toLowerCase()) ||
+            ce.courseName.toLowerCase().includes(g.courseName.toLowerCase())
+        )
+        let resolvedScore = hasScore ? Number(studentScore) : undefined
+        if (resolvedScore === undefined && courseGrade) {
+          if (ce.title.includes('1.') || ce.id.includes('1')) {
+            if (courseGrade.exam1 !== undefined && courseGrade.exam1 !== null && String(courseGrade.exam1) !== '') {
+              resolvedScore = Number(courseGrade.exam1)
+            }
+          } else if (ce.title.includes('2.') || ce.id.includes('2')) {
+            if (courseGrade.exam2 !== undefined && courseGrade.exam2 !== null && String(courseGrade.exam2) !== '') {
+              resolvedScore = Number(courseGrade.exam2)
+            }
+          } else if (ce.type === 'performance' || ce.type === 'oral') {
+            if (courseGrade.performance !== undefined && courseGrade.performance !== null && String(courseGrade.performance) !== '') {
+              resolvedScore = Number(courseGrade.performance)
+            }
+          }
+        }
+
+        const isGraded = resolvedScore !== undefined
         assessments.push({
           id: ce.id || `as-custom-${Date.now()}-${Math.random().toString(36).substring(7)}`,
           title: ce.title,
@@ -824,14 +883,16 @@ export function getSynchronizedStudentAssessments(): StudentAssessment[] {
           durationMinutes: ce.durationMinutes || 40,
           location: ce.location || `Derslik 101 (${currentClass})`,
           maxScore: 100,
-          score: hasScore ? Number(studentScore) : undefined,
-          isGraded: hasScore,
+          score: resolvedScore,
+          isGraded,
           isPublished: true,
-          status: hasScore || ce.status === 'completed' ? 'completed' : ce.status || 'upcoming',
-          teacherFeedback: hasScore
-            ? Number(studentScore) >= 90
+          status: isGraded ? 'completed' : 'upcoming',
+          teacherFeedback: isGraded && resolvedScore !== undefined
+            ? resolvedScore >= 85
               ? `${ce.teacherName || 'Öğretmen'}: Tebrikler, üstün akademik başarı.`
-              : `${ce.teacherName || 'Öğretmen'}: Başarılı çalışma, eksikler pekiştirilmeli.`
+              : resolvedScore >= 50
+              ? `${ce.teacherName || 'Öğretmen'}: Başarılı çalışma, eksikler pekiştirilmeli.`
+              : `${ce.teacherName || 'Öğretmen'}: Kritik seviye. Birebir etüt ve konu telafisi gereklidir.`
             : undefined,
           scope: ce.scope,
           teacherName: ce.teacherName || 'Ebru TEKNECİ',

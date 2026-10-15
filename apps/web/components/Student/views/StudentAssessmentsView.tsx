@@ -66,7 +66,7 @@ export default function StudentAssessmentsView({
     }
   }, [])
 
-  const displayAssessments = assessments.length > 0 ? assessments : STUDENT_ASSESSMENTS
+  const displayAssessments = assessments
 
   // Helper to normalize assessment type
   const normalizeType = (item: StudentAssessment): 'written' | 'oral' | 'quiz' | 'performance' | 'mock' => {
@@ -178,7 +178,7 @@ export default function StudentAssessmentsView({
     ? (
         publishedScores.reduce((acc, curr) => acc + (curr.score || 0), 0) / publishedScores.length
       ).toFixed(1)
-    : '98.8'
+    : '-'
 
   return (
     <div className="p-4 lg:p-8 max-w-7xl mx-auto space-y-6 font-jakarta">
@@ -210,7 +210,7 @@ export default function StudentAssessmentsView({
                 Sınav Not Ortalaması
               </div>
               <div className="text-xl font-black text-amber-900 dark:text-amber-100">
-                {averageScore} <span className="text-xs font-normal text-amber-700 dark:text-amber-400">/ 100</span>
+                {averageScore} {averageScore !== '-' && <span className="text-xs font-normal text-amber-700 dark:text-amber-400">/ 100</span>}
               </div>
             </div>
           </div>

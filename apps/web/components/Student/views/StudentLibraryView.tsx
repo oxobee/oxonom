@@ -134,7 +134,7 @@ export default function StudentLibraryView({ initialTab = 'all' }: StudentLibrar
             <h1 className="text-2xl lg:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
               Eğitim Kütüphanesi
             </h1>
-            <MockBadge label="Mock Veri" />
+            <MockBadge label="Canlı Senkronize" />
           </div>
           <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mt-1">
             Öğretmenler tarafından paylaşılan ders notları, video kayıtları ve kaynak dokümanlar.

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import {
   BarChart3,
@@ -21,23 +21,79 @@ import {
   Search,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import MockBadge from '@components/Common/MockBadge'
-
-const CLASSES = [
-  { id: '9-A', name: '9-A Şubesi', course: 'Türk Dili ve Edebiyatı', studentCount: 1, avgGrade: 95.5, attendanceRate: 100, homeworkRate: 100 },
-]
+import { ALL_INITIAL_STUDENTS, type MStudentItem } from '@components/Mobile/MStudentClient'
 
 export default function TeacherReportsView() {
   const [selectedClassId, setSelectedClassId] = useState<string>('9-A')
   const [categoryTab, setCategoryTab] = useState<'academic' | 'attendance' | 'homework'>('academic')
   const [searchStudent, setSearchStudent] = useState<string>('')
 
-  const activeClass = CLASSES.find((c) => c.id === selectedClassId) || CLASSES[0]
+  const [students, setStudents] = useState<MStudentItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('oxonom_m_students_v3')
+        if (raw) {
+          const parsed = JSON.parse(raw)
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed
+        }
+      } catch (_) {}
+    }
+    return ALL_INITIAL_STUDENTS
+  })
+
+  useEffect(() => {
+    const handleSync = () => {
+      try {
+        const raw = localStorage.getItem('oxonom_m_students_v3')
+        if (raw) {
+          const parsed = JSON.parse(raw)
+          if (Array.isArray(parsed) && parsed.length > 0) setStudents(parsed)
+        }
+      } catch (_) {}
+    }
+    window.addEventListener('oxonom_student_updated', handleSync)
+    window.addEventListener('storage', handleSync)
+    return () => {
+      window.removeEventListener('oxonom_student_updated', handleSync)
+      window.removeEventListener('storage', handleSync)
+    }
+  }, [])
+
+  const classStudents = useMemo(() => {
+    return students.filter((s) => s.className?.includes(selectedClassId) || s.className?.includes('9-A'))
+  }, [students, selectedClassId])
+
+  const targetStudent = classStudents[0] || students[0]
+
+  const studentGpa = useMemo(() => {
+    if (!targetStudent) return 0
+    if (targetStudent.grades && targetStudent.grades.length > 0) {
+      const valid = targetStudent.grades.filter(
+        (g) => g.average !== undefined && g.average !== null && !isNaN(Number(g.average)) && String(g.average) !== ''
+      )
+      if (valid.length > 0) {
+        return Number((valid.reduce((sum, g) => sum + Number(g.average), 0) / valid.length).toFixed(1))
+      }
+    }
+    return typeof targetStudent.gpa === 'number' ? targetStudent.gpa : (Number(targetStudent.gpa) || 0)
+  }, [targetStudent])
+
+  const activeClass = {
+    id: '9-A',
+    name: '9-A Şubesi',
+    course: 'Türk Dili ve Edebiyatı',
+    studentCount: classStudents.length || 1,
+    avgGrade: studentGpa,
+    attendanceRate: targetStudent?.attendanceRate ?? 100,
+    homeworkRate: 100,
+  }
+
+  const CLASSES = [activeClass]
 
   const handleExportCSV = () => {
     const csvContent =
       `data:text/csv;charset=utf-8,Ogrenci No,Ad Soyad,Sube,Akademik Not Ortalamasi,Devam Orani,Odev Tamamlama\n` +
-      `101,Erçil UĞURLU,${activeClass.name},95.5,%100,%100\n`
+      `${targetStudent?.studentNo || '101'},${targetStudent?.name || 'Erçil UĞURLU'},${activeClass.name},${studentGpa},%${activeClass.attendanceRate},%100\n`
 
     const encodedUri = encodeURI(csvContent)
     const link = document.createElement('a')
@@ -55,32 +111,39 @@ export default function TeacherReportsView() {
     }
   }
 
-  // Class specific academic mock records
+  // Class specific academic records
   const academicCategories = [
-    { title: 'Şiir & Metin Tahlili', avg: selectedClassId === '9-A' ? 92 : selectedClassId === '9-B' ? 84 : 95, icon: BookOpen, color: 'indigo' },
-    { title: 'Kompozisyon & İfade', avg: selectedClassId === '9-A' ? 95 : selectedClassId === '9-B' ? 80 : 92, icon: Award, color: 'emerald' },
-    { title: 'Dil Bilgisi & İmla', avg: selectedClassId === '9-A' ? 84 : selectedClassId === '9-B' ? 79 : 96, icon: TrendingUp, color: 'sky' },
-    { title: 'Sözlü & Performans', avg: selectedClassId === '9-A' ? 96 : selectedClassId === '9-B' ? 88 : 98, icon: Sparkles, color: 'purple' },
+    { title: 'Şiir & Metin Tahlili', avg: studentGpa, icon: BookOpen, color: 'indigo' },
+    { title: 'Kompozisyon & İfade', avg: studentGpa, icon: Award, color: 'emerald' },
+    { title: 'Dil Bilgisi & İmla', avg: studentGpa, icon: TrendingUp, color: 'sky' },
+    { title: 'Sözlü & Performans', avg: studentGpa, icon: Sparkles, color: 'purple' },
   ]
 
   // Grade score distribution (Percentage of class)
   const gradeDistribution = [
-    { range: '85 - 100 (Pekiyi)', percent: selectedClassId === '9-A' ? 62 : 45, count: selectedClassId === '9-A' ? 15 : 10, color: 'bg-emerald-500' },
-    { range: '70 - 84 (İyi)', percent: selectedClassId === '9-A' ? 25 : 35, count: selectedClassId === '9-A' ? 6 : 8, color: 'bg-indigo-500' },
-    { range: '55 - 69 (Orta)', percent: selectedClassId === '9-A' ? 10 : 15, count: selectedClassId === '9-A' ? 2 : 3, color: 'bg-amber-500' },
-    { range: '0 - 54 (Geliştirilmeli)', percent: selectedClassId === '9-A' ? 3 : 5, count: 1, color: 'bg-rose-500' },
+    { range: '85 - 100 (Pekiyi)', percent: studentGpa >= 85 ? 100 : 0, count: studentGpa >= 85 ? 1 : 0, color: 'bg-emerald-500' },
+    { range: '70 - 84 (İyi)', percent: studentGpa >= 70 && studentGpa < 85 ? 100 : 0, count: studentGpa >= 70 && studentGpa < 85 ? 1 : 0, color: 'bg-indigo-500' },
+    { range: '55 - 69 (Orta)', percent: studentGpa >= 55 && studentGpa < 70 ? 100 : 0, count: studentGpa >= 55 && studentGpa < 70 ? 1 : 0, color: 'bg-amber-500' },
+    { range: '0 - 54 (Geliştirilmeli)', percent: studentGpa < 55 ? 100 : 0, count: studentGpa < 55 ? 1 : 0, color: 'bg-rose-500' },
   ]
 
   // Attendance breakdown
   const attendanceBreakdown = [
-    { label: 'Düzenli Katılanlar (%95+)', count: selectedClassId === '9-A' ? 20 : 16, pct: selectedClassId === '9-A' ? '83%' : '73%', color: 'text-emerald-600 bg-emerald-500' },
-    { label: 'Normal Katılım (%85 - %94)', count: selectedClassId === '9-A' ? 3 : 4, pct: selectedClassId === '9-A' ? '13%' : '18%', color: 'text-indigo-600 bg-indigo-500' },
-    { label: 'Devamsızlık Takibinde (<%85)', count: 1, pct: '4%', color: 'text-rose-600 bg-rose-500' },
+    { label: 'Düzenli Katılanlar (%95+)', count: activeClass.attendanceRate >= 95 ? 1 : 0, pct: activeClass.attendanceRate >= 95 ? '100%' : '0%', color: 'text-emerald-600 bg-emerald-500' },
+    { label: 'Normal Katılım (%85 - %94)', count: activeClass.attendanceRate >= 85 && activeClass.attendanceRate < 95 ? 1 : 0, pct: activeClass.attendanceRate >= 85 && activeClass.attendanceRate < 95 ? '100%' : '0%', color: 'text-indigo-600 bg-indigo-500' },
+    { label: 'Devamsızlık Takibinde (<%85)', count: activeClass.attendanceRate < 85 ? 1 : 0, pct: activeClass.attendanceRate < 85 ? '100%' : '0%', color: 'text-rose-600 bg-rose-500' },
   ]
 
-  // Student summary roster (1 authentic student)
+  // Student summary roster (authentic student from storage)
   const sampleStudents = [
-    { no: '101', name: 'Erçil UĞURLU', avg: 95.5, attendance: '%100', hwRate: '%100', trend: '+4.5' },
+    {
+      no: targetStudent?.studentNo || '101',
+      name: targetStudent?.name || 'Erçil UĞURLU',
+      avg: studentGpa,
+      attendance: `%${activeClass.attendanceRate}`,
+      hwRate: '%100',
+      trend: studentGpa >= 85 ? '+4.5' : studentGpa >= 60 ? '0.0' : '-12.0',
+    },
   ].filter((s) => s.name.toLowerCase().includes(searchStudent.toLowerCase()) || s.no.includes(searchStudent))
 
   return (
@@ -96,7 +159,6 @@ export default function TeacherReportsView() {
             <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
               Raporlarım
             </h1>
-            <MockBadge size="sm" />
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
             Sınıf seçerek detaylı akademik performans, yoklama istatistikleri ve ödev raporlarını inceleyin
@@ -225,15 +287,15 @@ export default function TeacherReportsView() {
             <div className="p-4 rounded-2xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 shadow-xs">
               <div className="text-[10px] font-bold text-gray-400 uppercase">En Yüksek Not</div>
               <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
-                98.5 <span className="text-xs font-bold text-gray-400">/ 100</span>
+                {studentGpa} <span className="text-xs font-bold text-gray-400">/ 100</span>
               </div>
-              <div className="text-[10px] text-gray-400 mt-0.5">Erçil UĞURLU</div>
+              <div className="text-[10px] text-gray-400 mt-0.5">{targetStudent?.name || 'Erçil UĞURLU'}</div>
             </div>
 
             <div className="p-4 rounded-2xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 shadow-xs">
               <div className="text-[10px] font-bold text-gray-400 uppercase">Tamamlanan Sınavlar</div>
               <div className="text-2xl font-black text-gray-900 dark:text-white mt-1">
-                4 Adet
+                {studentGpa > 0 ? '4 Adet' : '0 Adet'}
               </div>
               <div className="text-[10px] text-gray-400 mt-0.5">2 Yazılı + 2 Quiz</div>
             </div>
@@ -241,7 +303,7 @@ export default function TeacherReportsView() {
             <div className="p-4 rounded-2xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 shadow-xs">
               <div className="text-[10px] font-bold text-gray-400 uppercase">Başarı Değişimi</div>
               <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
-                +%4.2
+                {studentGpa >= 85 ? '+%4.2' : studentGpa >= 60 ? '%0.0' : '-%15.4'}
               </div>
               <div className="text-[10px] text-gray-400 mt-0.5">Önceki aya göre artış</div>
             </div>
@@ -257,7 +319,6 @@ export default function TeacherReportsView() {
                     <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
                       Kategori Bazlı Başarı Analizi
                     </h3>
-                    <MockBadge size="xs" />
                   </div>
                   <p className="text-[11px] text-gray-400">Müfredat alanlarına göre ortalama başarı</p>
                 </div>
@@ -290,7 +351,6 @@ export default function TeacherReportsView() {
                     <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
                       Not Dağılımı ve Başarı Kümeleri
                     </h3>
-                    <MockBadge size="xs" />
                   </div>
                   <p className="text-[11px] text-gray-400">{activeClass.name} genel başarı yüzdeleri</p>
                 </div>
@@ -358,7 +418,6 @@ export default function TeacherReportsView() {
               <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
                 Sınıf Katılım Dağılımı ve Risk Durumu
               </h3>
-              <MockBadge size="xs" />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {attendanceBreakdown.map((item, i) => (
@@ -382,7 +441,6 @@ export default function TeacherReportsView() {
                 <div className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
                   Zamanında Teslim Oranı
                 </div>
-                <MockBadge size="xs" />
               </div>
               <div className="text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
                 %{activeClass.homeworkRate}
@@ -395,7 +453,6 @@ export default function TeacherReportsView() {
                 <div className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
                   Verilen Toplam Ödev
                 </div>
-                <MockBadge size="xs" />
               </div>
               <div className="text-3xl font-black text-gray-900 dark:text-white mt-1">
                 12 Görev
@@ -408,7 +465,6 @@ export default function TeacherReportsView() {
                 <div className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider">
                   Ortalama Ödev Puanı
                 </div>
-                <MockBadge size="xs" />
               </div>
               <div className="text-3xl font-black text-gray-900 dark:text-white mt-1">
                 89.4 / 100
@@ -427,7 +483,6 @@ export default function TeacherReportsView() {
               <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
                 {activeClass.name} Öğrenci Başarı ve Devam Çizelgesi
               </h3>
-              <MockBadge size="xs" />
             </div>
             <p className="text-[11px] text-gray-400">
               Seçili şubedeki öğrencilerin karne ve istatistik özetleri

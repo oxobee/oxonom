@@ -651,12 +651,60 @@ export function normalizeClassroom(c: AdminClassroom): AdminClassroom {
   }
 
   const cleanCode = `${gradeNum}/${branchLetter}`
+  let academicAverage = c.academicAverage
+  let courseAverages = c.courseAverages
+
+  if (typeof window !== 'undefined' && (cleanCode === '9/A' || c.code?.includes('9'))) {
+    try {
+      const rawStudents = localStorage.getItem('oxonom_m_students_v3')
+      if (rawStudents) {
+        const parsed = JSON.parse(rawStudents)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const classStudents = parsed.filter(
+            (s: any) => s.className?.includes('9-A') || s.className?.includes('9/A')
+          )
+          if (classStudents.length > 0) {
+            const student = classStudents[0]
+            if (student.grades && student.grades.length > 0) {
+              const valid = student.grades.filter(
+                (g: any) =>
+                  g.average !== undefined &&
+                  g.average !== null &&
+                  !isNaN(Number(g.average)) &&
+                  String(g.average) !== ''
+              )
+              if (valid.length > 0) {
+                const avg = Number(
+                  (
+                    valid.reduce((sum: number, g: any) => sum + Number(g.average), 0) /
+                    valid.length
+                  ).toFixed(1)
+                )
+                academicAverage = avg
+                courseAverages = valid.map((g: any) => ({
+                  course: g.courseName,
+                  average: Number(g.average),
+                  highest: Number(g.exam2 || g.exam1 || g.average),
+                  lowest: Number(g.exam1 || g.average),
+                }))
+              }
+            } else if (typeof student.gpa === 'number') {
+              academicAverage = student.gpa
+            }
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
   return {
     ...c,
     code: cleanCode,
     name: `${cleanCode} Şubesi`,
     roomName: c.roomName ? c.roomName.replace(/Derslik\s*(\d+)[\/-]([A-Za-z])/g, 'Derslik $1/$2') : `Derslik ${cleanCode}`,
     boardName: `${cleanCode} Akıllı Tahta`,
+    academicAverage,
+    courseAverages,
   }
 }
 

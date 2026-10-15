@@ -16,7 +16,16 @@ function loadFromTempFile() {
       const data = fs.readFileSync(TEMP_STORAGE_FILE, 'utf-8')
       const parsed = JSON.parse(data)
       if (Array.isArray(parsed) && parsed.length > 0) {
-        globalExamsState = parsed
+        globalExamsState = parsed.map((e: SchoolExamItem) => {
+          if (
+            (e.id === 'exam-ede-1' || e.id === 'exam-mat-1' || e.id === 'exam-ede-sozlu-1' || e.id === 'exam-mat-perf-1') &&
+            e.scores?.['s-1'] &&
+            (e.scores['s-1'] === 98 || e.scores['s-1'] === 96 || e.scores['s-1'] === 100)
+          ) {
+            return { ...e, scores: {}, status: 'upcoming' as const }
+          }
+          return e
+        })
       }
     }
   } catch (_) {}

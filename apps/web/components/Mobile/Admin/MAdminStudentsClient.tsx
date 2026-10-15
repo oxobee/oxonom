@@ -956,7 +956,7 @@ export default function MAdminStudentsClient({
                     <div className="flex items-center gap-2 self-stretch sm:self-auto justify-between sm:justify-end border-t sm:border-t-0 pt-3 sm:pt-0 border-white/10">
                       <div className="px-3 py-1.5 rounded-xl bg-white/10 text-center">
                         <div className="text-[10px] text-gray-400 font-bold">Not Ortalaması</div>
-                        <div className="text-sm font-black text-amber-300">%{selectedStudentForDetail.gpa || 98.8}</div>
+                        <div className="text-sm font-black text-amber-300">%{typeof selectedStudentForDetail.gpa === 'number' ? selectedStudentForDetail.gpa : (Number(selectedStudentForDetail.gpa) || 0)}</div>
                       </div>
                       <div className="px-3 py-1.5 rounded-xl bg-white/10 text-center">
                         <div className="text-[10px] text-gray-400 font-bold">Devamsızlık</div>
@@ -1898,11 +1898,21 @@ export default function MAdminStudentsClient({
                               Dönem Ağırlıklı Not Ortalaması
                             </div>
                             <div className="text-2xl font-black text-emerald-700 dark:text-emerald-300 mt-0.5">
-                              %{selectedStudentForDetail.gpa || 98.8}
+                              %{typeof selectedStudentForDetail.gpa === 'number' ? selectedStudentForDetail.gpa : (Number(selectedStudentForDetail.gpa) || 0)}
                             </div>
                           </div>
-                          <span className="text-xs font-black uppercase px-3 py-1 rounded-xl bg-emerald-500 text-gray-950">
-                            Takdir Belgesi & Üstün Başarı
+                          <span className={`text-xs font-black uppercase px-3 py-1 rounded-xl ${
+                            (Number(selectedStudentForDetail.gpa) || 0) >= 85
+                              ? 'bg-emerald-500 text-gray-950'
+                              : (Number(selectedStudentForDetail.gpa) || 0) >= 60
+                              ? 'bg-indigo-500 text-white'
+                              : 'bg-rose-500 text-white'
+                          }`}>
+                            {(Number(selectedStudentForDetail.gpa) || 0) >= 85
+                              ? 'Takdir Belgesi & Üstün Başarı'
+                              : (Number(selectedStudentForDetail.gpa) || 0) >= 60
+                              ? 'Teşekkür / Gelişim Sürecinde'
+                              : 'Akademik Destek / Birebir Etüt'}
                           </span>
                         </div>
 
@@ -1911,11 +1921,7 @@ export default function MAdminStudentsClient({
                           <div className="text-xs font-black text-gray-500 px-1 uppercase tracking-wider">
                             Ders Başarı Ortalamaları
                           </div>
-                          {(selectedStudentForDetail.grades || [
-                            { courseName: 'Türk Dili ve Edebiyatı', average: 99.3 },
-                            { courseName: 'Matematik', average: 98.0 },
-                            { courseName: 'Bilişim & Kodlama', average: 99.0 },
-                          ]).map((g: any) => (
+                          {(selectedStudentForDetail.grades || []).map((g: any) => (
                             <div
                               key={g.courseName}
                               className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-800 flex items-center justify-between"

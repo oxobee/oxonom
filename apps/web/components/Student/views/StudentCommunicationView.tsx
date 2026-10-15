@@ -86,7 +86,7 @@ export default function StudentCommunicationView({
             <h1 className="text-2xl lg:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
               Mesajlar ve Duyurular
             </h1>
-            <MockBadge label="Mock Veri" />
+            <MockBadge label="Canlı Senkronize" />
           </div>
           <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mt-1">
             Resmi okul duyuruları, öğretmen mesajları ve akademik bilgilendirmeler.

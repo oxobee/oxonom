@@ -43,14 +43,13 @@ import {
   AttendanceRecord,
 } from '@services/demo/attendanceService'
 
-// Comprehensive Student Profile Interface
 export interface MStudentCourseGrade {
   courseName: string
   teacherName: string
-  exam1: number
-  exam2: number
-  performance: number
-  average: number
+  exam1?: number
+  exam2?: number
+  performance?: number
+  average?: number
 }
 
 export interface MStudentItem {
@@ -104,7 +103,7 @@ const INITIAL_STUDENTS: MStudentItem[] = [
     className: '9-A Şubesi',
     mentorTeacher: 'Ebru TEKNECİ (Edebiyat Öğretmeni)',
     schoolName: 'Oxonom Okulları',
-    gpa: 98.8,
+    gpa: 0,
     classRank: 1,
     attendanceRate: 100,
     absentExcusedDays: 0,
@@ -120,14 +119,14 @@ const INITIAL_STUDENTS: MStudentItem[] = [
     emergencyPhone: '+90 532 999 2200',
     address: 'Caddebostan Mah. Bağdat Cad. No: 142/5 Kadıköy / İstanbul',
     specialHealthNote: 'Herhangi bir kronik rahatsızlığı veya alerjisi bulunmamaktadır.',
-    disciplineStatus: 'Temiz Sicil — Örnek Öğrenci Onur Belgesi',
-    notes: '9-A sınıfı öğrencisi. Türk Dili ve Edebiyatı, Matematik ve Bilişim alanlarında üstün analitik ve edebi başarı.',
+    disciplineStatus: 'Temiz Sicil — Örnek Öğrenci',
+    notes: '9-A sınıfı öğrencisi.',
     guidanceNotes: [
       {
         id: 'gn-1',
         date: '28.09.2026',
         author: 'Ebru TEKNECİ (Edebiyat Öğretmeni)',
-        content: 'Öğrencinin edebiyat tahlilleri, kompozisyon yeteneği ve ders içi motivasyonu en üst düzeydedir.',
+        content: 'Öğrencinin edebiyat tahlilleri, kompozisyon yeteneği ve ders içi motivasyonu yakından takip edilmektedir.',
       },
       {
         id: 'gn-2',
@@ -137,10 +136,10 @@ const INITIAL_STUDENTS: MStudentItem[] = [
       },
     ],
     grades: [
-      { courseName: 'Türk Dili ve Edebiyatı', teacherName: 'Ebru TEKNECİ', exam1: 98, exam2: 100, performance: 100, average: 99.3 },
-      { courseName: 'Matematik', teacherName: 'Ebru TEKNECİ', exam1: 96, exam2: 98, performance: 100, average: 98.0 },
-      { courseName: 'Bilişim & Kodlama', teacherName: 'Ebru TEKNECİ', exam1: 100, exam2: 98, performance: 100, average: 99.0 },
-      { courseName: 'Yabancı Dil (İngilizce)', teacherName: 'Yabancı Dil', exam1: 100, exam2: 98, performance: 100, average: 99.3 },
+      { courseName: 'Türk Dili ve Edebiyatı', teacherName: 'Ebru TEKNECİ' },
+      { courseName: 'Matematik', teacherName: 'Ebru TEKNECİ' },
+      { courseName: 'Bilişim & Kodlama', teacherName: 'Ebru TEKNECİ' },
+      { courseName: 'Yabancı Dil (İngilizce)', teacherName: 'Yabancı Dil Zümresi' },
     ],
     status: 'active',
   },
