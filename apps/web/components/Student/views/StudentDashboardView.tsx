@@ -13,6 +13,7 @@ import {
   Award,
   Sparkles,
   ChevronRight,
+  ChevronLeft,
   ArrowRight,
   CheckCircle2,
   AlertCircle,
@@ -486,6 +487,38 @@ export default function StudentDashboardView() {
       .slice(0, 4)
   }, [assignments, submissions])
 
+  // Total and submitted assignments for clear metrics
+  const allPendingAssignments = useMemo(() => {
+    return assignments.filter((asg) => {
+      const id = String(asg.assignment_uuid || asg.id)
+      return !submissions[id]
+    })
+  }, [assignments, submissions])
+
+  const submittedAssignmentsCount = useMemo(() => {
+    return assignments.filter((asg) => {
+      const id = String(asg.assignment_uuid || asg.id)
+      return Boolean(submissions[id])
+    }).length
+  }, [assignments, submissions])
+
+  const totalAssignmentsCount = Math.max(assignments.length, 1)
+  const homeworkProgressPercent = Math.min(
+    100,
+    Math.round((submittedAssignmentsCount / totalAssignmentsCount) * 100)
+  )
+
+  // Hero slider state
+  const [currentSlide, setCurrentSlide] = useState(0)
+
+  // Auto-advance hero slider every 7.5 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % 3)
+    }, 7500)
+    return () => clearInterval(timer)
+  }, [])
+
   // Parse exam date
   const parseExamDate = (dateStr: string): Date | null => {
     if (!dateStr) return null
@@ -673,18 +706,122 @@ export default function StudentDashboardView() {
   const activeTeacherName = activeOrNextLesson?.teacherName || profile.mentorTeacher || 'Ebru TEKNECİ'
   const activeRoomName = activeOrNextLesson?.roomName || `Derslik ${profile.className}`
 
+  const heroSlides = [
+    {
+      id: 0,
+      tag: `${profile.className} Sınıfı • Aktif Dönem`,
+      tagEmoji: '🇹🇷',
+      secondaryTag: '2026-2027 MEB Müfredatı',
+      title: (
+        <>
+          {greeting},{' '}
+          <span className="text-cyan-200 drop-shadow-sm">{profile.firstName}!</span> 👋
+        </>
+      ),
+      description: (
+        <>
+          Bugün {profile.className} şubesinde seni bekleyen{' '}
+          <strong className="font-extrabold text-white underline decoration-cyan-300/60 decoration-2 underline-offset-2">
+            {todayClassesCount} ders saati
+          </strong>{' '}
+          ve{' '}
+          <strong className="font-extrabold text-white underline decoration-amber-300/60 decoration-2 underline-offset-2">
+            {allPendingAssignments.length} aktif ödev
+          </strong>{' '}
+          bulunuyor.
+        </>
+      ),
+      primaryBtn: {
+        label: 'Dersine Devam Et',
+        href: '/student/courses',
+        icon: ArrowRight,
+      },
+      secondaryBtn: {
+        label: `Ödevler (${allPendingAssignments.length})`,
+        href: '/student/assignments',
+        icon: BookOpen,
+      },
+    },
+    {
+      id: 1,
+      tag: `Seviye ${Math.max(1, Math.round(profile.gpa / 10))} • Şube Sıralaması`,
+      tagEmoji: '🏆',
+      secondaryTag: `%${profile.attendanceRate} Devamlılık`,
+      title: (
+        <>
+          Tebrikler,{' '}
+          <span className="text-amber-200 drop-shadow-sm">Sınıf {profile.classRank}.'sisin!</span> 🌟
+        </>
+      ),
+      description: (
+        <>
+          {profile.gpa > 0 ? (
+            <>
+              Genel ağırlıklı not ortalaman{' '}
+              <strong className="font-extrabold text-white underline decoration-amber-300/60 decoration-2 underline-offset-2">
+                {profile.gpa} Ort.
+              </strong>
+              . Düzenli çalışma ve ödev teslimlerinle dereceni koruyabilirsin.
+            </>
+          ) : (
+            <>
+              Haftalık 30 saatlik MEB ders müfredatın ve sınıf içi değerlendirme kayıtların başarıyla senkronize edildi.
+            </>
+          )}
+        </>
+      ),
+      primaryBtn: {
+        label: 'Gelişim Grafiğini İncele',
+        href: '/student/progress',
+        icon: TrendingUp,
+      },
+      secondaryBtn: {
+        label: 'Not & Değerlendirmeler',
+        href: '/student/assessments',
+        icon: Award,
+      },
+    },
+    {
+      id: 2,
+      tag: 'Oxonom Canlı Etkileşim & Tahta',
+      tagEmoji: '⚡',
+      secondaryTag: activeRoomName,
+      title: (
+        <>
+          {profile.className} •{' '}
+          <span className="text-cyan-200 drop-shadow-sm">{activeSubjectName}</span> 🎯
+        </>
+      ),
+      description: (
+        <>
+          <strong className="font-extrabold text-white">{activeTeacherName}</strong> ile canlı ders akışı, akıllı tahta notları ve ödev takip sistemi senkronize çalışıyor.
+        </>
+      ),
+      primaryBtn: {
+        label: 'Hemen Derse Katıl',
+        href: '/student/courses',
+        icon: Play,
+      },
+      secondaryBtn: {
+        label: 'Haftalık Program',
+        href: '/student/courses?tab=schedule',
+        icon: Calendar,
+      },
+    },
+  ]
+
   return (
     <div className="w-full max-w-full overflow-x-hidden p-3.5 sm:p-6 lg:p-8 max-w-[1520px] mx-auto space-y-6 lg:space-y-8 select-none">
       {/* ── TOP SECTION: 2 COLUMNS (Left Main Content + Right Widgets Column) ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start w-full min-w-0">
         {/* ── LEFT MAIN COLUMN (lg:col-span-8) ── */}
         <div className="lg:col-span-8 space-y-6 lg:space-y-7 min-w-0 w-full">
-          {/* ── VIBRANT GRADIENT BLUE HERO CARD (Animated Subtle Patterns & Balanced Layout) ── */}
+          {/* ── VIBRANT GRADIENT BLUE HERO SLIDER (Kaydırılabilir Slider, No Bird Mascot) ── */}
           <motion.div
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="relative mt-2 sm:mt-4 lg:mt-6 rounded-[28px] sm:rounded-[32px] bg-gradient-to-br from-[#1E4FD8] via-[#1D77FF] to-[#0A58D0] dark:from-[#0E1A38] dark:via-[#162D63] dark:to-[#0F224D] border border-blue-400/30 dark:border-blue-800/40 p-5 sm:p-8 pt-6 sm:pt-8 text-white shadow-[0_16px_45px_rgba(29,119,255,0.18)] overflow-hidden"
+            className="relative mt-2 sm:mt-4 lg:mt-6 rounded-[28px] sm:rounded-[32px] bg-gradient-to-br from-[#1E4FD8] via-[#1D77FF] to-[#0A58D0] dark:from-[#0E1A38] dark:via-[#162D63] dark:to-[#0F224D] border border-blue-400/30 dark:border-blue-800/40 p-5 sm:p-7 text-white shadow-[0_16px_45px_rgba(29,119,255,0.18)] overflow-hidden"
           >
             {/* ── SUBTLE NON-DISTRACTING ANIMATED PATTERNS (Göz yormayan yumuşak desenler) ── */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-[28px] sm:rounded-[32px]">
@@ -734,76 +871,119 @@ export default function StudentDashboardView() {
               />
             </div>
 
-            {/* Desktop Mascot Only (Mobilde kuş kesinlikle gösterilmez, sadece geniş ekranlar) */}
-            <motion.div
-              animate={{ y: [0, -8, 0] }}
-              transition={{ repeat: Infinity, duration: 4.5, ease: 'easeInOut' }}
-              className="hidden sm:block absolute right-4 lg:right-8 xl:right-12 -top-10 sm:-top-14 lg:-top-18 xl:-top-20 w-44 h-44 sm:w-52 sm:h-52 lg:w-64 lg:h-64 xl:w-72 xl:h-72 z-20 pointer-events-none select-none"
-            >
-              <img
-                src="/oxonom-hero-owl.png"
-                alt="Oxonom Maskot"
-                className="w-full h-full object-contain filter drop-shadow-[0_20px_32px_rgba(0,0,0,0.28)]"
-              />
-            </motion.div>
+            {/* Slider Content with AnimatePresence */}
+            <div className="relative z-10 w-full">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentSlide}
+                  initial={{ opacity: 0, x: 18 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -18 }}
+                  transition={{ duration: 0.28, ease: 'easeOut' }}
+                  className="flex flex-col justify-between w-full space-y-3 sm:space-y-4"
+                >
+                  {/* Header Badges & Slide Controls */}
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-black text-white border border-white/30 shadow-xs">
+                        <span className="text-xs">{heroSlides[currentSlide].tagEmoji}</span>
+                        <span>{heroSlides[currentSlide].tag}</span>
+                        <ChevronRight size={13} className="text-white/70" />
+                      </div>
 
-            {/* Content Container (Mobilde tam genişlik, masaüstünde maskot payı) */}
-            <div className="relative z-10 flex flex-col justify-between w-full max-w-full sm:max-w-md lg:max-w-lg xl:max-w-xl space-y-3.5 sm:space-y-4">
-              {/* Header Badges Row */}
-              <div className="flex items-center gap-2 flex-wrap self-start">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-black text-white border border-white/30 shadow-xs">
-                  <span className="text-xs">🇹🇷</span>
-                  <span>{profile.className} Sınıfı • Aktif Dönem</span>
-                  <ChevronRight size={13} className="text-white/70" />
-                </div>
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-sm text-[10.5px] font-bold text-blue-100 border border-white/20">
+                        <Calendar size={12} className="text-cyan-300" />
+                        <span>{heroSlides[currentSlide].secondaryTag}</span>
+                      </span>
+                    </div>
 
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-sm text-[10.5px] font-bold text-blue-100 border border-white/20">
-                  <Calendar size={12} className="text-cyan-300" />
-                  <span>2026-2027 MEB Müfredatı</span>
-                </span>
-              </div>
+                    {/* Navigation Chevrons */}
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setCurrentSlide((prev) =>
+                            prev === 0 ? heroSlides.length - 1 : prev - 1
+                          )
+                        }
+                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/15 hover:bg-white/25 active:scale-95 text-white flex items-center justify-center backdrop-blur-md transition-all cursor-pointer"
+                        title="Önceki Slayt"
+                        aria-label="Önceki"
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setCurrentSlide((prev) =>
+                            prev === heroSlides.length - 1 ? 0 : prev + 1
+                          )
+                        }
+                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/15 hover:bg-white/25 active:scale-95 text-white flex items-center justify-center backdrop-blur-md transition-all cursor-pointer"
+                        title="Sonraki Slayt"
+                        aria-label="Sonraki"
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+                    </div>
+                  </div>
 
-              {/* Title & Greeting */}
-              <div>
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight">
-                  {greeting},{' '}
-                  <span className="text-cyan-200 drop-shadow-sm">{profile.firstName}!</span> 👋
-                </h1>
-                <p className="text-xs sm:text-sm font-medium text-blue-100/90 mt-1.5 leading-relaxed">
-                  Bugün {profile.className} şubesinde seni bekleyen{' '}
-                  <strong className="font-extrabold text-white underline decoration-cyan-300/60 decoration-2 underline-offset-2">
-                    {todayClassesCount} ders saati
-                  </strong>{' '}
-                  ve{' '}
-                  <strong className="font-extrabold text-white underline decoration-amber-300/60 decoration-2 underline-offset-2">
-                    {pendingAssignments.length} aktif ödev
-                  </strong>{' '}
-                  bulunuyor.
-                </p>
-              </div>
+                  {/* Title & Description */}
+                  <div>
+                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight">
+                      {heroSlides[currentSlide].title}
+                    </h1>
+                    <p className="text-xs sm:text-sm font-medium text-blue-100/90 mt-1.5 leading-relaxed max-w-2xl">
+                      {heroSlides[currentSlide].description}
+                    </p>
+                  </div>
 
-              {/* Action Buttons & Quick Stats */}
-              <div className="pt-1 flex items-center gap-2.5 sm:gap-3 flex-wrap">
-                <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                  <Link
-                    href="/student/courses"
-                    className="inline-flex items-center justify-center gap-2 px-6 py-2.5 sm:py-3 rounded-full bg-white hover:bg-blue-50 text-[#1D77FF] font-black text-xs sm:text-sm shadow-lg shadow-black/15 transition-all"
-                  >
-                    <span>Dersine Devam Et</span>
-                    <ArrowRight size={15} />
-                  </Link>
+                  {/* Action Buttons & Indicator Dots */}
+                  <div className="pt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
+                      <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                        <Link
+                          href={heroSlides[currentSlide].primaryBtn.href}
+                          className="inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-white hover:bg-blue-50 text-[#1D77FF] font-black text-xs sm:text-sm shadow-lg shadow-black/15 transition-all"
+                        >
+                          <span>{heroSlides[currentSlide].primaryBtn.label}</span>
+                          {React.createElement(heroSlides[currentSlide].primaryBtn.icon, {
+                            size: 15,
+                          })}
+                        </Link>
+                      </motion.div>
+
+                      <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                        <Link
+                          href={heroSlides[currentSlide].secondaryBtn.href}
+                          className="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-full bg-white/15 hover:bg-white/25 text-white backdrop-blur-md font-bold text-xs sm:text-sm border border-white/25 shadow-xs transition-all"
+                        >
+                          {React.createElement(heroSlides[currentSlide].secondaryBtn.icon, {
+                            size: 14,
+                            className: 'text-cyan-200',
+                          })}
+                          <span>{heroSlides[currentSlide].secondaryBtn.label}</span>
+                        </Link>
+                      </motion.div>
+                    </div>
+
+                    {/* Interactive Slide Dots */}
+                    <div className="flex items-center gap-1.5 self-start sm:self-center">
+                      {heroSlides.map((s, idx) => (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => setCurrentSlide(idx)}
+                          className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                            currentSlide === idx ? 'w-6 bg-white' : 'w-2 bg-white/40 hover:bg-white/70'
+                          }`}
+                          aria-label={`Slayt ${idx + 1}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 </motion.div>
-
-                <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                  <Link
-                    href="/student/assignments"
-                    className="inline-flex items-center justify-center gap-2 px-5 py-2.5 sm:py-3 rounded-full bg-white/15 hover:bg-white/25 text-white backdrop-blur-md font-bold text-xs sm:text-sm border border-white/25 shadow-xs transition-all"
-                  >
-                    <BookOpen size={14} className="text-cyan-200" />
-                    <span>Ödevler ({pendingAssignments.length})</span>
-                  </Link>
-                </motion.div>
-              </div>
+              </AnimatePresence>
             </div>
           </motion.div>
 
@@ -869,67 +1049,10 @@ export default function StudentDashboardView() {
             {/* Live Class Radar integrated seamlessly */}
             <LiveClassRadar role="student" initialClassCode={profile.className || '9-A'} />
           </div>
-
-          {/* ── "BECERİLERİNİ GELİŞTİR" / GERÇEK DERSLER (100% REAL DATA, 2 SÜTUN MOBİL) ── */}
-          <div className="space-y-3.5">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">
-                Derslerim & Gelişim Alanları
-              </h2>
-              <Link
-                href="/student/courses"
-                className="text-xs font-bold text-[#1D77FF] hover:underline flex items-center gap-1"
-              >
-                <span>Müfredatı İncele</span>
-                <ChevronRight size={14} />
-              </Link>
-            </div>
-
-            {/* 2 Sütun Mobil, 4 Sütun Masaüstü */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-              {realCoreCourses.map((c, idx) => {
-                const Icon = c.icon
-                return (
-                  <motion.div
-                    key={c.id}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.05, duration: 0.3 }}
-                    whileHover={{ y: -4, transition: { duration: 0.2 } }}
-                    className="h-full"
-                  >
-                    <Link
-                      href={`/student/courses/${c.id}`}
-                      className={`h-full p-3 sm:p-4 rounded-[22px] sm:rounded-[24px] ${c.bg} border ${c.border} hover:shadow-md transition-all group flex flex-col justify-between`}
-                    >
-                      <div className="flex items-center justify-between mb-2 sm:mb-3">
-                        <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl ${c.iconBg} flex items-center justify-center group-hover:scale-105 transition-transform`}>
-                          <Icon size={18} className="sm:hidden" />
-                          <Icon size={20} className="hidden sm:block" />
-                        </div>
-                        <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 dark:text-slate-400">{c.hours}</span>
-                      </div>
-                      <div>
-                        <div className="text-[11.5px] sm:text-xs font-black text-slate-900 dark:text-white leading-tight line-clamp-2">
-                          {c.name}
-                        </div>
-                        <div className="text-[9.5px] sm:text-[10px] text-slate-600 dark:text-slate-400 font-semibold mt-1 truncate">
-                          {c.teacher}
-                        </div>
-                      </div>
-                      <div className="pt-2 flex justify-end">
-                        <ArrowRight size={13} className="text-[#1D77FF] group-hover:translate-x-1 transition-transform" />
-                      </div>
-                    </Link>
-                  </motion.div>
-                )
-              })}
-            </div>
-          </div>
         </div>
 
         {/* ── RIGHT COLUMN: AUTHENTIC REAL DATA WIDGETS (lg:col-span-4) ── */}
-        <div className="lg:col-span-4 space-y-6 lg:space-y-7">
+        <div className="lg:col-span-4 space-y-4 sm:space-y-5">
           {/* ── WIDGET 1: GÜNLÜK HEDEF & PLANLAYICI GÖREVLERİ (REAL DATA) ── */}
           <div className="p-6 rounded-[32px] bg-white dark:bg-[#111A2E] border border-blue-100/80 dark:border-blue-900/40 shadow-[0_8px_30px_rgb(29,119,255,0.04)] space-y-5">
             <div className="flex items-center justify-between">
@@ -1109,26 +1232,158 @@ export default function StudentDashboardView() {
             </div>
           </div>
 
-          {/* ── WIDGET 3: ÇALIŞMA & ÖDEV TESLİM TAKİBİ (REAL DATA) ── */}
-          <div className="p-5 rounded-[28px] bg-gradient-to-br from-[#E0F2FE] via-[#EDE9FE] to-[#FCE7F3] dark:from-[#11233F] dark:to-[#211636] border border-sky-200/50 dark:border-purple-900/30 shadow-xs flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-white dark:bg-slate-800 shadow-md flex items-center justify-center text-3xl shrink-0">
-              🎯
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-xs font-black text-slate-900 dark:text-white leading-tight">
-                Ödev & Çalışma Durumu
+          {/* ── WIDGET 3: ÖDEV VE ÇALIŞMA DURUMU (YENİLENMİŞ & ANLAŞILIR) ── */}
+          <div className="p-5 sm:p-6 rounded-[28px] sm:rounded-[32px] bg-white dark:bg-[#111A2E] border border-blue-100/80 dark:border-blue-900/40 shadow-[0_8px_30px_rgb(29,119,255,0.04)] space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-[#1D77FF] flex items-center justify-center shrink-0">
+                  <BookOpen size={16} />
+                </div>
+                <h3 className="text-base font-black text-slate-900 dark:text-white">
+                  Ödev & Çalışma Durumu
+                </h3>
               </div>
-              <p className="text-[10px] text-slate-600 dark:text-slate-400 mt-0.5">
-                {pendingAssignments.length > 0
-                  ? `${pendingAssignments.length} bekleyen ödevin bulunuyor.`
-                  : 'Tüm ödevlerini teslim ettin, harikasın!'}
-              </p>
-              <div className="flex items-center gap-2 mt-2">
-                <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300">
-                  {Object.keys(submissions).length} Teslim / {assignments.length || 1} Toplam
-                </span>
+              <Link
+                href="/student/assignments"
+                className="text-xs font-bold text-[#1D77FF] hover:underline"
+              >
+                Tümü &gt;
+              </Link>
+            </div>
+
+            {/* Clear Status Metrics: Teslim Edilen vs Bekleyen */}
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="p-3 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/40 flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                  <CheckCircle2 size={16} />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Teslim Edilen</div>
+                  <div className="text-sm sm:text-base font-black text-emerald-600 dark:text-emerald-400 leading-tight">
+                    {submittedAssignmentsCount}{' '}
+                    <span className="text-[10px] font-bold text-slate-400">/ {totalAssignmentsCount}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                className={`p-3 rounded-2xl ${
+                  allPendingAssignments.length > 0
+                    ? 'bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/40'
+                    : 'bg-blue-50/80 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-800/40'
+                } flex items-center gap-2.5`}
+              >
+                <div
+                  className={`w-8 h-8 rounded-xl ${
+                    allPendingAssignments.length > 0
+                      ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                      : 'bg-blue-500/15 text-blue-600 dark:text-blue-400'
+                  } flex items-center justify-center shrink-0`}
+                >
+                  <AlertCircle size={16} />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Bekleyen</div>
+                  <div
+                    className={`text-sm sm:text-base font-black leading-tight ${
+                      allPendingAssignments.length > 0
+                        ? 'text-amber-600 dark:text-amber-400'
+                        : 'text-blue-600 dark:text-blue-400'
+                    }`}
+                  >
+                    {allPendingAssignments.length}{' '}
+                    <span className="text-[10px] font-bold text-slate-400">Ödev</span>
+                  </div>
+                </div>
               </div>
             </div>
+
+            {/* Visual Progress Bar */}
+            <div className="space-y-1.5 pt-0.5">
+              <div className="flex items-center justify-between text-xs font-bold">
+                <span className="text-slate-600 dark:text-slate-300">Ödev Teslim İlerlemesi</span>
+                <span className="text-[#1D77FF] font-black">%{homeworkProgressPercent}</span>
+              </div>
+              <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-[#1D77FF] to-emerald-400 transition-all duration-500 ease-out"
+                  style={{ width: `${homeworkProgressPercent}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* ── DERSLERİM & GELİŞİM ALANLARI (SAĞ PANELDE 2'Lİ SÜTUN + TÜMÜNÜ GÖR BUTONU) ── */}
+          <div className="p-5 sm:p-6 rounded-[28px] sm:rounded-[32px] bg-white dark:bg-[#111A2E] border border-blue-100/80 dark:border-blue-900/40 shadow-[0_8px_30px_rgb(29,119,255,0.04)] space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-black text-slate-900 dark:text-white">
+                  Derslerim & Gelişim Alanları
+                </h3>
+                <p className="text-[10px] text-slate-400 font-bold mt-0.5">
+                  9-A MEB Haftalık Müfredat Branşları
+                </p>
+              </div>
+              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/40 text-[#1D77FF] border border-blue-200/50">
+                {realCoreCourses.length} Branş
+              </span>
+            </div>
+
+            {/* 2'li Sütun Grid */}
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+              {realCoreCourses.map((c, idx) => {
+                const Icon = c.icon
+                return (
+                  <motion.div
+                    key={c.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.04, duration: 0.25 }}
+                    whileHover={{ y: -3, transition: { duration: 0.15 } }}
+                    className="h-full"
+                  >
+                    <Link
+                      href={`/student/courses/${c.id}`}
+                      className={`h-full p-3 sm:p-3.5 rounded-[20px] ${c.bg} border ${c.border} hover:shadow-md transition-all group flex flex-col justify-between`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div
+                          className={`w-8 h-8 rounded-xl ${c.iconBg} flex items-center justify-center group-hover:scale-105 transition-transform shrink-0`}
+                        >
+                          <Icon size={16} />
+                        </div>
+                        <span className="text-[9px] font-bold text-slate-500 dark:text-slate-400">
+                          {c.hours.split(' ')[0]}s
+                        </span>
+                      </div>
+                      <div>
+                        <div className="text-[11px] sm:text-xs font-black text-slate-900 dark:text-white leading-tight line-clamp-2">
+                          {c.name}
+                        </div>
+                        <div className="text-[9px] sm:text-[9.5px] text-slate-600 dark:text-slate-400 font-semibold mt-1 truncate">
+                          {c.teacher}
+                        </div>
+                      </div>
+                      <div className="pt-2 flex justify-end">
+                        <ArrowRight
+                          size={12}
+                          className="text-[#1D77FF] group-hover:translate-x-1 transition-transform"
+                        />
+                      </div>
+                    </Link>
+                  </motion.div>
+                )
+              })}
+            </div>
+
+            {/* Yatay Olarak Tümünü Gör Butonu ve İkonu */}
+            <Link
+              href="/student/courses"
+              className="w-full py-2.5 px-4 rounded-2xl bg-slate-50 dark:bg-[#15213B] hover:bg-blue-50 dark:hover:bg-blue-950/40 border border-blue-100/70 dark:border-blue-900/40 text-xs font-black text-[#1D77FF] flex items-center justify-center gap-2 shadow-xs transition-all group cursor-pointer"
+            >
+              <span>Tümünü Gör</span>
+              <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+            </Link>
           </div>
         </div>
       </div>

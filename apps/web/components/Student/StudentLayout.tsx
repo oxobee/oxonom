@@ -148,7 +148,7 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
       className={`${theme} min-h-screen w-full max-w-full overflow-x-hidden bg-[#F4F7FC] dark:bg-[#0B132B] text-slate-800 dark:text-slate-100 font-jakarta flex flex-col lg:flex-row transition-colors duration-200 antialiased`}
     >
       {/* ── DESKTOP SIDEBAR (lg+) — Lingora Claymorphic SaaS Style ── */}
-      <aside className="hidden lg:flex flex-col w-[270px] xl:w-[280px] h-screen sticky top-0 shrink-0 bg-white dark:bg-[#111A2E] border-r border-blue-100/70 dark:border-blue-950/50 z-30 select-none shadow-[2px_0_24px_rgba(29,119,255,0.03)]">
+      <aside className="hidden lg:flex flex-col fixed top-0 left-0 w-[270px] xl:w-[280px] h-screen shrink-0 bg-white dark:bg-[#111A2E] border-r border-blue-100/70 dark:border-blue-950/50 z-30 select-none shadow-[2px_0_24px_rgba(29,119,255,0.03)]">
         {/* Brand Header with Oxo Mascot */}
         <div className="p-5 pb-4 flex items-center justify-between border-b border-blue-50/80 dark:border-blue-950/40">
           <Link href="/student/dashboard" className="flex items-center gap-3 group">
@@ -297,7 +297,7 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
       </aside>
 
       {/* ── MAIN CONTENT WORKSPACE ── */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-screen">
+      <div className="flex-1 flex flex-col min-w-0 min-h-screen lg:pl-[270px] xl:pl-[280px]">
         {/* Desktop Top Header Bar (lg+) — Lingora Style with Search & Gamified Badges */}
         <header className="hidden lg:flex items-center justify-between h-20 px-8 border-b border-blue-100/60 dark:border-blue-950/40 bg-white/70 dark:bg-[#111A2E]/70 backdrop-blur-xl sticky top-0 z-20 select-none">
           {/* Rounded Pill Search Input */}
