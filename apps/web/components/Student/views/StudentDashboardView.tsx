@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, type Variants } from 'framer-motion'
 import {
   GraduationCap,
   Calendar,
@@ -508,16 +508,51 @@ export default function StudentDashboardView() {
     Math.round((submittedAssignmentsCount / totalAssignmentsCount) * 100)
   )
 
-  // Hero slider state
-  const [currentSlide, setCurrentSlide] = useState(0)
+  // Hero slider state with page & direction for 3D drag/swipe
+  const [[heroPage, heroDirection], setHeroPage] = useState([0, 0])
+  const heroSlideIndex = ((heroPage % 2) + 2) % 2
 
-  // Auto-advance hero slider every 7.5 seconds
+  const paginateHero = (newDirection: number) => {
+    setHeroPage(([prevPage]) => [prevPage + newDirection, newDirection])
+  }
+
+  // Auto-advance hero slider every 8 seconds
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % 3)
-    }, 7500)
+      paginateHero(1)
+    }, 8000)
     return () => clearInterval(timer)
   }, [])
+
+  const hero3DVariants: Variants = {
+    enter: (dir: number) => ({
+      x: dir >= 0 ? 300 : -300,
+      rotateY: dir >= 0 ? 25 : -25,
+      scale: 0.94,
+      opacity: 0.65,
+    }),
+    center: {
+      x: 0,
+      rotateY: 0,
+      scale: 1,
+      opacity: 1,
+      transition: {
+        type: 'spring' as const,
+        stiffness: 260,
+        damping: 24,
+      },
+    },
+    exit: (dir: number) => ({
+      x: dir < 0 ? 300 : -300,
+      rotateY: dir < 0 ? 25 : -25,
+      scale: 0.94,
+      opacity: 0.65,
+      transition: {
+        duration: 0.22,
+        ease: 'easeInOut' as const,
+      },
+    }),
+  }
 
   // Parse exam date
   const parseExamDate = (dateStr: string): Date | null => {
@@ -706,12 +741,14 @@ export default function StudentDashboardView() {
   const activeTeacherName = activeOrNextLesson?.teacherName || profile.mentorTeacher || 'Ebru TEKNECİ'
   const activeRoomName = activeOrNextLesson?.roomName || `Derslik ${profile.className}`
 
+  // Smart Academic Performance Calculation
+  const isGoodAcademic = profile.gpa >= 70 || (profile.classRank > 0 && profile.classRank <= 10)
+
   const heroSlides = [
     {
       id: 0,
-      tag: `${profile.className} Sınıfı • Aktif Dönem`,
+      tag: `${profile.className} Sınıfı • MEB Müfredatı`,
       tagEmoji: '🇹🇷',
-      secondaryTag: '2026-2027 MEB Müfredatı',
       title: (
         <>
           {greeting},{' '}
@@ -720,7 +757,7 @@ export default function StudentDashboardView() {
       ),
       description: (
         <>
-          Bugün {profile.className} şubesinde seni bekleyen{' '}
+          Bugün seni{' '}
           <strong className="font-extrabold text-white underline decoration-cyan-300/60 decoration-2 underline-offset-2">
             {todayClassesCount} ders saati
           </strong>{' '}
@@ -728,7 +765,7 @@ export default function StudentDashboardView() {
           <strong className="font-extrabold text-white underline decoration-amber-300/60 decoration-2 underline-offset-2">
             {allPendingAssignments.length} aktif ödev
           </strong>{' '}
-          bulunuyor.
+          bekliyor.
         </>
       ),
       primaryBtn: {
@@ -744,69 +781,64 @@ export default function StudentDashboardView() {
     },
     {
       id: 1,
-      tag: `Seviye ${Math.max(1, Math.round(profile.gpa / 10))} • Şube Sıralaması`,
-      tagEmoji: '🏆',
-      secondaryTag: `%${profile.attendanceRate} Devamlılık`,
-      title: (
+      tag: isGoodAcademic
+        ? `🏆 Sınıf Başarısı • Derece: ${profile.classRank}.`
+        : `🎯 Akademik Hedef & Motivasyon`,
+      tagEmoji: isGoodAcademic ? '🌟' : '💪',
+      title: isGoodAcademic ? (
+        profile.classRank === 1 ? (
+          <>
+            Harika Gidiyorsun, <span className="text-amber-200 drop-shadow-sm">Sınıf Birincisisin!</span> 🌟
+          </>
+        ) : (
+          <>
+            Tebrikler, <span className="text-amber-200 drop-shadow-sm">Başarın Yüksek Seviyede!</span> 🌟
+          </>
+        )
+      ) : (
         <>
-          Tebrikler,{' '}
-          <span className="text-amber-200 drop-shadow-sm">Sınıf {profile.classRank}.'sisin!</span> 🌟
+          Hedeflerine <span className="text-cyan-200 drop-shadow-sm">Adım Adım Odaklan!</span> 💪
         </>
       ),
-      description: (
+      description: isGoodAcademic ? (
+        profile.gpa > 0 ? (
+          <>
+            Genel not ortalaman{' '}
+            <strong className="font-extrabold text-white underline decoration-amber-300/60 decoration-2 underline-offset-2">
+              {profile.gpa} Ort.
+            </strong>
+            . Bu tempoyla devam ederek dereceni rahatlıkla koruyabilirsin.
+          </>
+        ) : (
+          <>Ders içi katılımın ve devamlılık oranın takdir seviyesinde.</>
+        )
+      ) : (
         <>
-          {profile.gpa > 0 ? (
-            <>
-              Genel ağırlıklı not ortalaman{' '}
-              <strong className="font-extrabold text-white underline decoration-amber-300/60 decoration-2 underline-offset-2">
-                {profile.gpa} Ort.
-              </strong>
-              . Düzenli çalışma ve ödev teslimlerinle dereceni koruyabilirsin.
-            </>
-          ) : (
-            <>
-              Haftalık 30 saatlik MEB ders müfredatın ve sınıf içi değerlendirme kayıtların başarıyla senkronize edildi.
-            </>
-          )}
+          Daha yüksek bir not ortalaması için çalışma planı oluşturup eksik olduğun ders konularına odaklanarak hızla yükselebilirsin.
         </>
       ),
-      primaryBtn: {
-        label: 'Gelişim Grafiğini İncele',
-        href: '/student/progress',
-        icon: TrendingUp,
-      },
-      secondaryBtn: {
-        label: 'Not & Değerlendirmeler',
-        href: '/student/assessments',
-        icon: Award,
-      },
-    },
-    {
-      id: 2,
-      tag: 'Oxonom Canlı Etkileşim & Tahta',
-      tagEmoji: '⚡',
-      secondaryTag: activeRoomName,
-      title: (
-        <>
-          {profile.className} •{' '}
-          <span className="text-cyan-200 drop-shadow-sm">{activeSubjectName}</span> 🎯
-        </>
-      ),
-      description: (
-        <>
-          <strong className="font-extrabold text-white">{activeTeacherName}</strong> ile canlı ders akışı, akıllı tahta notları ve ödev takip sistemi senkronize çalışıyor.
-        </>
-      ),
-      primaryBtn: {
-        label: 'Hemen Derse Katıl',
-        href: '/student/courses',
-        icon: Play,
-      },
-      secondaryBtn: {
-        label: 'Haftalık Program',
-        href: '/student/courses?tab=schedule',
-        icon: Calendar,
-      },
+      primaryBtn: isGoodAcademic
+        ? {
+            label: 'Gelişim Raporum',
+            href: '/student/progress',
+            icon: TrendingUp,
+          }
+        : {
+            label: 'Çalışma Planı Yap',
+            href: '/student/planner',
+            icon: CheckSquare,
+          },
+      secondaryBtn: isGoodAcademic
+        ? {
+            label: 'Not & Değerlendirmeler',
+            href: '/student/assessments',
+            icon: Award,
+          }
+        : {
+            label: 'Derslerimi İncele',
+            href: '/student/courses',
+            icon: BookOpen,
+          },
     },
   ]
 
@@ -816,16 +848,13 @@ export default function StudentDashboardView() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start w-full min-w-0">
         {/* ── LEFT MAIN COLUMN (lg:col-span-8) ── */}
         <div className="lg:col-span-8 space-y-6 lg:space-y-7 min-w-0 w-full">
-          {/* ── VIBRANT GRADIENT BLUE HERO SLIDER (Kaydırılabilir Slider, No Bird Mascot) ── */}
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="relative mt-2 sm:mt-4 lg:mt-6 rounded-[28px] sm:rounded-[32px] bg-gradient-to-br from-[#1E4FD8] via-[#1D77FF] to-[#0A58D0] dark:from-[#0E1A38] dark:via-[#162D63] dark:to-[#0F224D] border border-blue-400/30 dark:border-blue-800/40 p-5 sm:p-7 text-white shadow-[0_16px_45px_rgba(29,119,255,0.18)] overflow-hidden"
+          {/* ── VIBRANT GRADIENT BLUE HERO SLIDER (Sabit Sağ Üst Oklar & 3D Sürükleme) ── */}
+          <div
+            className="relative mt-2 sm:mt-4 lg:mt-6 rounded-[28px] sm:rounded-[32px] bg-gradient-to-br from-[#1E4FD8] via-[#1D77FF] to-[#0A58D0] dark:from-[#0E1A38] dark:via-[#162D63] dark:to-[#0F224D] border border-blue-400/30 dark:border-blue-800/40 p-5 sm:p-7 text-white shadow-[0_16px_45px_rgba(29,119,255,0.18)] overflow-hidden select-none"
+            style={{ perspective: 1000 }}
           >
             {/* ── SUBTLE NON-DISTRACTING ANIMATED PATTERNS (Göz yormayan yumuşak desenler) ── */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-[28px] sm:rounded-[32px]">
-              {/* Soft SVG Dot Matrix Pattern */}
               <svg
                 className="absolute inset-0 w-full h-full opacity-10 text-white"
                 xmlns="http://www.w3.org/2000/svg"
@@ -838,7 +867,6 @@ export default function StudentDashboardView() {
                 <rect width="100%" height="100%" fill="url(#hero-pattern-dots)" />
               </svg>
 
-              {/* Gentle Floating Ambient Glow Orbs */}
               <motion.div
                 animate={{
                   x: [0, 20, 0],
@@ -857,84 +885,68 @@ export default function StudentDashboardView() {
                 transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
                 className="absolute -bottom-16 -left-16 w-72 h-72 bg-blue-300/20 rounded-full blur-3xl pointer-events-none"
               />
-
-              {/* Subtle Floating Geometric Tech Elements */}
-              <motion.div
-                animate={{ y: [0, -8, 0], rotate: [0, 25, 0], opacity: [0.12, 0.25, 0.12] }}
-                transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-                className="absolute top-10 right-20 hidden md:block w-14 h-14 rounded-2xl border border-white/20 pointer-events-none"
-              />
-              <motion.div
-                animate={{ y: [0, 10, 0], rotate: [0, -20, 0], opacity: [0.1, 0.22, 0.1] }}
-                transition={{ duration: 7.5, repeat: Infinity, ease: 'easeInOut', delay: 1.5 }}
-                className="absolute bottom-8 right-36 hidden md:block w-10 h-10 rounded-full border border-cyan-300/25 pointer-events-none"
-              />
             </div>
 
-            {/* Slider Content with AnimatePresence */}
-            <div className="relative z-10 w-full">
-              <AnimatePresence mode="wait">
+            {/* ── SABİT SAĞ ÜST OK BUTONLARI (Kutunun sağ üstünde sabit) ── */}
+            <div className="absolute top-5 right-5 sm:top-6 sm:right-7 z-30 flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => paginateHero(-1)}
+                className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 active:scale-90 text-white flex items-center justify-center backdrop-blur-md transition-all cursor-pointer shadow-xs"
+                title="Önceki Slayt"
+                aria-label="Önceki"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={() => paginateHero(1)}
+                className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 active:scale-90 text-white flex items-center justify-center backdrop-blur-md transition-all cursor-pointer shadow-xs"
+                title="Sonraki Slayt"
+                aria-label="Sonraki"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+
+            {/* ── 3D DRAGGABLE SLIDER İÇERİĞİ (Sürükleyerek diğer slidera geçiş) ── */}
+            <div className="relative z-10 w-full" style={{ transformStyle: 'preserve-3d' }}>
+              <AnimatePresence custom={heroDirection} mode="wait">
                 <motion.div
-                  key={currentSlide}
-                  initial={{ opacity: 0, x: 18 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -18 }}
-                  transition={{ duration: 0.28, ease: 'easeOut' }}
-                  className="flex flex-col justify-between w-full space-y-3 sm:space-y-4"
+                  key={heroPage}
+                  custom={heroDirection}
+                  variants={hero3DVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  drag="x"
+                  dragConstraints={{ left: 0, right: 0 }}
+                  dragElastic={0.2}
+                  onDragEnd={(e, { offset, velocity }) => {
+                    if (offset.x < -35 || velocity.x < -250) {
+                      paginateHero(1)
+                    } else if (offset.x > 35 || velocity.x > 250) {
+                      paginateHero(-1)
+                    }
+                  }}
+                  className="flex flex-col justify-between w-full space-y-3 sm:space-y-4 cursor-grab active:cursor-grabbing"
+                  style={{ transformStyle: 'preserve-3d' }}
                 >
-                  {/* Header Badges & Slide Controls */}
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-black text-white border border-white/30 shadow-xs">
-                        <span className="text-xs">{heroSlides[currentSlide].tagEmoji}</span>
-                        <span>{heroSlides[currentSlide].tag}</span>
-                        <ChevronRight size={13} className="text-white/70" />
-                      </div>
-
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 backdrop-blur-sm text-[10.5px] font-bold text-blue-100 border border-white/20">
-                        <Calendar size={12} className="text-cyan-300" />
-                        <span>{heroSlides[currentSlide].secondaryTag}</span>
-                      </span>
-                    </div>
-
-                    {/* Navigation Chevrons */}
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setCurrentSlide((prev) =>
-                            prev === 0 ? heroSlides.length - 1 : prev - 1
-                          )
-                        }
-                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/15 hover:bg-white/25 active:scale-95 text-white flex items-center justify-center backdrop-blur-md transition-all cursor-pointer"
-                        title="Önceki Slayt"
-                        aria-label="Önceki"
-                      >
-                        <ChevronLeft size={16} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setCurrentSlide((prev) =>
-                            prev === heroSlides.length - 1 ? 0 : prev + 1
-                          )
-                        }
-                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/15 hover:bg-white/25 active:scale-95 text-white flex items-center justify-center backdrop-blur-md transition-all cursor-pointer"
-                        title="Sonraki Slayt"
-                        aria-label="Sonraki"
-                      >
-                        <ChevronRight size={16} />
-                      </button>
+                  {/* Badge */}
+                  <div className="flex items-center gap-2 self-start pr-20">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-black text-white border border-white/30 shadow-xs">
+                      <span className="text-xs">{heroSlides[heroSlideIndex].tagEmoji}</span>
+                      <span>{heroSlides[heroSlideIndex].tag}</span>
                     </div>
                   </div>
 
                   {/* Title & Description */}
                   <div>
                     <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight">
-                      {heroSlides[currentSlide].title}
+                      {heroSlides[heroSlideIndex].title}
                     </h1>
-                    <p className="text-xs sm:text-sm font-medium text-blue-100/90 mt-1.5 leading-relaxed max-w-2xl">
-                      {heroSlides[currentSlide].description}
+                    <p className="text-xs sm:text-sm font-medium text-blue-100/90 mt-1.5 leading-relaxed max-w-xl">
+                      {heroSlides[heroSlideIndex].description}
                     </p>
                   </div>
 
@@ -943,11 +955,11 @@ export default function StudentDashboardView() {
                     <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
                       <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                         <Link
-                          href={heroSlides[currentSlide].primaryBtn.href}
+                          href={heroSlides[heroSlideIndex].primaryBtn.href}
                           className="inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-white hover:bg-blue-50 text-[#1D77FF] font-black text-xs sm:text-sm shadow-lg shadow-black/15 transition-all"
                         >
-                          <span>{heroSlides[currentSlide].primaryBtn.label}</span>
-                          {React.createElement(heroSlides[currentSlide].primaryBtn.icon, {
+                          <span>{heroSlides[heroSlideIndex].primaryBtn.label}</span>
+                          {React.createElement(heroSlides[heroSlideIndex].primaryBtn.icon, {
                             size: 15,
                           })}
                         </Link>
@@ -955,14 +967,14 @@ export default function StudentDashboardView() {
 
                       <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                         <Link
-                          href={heroSlides[currentSlide].secondaryBtn.href}
+                          href={heroSlides[heroSlideIndex].secondaryBtn.href}
                           className="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-full bg-white/15 hover:bg-white/25 text-white backdrop-blur-md font-bold text-xs sm:text-sm border border-white/25 shadow-xs transition-all"
                         >
-                          {React.createElement(heroSlides[currentSlide].secondaryBtn.icon, {
+                          {React.createElement(heroSlides[heroSlideIndex].secondaryBtn.icon, {
                             size: 14,
                             className: 'text-cyan-200',
                           })}
-                          <span>{heroSlides[currentSlide].secondaryBtn.label}</span>
+                          <span>{heroSlides[heroSlideIndex].secondaryBtn.label}</span>
                         </Link>
                       </motion.div>
                     </div>
@@ -973,9 +985,13 @@ export default function StudentDashboardView() {
                         <button
                           key={s.id}
                           type="button"
-                          onClick={() => setCurrentSlide(idx)}
+                          onClick={() => {
+                            if (heroSlideIndex !== idx) {
+                              paginateHero(idx > heroSlideIndex ? 1 : -1)
+                            }
+                          }}
                           className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
-                            currentSlide === idx ? 'w-6 bg-white' : 'w-2 bg-white/40 hover:bg-white/70'
+                            heroSlideIndex === idx ? 'w-6 bg-white' : 'w-2 bg-white/40 hover:bg-white/70'
                           }`}
                           aria-label={`Slayt ${idx + 1}`}
                         />
@@ -985,7 +1001,7 @@ export default function StudentDashboardView() {
                 </motion.div>
               </AnimatePresence>
             </div>
-          </motion.div>
+          </div>
 
           {/* ── "KALDIĞIN YERDEN DEVAM ET" / AKTİF VE SIRADAKİ DERS ── */}
           <div className="space-y-3.5">
@@ -1048,6 +1064,113 @@ export default function StudentDashboardView() {
 
             {/* Live Class Radar integrated seamlessly */}
             <LiveClassRadar role="student" initialClassCode={profile.className || '9-A'} />
+          </div>
+
+          {/* ── REHBERLİK & ÖĞRETMEN GÖRÜŞÜ VE YAKLAŞAN SINAV ÖZETİ (Aradaki boşluğu dolduran alan) ── */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
+            {/* Card 1: Öğretmen & Rehberlik Görüşü */}
+            <div className="p-4 sm:p-5 rounded-[26px] bg-white dark:bg-[#111A2E] border border-blue-100/80 dark:border-blue-900/40 shadow-[0_6px_25px_rgb(29,119,255,0.03)] flex flex-col justify-between space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+                    <MessageSquareQuote size={16} />
+                  </div>
+                  <div>
+                    <h3 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white leading-tight">
+                      Rehberlik & Öğretmen Notu
+                    </h3>
+                    <p className="text-[10px] text-slate-400 font-bold mt-0.5">
+                      {profile.mentorTeacher || 'Ebru TEKNECİ'}
+                    </p>
+                  </div>
+                </div>
+                <span className="text-[9.5px] font-bold px-2 py-0.5 rounded-full bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-200/50">
+                  Resmi Görüş
+                </span>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-[#15213B] border border-blue-50 dark:border-blue-900/30">
+                <p className="text-xs text-slate-700 dark:text-slate-300 font-medium italic leading-relaxed">
+                  "{guidanceNotes.length > 0
+                    ? guidanceNotes[0].content
+                    : 'Öğrencinin ders içi motivasyonu, ödev disiplini ve sınıf içi etkileşimi yüksek seviyededir.'}"
+                </p>
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-200/50 dark:border-slate-800/50 text-[10px] text-slate-400 font-bold">
+                  <span>{guidanceNotes.length > 0 ? guidanceNotes[0].date : '28.09.2026'}</span>
+                  <span className="text-purple-600 dark:text-purple-400">Danışman Öğretmen Onaylı</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 2: Yaklaşan Sınav & Değerlendirme Takvimi Özeti */}
+            <div className="p-4 sm:p-5 rounded-[26px] bg-white dark:bg-[#111A2E] border border-blue-100/80 dark:border-blue-900/40 shadow-[0_6px_25px_rgb(29,119,255,0.03)] flex flex-col justify-between space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                    <CalendarDays size={16} />
+                  </div>
+                  <div>
+                    <h3 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white leading-tight">
+                      Sınav & Değerlendirme
+                    </h3>
+                    <p className="text-[10px] text-slate-400 font-bold mt-0.5">
+                      Resmi Takvim ({profile.className})
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  href="/student/planner?tab=calendar"
+                  className="text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-0.5"
+                >
+                  <span>Takvim</span>
+                  <ChevronRight size={13} />
+                </Link>
+              </div>
+
+              {upcomingWeekExams.length > 0 ? (
+                <div className="p-3 rounded-2xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/30 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[9.5px] font-black px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                        {upcomingWeekExams[0].courseName}
+                      </span>
+                      <span className="text-[9.5px] font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300">
+                        {(upcomingWeekExams[0] as any).daysLeft === 0
+                          ? 'Bugün!'
+                          : (upcomingWeekExams[0] as any).daysLeft === 1
+                          ? 'Yarın!'
+                          : `${(upcomingWeekExams[0] as any).daysLeft} Gün Kaldı`}
+                      </span>
+                    </div>
+                    <div className="text-xs font-black text-slate-900 dark:text-white truncate mt-1">
+                      {upcomingWeekExams[0].title}
+                    </div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold mt-0.5">
+                      {upcomingWeekExams[0].date} • {upcomingWeekExams[0].time}
+                    </div>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-amber-500 text-white shadow-xs">
+                      {upcomingWeekExams[0].durationMinutes} dk
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 rounded-2xl bg-slate-50 dark:bg-[#15213B] border border-blue-50 dark:border-blue-900/30 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+                    <CheckCircle2 size={16} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs font-black text-slate-800 dark:text-slate-200">
+                      Yakın Tarihte Sınav Yok
+                    </div>
+                    <div className="text-[10px] text-slate-400 mt-0.5">
+                      Ders tekrarları ve konu testlerine odaklanabilirsin.
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -1123,10 +1246,10 @@ export default function StudentDashboardView() {
               </div>
             </div>
 
-            {/* Real Interactive Tasks List */}
-            <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+            {/* Real Interactive Tasks List (Kaydırılabilir alan) */}
+            <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800 max-h-[195px] overflow-y-auto custom-scrollbar pr-1">
               {tasks.length > 0 ? (
-                tasks.slice(0, 4).map((task) => (
+                tasks.map((task) => (
                   <button
                     key={task.id}
                     type="button"

@@ -199,7 +199,6 @@ export default function StudentPlannerView({ initialTab = 'all' }: StudentPlanne
             <h1 className="text-2xl lg:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
               Defterim ve Planlayıcım
             </h1>
-            <MockBadge label="Canlı Senkronize" />
           </div>
           <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mt-1">
             Kişisel yapılacaklar listesi, ders not defteri ve haftalık akademik çalışma takvimi.
@@ -289,8 +288,8 @@ export default function StudentPlannerView({ initialTab = 'all' }: StudentPlanne
               </button>
             </form>
 
-            {/* Tasks list */}
-            <div className="space-y-2 pt-1">
+            {/* Tasks list (Scrollable after 5 tasks) */}
+            <div className="space-y-2 pt-1 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
               {tasks.map((task) => (
                 <div
                   key={task.id}
