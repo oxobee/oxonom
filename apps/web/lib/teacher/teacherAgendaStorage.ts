@@ -398,11 +398,17 @@ export function saveStoredTeacherNotes(notes: TeacherNote[]) {
 export function getStoredSchoolExams(): SchoolExamItem[] {
   if (typeof window === 'undefined') return CANONICAL_SCHOOL_EXAMS
   try {
+    const deletedRaw = localStorage.getItem('oxonom_deleted_exam_ids')
+    const deletedIds: string[] = deletedRaw ? JSON.parse(deletedRaw) : []
+
     const raw = localStorage.getItem('oxonom_school_exam_calendar')
-    if (raw) {
+    if (raw !== null) {
       const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      if (Array.isArray(parsed)) {
+        return parsed.filter((e) => !deletedIds.includes(e.id))
+      }
     }
+    return CANONICAL_SCHOOL_EXAMS.filter((e) => !deletedIds.includes(e.id))
   } catch (_) {}
   return CANONICAL_SCHOOL_EXAMS
 }
@@ -410,7 +416,11 @@ export function getStoredSchoolExams(): SchoolExamItem[] {
 export function saveStoredSchoolExams(exams: SchoolExamItem[]) {
   if (typeof window === 'undefined') return
   try {
-    localStorage.setItem('oxonom_school_exam_calendar', JSON.stringify(exams))
+    const deletedRaw = localStorage.getItem('oxonom_deleted_exam_ids')
+    const deletedIds: string[] = deletedRaw ? JSON.parse(deletedRaw) : []
+    const clean = exams.filter((e) => !deletedIds.includes(e.id))
+
+    localStorage.setItem('oxonom_school_exam_calendar', JSON.stringify(clean))
     window.dispatchEvent(new Event('oxonom_exam_calendar_updated'))
     window.dispatchEvent(new Event('oxonom_student_updated'))
   } catch (_) {}
@@ -424,9 +434,16 @@ export async function fetchExamsFromServer(): Promise<SchoolExamItem[]> {
     const res = await fetch('/api/exams', { cache: 'no-store' })
     if (res.ok) {
       const data = await res.json()
-      if (data.success && Array.isArray(data.exams) && data.exams.length > 0) {
+      if (data.success && Array.isArray(data.exams)) {
         if (typeof window !== 'undefined') {
-          localStorage.setItem('oxonom_school_exam_calendar', JSON.stringify(data.exams))
+          const deletedRaw = localStorage.getItem('oxonom_deleted_exam_ids')
+          const deletedIds: string[] = deletedRaw ? JSON.parse(deletedRaw) : []
+          const cleanExams = data.exams.filter((e: any) => !deletedIds.includes(e.id))
+
+          localStorage.setItem('oxonom_school_exam_calendar', JSON.stringify(cleanExams))
+          window.dispatchEvent(new Event('oxonom_exam_calendar_updated'))
+          window.dispatchEvent(new Event('oxonom_student_updated'))
+          return cleanExams
         }
         return data.exams
       }
@@ -438,12 +455,28 @@ export async function fetchExamsFromServer(): Promise<SchoolExamItem[]> {
 }
 
 export async function pushExamToServer(exam: SchoolExamItem): Promise<boolean> {
+  if (typeof window !== 'undefined') {
+    try {
+      const deletedRaw = localStorage.getItem('oxonom_deleted_exam_ids')
+      if (deletedRaw) {
+        const deletedIds: string[] = JSON.parse(deletedRaw)
+        const next = deletedIds.filter((id) => id !== exam.id)
+        localStorage.setItem('oxonom_deleted_exam_ids', JSON.stringify(next))
+      }
+    } catch (_) {}
+  }
   try {
     const res = await fetch('/api/exams', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ exam }),
     })
+    if (res.ok) {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('oxonom_exam_calendar_updated'))
+        window.dispatchEvent(new Event('oxonom_student_updated'))
+      }
+    }
     return res.ok
   } catch (_) {
     return false
@@ -451,6 +484,22 @@ export async function pushExamToServer(exam: SchoolExamItem): Promise<boolean> {
 }
 
 export async function deleteExamFromServer(examId: string): Promise<boolean> {
+  if (typeof window !== 'undefined') {
+    try {
+      const deletedRaw = localStorage.getItem('oxonom_deleted_exam_ids')
+      const deletedIds: string[] = deletedRaw ? JSON.parse(deletedRaw) : []
+      if (!deletedIds.includes(examId)) {
+        deletedIds.push(examId)
+        localStorage.setItem('oxonom_deleted_exam_ids', JSON.stringify(deletedIds))
+      }
+
+      // Also clean up local stored exams
+      const current = getStoredSchoolExams().filter((e) => e.id !== examId)
+      localStorage.setItem('oxonom_school_exam_calendar', JSON.stringify(current))
+      window.dispatchEvent(new Event('oxonom_exam_calendar_updated'))
+      window.dispatchEvent(new Event('oxonom_student_updated'))
+    } catch (_) {}
+  }
   try {
     const res = await fetch(`/api/exams?id=${encodeURIComponent(examId)}`, {
       method: 'DELETE',

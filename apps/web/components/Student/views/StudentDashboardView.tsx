@@ -334,23 +334,12 @@ export default function StudentDashboardView() {
         const res = await fetch('/api/exams?className=9-A', { cache: 'no-store' })
         if (res.ok) {
           const data = await res.json()
-          if (data && Array.isArray(data.exams) && data.exams.length > 0) {
+          if (data && Array.isArray(data.exams)) {
             try {
-              const localRaw = localStorage.getItem('oxonom_school_exam_calendar')
-              if (!localRaw) {
-                localStorage.setItem('oxonom_school_exam_calendar', JSON.stringify(data.exams))
-              } else {
-                const localExams = JSON.parse(localRaw)
-                if (Array.isArray(localExams)) {
-                  const merged = [...localExams]
-                  data.exams.forEach((se: any) => {
-                    if (!merged.some((le: any) => le.id === se.id)) {
-                      merged.push(se)
-                    }
-                  })
-                  localStorage.setItem('oxonom_school_exam_calendar', JSON.stringify(merged))
-                }
-              }
+              const deletedRaw = localStorage.getItem('oxonom_deleted_exam_ids')
+              const deletedIds: string[] = deletedRaw ? JSON.parse(deletedRaw) : []
+              const cleanExams = data.exams.filter((e: any) => !deletedIds.includes(e.id))
+              localStorage.setItem('oxonom_school_exam_calendar', JSON.stringify(cleanExams))
             } catch (_) {}
             setAssessments(getSynchronizedStudentAssessments())
           }

@@ -16,7 +16,7 @@ import {
   type MStudentItem,
   type MStudentCourseGrade,
 } from '@components/Mobile/MStudentClient'
-import { CANONICAL_SCHOOL_EXAMS } from '@/lib/teacher/teacherAgendaStorage'
+import { CANONICAL_SCHOOL_EXAMS, getStoredSchoolExams } from '@/lib/teacher/teacherAgendaStorage'
 
 export interface GuidanceNoteItem {
   id: string
@@ -686,105 +686,10 @@ export function getSynchronizedStudentAssessments(): StudentAssessment[] {
   const grades = profile.grades || []
   const assessments: StudentAssessment[] = []
 
-  grades.forEach((g, idx) => {
-    // 1. Yazılı Sınav
-    if (g.exam1 !== undefined && g.exam1 !== null && String(g.exam1) !== '') {
-      const scoreNum = Number(g.exam1)
-      assessments.push({
-        id: `exam1-${idx}-${g.courseName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
-        title: `${g.courseName} 1. Yazılı Sınavı`,
-        courseName: g.courseName,
-        type: 'exam',
-        examTypeLabel: 'Yazılı Sınav',
-        date: '12 Ekim 2026',
-        time: '09:25',
-        durationMinutes: 40,
-        location: `Derslik 101 (${profile.className})`,
-        maxScore: 100,
-        score: scoreNum,
-        isGraded: true,
-        isPublished: true,
-        teacherFeedback:
-          scoreNum >= 85
-            ? `${g.teacherName || 'Öğretmen'}: Üstün akademik başarı ve konu hakimiyeti.`
-            : scoreNum >= 50
-            ? `${g.teacherName || 'Öğretmen'}: Başarılı, küçük eksikler tekrar edilmeli.`
-            : `${g.teacherName || 'Öğretmen'}: Kritik seviye. Birebir etüt ve konu telafisi gereklidir.`,
-        status: 'completed',
-      })
-    }
-
-    // 2. Yazılı Sınav
-    if (g.exam2 !== undefined && g.exam2 !== null && String(g.exam2) !== '') {
-      const scoreNum = Number(g.exam2)
-      assessments.push({
-        id: `exam2-${idx}-${g.courseName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
-        title: `${g.courseName} 2. Yazılı Sınavı`,
-        courseName: g.courseName,
-        type: 'exam',
-        examTypeLabel: 'Yazılı Sınav',
-        date: '28 Kasım 2026',
-        time: '10:20',
-        durationMinutes: 40,
-        location: `Derslik 101 (${profile.className})`,
-        maxScore: 100,
-        score: scoreNum,
-        isGraded: true,
-        isPublished: true,
-        teacherFeedback:
-          scoreNum >= 85
-            ? `${g.teacherName || 'Öğretmen'}: Mükemmel kompozisyon ve tam puan.`
-            : scoreNum >= 50
-            ? `${g.teacherName || 'Öğretmen'}: Başarılı çalışma, konu tekrarı yapılmalı.`
-            : `${g.teacherName || 'Öğretmen'}: Kritik seviye. Birebir etüt ve konu telafisi gereklidir.`,
-        status: 'completed',
-      })
-    }
-
-    // 1. Performans Görevi
-    if (g.performance !== undefined && g.performance !== null && String(g.performance) !== '') {
-      const scoreNum = Number(g.performance)
-      assessments.push({
-        id: `perf-${idx}-${g.courseName.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
-        title: `${g.courseName} 1. Performans Görevi`,
-        courseName: g.courseName,
-        type: 'performance',
-        examTypeLabel: 'Performans / Proje',
-        date: '05 Kasım 2026',
-        time: '11:15',
-        durationMinutes: 40,
-        location: `Derslik 101 (${profile.className})`,
-        maxScore: 100,
-        score: scoreNum,
-        isGraded: true,
-        isPublished: true,
-        teacherFeedback:
-          scoreNum >= 85
-            ? `${g.teacherName || 'Öğretmen'}: Ders içi katılım ve proje üstün başarıyla tamamlandı.`
-            : scoreNum >= 50
-            ? `${g.teacherName || 'Öğretmen'}: Performans çalışması onaylandı.`
-            : `${g.teacherName || 'Öğretmen'}: Performans görevi beklentinin altında kalmıştır. Telafi çalışması gereklidir.`,
-        status: 'completed',
-        teacherName: g.teacherName || 'Ebru TEKNECİ',
-      })
-    }
-  })
-
-  // Merge teacher-created exams from the school exam calendar for this class
   try {
-    let calendarExams: any[] = []
-    if (typeof window !== 'undefined') {
-      const rawCal = localStorage.getItem('oxonom_school_exam_calendar')
-      if (rawCal) {
-        calendarExams = JSON.parse(rawCal)
-      }
-    }
-
-    if (!calendarExams || calendarExams.length === 0) {
-      calendarExams = CANONICAL_SCHOOL_EXAMS
-    }
-
+    const calendarExams = getStoredSchoolExams()
     const currentClass = profile.className || '9-A'
+
     calendarExams.forEach((ce: any) => {
       const matchClass =
         !ce.className ||
@@ -795,7 +700,34 @@ export function getSynchronizedStudentAssessments(): StudentAssessment[] {
       if (!matchClass) return
 
       const studentScore = ce.scores?.[profile.id] ?? ce.scores?.['s-1']
-      const hasScore = studentScore !== undefined && studentScore !== null && String(studentScore) !== ''
+      const hasScoreInExam = studentScore !== undefined && studentScore !== null && String(studentScore) !== ''
+
+      // Also check matching grade record
+      const courseGrade = grades.find(
+        (g) =>
+          g.courseName.toLowerCase().includes(ce.courseName.toLowerCase()) ||
+          ce.courseName.toLowerCase().includes(g.courseName.toLowerCase())
+      )
+
+      let resolvedScore: number | undefined = hasScoreInExam ? Number(studentScore) : undefined
+
+      if (resolvedScore === undefined && courseGrade) {
+        if (ce.type === 'performance' || ce.type === 'oral' || (ce.examTypeLabel || '').includes('Sözlü') || (ce.examTypeLabel || '').includes('Performans')) {
+          if (courseGrade.performance !== undefined && courseGrade.performance !== null && String(courseGrade.performance) !== '') {
+            resolvedScore = Number(courseGrade.performance)
+          }
+        } else if (ce.title.includes('2.') || ce.id.includes('2')) {
+          if (courseGrade.exam2 !== undefined && courseGrade.exam2 !== null && String(courseGrade.exam2) !== '') {
+            resolvedScore = Number(courseGrade.exam2)
+          }
+        } else if (ce.title.includes('1.') || ce.id.includes('1')) {
+          if (courseGrade.exam1 !== undefined && courseGrade.exam1 !== null && String(courseGrade.exam1) !== '') {
+            resolvedScore = Number(courseGrade.exam1)
+          }
+        }
+      }
+
+      const isGraded = resolvedScore !== undefined && !isNaN(resolvedScore)
       const typeLabel =
         ce.examTypeLabel ||
         (ce.type === 'quiz'
@@ -808,100 +740,41 @@ export function getSynchronizedStudentAssessments(): StudentAssessment[] {
           ? 'Deneme Sınavı'
           : 'Yazılı Sınav')
 
-      // Find if we have an existing assessment matching this course and exam order / type
-      const existing = assessments.find((a) => {
-        if (a.id === ce.id) return true
-        const sameCourse =
-          a.courseName.toLowerCase().includes(ce.courseName.toLowerCase()) ||
-          ce.courseName.toLowerCase().includes(a.courseName.toLowerCase())
-        if (!sameCourse) return false
-
-        const is1st =
-          (a.title.includes('1.') || a.id.startsWith('exam1-')) &&
-          (ce.title.includes('1.') || ce.id.includes('1'))
-        const is2nd =
-          (a.title.includes('2.') || a.id.startsWith('exam2-')) &&
-          (ce.title.includes('2.') || ce.id.includes('2'))
-        const isPerf =
-          (a.type === 'performance' || a.id.startsWith('perf-')) &&
-          (ce.type === 'performance' ||
-            ce.type === 'oral' ||
-            (ce.examTypeLabel || '').includes('Performans') ||
-            (ce.examTypeLabel || '').includes('Sözlü'))
-
-        return is1st || is2nd || isPerf
-      })
-
-      if (existing) {
-        existing.id = ce.id || existing.id
-        existing.date = ce.date || existing.date
-        existing.time = ce.time || existing.time
-        existing.location = ce.location || existing.location
-        existing.durationMinutes = ce.durationMinutes || existing.durationMinutes
-        existing.scope = ce.scope || existing.scope
-        existing.teacherName = ce.teacherName || existing.teacherName
-        existing.period = ce.period || existing.period
-        existing.examTypeLabel = typeLabel
-        if (hasScore) {
-          existing.score = Number(studentScore)
-          existing.isGraded = true
-          existing.status = 'completed'
+      let feedback: string | undefined = undefined
+      if (isGraded && resolvedScore !== undefined) {
+        if (resolvedScore >= 85) {
+          feedback = `${ce.teacherName || courseGrade?.teacherName || 'Öğretmen'}: Üstün akademik başarı ve konu hakimiyeti (${resolvedScore}/100).`
+        } else if (resolvedScore >= 50) {
+          feedback = `${ce.teacherName || courseGrade?.teacherName || 'Öğretmen'}: Başarılı çalışma, eksik kazanımlar tekrar edilmelidir (${resolvedScore}/100).`
+        } else {
+          feedback = `${ce.teacherName || courseGrade?.teacherName || 'Öğretmen'}: Kritik başarı seviyesi (${resolvedScore}/100). Birebir etüt ve telafi çalışması zorunludur.`
         }
-      } else {
-        const courseGrade = grades.find(
-          (g) =>
-            g.courseName.toLowerCase().includes(ce.courseName.toLowerCase()) ||
-            ce.courseName.toLowerCase().includes(g.courseName.toLowerCase())
-        )
-        let resolvedScore = hasScore ? Number(studentScore) : undefined
-        if (resolvedScore === undefined && courseGrade) {
-          if (ce.title.includes('1.') || ce.id.includes('1')) {
-            if (courseGrade.exam1 !== undefined && courseGrade.exam1 !== null && String(courseGrade.exam1) !== '') {
-              resolvedScore = Number(courseGrade.exam1)
-            }
-          } else if (ce.title.includes('2.') || ce.id.includes('2')) {
-            if (courseGrade.exam2 !== undefined && courseGrade.exam2 !== null && String(courseGrade.exam2) !== '') {
-              resolvedScore = Number(courseGrade.exam2)
-            }
-          } else if (ce.type === 'performance' || ce.type === 'oral') {
-            if (courseGrade.performance !== undefined && courseGrade.performance !== null && String(courseGrade.performance) !== '') {
-              resolvedScore = Number(courseGrade.performance)
-            }
-          }
-        }
-
-        const isGraded = resolvedScore !== undefined
-        assessments.push({
-          id: ce.id || `as-custom-${Date.now()}-${Math.random().toString(36).substring(7)}`,
-          title: ce.title,
-          courseName: ce.courseName,
-          type: ce.type || 'exam',
-          examTypeLabel: typeLabel,
-          date: ce.date,
-          time: ce.time || '10:20',
-          period: ce.period,
-          durationMinutes: ce.durationMinutes || 40,
-          location: ce.location || `Derslik 101 (${currentClass})`,
-          maxScore: 100,
-          score: resolvedScore,
-          isGraded,
-          isPublished: true,
-          status: isGraded ? 'completed' : 'upcoming',
-          teacherFeedback: isGraded && resolvedScore !== undefined
-            ? resolvedScore >= 85
-              ? `${ce.teacherName || 'Öğretmen'}: Tebrikler, üstün akademik başarı.`
-              : resolvedScore >= 50
-              ? `${ce.teacherName || 'Öğretmen'}: Başarılı çalışma, eksikler pekiştirilmeli.`
-              : `${ce.teacherName || 'Öğretmen'}: Kritik seviye. Birebir etüt ve konu telafisi gereklidir.`
-            : undefined,
-          scope: ce.scope,
-          teacherName: ce.teacherName || 'Ebru TEKNECİ',
-          className: ce.className,
-        })
       }
+
+      assessments.push({
+        id: ce.id || `exam-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+        title: ce.title,
+        courseName: ce.courseName,
+        type: ce.type || 'exam',
+        examTypeLabel: typeLabel,
+        date: ce.date,
+        time: ce.time || '10:20 - 11:00',
+        period: ce.period,
+        durationMinutes: ce.durationMinutes || 40,
+        location: ce.location || `Derslik 101 (${currentClass})`,
+        maxScore: 100,
+        score: isGraded ? resolvedScore : undefined,
+        isGraded,
+        isPublished: true,
+        status: isGraded ? 'completed' : 'upcoming',
+        teacherFeedback: feedback,
+        scope: ce.scope,
+        teacherName: ce.teacherName || courseGrade?.teacherName || 'Ebru TEKNECİ',
+        className: ce.className,
+      })
     })
   } catch (err) {
-    console.warn('Error merging teacher calendar exams:', err)
+    console.warn('Error in getSynchronizedStudentAssessments:', err)
   }
 
   return assessments

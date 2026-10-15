@@ -93,23 +93,12 @@ export default function StudentPlannerView({ initialTab = 'all' }: StudentPlanne
       fetch('/api/exams?className=9-A')
         .then((r) => r.json())
         .then((d) => {
-          if (d.success && Array.isArray(d.exams) && d.exams.length > 0) {
+          if (d.success && Array.isArray(d.exams)) {
             try {
-              const localRaw = localStorage.getItem('oxonom_school_exam_calendar')
-              if (!localRaw) {
-                localStorage.setItem('oxonom_school_exam_calendar', JSON.stringify(d.exams))
-              } else {
-                const localExams = JSON.parse(localRaw)
-                if (Array.isArray(localExams)) {
-                  const merged = [...localExams]
-                  d.exams.forEach((se: any) => {
-                    if (!merged.some((le: any) => le.id === se.id)) {
-                      merged.push(se)
-                    }
-                  })
-                  localStorage.setItem('oxonom_school_exam_calendar', JSON.stringify(merged))
-                }
-              }
+              const deletedRaw = localStorage.getItem('oxonom_deleted_exam_ids')
+              const deletedIds: string[] = deletedRaw ? JSON.parse(deletedRaw) : []
+              const cleanExams = d.exams.filter((e: any) => !deletedIds.includes(e.id))
+              localStorage.setItem('oxonom_school_exam_calendar', JSON.stringify(cleanExams))
             } catch (_) {}
             setAssessments(getSynchronizedStudentAssessments())
           }

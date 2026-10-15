@@ -33,6 +33,7 @@ import {
   saveStoredSchoolExams,
   pushExamToServer,
   deleteExamFromServer,
+  fetchExamsFromServer,
 } from '@/lib/teacher/teacherAgendaStorage'
 
 const COURSES = [
@@ -116,6 +117,11 @@ export default function TeacherAssessmentsView() {
 
   useEffect(() => {
     syncExams()
+    fetchExamsFromServer().then((srvExams: SchoolExamItem[]) => {
+      if (Array.isArray(srvExams)) {
+        setExams(srvExams)
+      }
+    })
     window.addEventListener('oxonom_exam_calendar_updated', syncExams)
     window.addEventListener('oxonom_student_updated', () => {
       if (typeof window !== 'undefined') {
@@ -276,7 +282,7 @@ export default function TeacherAssessmentsView() {
     saveStoredSchoolExams(updated)
     setExams(updated)
     await deleteExamFromServer(id)
-    toast.success('Sınav kaydı silindi.')
+    toast.success(`"${title}" sınavı veritabanından kalıcı olarak silindi.`)
   }
 
   // Eligible students for currently grading exam
@@ -335,13 +341,15 @@ export default function TeacherAssessmentsView() {
     })
 
     // Update exam object
+    let updatedExamToPush: SchoolExamItem | null = null
     const updatedExams = exams.map((ex) => {
       if (ex.id === gradingExam.id) {
-        return {
+        updatedExamToPush = {
           ...ex,
           scores: numScores,
           status: 'completed' as const,
         }
+        return updatedExamToPush
       }
       return ex
     })
@@ -407,7 +415,12 @@ export default function TeacherAssessmentsView() {
       } catch (_) {}
     }
 
-    toast.success(`📝 ${gradingExam.title} notları kaydedildi ve karneye işlendi!`)
+    // Persist updated exam with scores to real database
+    if (updatedExamToPush) {
+      pushExamToServer(updatedExamToPush).catch(console.error)
+    }
+
+    toast.success(`📝 ${gradingExam.title} notları kaydedildi ve veritabanına işlendi!`)
     setGradingExam(null)
   }
 

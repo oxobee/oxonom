@@ -21,29 +21,35 @@ import {
   BookOpen,
   User,
   Check,
+  AlertTriangle,
 } from 'lucide-react'
 import {
-  STUDENT_ASSESSMENTS,
   getSynchronizedStudentAssessments,
+  getSynchronizedStudentProfile,
   type StudentAssessment,
 } from '@/lib/student/studentData'
+import { fetchExamsFromServer } from '@/lib/teacher/teacherAgendaStorage'
 import toast from 'react-hot-toast'
 
-export type AssessmentFilterTab = 'all' | 'written' | 'oral' | 'quiz' | 'performance' | 'results'
+export type AssessmentStatusTab = 'all' | 'graded' | 'upcoming'
+export type AssessmentTypeTab = 'all' | 'written' | 'oral' | 'quiz' | 'performance'
 
 interface StudentAssessmentsViewProps {
-  initialTab?: AssessmentFilterTab | string
+  initialTab?: string
 }
 
 export default function StudentAssessmentsView({
   initialTab = 'all',
 }: StudentAssessmentsViewProps) {
-  const [activeTab, setActiveTab] = useState<AssessmentFilterTab>(() => {
-    if (initialTab === 'exams') return 'written'
-    if (initialTab === 'quizzes') return 'quiz'
-    if (initialTab === 'results') return 'results'
-    return (initialTab as AssessmentFilterTab) || 'all'
+  // Primary status category: 'all' | 'graded' (Puan Verilmiş) | 'upcoming' (Puan Verilecek)
+  const [statusTab, setStatusTab] = useState<AssessmentStatusTab>(() => {
+    if (initialTab === 'results' || initialTab === 'graded') return 'graded'
+    if (initialTab === 'upcoming' || initialTab === 'exams') return 'upcoming'
+    return 'all'
   })
+
+  // Secondary type filter
+  const [typeTab, setTypeTab] = useState<AssessmentTypeTab>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [assessments, setAssessments] = useState<StudentAssessment[]>([])
 
@@ -52,6 +58,13 @@ export default function StudentAssessmentsView({
       setAssessments(getSynchronizedStudentAssessments())
     }
     syncAssessments()
+
+    // Also pull latest updates from backend database
+    fetchExamsFromServer().then((srvExams) => {
+      if (Array.isArray(srvExams)) {
+        setAssessments(getSynchronizedStudentAssessments())
+      }
+    })
 
     window.addEventListener('oxonom_student_updated', syncAssessments)
     window.addEventListener('oxonom_teacher_profile_updated', syncAssessments)
@@ -117,18 +130,44 @@ export default function StudentAssessmentsView({
     }
   }
 
-  // Filter items based on activeTab and searchQuery
+  // Counts for pills and banners
+  const counts = useMemo(() => {
+    const graded = displayAssessments.filter((a) => a.isGraded && a.score !== undefined && a.score !== null)
+    const upcoming = displayAssessments.filter((a) => !a.isGraded || a.score === undefined || a.score === null)
+
+    const written = displayAssessments.filter((a) => normalizeType(a) === 'written')
+    const oral = displayAssessments.filter((a) => normalizeType(a) === 'oral')
+    const quiz = displayAssessments.filter((a) => normalizeType(a) === 'quiz')
+    const perf = displayAssessments.filter((a) => normalizeType(a) === 'performance')
+
+    return {
+      all: displayAssessments.length,
+      graded: graded.length,
+      upcoming: upcoming.length,
+      written: written.length,
+      oral: oral.length,
+      quiz: quiz.length,
+      performance: perf.length,
+    }
+  }, [displayAssessments])
+
+  // Filter items based on statusTab, typeTab, and searchQuery
   const filteredAssessments = useMemo(() => {
     return displayAssessments.filter((item) => {
+      const isItemGraded = item.isGraded && item.score !== undefined && item.score !== null
       const norm = normalizeType(item)
-      const isPublishedWithScore = item.isPublished && item.score !== undefined && item.score !== null
 
-      if (activeTab === 'written' && norm !== 'written') return false
-      if (activeTab === 'oral' && norm !== 'oral') return false
-      if (activeTab === 'quiz' && norm !== 'quiz') return false
-      if (activeTab === 'performance' && norm !== 'performance') return false
-      if (activeTab === 'results' && !isPublishedWithScore) return false
+      // Primary Status Filter
+      if (statusTab === 'graded' && !isItemGraded) return false
+      if (statusTab === 'upcoming' && isItemGraded) return false
 
+      // Secondary Type Filter
+      if (typeTab === 'written' && norm !== 'written') return false
+      if (typeTab === 'oral' && norm !== 'oral') return false
+      if (typeTab === 'quiz' && norm !== 'quiz') return false
+      if (typeTab === 'performance' && norm !== 'performance') return false
+
+      // Search query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase()
         return (
@@ -140,45 +179,58 @@ export default function StudentAssessmentsView({
       }
       return true
     })
-  }, [displayAssessments, activeTab, searchQuery])
+  }, [displayAssessments, statusTab, typeTab, searchQuery])
 
-  // Split into upcoming vs graded
+  // Split filtered into upcoming vs graded
   const upcomingAssessments = useMemo(() => {
-    return filteredAssessments.filter(
-      (a) => a.score === undefined || a.score === null || !a.isGraded
-    )
+    return filteredAssessments.filter((a) => !a.isGraded || a.score === undefined || a.score === null)
   }, [filteredAssessments])
 
   const gradedAssessments = useMemo(() => {
-    return filteredAssessments.filter(
-      (a) => a.score !== undefined && a.score !== null && a.isGraded
-    )
+    return filteredAssessments.filter((a) => a.isGraded && a.score !== undefined && a.score !== null)
   }, [filteredAssessments])
 
-  // Counts for pills
-  const counts = useMemo(() => {
-    const published = displayAssessments.filter((a) => a.isPublished && a.score !== undefined)
-    const written = displayAssessments.filter((a) => normalizeType(a) === 'written')
-    const oral = displayAssessments.filter((a) => normalizeType(a) === 'oral')
-    const quiz = displayAssessments.filter((a) => normalizeType(a) === 'quiz')
-    const perf = displayAssessments.filter((a) => normalizeType(a) === 'performance')
-    return {
-      all: displayAssessments.length,
-      written: written.length,
-      oral: oral.length,
-      quiz: quiz.length,
-      performance: perf.length,
-      results: published.length,
-    }
-  }, [displayAssessments])
+  // Calculate Average Score of graded exams strictly from real entered grades
+  const publishedScores = displayAssessments.filter((a) => a.isGraded && a.score !== undefined && a.score !== null)
+  const averageScoreNum = publishedScores.length
+    ? publishedScores.reduce((acc, curr) => acc + (Number(curr.score) || 0), 0) / publishedScores.length
+    : null
 
-  // Calculate Average Score of published exams
-  const publishedScores = displayAssessments.filter((a) => a.isPublished && a.score !== undefined)
-  const averageScore = publishedScores.length
-    ? (
-        publishedScores.reduce((acc, curr) => acc + (curr.score || 0), 0) / publishedScores.length
-      ).toFixed(1)
-    : '-'
+  const averageScore = averageScoreNum !== null ? averageScoreNum.toFixed(1) : '-'
+
+  // Academic Status badge based on average score
+  const getAcademicStatusBadge = () => {
+    if (averageScoreNum === null) {
+      return {
+        label: 'Değerlendirme Sürecinde',
+        badgeBg: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700',
+      }
+    }
+    if (averageScoreNum >= 85) {
+      return {
+        label: 'Üstün Başarı (Takdir Seviyesi)',
+        badgeBg: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
+      }
+    }
+    if (averageScoreNum >= 70) {
+      return {
+        label: 'Başarılı (Teşekkür Seviyesi)',
+        badgeBg: 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30',
+      }
+    }
+    if (averageScoreNum >= 50) {
+      return {
+        label: 'Geçer (Geliştirilmeli)',
+        badgeBg: 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30',
+      }
+    }
+    return {
+      label: 'Kritik Seviye / Etüt Takibinde',
+      badgeBg: 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30',
+    }
+  }
+
+  const academicStatus = getAcademicStatusBadge()
 
   return (
     <div className="p-4 lg:p-8 max-w-7xl mx-auto space-y-6 font-jakarta">
@@ -199,7 +251,7 @@ export default function StudentAssessmentsView({
           </p>
         </div>
 
-        {/* GPA Summary Pill */}
+        {/* Dynamic Academic Level Status Pill */}
         <div className="flex items-center gap-3">
           <div className="p-3.5 px-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/70 dark:border-amber-800/60 shadow-xs flex items-center gap-3 shrink-0">
             <div className="w-11 h-11 rounded-xl bg-amber-500 text-white flex items-center justify-center font-extrabold text-sm shadow-sm">
@@ -217,29 +269,134 @@ export default function StudentAssessmentsView({
         </div>
       </div>
 
-      {/* ── SEARCH & FILTER TABS (MATCHING USER SCREENSHOT STYLE) ── */}
+      {/* ── LIVE KPI STATS BAR ── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+        {/* Ortalamam */}
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 shadow-xs flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+              Genel Sınav Ort.
+            </span>
+            <span className="text-lg lg:text-xl font-black text-gray-900 dark:text-white">
+              {averageScore}
+            </span>
+          </div>
+          <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+            <TrendingUp size={18} />
+          </div>
+        </div>
+
+        {/* Puan Verilmiş */}
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 shadow-xs flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+              Puan Verilmiş
+            </span>
+            <span className="text-lg lg:text-xl font-black text-emerald-600 dark:text-emerald-400">
+              {counts.graded} Sınav
+            </span>
+          </div>
+          <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+            <CheckCircle2 size={18} />
+          </div>
+        </div>
+
+        {/* Puan Verilecek */}
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 shadow-xs flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+              Puan Verilecek
+            </span>
+            <span className="text-lg lg:text-xl font-black text-amber-600 dark:text-amber-400">
+              {counts.upcoming} Sınav
+            </span>
+          </div>
+          <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+            <Clock size={18} />
+          </div>
+        </div>
+
+        {/* Başarı Durumu */}
+        <div className="p-4 rounded-2xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 shadow-xs flex items-center justify-between">
+          <div className="min-w-0 pr-1">
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+              Akademik Durum
+            </span>
+            <span className="text-xs font-black truncate block mt-0.5 text-gray-900 dark:text-white">
+              {academicStatus.label}
+            </span>
+          </div>
+          <div className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+            <Award size={18} />
+          </div>
+        </div>
+      </div>
+
+      {/* ── PRIMARY STATUS TABS: PUAN VERİLMİŞ vs PUAN VERİLECEK ── */}
       <div className="space-y-4">
-        {/* Filter Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+        {/* Main Status Toggle (Puan Verilmiş / Puan Verilecek / Tümü) */}
+        <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-gray-100/80 dark:bg-gray-800/60 max-w-fit">
           <button
             type="button"
-            onClick={() => setActiveTab('all')}
-            className={`px-4 py-2 rounded-full text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-              activeTab === 'all'
-                ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/30'
-                : 'bg-white dark:bg-[#121826] text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+            onClick={() => setStatusTab('graded')}
+            className={`px-5 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+              statusTab === 'graded'
+                ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/30'
+                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
             }`}
           >
-            Tüm Değerlendirmeler ({counts.all})
+            <CheckCircle2 size={15} />
+            <span>Puan Verilmiş ({counts.graded})</span>
           </button>
 
           <button
             type="button"
-            onClick={() => setActiveTab('written')}
-            className={`px-4 py-2 rounded-full text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-              activeTab === 'written'
+            onClick={() => setStatusTab('upcoming')}
+            className={`px-5 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+              statusTab === 'upcoming'
                 ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/30'
-                : 'bg-white dark:bg-[#121826] text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+            }`}
+          >
+            <Clock size={15} />
+            <span>Puan Verilecek ({counts.upcoming})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setStatusTab('all')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+              statusTab === 'all'
+                ? 'bg-white dark:bg-[#121826] text-gray-900 dark:text-white shadow-xs'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            }`}
+          >
+            <Calendar size={15} />
+            <span>Tüm Sınavlar ({counts.all})</span>
+          </button>
+        </div>
+
+        {/* Secondary Exam Type Filters */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+          <button
+            type="button"
+            onClick={() => setTypeTab('all')}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+              typeTab === 'all'
+                ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 shadow-xs'
+                : 'bg-white dark:bg-[#121826] text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-800 hover:bg-gray-50'
+            }`}
+          >
+            Tüm Türler
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setTypeTab('written')}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+              typeTab === 'written'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'bg-white dark:bg-[#121826] text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-800 hover:bg-gray-50'
             }`}
           >
             Yazılı Sınavlar {counts.written > 0 && `(${counts.written})`}
@@ -247,11 +404,11 @@ export default function StudentAssessmentsView({
 
           <button
             type="button"
-            onClick={() => setActiveTab('oral')}
-            className={`px-4 py-2 rounded-full text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-              activeTab === 'oral'
-                ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/30'
-                : 'bg-white dark:bg-[#121826] text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+            onClick={() => setTypeTab('oral')}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+              typeTab === 'oral'
+                ? 'bg-amber-600 text-white shadow-xs'
+                : 'bg-white dark:bg-[#121826] text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-800 hover:bg-gray-50'
             }`}
           >
             Sözlü Sınavlar {counts.oral > 0 && `(${counts.oral})`}
@@ -259,11 +416,11 @@ export default function StudentAssessmentsView({
 
           <button
             type="button"
-            onClick={() => setActiveTab('quiz')}
-            className={`px-4 py-2 rounded-full text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-              activeTab === 'quiz'
-                ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/30'
-                : 'bg-white dark:bg-[#121826] text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+            onClick={() => setTypeTab('quiz')}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+              typeTab === 'quiz'
+                ? 'bg-cyan-600 text-white shadow-xs'
+                : 'bg-white dark:bg-[#121826] text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-800 hover:bg-gray-50'
             }`}
           >
             Quizler {counts.quiz > 0 && `(${counts.quiz})`}
@@ -271,26 +428,14 @@ export default function StudentAssessmentsView({
 
           <button
             type="button"
-            onClick={() => setActiveTab('performance')}
-            className={`px-4 py-2 rounded-full text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-              activeTab === 'performance'
-                ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/30'
-                : 'bg-white dark:bg-[#121826] text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+            onClick={() => setTypeTab('performance')}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+              typeTab === 'performance'
+                ? 'bg-purple-600 text-white shadow-xs'
+                : 'bg-white dark:bg-[#121826] text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-800 hover:bg-gray-50'
             }`}
           >
             Performans & Proje {counts.performance > 0 && `(${counts.performance})`}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('results')}
-            className={`px-4 py-2 rounded-full text-xs font-black transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-              activeTab === 'results'
-                ? 'bg-amber-500 text-white shadow-sm shadow-amber-500/30'
-                : 'bg-white dark:bg-[#121826] text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50'
-            }`}
-          >
-            Yayımlanan Sonuçlar ({counts.results})
           </button>
         </div>
 
@@ -307,123 +452,16 @@ export default function StudentAssessmentsView({
         </div>
       </div>
 
-      {/* ── BÖLÜM 1: YAKLAŞAN SINAVLAR ── */}
-      {activeTab !== 'results' && upcomingAssessments.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
-              <Calendar size={18} className="text-amber-500" />
-              <span>Yaklaşan Sınavlar & Takvim ({upcomingAssessments.length})</span>
-            </h2>
-            <span className="text-[11px] font-bold text-gray-400">
-              Sınav gün ve saatinde okulda olunuz
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {upcomingAssessments.map((item) => {
-              const badge = getTypeBadge(item)
-              return (
-                <div
-                  key={item.id}
-                  className="p-5 rounded-3xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 shadow-xs hover:border-amber-400/60 hover:shadow-md transition-all flex flex-col justify-between space-y-4"
-                >
-                  <div className="space-y-3">
-                    {/* Header Pill */}
-                    <div className="flex items-center justify-between gap-2">
-                      <span
-                        className={`text-[10px] font-black px-2.5 py-1 rounded-xl border flex items-center gap-1.5 ${badge.className}`}
-                      >
-                        <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
-                        <span>{badge.label}</span>
-                      </span>
-
-                      <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2.5 py-1 rounded-xl">
-                        Yaklaşıyor
-                      </span>
-                    </div>
-
-                    {/* Title & Subject */}
-                    <div>
-                      <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">
-                        {item.courseName}
-                      </div>
-                      <h3 className="text-sm font-black text-gray-900 dark:text-white mt-0.5 leading-snug">
-                        {item.title}
-                      </h3>
-                    </div>
-
-                    {/* Metadata Box */}
-                    <div className="p-3.5 rounded-2xl bg-gray-50/80 dark:bg-gray-800/50 border border-gray-200/50 dark:border-gray-700/50 space-y-2 text-xs">
-                      <div className="flex items-center justify-between text-gray-600 dark:text-gray-300">
-                        <span className="flex items-center gap-1.5 text-gray-400">
-                          <Calendar size={13} />
-                          Tarih:
-                        </span>
-                        <span className="font-extrabold text-gray-900 dark:text-white font-mono">
-                          {item.date}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between text-gray-600 dark:text-gray-300">
-                        <span className="flex items-center gap-1.5 text-gray-400">
-                          <Clock size={13} />
-                          Saat:
-                        </span>
-                        <span className="font-bold text-gray-900 dark:text-white font-mono">
-                          {item.time} ({item.durationMinutes} Dk)
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between text-gray-600 dark:text-gray-300">
-                        <span className="flex items-center gap-1.5 text-gray-400">
-                          <MapPin size={13} />
-                          Salon:
-                        </span>
-                        <span className="font-bold text-gray-900 dark:text-white truncate max-w-[150px]">
-                          {item.location}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Scope / Topics */}
-                    {item.scope && (
-                      <div className="text-[11px] text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/30 p-2.5 rounded-xl border border-gray-100 dark:border-gray-800 leading-relaxed">
-                        <strong className="text-gray-700 dark:text-gray-200 font-bold block mb-0.5">
-                          Konu Kapsamı:
-                        </strong>
-                        {item.scope}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Teacher Info */}
-                  <div className="pt-3 border-t border-gray-100 dark:border-gray-800/80 flex items-center justify-between text-[11px]">
-                    <span className="text-gray-400 flex items-center gap-1">
-                      <User size={12} />
-                      {item.teacherName || 'Zümre Öğretmeni'}
-                    </span>
-                    <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 font-mono">
-                      100 Tam Puan Üzerinden
-                    </span>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* ── BÖLÜM 2: PUANLANMIŞ SINAVLAR VE RESMİ NOTLAR ── */}
-      {(activeTab === 'all' || activeTab === 'results' || gradedAssessments.length > 0) && (
-        <div className="space-y-4 pt-2">
+      {/* ── BÖLÜM 1: PUAN VERİLMİŞ SINAVLAR (SONUÇLANAN RESMİ NOTLAR) ── */}
+      {(statusTab === 'all' || statusTab === 'graded') && (
+        <div className="space-y-4 pt-1">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
               <CheckCircle2 size={18} className="text-emerald-500" />
-              <span>Puanlanmış Sınavlar ve Notlar ({gradedAssessments.length})</span>
+              <span>Puan Verilmiş Sınavlar ve Notlar ({gradedAssessments.length})</span>
             </h2>
-            <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-              Resmi Karne ve E-Okul Kayıtları
+            <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-1 rounded-xl">
+              Resmi Karne ve Sınav Kayıtları
             </span>
           </div>
 
@@ -432,15 +470,23 @@ export default function StudentAssessmentsView({
               {gradedAssessments.map((item) => {
                 const badge = getTypeBadge(item)
                 const score = item.score ?? 0
-                const isHigh = score >= 90
+                const isCritical = score < 50
+                const isWarning = score < 70 && score >= 50
+                const isGood = score >= 70
 
                 return (
                   <div
                     key={item.id}
-                    className="p-5 rounded-3xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 shadow-xs hover:border-emerald-400/60 hover:shadow-md transition-all flex flex-col justify-between space-y-4"
+                    className={`p-5 rounded-3xl bg-white dark:bg-[#121826] border transition-all flex flex-col justify-between space-y-4 shadow-xs hover:shadow-md ${
+                      isCritical
+                        ? 'border-rose-300 dark:border-rose-900/60 hover:border-rose-500'
+                        : isWarning
+                        ? 'border-amber-300 dark:border-amber-900/60 hover:border-amber-500'
+                        : 'border-emerald-200/80 dark:border-emerald-900/60 hover:border-emerald-500'
+                    }`}
                   >
                     <div className="space-y-3">
-                      {/* Header with Type & Date */}
+                      {/* Header with Type Badge & Date */}
                       <div className="flex items-center justify-between gap-2">
                         <span
                           className={`text-[10px] font-black px-2.5 py-1 rounded-xl border flex items-center gap-1.5 ${badge.className}`}
@@ -466,18 +512,48 @@ export default function StudentAssessmentsView({
                       </div>
 
                       {/* Score Highlight Box */}
-                      <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/30 flex items-center justify-between">
+                      <div
+                        className={`p-4 rounded-2xl border flex items-center justify-between ${
+                          isCritical
+                            ? 'bg-rose-500/10 border-rose-500/30'
+                            : isWarning
+                            ? 'bg-amber-500/10 border-amber-500/30'
+                            : 'bg-emerald-500/10 border-emerald-500/30'
+                        }`}
+                      >
                         <div>
-                          <span className="text-[10px] font-extrabold uppercase text-emerald-700 dark:text-emerald-400 block tracking-wider">
-                            Sınav Sonucu
+                          <span
+                            className={`text-[10px] font-extrabold uppercase block tracking-wider ${
+                              isCritical
+                                ? 'text-rose-700 dark:text-rose-400'
+                                : isWarning
+                                ? 'text-amber-700 dark:text-amber-400'
+                                : 'text-emerald-700 dark:text-emerald-400'
+                            }`}
+                          >
+                            Puan Verildi
                           </span>
-                          <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">
-                            {score >= 85 ? 'Pekiyi • Üstün Başarı' : 'Başarılı'}
+                          <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-300">
+                            {score >= 85
+                              ? 'Üstün Başarı'
+                              : score >= 70
+                              ? 'İyi Seviye'
+                              : score >= 50
+                              ? 'Geçer Not'
+                              : 'Kritik Seviye / Başarısız'}
                           </span>
                         </div>
 
                         <div className="text-right">
-                          <div className="text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
+                          <div
+                            className={`text-3xl font-black tracking-tight ${
+                              isCritical
+                                ? 'text-rose-600 dark:text-rose-400'
+                                : isWarning
+                                ? 'text-amber-600 dark:text-amber-400'
+                                : 'text-emerald-600 dark:text-emerald-400'
+                            }`}
+                          >
                             {score}
                           </div>
                           <span className="text-[10px] font-mono text-gray-400 block -mt-1">
@@ -486,9 +562,25 @@ export default function StudentAssessmentsView({
                         </div>
                       </div>
 
+                      {/* Score Progress Bar */}
+                      <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-1.5 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${
+                            isCritical ? 'bg-rose-500' : isWarning ? 'bg-amber-500' : 'bg-emerald-500'
+                          }`}
+                          style={{ width: `${Math.min(100, Math.max(0, score))}%` }}
+                        />
+                      </div>
+
                       {/* Teacher Feedback */}
                       {item.teacherFeedback ? (
-                        <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200/50 dark:border-gray-700/50 text-[11px] text-gray-700 dark:text-gray-300 leading-relaxed">
+                        <div
+                          className={`p-3 rounded-xl border text-[11px] leading-relaxed ${
+                            isCritical
+                              ? 'bg-rose-50/60 dark:bg-rose-950/20 border-rose-200 dark:border-rose-800/40 text-rose-900 dark:text-rose-200'
+                              : 'bg-gray-50 dark:bg-gray-800/40 border-gray-200/50 dark:border-gray-700/50 text-gray-700 dark:text-gray-300'
+                          }`}
+                        >
                           <strong className="text-indigo-600 dark:text-indigo-400 block mb-0.5 font-bold">
                             Öğretmen Değerlendirmesi:
                           </strong>
@@ -507,9 +599,15 @@ export default function StudentAssessmentsView({
                         <User size={12} />
                         {item.teacherName || 'Ders Öğretmeni'}
                       </span>
-                      <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                      <span
+                        className={`font-bold flex items-center gap-1 ${
+                          isCritical
+                            ? 'text-rose-600 dark:text-rose-400'
+                            : 'text-emerald-600 dark:text-emerald-400'
+                        }`}
+                      >
                         <Check size={13} />
-                        Puanlandı & Onaylandı
+                        Puanlandı & Karneye İşlendi
                       </span>
                     </div>
                   </div>
@@ -518,13 +616,126 @@ export default function StudentAssessmentsView({
             </div>
           ) : (
             <div className="p-8 text-center rounded-3xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 text-xs text-gray-400">
-              Bu filtrede puanlanmış bir sınav kaydı bulunmamaktadır.
+              Henüz puanlanmış bir sınav kaydı bulunmamaktadır.
             </div>
           )}
         </div>
       )}
 
-      {/* Empty State when no results in tab */}
+      {/* ── BÖLÜM 2: PUAN VERİLECEK SINAVLAR (YAKLAŞAN / BEKLEYENLER) ── */}
+      {(statusTab === 'all' || statusTab === 'upcoming') && (
+        <div className="space-y-4 pt-2">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
+              <Clock size={18} className="text-amber-500" />
+              <span>Puan Verilecek Sınavlar ({upcomingAssessments.length})</span>
+            </h2>
+            <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2.5 py-1 rounded-xl">
+              Değerlendirme & Sınav Bekleniyor
+            </span>
+          </div>
+
+          {upcomingAssessments.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {upcomingAssessments.map((item) => {
+                const badge = getTypeBadge(item)
+                return (
+                  <div
+                    key={item.id}
+                    className="p-5 rounded-3xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 shadow-xs hover:border-amber-400/60 hover:shadow-md transition-all flex flex-col justify-between space-y-4"
+                  >
+                    <div className="space-y-3">
+                      {/* Header Pill */}
+                      <div className="flex items-center justify-between gap-2">
+                        <span
+                          className={`text-[10px] font-black px-2.5 py-1 rounded-xl border flex items-center gap-1.5 ${badge.className}`}
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full ${badge.dot}`} />
+                          <span>{badge.label}</span>
+                        </span>
+
+                        <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2.5 py-1 rounded-xl">
+                          Puan Verilecek
+                        </span>
+                      </div>
+
+                      {/* Title & Subject */}
+                      <div>
+                        <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wide">
+                          {item.courseName}
+                        </div>
+                        <h3 className="text-sm font-black text-gray-900 dark:text-white mt-0.5 leading-snug">
+                          {item.title}
+                        </h3>
+                      </div>
+
+                      {/* Metadata Box */}
+                      <div className="p-3.5 rounded-2xl bg-gray-50/80 dark:bg-gray-800/50 border border-gray-200/50 dark:border-gray-700/50 space-y-2 text-xs">
+                        <div className="flex items-center justify-between text-gray-600 dark:text-gray-300">
+                          <span className="flex items-center gap-1.5 text-gray-400">
+                            <Calendar size={13} />
+                            Tarih:
+                          </span>
+                          <span className="font-extrabold text-gray-900 dark:text-white font-mono">
+                            {item.date}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between text-gray-600 dark:text-gray-300">
+                          <span className="flex items-center gap-1.5 text-gray-400">
+                            <Clock size={13} />
+                            Saat:
+                          </span>
+                          <span className="font-bold text-gray-900 dark:text-white font-mono">
+                            {item.time} ({item.durationMinutes} Dk)
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between text-gray-600 dark:text-gray-300">
+                          <span className="flex items-center gap-1.5 text-gray-400">
+                            <MapPin size={13} />
+                            Salon:
+                          </span>
+                          <span className="font-bold text-gray-900 dark:text-white truncate max-w-[150px]">
+                            {item.location}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Scope / Topics */}
+                      {item.scope && (
+                        <div className="text-[11px] text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/30 p-2.5 rounded-xl border border-gray-100 dark:border-gray-800 leading-relaxed">
+                          <strong className="text-gray-700 dark:text-gray-200 font-bold block mb-0.5">
+                            Konu Kapsamı:
+                          </strong>
+                          {item.scope}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Teacher Info */}
+                    <div className="pt-3 border-t border-gray-100 dark:border-gray-800/80 flex items-center justify-between text-[11px]">
+                      <span className="text-gray-400 flex items-center gap-1">
+                        <User size={12} />
+                        {item.teacherName || 'Zümre Öğretmeni'}
+                      </span>
+                      <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                        100 Tam Puan Üzerinden
+                      </span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="p-8 text-center rounded-3xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 text-xs text-gray-400">
+              Şu an değerlendirme bekleyen bir sınav bulunmamaktadır.
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Empty State when no results across filters */}
       {filteredAssessments.length === 0 && (
         <div className="p-12 text-center rounded-3xl bg-white dark:bg-[#121826] border border-gray-200/80 dark:border-gray-800/80 space-y-2">
           <AlertCircle size={28} className="mx-auto text-gray-400" />
