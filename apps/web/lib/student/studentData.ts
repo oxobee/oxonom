@@ -45,6 +45,8 @@ export interface StudentProfile {
   classRank: number
   attendanceRate: number
   absentDays: number
+  absentExcusedDays?: number
+  absentUnexcusedDays?: number
   parentName: string
   parentPhone: string
   parentRelation: string
@@ -80,6 +82,8 @@ export const DEFAULT_STUDENT_PROFILE: StudentProfile = {
   classRank: 1,
   attendanceRate: 100,
   absentDays: 0,
+  absentExcusedDays: 0,
+  absentUnexcusedDays: 0,
   parentName: 'Ebru UĞURLU',
   parentPhone: '+90 532 999 1100',
   parentRelation: 'Anne (Mimar)',
@@ -538,43 +542,117 @@ export function getSynchronizedStudentProfile(): StudentProfile {
       } catch (_) {}
     }
 
-    // 3. Dynamic GPA calculation from official student record and teacher grade inputs
-    const grades: MStudentCourseGrade[] =
-      studentRecord.grades && studentRecord.grades.length > 0
-        ? studentRecord.grades
-        : ALL_INITIAL_STUDENTS[0]?.grades || []
+    // 3. Dynamic GPA and Course Grades calculation from official student record & calendar exams
+    const baseCurriculum = [
+      'Türk Dili ve Edebiyatı',
+      'Matematik',
+      'Fizik & Fen Bilimleri',
+      'Bilişim & Kodlama',
+      'Yabancı Dil (İngilizce)',
+      'Tarih',
+      'Coğrafya',
+      'Felsefe',
+    ]
 
-    let calculatedGpa = 0
-    const gradedCourses = grades.filter((g) => {
-      const hasE1 = g.exam1 !== undefined && g.exam1 !== null && String(g.exam1) !== ''
-      const hasE2 = g.exam2 !== undefined && g.exam2 !== null && String(g.exam2) !== ''
-      const hasPf = g.performance !== undefined && g.performance !== null && String(g.performance) !== ''
-      const hasAvg = g.average !== undefined && g.average !== null && !isNaN(Number(g.average)) && String(g.average) !== ''
-      return hasE1 || hasE2 || hasPf || hasAvg
+    const gradesMap = new Map<string, MStudentCourseGrade>()
+
+    // Seed base courses
+    baseCurriculum.forEach((cName) => {
+      gradesMap.set(cName, {
+        courseName: cName,
+        teacherName: cName.includes('Edebiyat')
+          ? 'Ebru TEKNECİ'
+          : cName.includes('Matematik')
+          ? 'Matematik Zümresi'
+          : cName.includes('Bilişim')
+          ? 'Ebru TEKNECİ'
+          : 'Ders Öğretmeni',
+      })
     })
 
-    if (gradedCourses.length > 0) {
-      const totalAvg = gradedCourses.reduce((acc, g) => {
-        const e1 = g.exam1 !== undefined && g.exam1 !== null && String(g.exam1) !== '' ? Number(g.exam1) : null
-        const e2 = g.exam2 !== undefined && g.exam2 !== null && String(g.exam2) !== '' ? Number(g.exam2) : null
-        const pf = g.performance !== undefined && g.performance !== null && String(g.performance) !== '' ? Number(g.performance) : null
-
-        let avg = g.average
-        if (avg === undefined || avg === null || isNaN(Number(avg)) || String(avg) === '') {
-          const v1 = e1 ?? (e2 ?? pf ?? 0)
-          const v2 = e2 ?? (e1 ?? pf ?? 0)
-          const vp = pf ?? (e1 ?? e2 ?? 0)
-          avg = Number(((v1 * 0.4) + (v2 * 0.4) + (vp * 0.2)).toFixed(1))
+    // Overlay studentRecord.grades
+    if (studentRecord.grades && Array.isArray(studentRecord.grades)) {
+      studentRecord.grades.forEach((g) => {
+        if (g && g.courseName) {
+          const existing = gradesMap.get(g.courseName) || {
+            courseName: g.courseName,
+            teacherName: g.teacherName || 'Ders Öğretmeni',
+          }
+          gradesMap.set(g.courseName, { ...existing, ...g })
         }
-        return acc + Number(avg)
-      }, 0)
-      calculatedGpa = Number((totalAvg / gradedCourses.length).toFixed(1))
+      })
+    }
+
+    // Overlay actual exam scores from getStoredSchoolExams()
+    try {
+      const calendarExams = getStoredSchoolExams()
+      const studentId = studentRecord.id || 's-1'
+
+      calendarExams.forEach((ce) => {
+        const studentScore = ce.scores?.[studentId] ?? ce.scores?.['s-1']
+        if (studentScore !== undefined && studentScore !== null && String(studentScore) !== '') {
+          const scoreNum = Number(studentScore)
+          const targetCourse = ce.courseName
+          const cur = gradesMap.get(targetCourse) || {
+            courseName: targetCourse,
+            teacherName: ce.teacherName || 'Ders Öğretmeni',
+          }
+
+          if (
+            ce.type === 'performance' ||
+            ce.type === 'oral' ||
+            (ce.examTypeLabel || '').includes('Sözlü') ||
+            (ce.examTypeLabel || '').includes('Performans')
+          ) {
+            cur.performance = scoreNum
+          } else if (ce.title.includes('2.') || (ce.id && ce.id.includes('2'))) {
+            cur.exam2 = scoreNum
+          } else {
+            cur.exam1 = scoreNum
+          }
+
+          gradesMap.set(targetCourse, cur)
+        }
+      })
+    } catch (_) {}
+
+    // Calculate each course average strictly from entered components
+    const grades: MStudentCourseGrade[] = Array.from(gradesMap.values()).map((g) => {
+      const e1 = g.exam1 !== undefined && g.exam1 !== null && String(g.exam1) !== '' ? Number(g.exam1) : null
+      const e2 = g.exam2 !== undefined && g.exam2 !== null && String(g.exam2) !== '' ? Number(g.exam2) : null
+      const perf = g.performance !== undefined && g.performance !== null && String(g.performance) !== '' ? Number(g.performance) : null
+
+      const entered: { val: number; weight: number }[] = []
+      if (e1 !== null && !isNaN(e1)) entered.push({ val: e1, weight: 0.4 })
+      if (e2 !== null && !isNaN(e2)) entered.push({ val: e2, weight: 0.4 })
+      if (perf !== null && !isNaN(perf)) entered.push({ val: perf, weight: 0.2 })
+
+      let avg: number | undefined = undefined
+      if (entered.length > 0) {
+        const totalWeight = entered.reduce((acc, c) => acc + c.weight, 0)
+        const weightedSum = entered.reduce((acc, c) => acc + c.val * c.weight, 0)
+        avg = Number((weightedSum / totalWeight).toFixed(1))
+      } else if (g.average !== undefined && g.average !== null && !isNaN(Number(g.average))) {
+        avg = Number(Number(g.average).toFixed(1))
+      }
+
+      return {
+        ...g,
+        average: avg,
+      }
+    })
+
+    // Calculate overall GPA strictly from courses that have actual grades
+    const coursesWithAverage = grades.filter((g) => g.average !== undefined && g.average !== null)
+    let calculatedGpa = 0
+
+    if (coursesWithAverage.length > 0) {
+      const sum = coursesWithAverage.reduce((acc, g) => acc + (Number(g.average) || 0), 0)
+      calculatedGpa = Number((sum / coursesWithAverage.length).toFixed(1))
     } else if (typeof studentRecord.gpa === 'number') {
       calculatedGpa = studentRecord.gpa
     } else if (studentRecord.gpa) {
       calculatedGpa = Number(studentRecord.gpa)
-    } else {
-      calculatedGpa = 0
     }
 
     // Dynamic Class Rank based on GPA
@@ -658,6 +736,8 @@ export function getSynchronizedStudentProfile(): StudentProfile {
       classRank,
       attendanceRate,
       absentDays,
+      absentExcusedDays: studentRecord.absentExcusedDays ?? 0,
+      absentUnexcusedDays: studentRecord.absentUnexcusedDays ?? absentDays,
       parentName: studentRecord.parentName || 'Ebru UĞURLU',
       parentPhone: studentRecord.parentPhone || '+90 532 999 1100',
       parentRelation: studentRecord.parentRelation || 'Anne (Mimar)',
