@@ -45,7 +45,7 @@ export function OxoMascotIcon({ className = 'w-9 h-9' }: { className?: string })
   return (
     <div className={`relative flex items-center justify-center shrink-0 ${className}`}>
       <img
-        src="/images/oxonom-hero-owl.png"
+        src="/oxonom-hero-owl.png"
         alt="Oxonom Maskot"
         className="w-full h-full object-contain drop-shadow-md select-none"
       />
@@ -145,7 +145,7 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
 
   return (
     <div
-      className={`${theme} min-h-screen bg-[#F4F7FC] dark:bg-[#0B132B] text-slate-800 dark:text-slate-100 font-jakarta flex flex-col lg:flex-row transition-colors duration-200 antialiased`}
+      className={`${theme} min-h-screen w-full max-w-full overflow-x-hidden bg-[#F4F7FC] dark:bg-[#0B132B] text-slate-800 dark:text-slate-100 font-jakarta flex flex-col lg:flex-row transition-colors duration-200 antialiased`}
     >
       {/* ── DESKTOP SIDEBAR (lg+) — Lingora Claymorphic SaaS Style ── */}
       <aside className="hidden lg:flex flex-col w-[270px] xl:w-[280px] h-screen sticky top-0 shrink-0 bg-white dark:bg-[#111A2E] border-r border-blue-100/70 dark:border-blue-950/50 z-30 select-none shadow-[2px_0_24px_rgba(29,119,255,0.03)]">
@@ -399,7 +399,7 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
         </header>
 
         {/* ── MAIN CONTENT AREA ── */}
-        <main className="flex-1 min-w-0 pb-28 lg:pb-12 flex flex-col">
+        <main className="flex-1 w-full max-w-full min-w-0 overflow-x-hidden pb-28 lg:pb-12 flex flex-col">
           {children}
         </main>
       </div>

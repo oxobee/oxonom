@@ -624,35 +624,32 @@ export default function StudentDashboardView() {
   const activeRoomName = activeOrNextLesson?.roomName || `Derslik ${profile.className}`
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-[1520px] mx-auto space-y-6 lg:space-y-8 select-none">
+    <div className="w-full max-w-full overflow-x-hidden p-3.5 sm:p-6 lg:p-8 max-w-[1520px] mx-auto space-y-6 lg:space-y-8 select-none">
       {/* ── TOP SECTION: 2 COLUMNS (Left Main Content + Right Widgets Column) ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start w-full min-w-0">
         {/* ── LEFT MAIN COLUMN (lg:col-span-8) ── */}
-        <div className="lg:col-span-8 space-y-6 lg:space-y-7 min-w-0">
+        <div className="lg:col-span-8 space-y-6 lg:space-y-7 min-w-0 w-full">
           {/* ── SKY-BLUE HERO CARD (Lingora Style Banner with 3D Popping Owl Mascot) ── */}
-          {/* Extra top margin provided so the owl's head pops out above the box with depth effect */}
-          <div className="relative mt-8 sm:mt-14 lg:mt-20 rounded-[32px] bg-gradient-to-r from-[#D9EBFF] via-[#E8F3FF] to-[#D5E9FF] dark:from-[#132247] dark:via-[#192D5C] dark:to-[#132247] border border-blue-100/90 dark:border-blue-900/50 p-6 sm:p-8 pt-8 shadow-[0_12px_40px_rgba(29,119,255,0.08)]">
-            {/* Mascot on Mobile: Centered above card with head protruding */}
-            <div className="sm:hidden flex justify-center -mt-20 mb-3 pointer-events-none select-none">
-              <div className="relative w-36 h-36">
-                <img
-                  src="/images/oxonom-hero-owl.png"
-                  alt="Oxonom Maskot"
-                  className="w-full h-full object-contain filter drop-shadow-[0_14px_20px_rgba(0,0,0,0.18)]"
-                />
-              </div>
+          <div className="relative mt-10 sm:mt-14 lg:mt-20 rounded-[28px] sm:rounded-[32px] bg-gradient-to-r from-[#D9EBFF] via-[#E8F3FF] to-[#D5E9FF] dark:from-[#132247] dark:via-[#192D5C] dark:to-[#132247] border border-blue-100/90 dark:border-blue-900/50 p-5 sm:p-8 pt-7 sm:pt-8 shadow-[0_12px_40px_rgba(29,119,255,0.08)]">
+            {/* Mobile 3D Mascot: Positioned on the top-right, cap protruding 36px above the top border */}
+            <div className="sm:hidden absolute -top-9 right-3 w-28 h-28 z-20 pointer-events-none select-none">
+              <img
+                src="/oxonom-hero-owl.png"
+                alt="Oxonom Maskot"
+                className="w-full h-full object-contain filter drop-shadow-[0_12px_20px_rgba(0,0,0,0.18)]"
+              />
             </div>
 
-            {/* Mascot on Desktop/Tablet: Positioned on the right, protruding high above the upper border */}
-            <div className="hidden sm:block absolute right-4 lg:right-8 xl:right-12 -top-16 sm:-top-20 lg:-top-24 xl:-top-28 w-52 h-52 sm:w-60 sm:h-60 lg:w-72 lg:h-72 xl:w-84 xl:h-84 z-20 pointer-events-none select-none">
+            {/* Desktop/Tablet 3D Mascot: Large size with graduation cap popping high above the upper border */}
+            <div className="hidden sm:block absolute right-4 lg:right-8 xl:right-12 -top-14 sm:-top-18 lg:-top-22 xl:-top-24 w-52 h-52 sm:w-60 sm:h-60 lg:w-72 lg:h-72 xl:w-80 xl:h-80 z-20 pointer-events-none select-none">
               <img
-                src="/images/oxonom-hero-owl.png"
+                src="/oxonom-hero-owl.png"
                 alt="Oxonom Maskot"
                 className="w-full h-full object-contain filter drop-shadow-[0_20px_30px_rgba(0,0,0,0.22)]"
               />
             </div>
 
-            <div className="relative z-10 flex flex-col justify-between max-w-md sm:max-w-sm lg:max-w-md xl:max-w-lg space-y-3 sm:space-y-4">
+            <div className="relative z-10 flex flex-col justify-between pr-24 sm:pr-0 max-w-md sm:max-w-sm lg:max-w-md xl:max-w-lg space-y-3 sm:space-y-4">
               {/* Active Class Pill */}
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 dark:bg-slate-900/90 text-[11px] font-black text-slate-700 dark:text-slate-200 shadow-xs border border-blue-100/80 dark:border-blue-900/60 self-start">
                 <span className="text-sm">🇹🇷</span>
@@ -661,7 +658,7 @@ export default function StudentDashboardView() {
               </div>
 
               <div>
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+                <h1 className="text-xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
                   {greeting},{' '}
                   <span className="text-[#1D77FF] dark:text-[#5BA0FF]">{profile.firstName}!</span> 👋
                 </h1>
@@ -679,20 +676,20 @@ export default function StudentDashboardView() {
               </div>
 
               {/* Action Buttons */}
-              <div className="pt-1 flex items-center gap-3 flex-wrap">
+              <div className="pt-1 flex items-center gap-2.5 sm:gap-3 flex-wrap">
                 <Link
                   href="/student/courses"
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#1D77FF] hover:bg-blue-600 active:scale-95 text-white font-black text-xs sm:text-sm shadow-lg shadow-blue-500/30 transition-all hover:shadow-xl hover:shadow-blue-500/40"
+                  className="inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-[#1D77FF] hover:bg-blue-600 active:scale-95 text-white font-black text-xs sm:text-sm shadow-lg shadow-blue-500/30 transition-all hover:shadow-xl hover:shadow-blue-500/40"
                 >
                   <span>Dersine Devam Et</span>
-                  <ArrowRight size={16} />
+                  <ArrowRight size={15} />
                 </Link>
 
                 <Link
                   href="/student/assignments"
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-white/80 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-sm border border-blue-100/80 dark:border-blue-900/40 shadow-xs transition-all"
+                  className="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-full bg-white/80 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-sm border border-blue-100/80 dark:border-blue-900/40 shadow-xs transition-all"
                 >
-                  <BookOpen size={15} className="text-[#1D77FF]" />
+                  <BookOpen size={14} className="text-[#1D77FF]" />
                   <span>Ödevler ({pendingAssignments.length})</span>
                 </Link>
               </div>
@@ -1077,9 +1074,9 @@ export default function StudentDashboardView() {
 
           {/* TABLO MATRİS GÖRÜNÜMÜ: 5 Gün x Periyotlar */}
           {scheduleViewMode === 'matrix' && (
-            <div className="rounded-2xl border border-blue-100/70 dark:border-blue-900/40 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[660px]">
+            <div className="w-full max-w-full rounded-2xl border border-blue-100/70 dark:border-blue-900/40 overflow-hidden">
+              <div className="w-full max-w-full overflow-x-auto touch-pan-x custom-scrollbar">
+                <table className="w-full text-left border-collapse min-w-[620px]">
                   <thead>
                     <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-blue-100/80 dark:border-blue-900/60 text-[10px] font-black text-slate-600 dark:text-slate-300">
                       <th className="p-3 w-28 text-center shrink-0">Saat / Periyot</th>
@@ -1202,9 +1199,9 @@ export default function StudentDashboardView() {
 
           {/* GÜNLÜK LİSTE GÖRÜNÜMÜ */}
           {scheduleViewMode === 'list' && (
-            <div className="space-y-4">
+            <div className="space-y-4 w-full min-w-0">
               {/* Day Selector Pill Tabs */}
-              <div className="grid grid-cols-5 gap-2 p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-800">
+              <div className="grid grid-cols-5 gap-1 sm:gap-2 p-1 sm:p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-800 w-full min-w-0">
                 {DAYS_LIST.map((day) => {
                   const isSelected = selectedScheduleDay === day.key
                   const isToday = todayKey === day.key
@@ -1215,7 +1212,7 @@ export default function StudentDashboardView() {
                       key={day.key}
                       type="button"
                       onClick={() => setSelectedScheduleDay(day.key)}
-                      className={`py-2 px-2 rounded-xl text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
+                      className={`py-2 px-1 sm:px-2 rounded-xl text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 min-w-0 ${
                         isSelected
                           ? 'bg-white dark:bg-[#111A2E] text-[#1D77FF] font-black shadow-xs'
                           : 'text-slate-500 hover:text-slate-900 dark:hover:text-white font-bold'
