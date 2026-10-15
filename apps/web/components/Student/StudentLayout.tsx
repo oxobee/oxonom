@@ -40,39 +40,15 @@ import {
 import HeaderLiveClock from '@components/Common/HeaderLiveClock'
 import { useMobileTheme } from '@components/Mobile/useMobileTheme'
 
-// Cute Oxo Bird Mascot Icon matching the Lingora design aesthetic
+// Real 3D Owl Mascot Icon matching user's uploaded corporate mascot
 export function OxoMascotIcon({ className = 'w-9 h-9' }: { className?: string }) {
   return (
     <div className={`relative flex items-center justify-center shrink-0 ${className}`}>
-      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full drop-shadow-sm">
-        {/* Soft Circular Body */}
-        <circle cx="50" cy="50" r="45" fill="url(#oxoGrad)" />
-        {/* White Belly */}
-        <ellipse cx="50" cy="64" rx="28" ry="24" fill="#FFFFFF" opacity="0.94" />
-        {/* Aviator Goggles & Glasses */}
-        <rect x="22" y="32" width="24" height="20" rx="8" fill="#0F172A" stroke="#F59E0B" strokeWidth="3" />
-        <rect x="54" y="32" width="24" height="20" rx="8" fill="#0F172A" stroke="#F59E0B" strokeWidth="3" />
-        <line x1="46" y1="42" x2="54" y2="42" stroke="#F59E0B" strokeWidth="3.5" strokeLinecap="round" />
-        {/* Eye pupils with reflection */}
-        <circle cx="34" cy="42" r="5" fill="#38BDF8" />
-        <circle cx="36" cy="40" r="2" fill="#FFFFFF" />
-        <circle cx="66" cy="42" r="5" fill="#38BDF8" />
-        <circle cx="68" cy="40" r="2" fill="#FFFFFF" />
-        {/* Cute Beak */}
-        <polygon points="50,48 43,58 57,58" fill="#F97316" />
-        {/* Rosy Cheeks */}
-        <ellipse cx="23" cy="59" rx="5" ry="3" fill="#FDA4AF" opacity="0.8" />
-        <ellipse cx="77" cy="59" rx="5" ry="3" fill="#FDA4AF" opacity="0.8" />
-        {/* Golden Scarf */}
-        <path d="M28 72 C42 80, 58 80, 72 72 C68 84, 32 84, 28 72 Z" fill="#EAB308" />
-        <defs>
-          <linearGradient id="oxoGrad" x1="10" y1="10" x2="90" y2="90" gradientUnits="userSpaceOnUse">
-            <stop stopColor="#38BDF8" />
-            <stop offset="0.5" stopColor="#1D77FF" />
-            <stop offset="1" stopColor="#1E40AF" />
-          </linearGradient>
-        </defs>
-      </svg>
+      <img
+        src="/images/oxonom-hero-owl.png"
+        alt="Oxonom Maskot"
+        className="w-full h-full object-contain drop-shadow-md select-none"
+      />
     </div>
   )
 }
@@ -341,22 +317,22 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
             {/* Live Clock */}
             <HeaderLiveClock theme="cyan" variant="desktop" />
 
-            {/* Streak Counter 🔥 */}
+            {/* Real Academic GPA Badge */}
             <div
-              className="h-10 px-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/40 flex items-center gap-2 text-xs font-black text-amber-600 dark:text-amber-400 shadow-xs cursor-default hover:scale-105 transition-transform"
-              title="Aktif Günlük Seri"
+              className="h-10 px-3.5 rounded-2xl bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200/60 dark:border-indigo-800/40 flex items-center gap-2 text-xs font-black text-indigo-600 dark:text-indigo-400 shadow-xs cursor-default hover:scale-105 transition-transform"
+              title="Dönem Genel Not Ortalaması"
             >
-              <Flame size={17} className="fill-amber-500 text-amber-500" />
-              <span>12 Gün</span>
+              <Award size={16} className="text-indigo-600 dark:text-indigo-400" />
+              <span>{profile.gpa > 0 ? `${profile.gpa} Ort.` : '0.0 Ort.'}</span>
             </div>
 
-            {/* Diamonds / XP Points 💎 */}
+            {/* Real Attendance Rate Badge */}
             <div
-              className="h-10 px-3.5 rounded-2xl bg-sky-50 dark:bg-sky-950/30 border border-sky-200/60 dark:border-sky-800/40 flex items-center gap-2 text-xs font-black text-[#1D77FF] dark:text-sky-400 shadow-xs cursor-default hover:scale-105 transition-transform"
-              title="Toplam Akademik Puan"
+              className="h-10 px-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-800/40 flex items-center gap-2 text-xs font-black text-emerald-600 dark:text-emerald-400 shadow-xs cursor-default hover:scale-105 transition-transform"
+              title="Resmi Devam Oranı"
             >
-              <Gem size={16} className="fill-sky-400 text-[#1D77FF]" />
-              <span>{studentXp} Puan</span>
+              <TrendingUp size={16} className="text-emerald-600 dark:text-emerald-400" />
+              <span>%{profile.attendanceRate} Devam</span>
             </div>
 
             {/* Notification Bell 🔔 */}
@@ -381,7 +357,7 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
           </div>
         </header>
 
-        {/* ── MOBILE HEADER (<lg) — Modernized with Oxo Brand & Quick Badges ── */}
+        {/* ── MOBILE HEADER (<lg) — Modernized with Oxo Brand & Real Badges ── */}
         <header className="lg:hidden sticky top-0 z-30 bg-white/90 dark:bg-[#111A2E]/90 backdrop-blur-xl border-b border-blue-100/70 dark:border-blue-950/50 px-4 py-3 flex items-center justify-between select-none">
           <div className="flex items-center gap-2.5">
             <OxoMascotIcon className="w-8 h-8" />
@@ -399,16 +375,16 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
             {/* Live Clock compact */}
             <HeaderLiveClock theme="cyan" variant="mobile" />
 
-            {/* Streak compact */}
-            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/50 text-[11px] font-black">
-              <Flame size={13} className="fill-amber-500 text-amber-500" />
-              <span>12</span>
+            {/* Real GPA compact */}
+            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200/50 text-[11px] font-black">
+              <Award size={12} />
+              <span>{profile.gpa > 0 ? `${profile.gpa}` : '0.0'}</span>
             </div>
 
-            {/* XP compact */}
-            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-sky-50 dark:bg-sky-950/40 text-[#1D77FF] dark:text-sky-400 border border-sky-200/50 text-[11px] font-black">
-              <Gem size={13} className="fill-sky-400 text-[#1D77FF]" />
-              <span>{studentXp}</span>
+            {/* Real Attendance compact */}
+            <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 text-[11px] font-black">
+              <TrendingUp size={12} />
+              <span>%{profile.attendanceRate}</span>
             </div>
 
             <button

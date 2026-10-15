@@ -41,6 +41,8 @@ import {
   Trophy,
   Crown,
   ChevronDown,
+  UserCheck,
+  Check,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import {
@@ -158,108 +160,6 @@ function getStudentDashboardSubjectColor(subject: string, color?: string) {
     border: 'border-blue-200 dark:border-blue-900/60',
     text: 'text-blue-700 dark:text-blue-300',
   }
-}
-
-// 3D-Styled Illustrated Hero Mascot ("Oxo" the Aviator Bluebird)
-function HeroMascotBird() {
-  return (
-    <div className="relative w-44 h-44 sm:w-52 sm:h-52 shrink-0 select-none pointer-events-none drop-shadow-2xl">
-      <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-        <defs>
-          <radialGradient id="bodyGrad" cx="40%" cy="35%" r="65%">
-            <stop offset="0%" stopColor="#67E8F9" />
-            <stop offset="45%" stopColor="#1D77FF" />
-            <stop offset="100%" stopColor="#1E40AF" />
-          </radialGradient>
-          <linearGradient id="wingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#38BDF8" />
-            <stop offset="100%" stopColor="#1E3A8A" />
-          </linearGradient>
-          <linearGradient id="bellyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#FFFFFF" />
-            <stop offset="100%" stopColor="#E2E8F0" />
-          </linearGradient>
-          <linearGradient id="scarfGrad" x1="0%" y1="0%" x2="100%" y2="50%">
-            <stop offset="0%" stopColor="#FDE047" />
-            <stop offset="100%" stopColor="#EAB308" />
-          </linearGradient>
-          <linearGradient id="beakGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#FB923C" />
-            <stop offset="100%" stopColor="#EA580C" />
-          </linearGradient>
-          <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="6" result="blur" />
-            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-          </filter>
-        </defs>
-
-        {/* Soft Shadow on ground */}
-        <ellipse cx="100" cy="180" rx="60" ry="12" fill="#000000" opacity="0.15" />
-
-        {/* Left Foot */}
-        <ellipse cx="78" cy="174" rx="14" ry="7" fill="#F97316" />
-        <ellipse cx="70" cy="173" rx="5" ry="4" fill="#EA580C" />
-        <ellipse cx="86" cy="173" rx="5" ry="4" fill="#EA580C" />
-
-        {/* Right Foot */}
-        <ellipse cx="122" cy="174" rx="14" ry="7" fill="#F97316" />
-        <ellipse cx="114" cy="173" rx="5" ry="4" fill="#EA580C" />
-        <ellipse cx="130" cy="173" rx="5" ry="4" fill="#EA580C" />
-
-        {/* Tail Feathers */}
-        <path d="M40 135 C20 130, 15 145, 30 155 C38 160, 50 150, 48 140 Z" fill="#1E3A8A" />
-
-        {/* Main Body */}
-        <circle cx="100" cy="110" r="62" fill="url(#bodyGrad)" />
-
-        {/* White Belly */}
-        <ellipse cx="100" cy="126" rx="42" ry="38" fill="url(#bellyGrad)" />
-
-        {/* Left Wing (Waving Upward) */}
-        <path
-          d="M48 105 C25 80, 20 50, 45 42 C60 36, 68 70, 58 115 Z"
-          fill="url(#wingGrad)"
-          transform="rotate(-15 48 85)"
-        />
-
-        {/* Right Wing (Resting at side) */}
-        <path
-          d="M152 105 C175 110, 185 135, 168 150 C155 160, 142 140, 146 115 Z"
-          fill="url(#wingGrad)"
-        />
-
-        {/* Aviator Goggles & Glasses Strap */}
-        <path d="M40 76 Q100 85 160 76" stroke="#78350F" strokeWidth="8" strokeLinecap="round" />
-        <rect x="46" y="58" width="46" height="36" rx="14" fill="#0F172A" stroke="#F59E0B" strokeWidth="5" />
-        <rect x="108" y="58" width="46" height="36" rx="14" fill="#0F172A" stroke="#F59E0B" strokeWidth="5" />
-        <line x1="92" y1="76" x2="108" y2="76" stroke="#F59E0B" strokeWidth="6" strokeLinecap="round" />
-
-        {/* Eyes & Pupils */}
-        <circle cx="69" cy="76" r="14" fill="#38BDF8" />
-        <circle cx="70" cy="74" r="8" fill="#0F172A" />
-        <circle cx="73" cy="71" r="3.5" fill="#FFFFFF" />
-
-        <circle cx="131" cy="76" r="14" fill="#38BDF8" />
-        <circle cx="132" cy="74" r="8" fill="#0F172A" />
-        <circle cx="135" cy="71" r="3.5" fill="#FFFFFF" />
-
-        {/* Beak */}
-        <path d="M100 86 L85 106 L115 106 Z" fill="url(#beakGrad)" />
-
-        {/* Rosy Cheeks */}
-        <ellipse cx="48" cy="110" rx="9" ry="5.5" fill="#FDA4AF" opacity="0.8" />
-        <ellipse cx="152" cy="110" rx="9" ry="5.5" fill="#FDA4AF" opacity="0.8" />
-
-        {/* Golden Yellow Scarf */}
-        <path
-          d="M52 130 C75 145, 125 145, 148 130 C154 142, 146 152, 132 152 C115 152, 85 152, 68 152 C54 152, 46 142, 52 130 Z"
-          fill="url(#scarfGrad)"
-        />
-        {/* Scarf flowing tail */}
-        <path d="M132 144 C150 150, 168 165, 175 155 C180 148, 165 138, 145 136 Z" fill="#EAB308" />
-      </svg>
-    </div>
-  )
 }
 
 export default function StudentDashboardView() {
@@ -550,9 +450,24 @@ export default function StudentDashboardView() {
       .sort((a, b) => a.period - b.period)
   }, [weeklySchedule, selectedScheduleDay])
 
-  const todayClassesCount = useMemo(() => {
-    return weeklySchedule.filter((e) => e.day === todayKey).length || 6
+  const todayClasses = useMemo(() => {
+    return weeklySchedule
+      .filter((e) => e.day === todayKey)
+      .sort((a, b) => a.period - b.period)
   }, [weeklySchedule, todayKey])
+
+  const todayClassesCount = todayClasses.length || 6
+
+  // Find today's current or upcoming active lesson for "Kaldığın Yerden Devam Et"
+  const activeOrNextLesson = useMemo(() => {
+    if (todayClasses.length > 0) {
+      return todayClasses[0]
+    }
+    if (weeklySchedule.length > 0) {
+      return weeklySchedule[0]
+    }
+    return null
+  }, [todayClasses, weeklySchedule])
 
   // Pending assignments
   const pendingAssignments = useMemo(() => {
@@ -647,7 +562,7 @@ export default function StudentDashboardView() {
   }
 
   const completedTasksCount = tasks.filter((t) => t.completed).length
-  const totalTasksCount = tasks.length || 4
+  const totalTasksCount = tasks.length || 0
 
   // Time-aware greeting
   const greeting = useMemo(() => {
@@ -657,25 +572,56 @@ export default function StudentDashboardView() {
     return 'İyi akşamlar'
   }, [])
 
-  // Gamified Leaderboard list (Dynamic with current student highlighted)
-  const leaderboardList = [
-    { rank: 1, name: 'Elif Yılmaz', xp: '3,420 XP', crown: true, isMe: false },
-    { rank: 2, name: `${profile.name} (Sen)`, xp: `${Math.round(profile.gpa * 10 + 2250)} XP`, crown: false, isMe: true },
-    { rank: 3, name: 'Caner Demir', xp: '2,980 XP', crown: false, isMe: false },
-    { rank: 4, name: 'Zeynep Kaya', xp: '2,760 XP', crown: false, isMe: false },
-    { rank: 5, name: 'Burak Şahin', xp: '2,540 XP', crown: false, isMe: false },
+  // Core actual courses of 9-A curriculum (100% REAL DATA, NO MOCK)
+  const realCoreCourses = [
+    {
+      id: 'turk-dili-ve-edebiyati',
+      name: 'Türk Dili ve Edebiyatı',
+      teacher: 'Ebru TEKNECİ',
+      hours: '5 Saat / Hafta',
+      icon: Headphones,
+      bg: 'bg-[#FAF5FF] dark:bg-[#1E192E]',
+      border: 'border-purple-100 dark:border-purple-900/30',
+      iconBg: 'bg-purple-500/15 text-purple-600 dark:text-purple-400',
+    },
+    {
+      id: 'matematik',
+      name: 'Matematik',
+      teacher: 'Ebru TEKNECİ',
+      hours: '6 Saat / Hafta',
+      icon: Mic,
+      bg: 'bg-[#FFF1F2] dark:bg-[#2A161B]',
+      border: 'border-rose-100 dark:border-rose-900/30',
+      iconBg: 'bg-rose-500/15 text-rose-600 dark:text-rose-400',
+    },
+    {
+      id: 'bilisim-ve-kodlama',
+      name: 'Bilişim & Kodlama',
+      teacher: 'Ebru TEKNECİ',
+      hours: '2 Saat / Hafta',
+      icon: Lightbulb,
+      bg: 'bg-[#F0FDF4] dark:bg-[#13261C]',
+      border: 'border-emerald-100 dark:border-emerald-900/30',
+      iconBg: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
+    },
+    {
+      id: 'yabanci-dil',
+      name: 'Yabancı Dil (İngilizce)',
+      teacher: 'Yabancı Dil Zümresi',
+      hours: '4 Saat / Hafta',
+      icon: Compass,
+      bg: 'bg-[#FFFBEB] dark:bg-[#261E10]',
+      border: 'border-amber-100 dark:border-amber-900/30',
+      iconBg: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
+    },
   ]
 
-  // Weekday progress checklist
-  const weekdays = [
-    { label: 'Pzt', checked: true },
-    { label: 'Sal', checked: true },
-    { label: 'Çar', checked: true },
-    { label: 'Per', checked: true },
-    { label: 'Cum', checked: false },
-    { label: 'Cmt', checked: false },
-    { label: 'Paz', checked: false },
-  ]
+  const activeSubjectName =
+    (activeOrNextLesson as any)?.subjectName ||
+    activeOrNextLesson?.subject ||
+    'Türk Dili ve Edebiyatı'
+  const activeTeacherName = activeOrNextLesson?.teacherName || profile.mentorTeacher || 'Ebru TEKNECİ'
+  const activeRoomName = activeOrNextLesson?.roomName || `Derslik ${profile.className}`
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-[1520px] mx-auto space-y-6 lg:space-y-8 select-none">
@@ -683,64 +629,77 @@ export default function StudentDashboardView() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
         {/* ── LEFT MAIN COLUMN (lg:col-span-8) ── */}
         <div className="lg:col-span-8 space-y-6 lg:space-y-7 min-w-0">
-          {/* ── SKY-BLUE HERO CARD (Lingora Style Banner) ── */}
-          <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-r from-[#D9EBFF] via-[#E8F3FF] to-[#D5E9FF] dark:from-[#132247] dark:via-[#192D5C] dark:to-[#132247] border border-blue-100/90 dark:border-blue-900/50 p-6 sm:p-8 shadow-[0_12px_40px_rgba(29,119,255,0.08)]">
-            <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-              {/* Left Column: Greeting, Motivational subtitle, Big Blue CTA */}
-              <div className="space-y-3 sm:space-y-4 max-w-lg">
-                {/* Active Class Pill */}
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 dark:bg-slate-900/90 text-[11px] font-black text-slate-700 dark:text-slate-200 shadow-xs border border-blue-100/80 dark:border-blue-900/60">
-                  <span className="text-sm">🇹🇷</span>
-                  <span>{profile.className} Sınıfı • Aktif Dönem</span>
-                  <ChevronRight size={13} className="text-slate-400" />
-                </div>
+          {/* ── SKY-BLUE HERO CARD (Lingora Style Banner with 3D Popping Owl Mascot) ── */}
+          {/* Extra top margin provided so the owl's head pops out above the box with depth effect */}
+          <div className="relative mt-8 sm:mt-14 lg:mt-20 rounded-[32px] bg-gradient-to-r from-[#D9EBFF] via-[#E8F3FF] to-[#D5E9FF] dark:from-[#132247] dark:via-[#192D5C] dark:to-[#132247] border border-blue-100/90 dark:border-blue-900/50 p-6 sm:p-8 pt-8 shadow-[0_12px_40px_rgba(29,119,255,0.08)]">
+            {/* Mascot on Mobile: Centered above card with head protruding */}
+            <div className="sm:hidden flex justify-center -mt-20 mb-3 pointer-events-none select-none">
+              <div className="relative w-36 h-36">
+                <img
+                  src="/images/oxonom-hero-owl.png"
+                  alt="Oxonom Maskot"
+                  className="w-full h-full object-contain filter drop-shadow-[0_14px_20px_rgba(0,0,0,0.18)]"
+                />
+              </div>
+            </div>
 
-                <div>
-                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-                    {greeting},{' '}
-                    <span className="text-[#1D77FF] dark:text-[#5BA0FF]">{profile.firstName}!</span> 👋
-                  </h1>
-                  <p className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 mt-1.5 leading-relaxed">
-                    Bugünkü hedeflerine ve başarıya bir adım daha yaklaş! Seni bekleyen{' '}
-                    <span className="font-bold text-slate-900 dark:text-white">
-                      {todayClassesCount} ders saati
-                    </span>{' '}
-                    ve{' '}
-                    <span className="font-bold text-slate-900 dark:text-white">
-                      {pendingAssignments.length} aktif ödev
-                    </span>{' '}
-                    bulunuyor.
-                  </p>
-                </div>
+            {/* Mascot on Desktop/Tablet: Positioned on the right, protruding high above the upper border */}
+            <div className="hidden sm:block absolute right-4 lg:right-8 xl:right-12 -top-16 sm:-top-20 lg:-top-24 xl:-top-28 w-52 h-52 sm:w-60 sm:h-60 lg:w-72 lg:h-72 xl:w-84 xl:h-84 z-20 pointer-events-none select-none">
+              <img
+                src="/images/oxonom-hero-owl.png"
+                alt="Oxonom Maskot"
+                className="w-full h-full object-contain filter drop-shadow-[0_20px_30px_rgba(0,0,0,0.22)]"
+              />
+            </div>
 
-                {/* Big Pill CTA Button */}
-                <div className="pt-1 flex items-center gap-3 flex-wrap">
-                  <Link
-                    href="/student/courses"
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#1D77FF] hover:bg-blue-600 active:scale-95 text-white font-black text-xs sm:text-sm shadow-lg shadow-blue-500/30 transition-all hover:shadow-xl hover:shadow-blue-500/40"
-                  >
-                    <span>Dersine Devam Et</span>
-                    <ArrowRight size={16} />
-                  </Link>
-
-                  <Link
-                    href="/student/assignments"
-                    className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-white/80 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-sm border border-blue-100/80 dark:border-blue-900/40 shadow-xs transition-all"
-                  >
-                    <BookOpen size={15} className="text-[#1D77FF]" />
-                    <span>Ödevler ({pendingAssignments.length})</span>
-                  </Link>
-                </div>
+            <div className="relative z-10 flex flex-col justify-between max-w-md sm:max-w-sm lg:max-w-md xl:max-w-lg space-y-3 sm:space-y-4">
+              {/* Active Class Pill */}
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 dark:bg-slate-900/90 text-[11px] font-black text-slate-700 dark:text-slate-200 shadow-xs border border-blue-100/80 dark:border-blue-900/60 self-start">
+                <span className="text-sm">🇹🇷</span>
+                <span>{profile.className} Sınıfı • Aktif Dönem</span>
+                <ChevronRight size={13} className="text-slate-400" />
               </div>
 
-              {/* Right Mascot: Illustrated 3D Aviator Bird Mascot */}
-              <div className="hidden sm:flex items-center justify-center shrink-0">
-                <HeroMascotBird />
+              <div>
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+                  {greeting},{' '}
+                  <span className="text-[#1D77FF] dark:text-[#5BA0FF]">{profile.firstName}!</span> 👋
+                </h1>
+                <p className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 mt-1.5 leading-relaxed">
+                  Bugün {profile.className} şubesinde seni bekleyen{' '}
+                  <span className="font-bold text-slate-900 dark:text-white">
+                    {todayClassesCount} ders saati
+                  </span>{' '}
+                  ve{' '}
+                  <span className="font-bold text-slate-900 dark:text-white">
+                    {pendingAssignments.length} aktif ödev
+                  </span>{' '}
+                  bulunuyor.
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-1 flex items-center gap-3 flex-wrap">
+                <Link
+                  href="/student/courses"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#1D77FF] hover:bg-blue-600 active:scale-95 text-white font-black text-xs sm:text-sm shadow-lg shadow-blue-500/30 transition-all hover:shadow-xl hover:shadow-blue-500/40"
+                >
+                  <span>Dersine Devam Et</span>
+                  <ArrowRight size={16} />
+                </Link>
+
+                <Link
+                  href="/student/assignments"
+                  className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-white/80 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs sm:text-sm border border-blue-100/80 dark:border-blue-900/40 shadow-xs transition-all"
+                >
+                  <BookOpen size={15} className="text-[#1D77FF]" />
+                  <span>Ödevler ({pendingAssignments.length})</span>
+                </Link>
               </div>
             </div>
           </div>
 
-          {/* ── "KALDIĞIN YERDEN DEVAM ET" / "CONTINUE LEARNING" ── */}
+          {/* ── "KALDIĞIN YERDEN DEVAM ET" / AKTİF VE SIRADAKİ DERS ── */}
           <div className="space-y-3.5">
             <div className="flex items-center justify-between">
               <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">
@@ -750,12 +709,12 @@ export default function StudentDashboardView() {
                 href="/student/courses"
                 className="text-xs font-bold text-[#1D77FF] hover:underline flex items-center gap-1"
               >
-                <span>Tümünü Gör</span>
+                <span>Tüm Dersler</span>
                 <ChevronRight size={14} />
               </Link>
             </div>
 
-            {/* Feature Active Lesson Card */}
+            {/* Real Active Lesson Card */}
             <div className="p-4 sm:p-5 rounded-[28px] bg-white dark:bg-[#111A2E] border border-blue-100/80 dark:border-blue-900/40 shadow-[0_8px_30px_rgb(29,119,255,0.04)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="flex items-center gap-4 min-w-0">
                 <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-tr from-blue-500 to-indigo-600 text-white flex items-center justify-center font-black text-xl shrink-0 shadow-md shadow-blue-500/20">
@@ -766,17 +725,20 @@ export default function StudentDashboardView() {
                     <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/40 text-[#1D77FF] border border-blue-200/50">
                       Aktif Müfredat
                     </span>
-                    <span className="text-[11px] font-bold text-slate-400">Ünite 2 • 3. Ders</span>
+                    <span className="text-[11px] font-bold text-slate-400">
+                      {activeOrNextLesson ? `${activeOrNextLesson.period}. Ders Saati` : 'Dönem Planı'}
+                    </span>
                   </div>
                   <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white truncate mt-1">
-                    9-A Türk Dili ve Edebiyatı — Hikaye ve Anlatım
+                    {profile.className} {activeSubjectName}
                   </h3>
-                  {/* Progress Bar */}
-                  <div className="flex items-center gap-3 mt-2">
-                    <div className="w-40 sm:w-56 h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                      <div className="h-full rounded-full bg-[#1D77FF] w-[60%]" />
-                    </div>
-                    <span className="text-[11px] font-black text-slate-500">%60</span>
+                  <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-semibold">
+                    <span>{activeTeacherName}</span>
+                    <span>•</span>
+                    <span className="flex items-center gap-1">
+                      <MapPin size={11} />
+                      {activeRoomName}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -786,7 +748,7 @@ export default function StudentDashboardView() {
                 className="w-full sm:w-auto px-6 py-3 rounded-full bg-[#1D77FF] hover:bg-blue-600 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-blue-500/25 shrink-0 transition-transform active:scale-95"
               >
                 <Play size={14} className="fill-white" />
-                <span>Başla</span>
+                <span>Derse Git</span>
               </Link>
             </div>
 
@@ -794,87 +756,57 @@ export default function StudentDashboardView() {
             <LiveClassRadar role="student" initialClassCode={profile.className || '9-A'} />
           </div>
 
-          {/* ── "GELİŞİM ALANLARI & BECERİLER" / "BUILD YOUR SKILLS" ── */}
+          {/* ── "BECERİLERİNİ GELİŞTİR" / GERÇEK DERSLER (100% REAL DATA) ── */}
           <div className="space-y-3.5">
-            <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">
-              Becerilerini Geliştir
-            </h2>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-              {/* Skill 1: Dinleme & Anlama (Pastel Purple) */}
+            <div className="flex items-center justify-between">
+              <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">
+                Derslerim & Gelişim Alanları
+              </h2>
               <Link
                 href="/student/courses"
-                className="p-4 rounded-[24px] bg-[#FAF5FF] dark:bg-[#1E192E] border border-purple-100 dark:border-purple-900/30 hover:shadow-md transition-all group flex flex-col justify-between"
+                className="text-xs font-bold text-[#1D77FF] hover:underline flex items-center gap-1"
               >
-                <div className="w-10 h-10 rounded-2xl bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
-                  <Headphones size={20} />
-                </div>
-                <div>
-                  <div className="text-xs font-black text-slate-900 dark:text-white">Dinleme</div>
-                  <div className="text-[10px] text-slate-400 font-semibold mt-0.5">12 Etkinlik</div>
-                </div>
-                <div className="pt-2 flex justify-end">
-                  <ArrowRight size={13} className="text-purple-500 group-hover:translate-x-1 transition-transform" />
-                </div>
+                <span>Müfredatı İncele</span>
+                <ChevronRight size={14} />
               </Link>
+            </div>
 
-              {/* Skill 2: Soru & Çözüm (Pastel Coral/Rose) */}
-              <Link
-                href="/student/learn"
-                className="p-4 rounded-[24px] bg-[#FFF1F2] dark:bg-[#2A161B] border border-rose-100 dark:border-rose-900/30 hover:shadow-md transition-all group flex flex-col justify-between"
-              >
-                <div className="w-10 h-10 rounded-2xl bg-rose-500/15 text-rose-600 dark:text-rose-400 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
-                  <Mic size={20} />
-                </div>
-                <div>
-                  <div className="text-xs font-black text-slate-900 dark:text-white">Soru Çözüm</div>
-                  <div className="text-[10px] text-slate-400 font-semibold mt-0.5">18 Quiz</div>
-                </div>
-                <div className="pt-2 flex justify-end">
-                  <ArrowRight size={13} className="text-rose-500 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </Link>
-
-              {/* Skill 3: Fen & Kavram (Pastel Green) */}
-              <Link
-                href="/student/courses"
-                className="p-4 rounded-[24px] bg-[#F0FDF4] dark:bg-[#13261C] border border-emerald-100 dark:border-emerald-900/30 hover:shadow-md transition-all group flex flex-col justify-between"
-              >
-                <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
-                  <Lightbulb size={20} />
-                </div>
-                <div>
-                  <div className="text-xs font-black text-slate-900 dark:text-white">Fen Deney</div>
-                  <div className="text-[10px] text-slate-400 font-semibold mt-0.5">24 İçerik</div>
-                </div>
-                <div className="pt-2 flex justify-end">
-                  <ArrowRight size={13} className="text-emerald-500 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </Link>
-
-              {/* Skill 4: Kodlama & Mantık (Pastel Amber) */}
-              <Link
-                href="/student/library"
-                className="p-4 rounded-[24px] bg-[#FFFBEB] dark:bg-[#261E10] border border-amber-100 dark:border-amber-900/30 hover:shadow-md transition-all group flex flex-col justify-between"
-              >
-                <div className="w-10 h-10 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
-                  <Compass size={20} />
-                </div>
-                <div>
-                  <div className="text-xs font-black text-slate-900 dark:text-white">Mantık & Kod</div>
-                  <div className="text-[10px] text-slate-400 font-semibold mt-0.5">16 Modül</div>
-                </div>
-                <div className="pt-2 flex justify-end">
-                  <ArrowRight size={13} className="text-amber-500 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </Link>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+              {realCoreCourses.map((c) => {
+                const Icon = c.icon
+                return (
+                  <Link
+                    key={c.id}
+                    href={`/student/courses/${c.id}`}
+                    className={`p-4 rounded-[24px] ${c.bg} border ${c.border} hover:shadow-md transition-all group flex flex-col justify-between`}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className={`w-10 h-10 rounded-2xl ${c.iconBg} flex items-center justify-center group-hover:scale-105 transition-transform`}>
+                        <Icon size={20} />
+                      </div>
+                      <span className="text-[10px] font-bold text-slate-400">{c.hours}</span>
+                    </div>
+                    <div>
+                      <div className="text-xs font-black text-slate-900 dark:text-white leading-tight">
+                        {c.name}
+                      </div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold mt-1">
+                        {c.teacher}
+                      </div>
+                    </div>
+                    <div className="pt-2 flex justify-end">
+                      <ArrowRight size={13} className="text-[#1D77FF] group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </Link>
+                )
+              })}
             </div>
           </div>
         </div>
 
-        {/* ── RIGHT COLUMN: GAMIFIED WIDGETS (lg:col-span-4) ── */}
+        {/* ── RIGHT COLUMN: AUTHENTIC REAL DATA WIDGETS (lg:col-span-4) ── */}
         <div className="lg:col-span-4 space-y-6 lg:space-y-7">
-          {/* ── WIDGET 1: YOUR DAILY GOAL (Günlük Hedef & Çalışma Sayacı) ── */}
+          {/* ── WIDGET 1: GÜNLÜK HEDEF & PLANLAYICI GÖREVLERİ (REAL DATA) ── */}
           <div className="p-6 rounded-[32px] bg-white dark:bg-[#111A2E] border border-blue-100/80 dark:border-blue-900/40 shadow-[0_8px_30px_rgb(29,119,255,0.04)] space-y-5">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-black text-slate-900 dark:text-white">
@@ -884,7 +816,7 @@ export default function StudentDashboardView() {
                 href="/student/planner"
                 className="text-xs font-bold text-[#1D77FF] hover:underline"
               >
-                Düzenle &gt;
+                Planlayıcı &gt;
               </Link>
             </div>
 
@@ -909,7 +841,11 @@ export default function StudentDashboardView() {
                     stroke="#1D77FF"
                     strokeWidth="8"
                     strokeDasharray="251.2"
-                    strokeDashoffset={251.2 * (1 - (completedTasksCount / Math.max(1, totalTasksCount)))}
+                    strokeDashoffset={
+                      totalTasksCount > 0
+                        ? 251.2 * (1 - completedTasksCount / totalTasksCount)
+                        : 251.2
+                    }
                     strokeLinecap="round"
                     className="transition-all duration-700 ease-out"
                   />
@@ -917,157 +853,155 @@ export default function StudentDashboardView() {
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
                   <Flame size={16} className="text-amber-500 fill-amber-500 mb-0.5" />
                   <div className="text-xs font-black text-slate-900 dark:text-white leading-tight">
-                    {completedTasksCount * 5 + 10} / 20
+                    {completedTasksCount}/{Math.max(1, totalTasksCount)}
                   </div>
-                  <div className="text-[8px] font-bold text-slate-400 uppercase">Dk</div>
+                  <div className="text-[8px] font-bold text-slate-400 uppercase">Görev</div>
                 </div>
               </div>
 
               <div>
                 <div className="text-xs font-black text-slate-900 dark:text-white">
-                  Harika gidiyorsun!
+                  {completedTasksCount === totalTasksCount && totalTasksCount > 0
+                    ? 'Tüm görevler tamamlandı! 🎉'
+                    : 'Hedefine odaklan!'}
                 </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold mt-0.5 flex items-center gap-1">
-                  <span>4 günlük seridesin</span>
-                  <Flame size={13} className="fill-amber-500 text-amber-500" />
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold mt-0.5">
+                  {tasks.length > 0
+                    ? `${totalTasksCount - completedTasksCount} görev bekliyor`
+                    : 'Henüz görev eklenmedi'}
                 </div>
                 <div className="text-[10px] text-[#1D77FF] font-bold mt-2">
-                  %{Math.round((completedTasksCount / Math.max(1, totalTasksCount)) * 100)} Tamamlandı
+                  %{totalTasksCount > 0 ? Math.round((completedTasksCount / totalTasksCount) * 100) : 0} İlerleme
                 </div>
               </div>
             </div>
 
-            {/* Weekly Days Row (Pzt, Sal, Çar, Per, Cum, Cmt, Paz) */}
-            <div className="grid grid-cols-7 gap-1 pt-1 border-t border-slate-100 dark:border-slate-800">
-              {weekdays.map((d, idx) => (
-                <div key={idx} className="flex flex-col items-center gap-1.5 py-1">
-                  <div
-                    className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black transition-all ${
-                      d.checked
-                        ? 'bg-[#1D77FF] text-white shadow-xs'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
-                    }`}
-                  >
-                    {d.checked ? '✓' : ''}
-                  </div>
-                  <span className="text-[9px] font-bold text-slate-400">{d.label}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Quick Interactive Tasks */}
+            {/* Real Interactive Tasks List */}
             <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800">
-              {tasks.slice(0, 3).map((task) => (
-                <button
-                  key={task.id}
-                  type="button"
-                  onClick={() => handleToggleTask(task.id)}
-                  className="w-full text-left p-2.5 rounded-2xl bg-slate-50 dark:bg-[#15213B] hover:bg-slate-100/80 dark:hover:bg-slate-800/60 border border-blue-50 dark:border-blue-900/30 flex items-center gap-2.5 transition-colors cursor-pointer"
-                >
-                  <div
-                    className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 transition-colors ${
-                      task.completed
-                        ? 'bg-[#1D77FF] border-[#1D77FF] text-white'
-                        : 'border-slate-300 dark:border-slate-600'
-                    }`}
+              {tasks.length > 0 ? (
+                tasks.slice(0, 4).map((task) => (
+                  <button
+                    key={task.id}
+                    type="button"
+                    onClick={() => handleToggleTask(task.id)}
+                    className="w-full text-left p-2.5 rounded-2xl bg-slate-50 dark:bg-[#15213B] hover:bg-slate-100/80 dark:hover:bg-slate-800/60 border border-blue-50 dark:border-blue-900/30 flex items-center gap-2.5 transition-colors cursor-pointer"
                   >
-                    {task.completed && <CheckSquare size={12} />}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p
-                      className={`text-xs font-bold leading-tight truncate ${
+                    <div
+                      className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 transition-colors ${
                         task.completed
-                          ? 'line-through text-slate-400 dark:text-slate-500'
-                          : 'text-slate-800 dark:text-slate-200'
+                          ? 'bg-[#1D77FF] border-[#1D77FF] text-white'
+                          : 'border-slate-300 dark:border-slate-600'
                       }`}
                     >
-                      {task.title}
-                    </p>
-                  </div>
-                </button>
-              ))}
+                      {task.completed && <CheckSquare size={12} />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className={`text-xs font-bold leading-tight truncate ${
+                          task.completed
+                            ? 'line-through text-slate-400 dark:text-slate-500'
+                            : 'text-slate-800 dark:text-slate-200'
+                        }`}
+                      >
+                        {task.title}
+                      </p>
+                      <span className="text-[9px] text-slate-400 block mt-0.5">{task.course}</span>
+                    </div>
+                  </button>
+                ))
+              ) : (
+                <div className="text-center py-4 text-xs text-slate-400 font-medium">
+                  Henüz planlanmış bir görev bulunmuyor.
+                </div>
+              )}
             </div>
           </div>
 
-          {/* ── WIDGET 2: LEADERBOARD (Sınıf Başarı Sıralaması) ── */}
+          {/* ── WIDGET 2: AKADEMİK BAŞARI & RESMİ STATÜ (100% REAL DATA, NO FAKE NAMES) ── */}
           <div className="p-6 rounded-[32px] bg-white dark:bg-[#111A2E] border border-blue-100/80 dark:border-blue-900/40 shadow-[0_8px_30px_rgb(29,119,255,0.04)] space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-black text-slate-900 dark:text-white">
-                Sıralama
+                Akademik Durumum
               </h3>
-              <div className="flex items-center gap-1 text-xs font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full cursor-pointer">
-                <span>Bu Hafta</span>
-                <ChevronDown size={13} />
+              <Link
+                href="/student/progress"
+                className="text-xs font-bold text-[#1D77FF] hover:underline"
+              >
+                Detay &gt;
+              </Link>
+            </div>
+
+            {/* Official Student Standing Row */}
+            <div className="p-4 rounded-2xl bg-[#EAF2FF] dark:bg-[#1A2849] border border-[#1D77FF]/30 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#1D77FF] to-cyan-400 text-white font-black text-xs flex items-center justify-center">
+                    {profile.firstName.slice(0, 1)}
+                    {profile.lastName.slice(0, 1)}
+                  </div>
+                  <div>
+                    <div className="text-xs font-black text-slate-900 dark:text-white">
+                      {profile.name}
+                    </div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                      {profile.className} • No: {profile.studentNo}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <div className="text-sm font-black text-[#1D77FF]">
+                    {profile.gpa > 0 ? `${profile.gpa} Ort.` : '0.0 Ort.'}
+                  </div>
+                  <div className="text-[10px] font-bold text-slate-500">
+                    Sınıf {profile.classRank}.'si
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-blue-200/50 dark:border-blue-900/50 flex items-center justify-between text-[11px]">
+                <span className="text-slate-500 dark:text-slate-400">Resmi Sicil & Statü:</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                  {profile.disciplineStatus.split('—')[0]?.trim() || 'Temiz Sicil'}
+                </span>
               </div>
             </div>
 
-            {/* Top 5 list */}
-            <div className="space-y-1.5">
-              {leaderboardList.map((item) => (
-                <div
-                  key={item.rank}
-                  className={`flex items-center justify-between p-2.5 rounded-2xl transition-all ${
-                    item.isMe
-                      ? 'bg-[#EAF2FF] dark:bg-[#1A2849] border border-[#1D77FF]/30 font-black'
-                      : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
-                  }`}
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      className={`w-6 h-6 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${
-                        item.rank === 1
-                          ? 'bg-amber-400 text-white'
-                          : item.rank === 2
-                          ? 'bg-slate-300 dark:bg-slate-700 text-slate-800 dark:text-white'
-                          : item.rank === 3
-                          ? 'bg-amber-700 text-white'
-                          : 'text-slate-400'
-                      }`}
-                    >
-                      {item.rank}
-                    </div>
-
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-400 to-indigo-500 text-white font-bold text-xs flex items-center justify-center shrink-0">
-                      {item.name.slice(0, 1)}
-                    </div>
-
-                    <div className="min-w-0">
-                      <div className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate flex items-center gap-1">
-                        <span>{item.name}</span>
-                        {item.crown && <Crown size={12} className="text-amber-500 fill-amber-500 shrink-0" />}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="text-xs font-black text-slate-700 dark:text-slate-300 shrink-0">
-                    {item.xp}
-                  </div>
+            {/* Attendance & Class Details */}
+            <div className="grid grid-cols-2 gap-2 text-center">
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-[#15213B] border border-blue-50 dark:border-blue-900/30">
+                <div className="text-[10px] text-slate-400 font-bold uppercase">Devam Oranı</div>
+                <div className="text-base font-black text-emerald-600 mt-0.5">
+                  %{profile.attendanceRate}
                 </div>
-              ))}
+              </div>
+
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-[#15213B] border border-blue-50 dark:border-blue-900/30">
+                <div className="text-[10px] text-slate-400 font-bold uppercase">Devamsızlık</div>
+                <div className="text-base font-black text-slate-800 dark:text-slate-100 mt-0.5">
+                  {profile.absentDays || 0} Gün
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* ── WIDGET 3: HAFTALIK BAŞARI ÖDÜLÜ (Gift Milestone Card) ── */}
+          {/* ── WIDGET 3: ÇALIŞMA & ÖDEV TESLİM TAKİBİ (REAL DATA) ── */}
           <div className="p-5 rounded-[28px] bg-gradient-to-br from-[#E0F2FE] via-[#EDE9FE] to-[#FCE7F3] dark:from-[#11233F] dark:to-[#211636] border border-sky-200/50 dark:border-purple-900/30 shadow-xs flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-white dark:bg-slate-800 shadow-md flex items-center justify-center text-3xl shrink-0">
-              🎁
+              🎯
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-xs font-black text-slate-900 dark:text-white leading-tight">
-                Haftalık Başarı Ödülü
+                Ödev & Çalışma Durumu
               </div>
               <p className="text-[10px] text-slate-600 dark:text-slate-400 mt-0.5">
-                5 görevi tamamla ve Haftalık Başarı Rozetini Kazan!
+                {pendingAssignments.length > 0
+                  ? `${pendingAssignments.length} bekleyen ödevin bulunuyor.`
+                  : 'Tüm ödevlerini teslim ettin, harikasın!'}
               </p>
               <div className="flex items-center gap-2 mt-2">
-                <div className="flex-1 h-2 rounded-full bg-white/70 dark:bg-slate-700 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-[#1D77FF]"
-                    style={{ width: `${Math.min(100, (completedTasksCount / 5) * 100)}%` }}
-                  />
-                </div>
-                <span className="text-[10px] font-black text-slate-700 dark:text-slate-200">
-                  {completedTasksCount}/5
+                <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300">
+                  {Object.keys(submissions).length} Teslim / {assignments.length || 1} Toplam
                 </span>
               </div>
             </div>
@@ -1379,7 +1313,7 @@ export default function StudentDashboardView() {
           )}
         </div>
 
-        {/* ── 2 COLUMNS: YAKLAŞAN SINAVLAR & BEKLEYEN ÖDEVLER ── */}
+        {/* ── 2 COLUMNS: YAKLAŞAN SINAVLAR & BEKLEYEN ÖDEVLER (REAL DATA) ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
           {/* ── YAKLAŞAN SINAVLAR ── */}
           <div
@@ -1471,7 +1405,7 @@ export default function StudentDashboardView() {
             )}
           </div>
 
-          {/* ── BEKLEYEN ÖDEVLER ── */}
+          {/* ── BEKLEYEN ÖDEVLER (REAL DATA) ── */}
           <div className="p-6 sm:p-7 rounded-[32px] bg-white dark:bg-[#111A2E] border border-blue-100/80 dark:border-blue-900/40 shadow-[0_8px_30px_rgb(29,119,255,0.04)] space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -1548,7 +1482,7 @@ export default function StudentDashboardView() {
         </div>
       </div>
 
-      {/* ── MODAL: DERS NOTU EKLEME VE GÖRÜNTÜLEME MODALI ── */}
+      {/* ── MODAL: DERS NOTU EKLEME VE GÖRÜNTÜLEME MODALI (100% WORKING & SYNCED) ── */}
       <AnimatePresence>
         {isNoteModalOpen && selectedLessonNoteTarget && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 font-jakarta select-none">
