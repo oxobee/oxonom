@@ -18,6 +18,7 @@ import {
 import {
   STUDENT_ANNOUNCEMENTS,
   getSynchronizedStudentAnnouncements,
+  resolveAnnouncementVariables,
   type StudentAnnouncement,
 } from '@/lib/student/studentData'
 import toast from 'react-hot-toast'
@@ -221,10 +222,10 @@ export default function StudentCommunicationView({
                     </div>
 
                     <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
-                      {ann.title}
+                      {resolveAnnouncementVariables(ann.title)}
                     </h3>
                     <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
-                      {ann.content}
+                      {resolveAnnouncementVariables(ann.content)}
                     </p>
                   </div>
                 )

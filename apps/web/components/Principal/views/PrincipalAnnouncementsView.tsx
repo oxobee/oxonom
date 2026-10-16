@@ -35,6 +35,7 @@ import toast from 'react-hot-toast'
 import { getStoredPrincipalProfile } from '@/lib/principal/principalProfileStorage'
 import {
   saveSynchronizedStudentAnnouncement,
+  resolveAnnouncementVariables,
   type StudentAnnouncement,
 } from '@/lib/student/studentData'
 
@@ -111,26 +112,9 @@ export function playNotificationChime() {
   } catch (_) {}
 }
 
-// Dynamic Template Variable Replacer
-export function resolveTemplateTags(text: string, overrides?: Record<string, string>): string {
-  const defaults: Record<string, string> = {
-    ogrenci_adi: 'Erçil UĞURLU',
-    veli_adi: 'Ebru UĞURLU',
-    ogretmen_adi: 'Özlem ZOR',
-    sinif: '1/A',
-    okul_adi: 'Oxonom Okulları',
-    tarih: new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }),
-    saat: '14:30',
-  }
-  const merged = { ...defaults, ...overrides }
-  return text
-    .replace(/\{ogrenci_adi\}|\{OgrenciAdi\}/gi, merged.ogrenci_adi)
-    .replace(/\{veli_adi\}|\{VeliAdi\}/gi, merged.veli_adi)
-    .replace(/\{ogretmen_adi\}|\{OgretmenAdi\}/gi, merged.ogretmen_adi)
-    .replace(/\{sinif\}|\{Sinif\}/gi, merged.sinif)
-    .replace(/\{okul_adi\}|\{OkulAdi\}/gi, merged.okul_adi)
-    .replace(/\{tarih\}|\{Tarih\}/gi, merged.tarih)
-    .replace(/\{saat\}|\{Saat\}/gi, merged.saat)
+// Dynamic Template Variable Replacer (delegating to unified resolver)
+export function resolveTemplateTags(text: string, overrides?: any): string {
+  return resolveAnnouncementVariables(text, overrides)
 }
 
 // MEB-Compliant SMS & Announcement Templates
@@ -312,7 +296,7 @@ export default function PrincipalAnnouncementsView() {
         if (saved) {
           const parsed = JSON.parse(saved)
           if (Array.isArray(parsed) && parsed.length > 0) {
-            // Cleanse stale references
+            // Cleanse stale references and resolve template variables
             return parsed.map((item: any) => {
               let updated = { ...item }
               if (updated.title && updated.title.includes('9-A')) {
@@ -320,6 +304,12 @@ export default function PrincipalAnnouncementsView() {
               }
               if (updated.content && updated.content.includes('9-A')) {
                 updated.content = updated.content.replace(/9-A/g, '1/A')
+              }
+              if (updated.title) {
+                updated.title = resolveAnnouncementVariables(updated.title)
+              }
+              if (updated.content) {
+                updated.content = resolveAnnouncementVariables(updated.content)
               }
               if (!updated.priority) updated.priority = 'normal'
               if (!updated.targetChannels) {
@@ -459,10 +449,13 @@ export default function PrincipalAnnouncementsView() {
     if (targetParent) channelNames.push('Veli Paneli (SMS)')
     if (targetBoard) channelNames.push('Akıllı Tahta')
 
+    const resolvedTitle = resolveAnnouncementVariables(formTitle.trim())
+    const resolvedContent = resolveAnnouncementVariables(formContent.trim())
+
     const newAnn: AnnouncementItem = {
       id: `ann-p-${Date.now()}`,
-      title: formTitle.trim(),
-      content: formContent.trim(),
+      title: resolvedTitle,
+      content: resolvedContent,
       author: principalName,
       authorRole: 'Okul Müdürü',
       targetChannels: channels,
@@ -484,13 +477,13 @@ export default function PrincipalAnnouncementsView() {
     if (targetStudent) {
       const studentAnn: StudentAnnouncement = {
         id: `ann-s-${Date.now()}`,
-        title: formTitle.trim(),
+        title: resolvedTitle,
         author: principalName,
         authorRole: 'Okul Müdürü',
         date: 'Bugün, ' + new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
         category: formCategory === 'emergency' ? 'emergency' : formCategory === 'academic' ? 'academic' : 'general',
         priority: formPriority,
-        content: formContent.trim(),
+        content: resolvedContent,
         isPinned: formIsPinned,
       }
       saveSynchronizedStudentAnnouncement(studentAnn)
@@ -503,8 +496,8 @@ export default function PrincipalAnnouncementsView() {
         const currentTeacherAnn = rawTeacher ? JSON.parse(rawTeacher) : []
         const newTeacherAnn = {
           id: `ann-t-${Date.now()}`,
-          title: formTitle.trim(),
-          content: formContent.trim(),
+          title: resolvedTitle,
+          content: resolvedContent,
           author: principalName,
           authorRole: 'Okul Müdürü',
           date: 'Bugün, ' + new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
@@ -521,8 +514,8 @@ export default function PrincipalAnnouncementsView() {
       const recipientCount = 124
       const newSms: SmsLogItem = {
         id: `sms-log-${Date.now()}`,
-        title: formTitle.trim(),
-        message: formContent.trim().substring(0, 155),
+        title: resolvedTitle,
+        message: resolvedContent.substring(0, 155),
         recipientGroup: 'Veli Paneli (SMS Bildirimi)',
         recipientCount,
         status: 'delivered',
@@ -562,10 +555,13 @@ export default function PrincipalAnnouncementsView() {
     if (smsTargetGroup.includes('Öğretmen')) count = 18
     if (smsTargetGroup.includes('Devamsız')) count = 4
 
+    const resolvedSmsTitle = resolveAnnouncementVariables(smsTitle.trim())
+    const resolvedSmsContent = resolveAnnouncementVariables(smsMessage.trim())
+
     const newLog: SmsLogItem = {
       id: `sms-log-${Date.now()}`,
-      title: smsTitle.trim(),
-      message: smsMessage.trim(),
+      title: resolvedSmsTitle,
+      message: resolvedSmsContent,
       recipientGroup: smsTargetGroup,
       recipientCount: count,
       status: 'delivered',
@@ -926,12 +922,12 @@ export default function PrincipalAnnouncementsView() {
 
                   {/* Başlık */}
                   <h3 className="text-sm sm:text-base font-black text-gray-900 dark:text-white leading-snug">
-                    {ann.title}
+                    {resolveAnnouncementVariables(ann.title)}
                   </h3>
 
                   {/* İçerik */}
                   <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
-                    {ann.content}
+                    {resolveAnnouncementVariables(ann.content)}
                   </p>
                 </div>
 

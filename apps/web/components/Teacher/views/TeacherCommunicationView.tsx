@@ -16,6 +16,10 @@ import {
   GraduationCap,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import {
+  resolveAnnouncementVariables,
+  saveSynchronizedStudentAnnouncement,
+} from '@/lib/student/studentData'
 
 interface TeacherAnnouncement {
   id: string
@@ -77,7 +81,12 @@ export default function TeacherCommunicationView() {
       if (raw) {
         const parsed = JSON.parse(raw)
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setAnnouncements(parsed)
+          const resolved = parsed.map((item: any) => ({
+            ...item,
+            title: resolveAnnouncementVariables(item.title || ''),
+            content: resolveAnnouncementVariables(item.content || ''),
+          }))
+          setAnnouncements(resolved)
           return
         }
       }
@@ -102,10 +111,13 @@ export default function TeacherCommunicationView() {
       return
     }
 
+    const resolvedTitle = resolveAnnouncementVariables(formTitle.trim())
+    const resolvedContent = resolveAnnouncementVariables(formContent.trim())
+
     const newAnn: TeacherAnnouncement = {
       id: `ann-t-${Date.now()}`,
-      title: formTitle.trim(),
-      content: formContent.trim(),
+      title: resolvedTitle,
+      content: resolvedContent,
       author: 'Özlem ZOR',
       authorRole: '1/A Sınıf Öğretmeni',
       date: 'Bugün, ' + new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
@@ -118,6 +130,21 @@ export default function TeacherCommunicationView() {
     try {
       localStorage.setItem('oxonom_teacher_announcements', JSON.stringify(updated))
       window.dispatchEvent(new CustomEvent('oxonom_teacher_announcements_updated'))
+    } catch (_) {}
+
+    // Also sync to Student Portal
+    try {
+      saveSynchronizedStudentAnnouncement({
+        id: `ann-s-${Date.now()}`,
+        title: resolvedTitle,
+        author: 'Özlem ZOR',
+        authorRole: '1/A Sınıf Öğretmeni',
+        date: 'Bugün, ' + new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }),
+        category: 'general',
+        priority: 'normal',
+        content: resolvedContent,
+        isPinned: false,
+      })
     } catch (_) {}
 
     toast.success('Duyurunuz başarıyla yayınlandı!')
@@ -236,10 +263,10 @@ export default function TeacherCommunicationView() {
               </div>
 
               <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
-                {ann.title}
+                {resolveAnnouncementVariables(ann.title)}
               </h3>
               <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
-                {ann.content}
+                {resolveAnnouncementVariables(ann.content)}
               </p>
             </div>
           )

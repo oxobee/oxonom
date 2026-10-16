@@ -435,38 +435,146 @@ export const STUDENT_ANNOUNCEMENTS: StudentAnnouncement[] = [
   },
 ]
 
+export interface TemplateResolveContext {
+  studentName?: string
+  ogrenci_adi?: string
+  parentName?: string
+  veli_adi?: string
+  className?: string
+  sinif?: string
+  teacherName?: string
+  ogretmen_adi?: string
+  schoolName?: string
+  okul_adi?: string
+  date?: string
+  tarih?: string
+  time?: string
+  saat?: string
+  studentNo?: string
+  ogrenci_no?: string
+  gpa?: string | number
+  puan?: string | number
+  gradeLevel?: string
+  kademe?: string
+  parentPhone?: string
+  telefon?: string
+}
+
+export function resolveAnnouncementVariables(
+  text: string,
+  customContext?: TemplateResolveContext
+): string {
+  if (!text) return ''
+
+  let profile: any = null
+  if (typeof window !== 'undefined') {
+    try {
+      profile = getSynchronizedStudentProfile()
+    } catch (_) {}
+  }
+
+  const now = new Date()
+  const defaultDate = `${now.getDate()} ${now.toLocaleString('tr-TR', { month: 'long' })} ${now.getFullYear()}`
+  const defaultTime = now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+
+  let mentorTeacher = profile?.mentorTeacher || 'Özlem ZOR'
+  if (mentorTeacher.includes('(')) {
+    mentorTeacher = mentorTeacher.split('(')[0].trim()
+  }
+
+  const ctx = {
+    studentName: customContext?.studentName || customContext?.ogrenci_adi || profile?.name || 'Erçil UĞURLU',
+    parentName: customContext?.parentName || customContext?.veli_adi || profile?.parentName || 'Ebru UĞURLU',
+    className: customContext?.className || customContext?.sinif || profile?.className || '1/A',
+    teacherName: customContext?.teacherName || customContext?.ogretmen_adi || mentorTeacher || 'Özlem ZOR',
+    schoolName: customContext?.schoolName || customContext?.okul_adi || profile?.schoolName || 'Oxonom Okulları',
+    date: customContext?.date || customContext?.tarih || defaultDate,
+    time: customContext?.time || customContext?.saat || defaultTime,
+    studentNo: customContext?.studentNo || customContext?.ogrenci_no || profile?.studentNo || '101',
+    gpa: customContext?.gpa || customContext?.puan || profile?.gpa || '98.8',
+    gradeLevel: customContext?.gradeLevel || customContext?.kademe || profile?.gradeLevel || '1. Sınıf',
+    parentPhone: customContext?.parentPhone || customContext?.telefon || profile?.parentPhone || '+90 532 999 1100',
+  }
+
+  let result = text
+
+  // 1. Öğrenci Adı: {ogrenci_adi}, {ogrenciadi}, {öğrenci_adı}, {ogrenci}, (ogrenci_adi), [ogrenci_adi]
+  result = result.replace(/[\{\[\(]\s*(?:ogrenci_adi|ogrenciadi|öğrenci_adı|öğrenciadı|ogrenci|öğrenci|ogrenci_ad|öğrenci_ad)\s*[\}\]\)]/gi, ctx.studentName!)
+
+  // 2. Veli Adı: {veli_adi}, {veliadi}, {veli_adı}, {veli}, {velisi}, (veli_adi), [veli_adi]
+  result = result.replace(/[\{\[\(]\s*(?:veli_adi|veliadi|veli_adı|veliadı|veli|velisi|veli_ad|anne_adi|baba_adi)\s*[\}\]\)]/gi, ctx.parentName!)
+
+  // 3. Sınıf / Şube: {sinif}, {sınıf}, {sinifi}, {sınıfı}, {sube}, {şube}, (sinif), [sinif]
+  result = result.replace(/[\{\[\(]\s*(?:sinif|sınıf|sinifi|sınıfı|sube|şube|sinif_sube|sınıf_şube)\s*[\}\]\)]/gi, ctx.className!)
+
+  // 4. Öğretmen Adı: {ogretmen_adi}, {ogretmenadi}, {öğretmen_adı}, {ogretmen}, {öğretmen}, (ogretmen_adi), [ogretmen_adi]
+  result = result.replace(/[\{\[\(]\s*(?:ogretmen_adi|ogretmenadi|öğretmen_adı|öğretmenadı|ogretmen|öğretmen|ogretmeni|öğretmeni|ogretmen_ad)\s*[\}\]\)]/gi, ctx.teacherName!)
+
+  // 5. Okul Adı: {okul_adi}, {okuladi}, {okul_adı}, {okul}, {okulu}, (okul_adi), [okul_adi]
+  result = result.replace(/[\{\[\(]\s*(?:okul_adi|okuladi|okul_adı|okuladı|okul|okulu|kurum_adi|kurum)\s*[\}\]\)]/gi, ctx.schoolName!)
+
+  // 6. Tarih: {tarih}, {tarihi}, {derstarih}, {gun}, (tarih), [tarih]
+  result = result.replace(/[\{\[\(]\s*(?:tarih|tarihi|derstarih|ders_tarihi|gun|gün)\s*[\}\]\)]/gi, ctx.date!)
+
+  // 7. Saat: {saat}, {saati}, {vakit}, (saat), [saat]
+  result = result.replace(/[\{\[\(]\s*(?:saat|saati|vakit|zaman)\s*[\}\]\)]/gi, ctx.time!)
+
+  // 8. Öğrenci No: {ogrenci_no}, {öğrenci_no}, {okul_no}, {numara}, (ogrenci_no), [ogrenci_no]
+  result = result.replace(/[\{\[\(]\s*(?:ogrenci_no|öğrenci_no|okul_no|numara|no)\s*[\}\]\)]/gi, ctx.studentNo!)
+
+  // 9. Puan / Not / Ortalama: {puan}, {not}, {gpa}, {ortalama}
+  result = result.replace(/[\{\[\(]\s*(?:puan|not|gpa|ortalama)\s*[\}\]\)]/gi, String(ctx.gpa!))
+
+  // 10. Kademe / Seviye: {kademe}, {seviye}, {sinif_seviyesi}
+  result = result.replace(/[\{\[\(]\s*(?:kademe|seviye|sinif_seviyesi)\s*[\}\]\)]/gi, ctx.gradeLevel!)
+
+  // 11. Veli Telefon: {telefon}, {tel}, {veli_tel}
+  result = result.replace(/[\{\[\(]\s*(?:telefon|tel|veli_tel|veli_telefon)\s*[\}\]\)]/gi, ctx.parentPhone!)
+
+  return result
+}
+
 export function getSynchronizedStudentAnnouncements(): StudentAnnouncement[] {
-  if (typeof window === 'undefined') return STUDENT_ANNOUNCEMENTS
-  try {
-    const raw = localStorage.getItem('oxonom_student_announcements')
-    if (raw) {
-      const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        // Cleanse any stale 9-A mentions if present
-        return parsed.map((item: any) => {
-          let updated = { ...item }
-          if (updated.title && updated.title.includes('9-A')) {
-            updated.title = updated.title.replace(/9-A/g, '1/A')
-          }
-          if (updated.content && updated.content.includes('9-A')) {
-            updated.content = updated.content.replace(/9-A/g, '1/A')
-          }
-          if (updated.authorRole && updated.authorRole.includes('9-A')) {
-            updated.authorRole = '1/A Sınıf Öğretmeni'
-          }
-          return updated
-        })
+  let list = STUDENT_ANNOUNCEMENTS
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = localStorage.getItem('oxonom_student_announcements')
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          list = parsed
+        }
       }
+    } catch (_) {}
+  }
+  return list.map((item: any) => {
+    let updated = { ...item }
+    if (updated.title && updated.title.includes('9-A')) {
+      updated.title = updated.title.replace(/9-A/g, '1/A')
     }
-  } catch (_) {}
-  return STUDENT_ANNOUNCEMENTS
+    if (updated.content && updated.content.includes('9-A')) {
+      updated.content = updated.content.replace(/9-A/g, '1/A')
+    }
+    if (updated.authorRole && updated.authorRole.includes('9-A')) {
+      updated.authorRole = '1/A Sınıf Öğretmeni'
+    }
+    // Automatically resolve all bracketed variables with user info
+    updated.title = resolveAnnouncementVariables(updated.title)
+    updated.content = resolveAnnouncementVariables(updated.content)
+    return updated
+  })
 }
 
 export function saveSynchronizedStudentAnnouncement(newAnnouncement: StudentAnnouncement) {
   if (typeof window === 'undefined') return
   try {
+    const toSave: StudentAnnouncement = {
+      ...newAnnouncement,
+      title: resolveAnnouncementVariables(newAnnouncement.title),
+      content: resolveAnnouncementVariables(newAnnouncement.content),
+    }
     const current = getSynchronizedStudentAnnouncements()
-    const updated = [newAnnouncement, ...current.filter((a) => a.id !== newAnnouncement.id)]
+    const updated = [toSave, ...current.filter((a) => a.id !== toSave.id)]
     localStorage.setItem('oxonom_student_announcements', JSON.stringify(updated))
     window.dispatchEvent(new CustomEvent('oxonom_student_announcements_updated', { detail: updated }))
     window.dispatchEvent(new CustomEvent('oxonom_student_updated'))
