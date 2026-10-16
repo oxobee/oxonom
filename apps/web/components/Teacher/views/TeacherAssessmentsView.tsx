@@ -411,7 +411,43 @@ export default function TeacherAssessmentsView() {
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem('oxonom_m_students_v3', JSON.stringify(updatedStudents))
+
+        // Also update student profile if matching
+        const rawProfile = localStorage.getItem('oxonom_student_profile')
+        if (rawProfile) {
+          const prof = JSON.parse(rawProfile)
+          const matchedSt = updatedStudents.find((s) => s.id === prof.id || s.studentNo === prof.studentNo)
+          if (matchedSt) {
+            prof.gpa = matchedSt.gpa
+            prof.classRank = matchedSt.classRank
+            prof.grades = matchedSt.grades
+            localStorage.setItem('oxonom_student_profile', JSON.stringify(prof))
+          }
+        }
+
+        // Also update principal students list
+        const rawAdmin = localStorage.getItem('oxonom_admin_students_list_30')
+        if (rawAdmin) {
+          const aList = JSON.parse(rawAdmin)
+          if (Array.isArray(aList)) {
+            const updatedAList = aList.map((a: any) => {
+              const matchedSt = updatedStudents.find((s) => s.id === a.id || s.studentNo === a.studentNo)
+              if (matchedSt) {
+                return {
+                  ...a,
+                  gpa: matchedSt.gpa,
+                  classRank: matchedSt.classRank,
+                  grades: matchedSt.grades,
+                }
+              }
+              return a
+            })
+            localStorage.setItem('oxonom_admin_students_list_30', JSON.stringify(updatedAList))
+          }
+        }
+
         window.dispatchEvent(new CustomEvent('oxonom_student_updated'))
+        window.dispatchEvent(new CustomEvent('oxonom_admin_students_updated'))
       } catch (_) {}
     }
 

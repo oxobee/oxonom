@@ -489,6 +489,8 @@ export default function MAdminCurriculumClient({
   const [isNewCourseModalOpen, setIsNewCourseModalOpen] = useState(false)
   const [courseToEdit, setCourseToEdit] = useState<CurriculumCourse | null>(null)
   const [isEditPeriodsModalOpen, setIsEditPeriodsModalOpen] = useState(false)
+  const [isCopyScheduleModalOpen, setIsCopyScheduleModalOpen] = useState(false)
+  const [copyTargetClass, setCopyTargetClass] = useState('')
   const [selectedSlotForAction, setSelectedSlotForAction] = useState<{
     entry?: ScheduleEntry
     day: DayKey
@@ -532,14 +534,14 @@ export default function MAdminCurriculumClient({
   })
 
   // Dynamic Available Classes (Synchronized with /principal/classes)
-  const availableClasses = useMemo(() => {
+  const parseClassesFromStorage = (orgId: number): string[] => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem(`oxonom_admin_classes_${selectedOrgId}`)
+        const saved = localStorage.getItem(`oxonom_admin_classes_${orgId}`)
         if (saved) {
           const parsed = JSON.parse(saved)
           if (Array.isArray(parsed) && parsed.length > 0) {
-            return parsed.map((c: any) => {
+            const list = parsed.map((c: any) => {
               const code = (c.code || '').trim()
               const matchGrade = (c.gradeLevel || '').match(/\d+/) || code.match(/^\d+/)
               const gNum = matchGrade ? matchGrade[0] : '9'
@@ -554,11 +556,32 @@ export default function MAdminCurriculumClient({
               }
               return `${gNum}/${branch}`
             })
+            if (!list.includes('9/A')) list.unshift('9/A')
+            return Array.from(new Set(list))
           }
         }
       } catch (_) {}
     }
     return ['9/A']
+  }
+
+  const [availableClasses, setAvailableClasses] = useState<string[]>(() =>
+    parseClassesFromStorage(selectedOrgId)
+  )
+
+  useEffect(() => {
+    const syncClasses = () => {
+      setAvailableClasses(parseClassesFromStorage(selectedOrgId))
+    }
+    syncClasses()
+    window.addEventListener('oxonom_admin_classes_updated', syncClasses)
+    window.addEventListener('oxonom_classes_updated', syncClasses)
+    window.addEventListener('storage', syncClasses)
+    return () => {
+      window.removeEventListener('oxonom_admin_classes_updated', syncClasses)
+      window.removeEventListener('oxonom_classes_updated', syncClasses)
+      window.removeEventListener('storage', syncClasses)
+    }
   }, [selectedOrgId])
 
   // Courses Catalog State
@@ -710,6 +733,129 @@ export default function MAdminCurriculumClient({
         localStorage.setItem('oxonom_periods_30', JSON.stringify(updated))
       } catch (_) {}
     }
+  }
+
+  // ── DERS PROGRAMINI BAŞKA ŞUBEYE KOPYALAMA ──
+  // User Rule: "programı hazırlanan sınıf/şube kısmında listelenen sınıfları ders programı ile birlikte kopyalama özelliği ekle."
+  const handleCopySchedule = () => {
+    const target = copyTargetClass.trim().toUpperCase()
+    if (!target) {
+      toast.error('Lütfen hedef sınıf veya şube seçiniz / yazınız.')
+      return
+    }
+    if (normalizeClassCode(target) === normalizeClassCode(selectedClass)) {
+      toast.error('Kaynak ve hedef şube aynı olamaz.')
+      return
+    }
+
+    // 1. Ensure target class exists in oxonom_admin_classes_${selectedOrgId}
+    try {
+      const classesKey = `oxonom_admin_classes_${selectedOrgId}`
+      const savedRaw = localStorage.getItem(classesKey)
+      let existingClasses: any[] = []
+      if (savedRaw) {
+        try {
+          existingClasses = JSON.parse(savedRaw)
+        } catch (_) {}
+      }
+      const hasTarget = existingClasses.some(
+        (c) => (c.code || '').trim().toUpperCase() === target
+      )
+      if (!hasTarget) {
+        const matchGrade = target.match(/\d+/)
+        const gNum = matchGrade ? parseInt(matchGrade[0], 10) : 9
+        const newClassRecord = {
+          id: Date.now(),
+          code: target,
+          name: `${target} Şubesi`,
+          gradeLevel: `${gNum}. Sınıf`,
+          gradeNumber: gNum,
+          orgId: selectedOrgId,
+          roomName: `Derslik ${target.replace('/', '-')}`,
+          teacherName: 'Atanmadı',
+          teacherBranch: 'Genel',
+          teacherPhone: '',
+          teacherEmail: '',
+          studentCount: 24,
+          capacity: 30,
+          academicAverage: 88.0,
+          attendanceRate: 98.0,
+          boardStatus: 'online',
+        }
+        const updatedClasses = [...existingClasses, newClassRecord]
+        localStorage.setItem(classesKey, JSON.stringify(updatedClasses))
+        window.dispatchEvent(new CustomEvent('oxonom_admin_classes_updated'))
+        window.dispatchEvent(new CustomEvent('oxonom_classes_updated'))
+      }
+    } catch (_) {}
+
+    // 2. Clone courses if specific to source class
+    const sourceCourses = coursesList.filter(
+      (c) =>
+        c.orgId === selectedOrgId &&
+        c.targetClass &&
+        normalizeClassCode(c.targetClass) === normalizeClassCode(selectedClass)
+    )
+    if (sourceCourses.length > 0) {
+      const clonedCourses: CurriculumCourse[] = sourceCourses.map((c) => ({
+        ...c,
+        id: `course_${target.replace(/[^a-zA-Z0-9]/g, '_')}_${c.code}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        targetClass: target,
+        name: c.name.replace(selectedClass, target),
+      }))
+      const newCourses = [
+        ...coursesList.filter(
+          (c) =>
+            !(
+              c.targetClass &&
+              normalizeClassCode(c.targetClass) === normalizeClassCode(target)
+            )
+        ),
+        ...clonedCourses,
+      ]
+      persistCourses(newCourses)
+    }
+
+    // 3. Clone schedule entries
+    const sourceEntries = scheduleList.filter(
+      (e) => normalizeClassCode(e.classCode) === normalizeClassCode(selectedClass)
+    )
+    if (sourceEntries.length === 0) {
+      toast.error(`${selectedClass} şubesinde kopyalanacak ders programı bulunamadı.`)
+      return
+    }
+
+    const cleanSchedule = scheduleList.filter(
+      (e) => normalizeClassCode(e.classCode) !== normalizeClassCode(target)
+    )
+    const clonedEntries: ScheduleEntry[] = sourceEntries.map((e) => ({
+      ...e,
+      id: `slot_${target.replace(/[^a-zA-Z0-9]/g, '_')}_${e.day}_${e.period}_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`,
+      classCode: target,
+      roomName: e.roomName
+        ? e.roomName
+            .replace(selectedClass, target)
+            .replace(selectedClass.replace('/', '-'), target.replace('/', '-'))
+        : `Derslik ${target.replace('/', '-')}`,
+    }))
+
+    const finalSchedule = [...cleanSchedule, ...clonedEntries]
+    persistSchedule(finalSchedule)
+
+    // 4. Update availableClasses
+    setAvailableClasses((prev) => {
+      if (prev.some((c) => normalizeClassCode(c) === normalizeClassCode(target))) {
+        return prev
+      }
+      return [...prev, target]
+    })
+
+    handleSelectClass(target)
+    setIsCopyScheduleModalOpen(false)
+    setCopyTargetClass('')
+    toast.success(
+      `${selectedClass} ders programı ve dersleri ${target} şubesine başarıyla kopyalandı!`
+    )
   }
 
   // Ensure selectedClass is valid and matches available classes without resetting to 1/A
@@ -1355,7 +1501,6 @@ export default function MAdminCurriculumClient({
                     <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                       Çakışma Korumalı
                     </span>
-                    <MockBadge size="xs" />
                   </div>
                   <p className="text-xs text-gray-300/80 mt-0.5">
                     Oxonom Okulları · Akıllı Zümre, Derslik ve Öğretmen Yerleşimi
@@ -1376,14 +1521,28 @@ export default function MAdminCurriculumClient({
 
             {/* Sınıf / Şube Seçici (User Rule: Program oluşturulurken ilk önce sınıf seçilmeli) */}
             <div className="mt-3">
-              <div className="flex items-center justify-between mb-1.5 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-2 text-xs">
                 <span className="text-gray-300 font-bold flex items-center gap-1.5">
                   <GraduationCap size={14} className="text-emerald-400" />
                   <span>Programı Hazırlanan Sınıf / Şube:</span>
                 </span>
-                <span className="text-[11px] text-emerald-400 font-semibold">
-                  Seçili Sınıf: <strong>{selectedClass}</strong>
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-emerald-400 font-semibold">
+                    Seçili: <strong>{selectedClass}</strong>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCopyTargetClass('')
+                      setIsCopyScheduleModalOpen(true)
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95"
+                    title={`${selectedClass} ders programını başka bir şubeye kopyala`}
+                  >
+                    <Copy size={13} />
+                    <span>Şube Programını Kopyala</span>
+                  </button>
+                </div>
               </div>
 
               <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
@@ -1568,7 +1727,6 @@ export default function MAdminCurriculumClient({
                         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                         2026-2027 Güncel & Onaylı Haftalık Ders Programı (Aktif)
                       </span>
-                      <MockBadge size="xs" />
                     </div>
                     <h3 className="text-sm font-black text-gray-900 dark:text-white flex items-center gap-2 mt-1">
                       <span>{selectedClass} Şubesi Haftalık Ders Çizelgesi</span>
@@ -3163,6 +3321,146 @@ export default function MAdminCurriculumClient({
                   <Trash2 size={15} />
                   <span>Bu Saati Boşalt / Dersi Kaldır</span>
                 </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── MODAL 5: ŞUBE PROGRAMINI KOPYALA ── */}
+      <AnimatePresence>
+        {isCopyScheduleModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 font-jakarta select-none">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsCopyScheduleModalOpen(false)}
+              className="fixed inset-0 bg-black/75 backdrop-blur-xs"
+            />
+
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 320 }}
+              className={`relative w-full sm:max-w-md rounded-3xl shadow-2xl flex flex-col z-10 overflow-hidden border ${
+                theme === 'dark'
+                  ? 'bg-[#0E131F] text-white border-gray-800'
+                  : 'bg-white text-gray-900 border-gray-200'
+              }`}
+            >
+              <div className="px-5 pt-4 pb-3 flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                    <Copy size={18} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-gray-900 dark:text-white">
+                      Ders Programını Kopyala
+                    </h3>
+                    <p className="text-[11px] text-gray-400">
+                      Kaynak şube çizelgesini başka bir şubeye aktarın
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsCopyScheduleModalOpen(false)}
+                  className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 flex items-center justify-center text-gray-500 cursor-pointer"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="p-5 space-y-4">
+                {/* Kaynak Şube Bilgisi */}
+                <div className="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-200/80 dark:border-gray-700/60">
+                  <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                    Kaynak Şube (Mevcut Program)
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="px-3 py-1 rounded-xl bg-emerald-500/20 text-emerald-400 font-black text-sm border border-emerald-500/30">
+                        {selectedClass}
+                      </span>
+                      <span className="text-xs font-bold text-gray-700 dark:text-gray-300">
+                        {selectedClass} Şubesi Haftalık Ders Çizelgesi
+                      </span>
+                    </div>
+                    <span className="text-xs font-extrabold text-emerald-500">
+                      {classEntries.length} Saat
+                    </span>
+                  </div>
+                </div>
+
+                {/* Hedef Sınıf / Şube */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
+                    Hedef Sınıf / Şube Seçiniz veya Yazınız:
+                  </label>
+                  
+                  {/* Hızlı Seçim Butonları */}
+                  <div className="flex items-center gap-1.5 flex-wrap mb-2.5">
+                    {['9/B', '9/C', '10/A', '10/B', '11/A', '12/A']
+                      .filter((c) => normalizeClassCode(c) !== normalizeClassCode(selectedClass))
+                      .map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => setCopyTargetClass(preset)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                            copyTargetClass === preset
+                              ? 'bg-emerald-600 text-white shadow-xs'
+                              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                          }`}
+                        >
+                          {preset}
+                        </button>
+                      ))}
+                  </div>
+
+                  <input
+                    type="text"
+                    value={copyTargetClass}
+                    onChange={(e) => setCopyTargetClass(e.target.value.toUpperCase())}
+                    placeholder="Örn: 9/B veya 10/A"
+                    className="w-full h-11 px-3.5 rounded-2xl text-xs font-bold bg-white dark:bg-[#121826] border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-hidden focus:ring-2 focus:ring-emerald-500/40 uppercase"
+                  />
+                </div>
+
+                {/* Bilgilendirme Notu */}
+                <div className="p-3 rounded-2xl bg-blue-50/80 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-900/40 text-[11px] text-blue-800 dark:text-blue-300 space-y-1">
+                  <div className="font-bold flex items-center gap-1.5">
+                    <Sparkles size={13} className="text-blue-500" />
+                    <span>Otomatik Uyarlama:</span>
+                  </div>
+                  <p className="text-blue-700/90 dark:text-blue-400/90 leading-relaxed">
+                    Kopyalama yapıldığında <strong>{selectedClass}</strong> şubesinin tüm ders havuzu ve haftalık tablosu hedef şubeye aktarılır. Derslik adları ve şube kodları hedef şubeye göre otomatik güncellenir.
+                  </p>
+                </div>
+
+                {/* Aksiyon Butonları */}
+                <div className="pt-2 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsCopyScheduleModalOpen(false)}
+                    className="flex-1 h-11 rounded-2xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold text-xs cursor-pointer transition-colors"
+                  >
+                    İptal
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCopySchedule}
+                    disabled={!copyTargetClass.trim()}
+                    className="flex-1 h-11 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 text-white font-black text-xs flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-500/20 transition-all active:scale-98"
+                  >
+                    <Copy size={14} />
+                    <span>Programı Kopyala ve Uygula</span>
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>

@@ -60,6 +60,7 @@ import {
 } from '@services/demo/schoolDirectory'
 import { useLHSession } from '@components/Contexts/LHSessionContext'
 import { getStoredPrincipalProfile } from '@/lib/principal/principalProfileStorage'
+import { getStudentAttendanceSummary } from '@services/demo/attendanceService'
 
 export interface MAdminStudentsClientProps {
   orgSlug?: string
@@ -223,53 +224,124 @@ export default function MAdminStudentsClient({
   const [editDocTransferReport, setEditDocTransferReport] = useState(false)
   const [editAdminNote, setEditAdminNote] = useState('')
 
+  // ── ENRICH STUDENT WITH REAL LIVE ATTENDANCE & TEACHER GRADES ──
+  const enrichStudentWithRealData = (student: any) => {
+    const enriched = { ...student }
+
+    // 1. Live attendance calculation from actual attendance records
+    try {
+      const att = getStudentAttendanceSummary(enriched.id, enriched.studentNo, enriched.className)
+      enriched.attendanceRate = att.attendanceRate
+      enriched.unexcusedDays = att.unexcusedDays
+      enriched.excusedDays = att.excusedDays
+    } catch (_) {}
+
+    // 2. Live grades calculation from teacher portal records (oxonom_m_students_v3)
+    try {
+      if (typeof window !== 'undefined') {
+        const mRaw = localStorage.getItem('oxonom_m_students_v3')
+        if (mRaw) {
+          const mList = JSON.parse(mRaw)
+          if (Array.isArray(mList)) {
+            const match = mList.find((st: any) => st.id === enriched.id || st.studentNo === enriched.studentNo)
+            if (match) {
+              if (match.grades && Array.isArray(match.grades) && match.grades.length > 0) {
+                enriched.grades = match.grades
+              }
+              if (match.gpa !== undefined && match.gpa !== null && Number(match.gpa) > 0) {
+                enriched.gpa = match.gpa
+              }
+            }
+          }
+        }
+      }
+    } catch (_) {}
+
+    return enriched
+  }
+
   // ── STUDENTS LIST WITH STRICT MULTI-TENANT ISOLATION (OXONOM OKULLARI) ──
   const [studentsList, setStudentsList] = useState<any[]>(() => {
+    let baseList = getOrgStudents(30)
     if (typeof window !== 'undefined') {
       try {
         const saved = localStorage.getItem('oxonom_admin_students_list_30')
         if (saved) {
           const parsed = JSON.parse(saved)
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            baseList = parsed
+          }
         }
       } catch (_) {}
     }
-    return getOrgStudents(30)
+    return baseList.map(enrichStudentWithRealData)
   })
 
   // Synchronize when school org changes or load from isolated localStorage partition
-  useEffect(() => {
+  const loadStudents = () => {
+    let baseList = getOrgStudents(selectedOrgId)
     if (typeof window !== 'undefined') {
       try {
         const saved = localStorage.getItem(`oxonom_admin_students_list_${selectedOrgId}`)
         if (saved) {
           const parsed = JSON.parse(saved)
           if (Array.isArray(parsed) && parsed.length > 0) {
-            setStudentsList(parsed)
-            setSelectedClassCode('ALL')
-            return
+            baseList = parsed
           }
         }
       } catch (_) {}
     }
-    const orgStudents = getOrgStudents(selectedOrgId)
-    setStudentsList(orgStudents)
+    const enrichedList = baseList.map(enrichStudentWithRealData)
+    setStudentsList(enrichedList)
+
+    // Also update selectedStudentForDetail if modal is open
+    setSelectedStudentForDetail((prev: any) => {
+      if (!prev) return null
+      const updated = enrichedList.find((s) => s.id === prev.id || s.studentNo === prev.studentNo)
+      return updated ? enrichStudentWithRealData(updated) : prev
+    })
+  }
+
+  useEffect(() => {
+    loadStudents()
     setSelectedClassCode('ALL')
+
+    const handleSync = () => {
+      loadStudents()
+    }
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('oxonom_attendance_updated', handleSync)
+      window.addEventListener('oxonom_student_updated', handleSync)
+      window.addEventListener('oxonom_admin_students_updated', handleSync)
+      window.addEventListener('storage', handleSync)
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('oxonom_attendance_updated', handleSync)
+        window.removeEventListener('oxonom_student_updated', handleSync)
+        window.removeEventListener('oxonom_admin_students_updated', handleSync)
+        window.removeEventListener('storage', handleSync)
+      }
+    }
   }, [selectedOrgId])
 
   // Sync to isolated localStorage partition whenever studentsList changes
   const updateStudentsList = (newList: any[]) => {
-    setStudentsList(newList)
+    const enriched = newList.map(enrichStudentWithRealData)
+    setStudentsList(enriched)
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem(`oxonom_admin_students_list_${selectedOrgId}`, JSON.stringify(newList))
+        localStorage.setItem(`oxonom_admin_students_list_${selectedOrgId}`, JSON.stringify(enriched))
       } catch (_) {}
     }
   }
 
   // ── OPEN DETAIL MODAL & PREFILL FORM ──
   const handleOpenStudentDetail = (student: any) => {
-    setSelectedStudentForDetail(student)
+    const freshStudent = enrichStudentWithRealData(student)
+    setSelectedStudentForDetail(freshStudent)
     setIsEditingStudent(false)
     setActiveDetailTab('general')
 

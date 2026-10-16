@@ -19,6 +19,7 @@ import {
   type MStudentCourseGrade,
 } from '@components/Mobile/MStudentClient'
 import { CANONICAL_SCHOOL_EXAMS, getStoredSchoolExams } from '@/lib/teacher/teacherAgendaStorage'
+import { getStudentAttendanceSummary } from '@services/demo/attendanceService'
 
 export interface GuidanceNoteItem {
   id: string
@@ -748,32 +749,13 @@ export function getSynchronizedStudentProfile(): StudentProfile {
     let attendanceRate = studentRecord.attendanceRate || 100
     let absentDays = (studentRecord.absentExcusedDays || 0) + (studentRecord.absentUnexcusedDays || 0)
     try {
-      const rawAttendance = localStorage.getItem('oxonom_attendance_records')
-      if (rawAttendance) {
-        const attList = JSON.parse(rawAttendance)
-        if (Array.isArray(attList) && attList.length > 0) {
-          const classAtts = attList.filter((a: any) =>
-            a.classCode === '9/A' || a.classCode === '9-A' || a.classCode === '9-A Şubesi'
-          )
-          if (classAtts.length > 0) {
-            let presentCount = 0
-            let absentCount = 0
-            classAtts.forEach((att: any) => {
-              const status =
-                att.records?.[studentRecord?.id || 's-1'] ||
-                att.records?.['101'] ||
-                att.records?.['s-1']
-              if (status === 'absent') absentCount++
-              else presentCount++
-            })
-            const total = presentCount + absentCount
-            if (total > 0) {
-              attendanceRate = Math.round((presentCount / total) * 100)
-              absentDays = absentCount
-            }
-          }
-        }
-      }
+      const summary = getStudentAttendanceSummary(
+        studentRecord.id || 's-1',
+        studentRecord.studentNo || '101',
+        studentRecord.className || '9/A'
+      )
+      attendanceRate = summary.attendanceRate
+      absentDays = summary.absentSessions
     } catch (_) {}
 
     const nameParts = (studentRecord.name || 'Erçil UĞURLU').split(' ')
