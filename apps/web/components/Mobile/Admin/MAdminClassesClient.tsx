@@ -799,8 +799,67 @@ export function reconcileClassesWithRealData(classes: AdminClassroom[], orgId: n
         if (Array.isArray(parsed)) students = parsed
       } catch (_) {}
     }
-    if (students.length === 0) {
-      students = [{ id: 3001, name: 'Erçil UĞURLU', className: '1/A', studentNo: '101', gpa: 98.8, gender: 'Erkek' }]
+
+    let needsSave = false
+
+    // Normalize any stale student (e.g. Erçil, 101, or old 9-A) to 1/A
+    students = students.map((s: any) => {
+      const name = (s.name || '').toLowerCase()
+      const isErcil = name.includes('erçil') || s.studentNo === '101' || s.id === 3001 || s.id === 's-1'
+      const isStaleClass = s.className && (s.className.includes('9') || s.className === '9-A' || s.className === '9/A')
+      if (isErcil || isStaleClass) {
+        needsSave = true
+        return {
+          ...s,
+          id: s.id || 3001,
+          name: 'Erçil UĞURLU',
+          className: '1/A',
+          gradeLevel: '1. Sınıf',
+          studentNo: '101',
+          gpa: 98.8,
+          gender: 'Erkek',
+          mentorTeacher: 'Özlem ZOR',
+          status: 'active',
+          birthDate: '15.06.2018 (7 Yaşında)',
+          bloodType: 'A Rh+',
+          parentName: 'Ebru UĞURLU',
+          parentPhone: '+90 532 999 1100',
+        }
+      }
+      return s
+    })
+
+    // If Erçil in 1/A is missing, add him
+    const has1A = students.some((s: any) => {
+      const c = (s.className || '').replace('-', '/').trim().toUpperCase()
+      return c === '1/A'
+    })
+    if (!has1A) {
+      students.push({
+        id: 3001,
+        name: 'Erçil UĞURLU',
+        className: '1/A',
+        gradeLevel: '1. Sınıf',
+        studentNo: '101',
+        gpa: 98.8,
+        gender: 'Erkek',
+        mentorTeacher: 'Özlem ZOR',
+        status: 'active',
+        birthDate: '15.06.2018 (7 Yaşında)',
+        bloodType: 'A Rh+',
+        parentName: 'Ebru UĞURLU',
+        parentPhone: '+90 532 999 1100',
+      })
+      needsSave = true
+    }
+
+    if (needsSave) {
+      try {
+        const studentJson = JSON.stringify(students)
+        localStorage.setItem(`oxonom_admin_students_list_${orgId}`, studentJson)
+        localStorage.setItem('oxonom_admin_students_list_30', studentJson)
+        localStorage.setItem('oxonom_m_students_v3', studentJson)
+      } catch (_) {}
     }
 
     const rawActiveBoards = localStorage.getItem('oxonom_principal_active_boards')
@@ -817,7 +876,7 @@ export function reconcileClassesWithRealData(classes: AdminClassroom[], orgId: n
 
       const classStudents = students.filter((s: any) => {
         const sClassNorm = (s.className || '').replace('-', '/').trim().toUpperCase()
-        return sClassNorm === clsCodeNorm || sClassNorm.startsWith(clsCodeNorm)
+        return sClassNorm === clsCodeNorm
       })
 
       const studentCount = classStudents.length

@@ -393,7 +393,8 @@ export interface StudentAnnouncement {
   author: string
   authorRole: string
   date: string
-  category: 'general' | 'academic' | 'event'
+  category: 'general' | 'academic' | 'event' | 'meeting' | 'emergency'
+  priority?: 'low' | 'normal' | 'important' | 'emergency'
   content: string
   isPinned?: boolean
 }
@@ -401,35 +402,76 @@ export interface StudentAnnouncement {
 export const STUDENT_ANNOUNCEMENTS: StudentAnnouncement[] = [
   {
     id: 'ann-1',
-    title: '9-A Şubesi Dönem Ortası Akademik Başarı Tebriği',
+    title: '1/A Şubesi Dönem Ortası Akademik Başarı ve Uyum Tebriği',
     author: 'Dr. Uğur UĞURLU',
     authorRole: 'Okul Müdürü',
     date: 'Bugün, 09:30',
     category: 'academic',
+    priority: 'important',
     isPinned: true,
-    content: '9-A şubemiz edebiyat, matematik ve bilişim derslerindeki üstün performansıyla okulumuzun birinci şubesi olarak devam etmektedir. Tüm öğrencilerimizi ve zümre öğretmenimiz Ebru Hanımı tebrik eder, başarılarının devamını dilerim.',
+    content: '1/A şubemiz Türkçe, Matematik ve Hayat Bilgisi derslerindeki örnek sınıf düzeni ve üstün performansıyla okulumuzun gururu olmuştur. Sevgili öğrencimiz Erçil ve sınıf öğretmenimiz Özlem Hanımı tebrik eder, başarılarının devamını dilerim.',
   },
   {
     id: 'ann-2',
-    title: 'Akıllı Tahta ve Dijital Kütüphane Yeni İçerikleri Eklendi',
-    author: 'Ebru TEKNECİ',
-    authorRole: '9-A Rehber Öğretmeni & Edebiyat',
+    title: 'Akıllı Tahta ve Dijital Kütüphane 1. Sınıf Yeni Föyleri Eklendi',
+    author: 'Özlem ZOR',
+    authorRole: '1/A Sınıf Öğretmeni',
     date: 'Dün, 14:15',
     category: 'academic',
+    priority: 'normal',
     isPinned: false,
-    content: 'Dersliklerimizde bulunan akıllı tahtalar ile senkronize çalışan yeni dijital çalışma föyleri ve video kaynakları öğrenci kütüphanesine yüklenmiştir. Hafta sonu inceleyebilirsiniz.',
+    content: 'Dersliklerimizde bulunan akıllı tahtalar ile senkronize çalışan yeni dijital okuma-yazma çalışma föyleri ve ritmik sayma etkinlikleri öğrenci kütüphanesine yüklenmiştir. Hafta sonu velilerinizle inceleyebilirsiniz.',
   },
   {
     id: 'ann-3',
-    title: 'TÜBİTAK & Bilişim Bilim Fuarı Başvuruları Başladı',
+    title: 'Oxonom Geleneksel Bilim Şenliği ve Robotik Atölyeleri',
     author: 'Oxonom Bilim Koordinatörlüğü',
     authorRole: 'Akademik Koordinatörlük',
     date: '10 Ekim 2026',
     category: 'event',
+    priority: 'low',
     isPinned: false,
-    content: 'Bu yıl düzenlenecek geleneksel Oxonom Bilim Şenliği için proje önerilerini danışman öğretmenleriniz ile paylaşabilirsiniz.',
+    content: 'Bu yıl düzenlenecek geleneksel Oxonom Bilim Şenliği ve Robotik Kodlama atölye etkinlikleri için hazırlıklar başladı.',
   },
 ]
+
+export function getSynchronizedStudentAnnouncements(): StudentAnnouncement[] {
+  if (typeof window === 'undefined') return STUDENT_ANNOUNCEMENTS
+  try {
+    const raw = localStorage.getItem('oxonom_student_announcements')
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // Cleanse any stale 9-A mentions if present
+        return parsed.map((item: any) => {
+          let updated = { ...item }
+          if (updated.title && updated.title.includes('9-A')) {
+            updated.title = updated.title.replace(/9-A/g, '1/A')
+          }
+          if (updated.content && updated.content.includes('9-A')) {
+            updated.content = updated.content.replace(/9-A/g, '1/A')
+          }
+          if (updated.authorRole && updated.authorRole.includes('9-A')) {
+            updated.authorRole = '1/A Sınıf Öğretmeni'
+          }
+          return updated
+        })
+      }
+    }
+  } catch (_) {}
+  return STUDENT_ANNOUNCEMENTS
+}
+
+export function saveSynchronizedStudentAnnouncement(newAnnouncement: StudentAnnouncement) {
+  if (typeof window === 'undefined') return
+  try {
+    const current = getSynchronizedStudentAnnouncements()
+    const updated = [newAnnouncement, ...current.filter((a) => a.id !== newAnnouncement.id)]
+    localStorage.setItem('oxonom_student_announcements', JSON.stringify(updated))
+    window.dispatchEvent(new CustomEvent('oxonom_student_announcements_updated', { detail: updated }))
+    window.dispatchEvent(new CustomEvent('oxonom_student_updated'))
+  } catch (_) {}
+}
 
 // Student submission storage
 const SUBMISSIONS_STORAGE_KEY = 'oxonom_student_submissions_ercil'
@@ -606,28 +648,70 @@ export function getSynchronizedStudentProfile(): StudentProfile {
       studentRecord = ALL_INITIAL_STUDENTS[0] || (DEFAULT_STUDENT_PROFILE as any)
     }
 
+    let needStudentCleanse = false
+    if (studentRecord) {
+      const is9 = !studentRecord.className || studentRecord.className.includes('9') || studentRecord.className === '9-A'
+      const isErcil = (studentRecord.name && studentRecord.name.toLowerCase().includes('erçil')) || studentRecord.studentNo === '101'
+      if (is9 || isErcil) {
+        studentRecord.className = '1/A'
+        ;(studentRecord as any).gradeLevel = '1. Sınıf'
+        studentRecord.mentorTeacher = 'Özlem ZOR (Sınıf Öğretmeni)'
+        if (!studentRecord.gpa || Number(studentRecord.gpa) < 50) {
+          studentRecord.gpa = 98.8
+          needStudentCleanse = true
+        }
+        // If grades have high school subjects, replace with authentic 1. Sınıf grades
+        const hasHighSchool = studentRecord.grades?.some((g: any) =>
+          g.courseName?.includes('Edebiyat') || g.courseName?.includes('Fizik') || g.courseName?.includes('Felsefe') || g.courseName?.includes('Bilişim')
+        )
+        if (!studentRecord.grades || studentRecord.grades.length === 0 || hasHighSchool) {
+          studentRecord.grades = [
+            { courseName: 'Türkçe', teacherName: 'Özlem ZOR', exam1: 99, exam2: 100, performance: 99, average: 99.3 },
+            { courseName: 'Matematik', teacherName: 'Özlem ZOR', exam1: 98, exam2: 97, performance: 99, average: 98.0 },
+            { courseName: 'Hayat Bilgisi', teacherName: 'Özlem ZOR', exam1: 100, exam2: 98, performance: 99, average: 99.0 },
+            { courseName: 'Yabancı Dil (İngilizce)', teacherName: 'Nilgün KAYA', exam1: 98, exam2: 100, performance: 99, average: 99.0 },
+          ]
+          needStudentCleanse = true
+        }
+      }
+    }
+
+    if (needStudentCleanse && rawStudents) {
+      try {
+        const parsed = JSON.parse(rawStudents)
+        if (Array.isArray(parsed)) {
+          const updated = parsed.map((s: any) => {
+            if (s.id === studentRecord?.id || s.studentNo === '101' || (s.name && s.name.toLowerCase().includes('erçil'))) {
+              return studentRecord
+            }
+            return s
+          })
+          localStorage.setItem('oxonom_m_students_v3', JSON.stringify(updated))
+        }
+      } catch (_) {}
+    }
+
     // 2. Mentor Teacher synchronization from active teacher's profile
-    let mentorTeacher = studentRecord.mentorTeacher || 'Ebru TEKNECİ (Türk Dili ve Edebiyatı)'
+    let mentorTeacher = studentRecord.mentorTeacher || 'Özlem ZOR (Sınıf Öğretmeni)'
     const rawTeacher = localStorage.getItem('oxonom_teacher_profile')
     if (rawTeacher) {
       try {
         const teacherObj = JSON.parse(rawTeacher)
-        const tName = `${teacherObj.firstName || teacherObj.name || 'Ebru'} ${teacherObj.lastName || 'TEKNECİ'}`.trim()
-        const tBranch = teacherObj.branch || 'Türk Dili ve Edebiyatı'
+        const tName = `${teacherObj.firstName || teacherObj.name || 'Özlem'} ${teacherObj.lastName || 'ZOR'}`.trim()
+        const tBranch = teacherObj.branch || 'Sınıf Öğretmeni'
         mentorTeacher = `${tName} (${tBranch})`
       } catch (_) {}
     }
 
     // 3. Dynamic GPA and Course Grades calculation from official student record & calendar exams
     const baseCurriculum = [
-      'Türk Dili ve Edebiyatı',
+      'Türkçe',
       'Matematik',
-      'Fizik & Fen Bilimleri',
-      'Bilişim & Kodlama',
+      'Hayat Bilgisi',
       'Yabancı Dil (İngilizce)',
-      'Tarih',
-      'Coğrafya',
-      'Felsefe',
+      'Görsel Sanatlar',
+      'Müzik',
+      'Beden Eğitimi ve Oyun',
     ]
 
     const gradesMap = new Map<string, MStudentCourseGrade>()
@@ -636,13 +720,15 @@ export function getSynchronizedStudentProfile(): StudentProfile {
     baseCurriculum.forEach((cName) => {
       gradesMap.set(cName, {
         courseName: cName,
-        teacherName: cName.includes('Edebiyat')
-          ? 'Ebru TEKNECİ'
-          : cName.includes('Matematik')
-          ? 'Matematik Zümresi'
-          : cName.includes('Bilişim')
-          ? 'Ebru TEKNECİ'
-          : 'Ders Öğretmeni',
+        teacherName: cName.includes('İngilizce')
+          ? 'Nilgün KAYA'
+          : cName.includes('Beden')
+          ? 'Selim AKSOY'
+          : cName.includes('Görsel')
+          ? 'Gülşah ÖZTÜRK'
+          : cName.includes('Müzik')
+          ? 'Bahar ŞEN'
+          : 'Özlem ZOR',
       })
     })
 

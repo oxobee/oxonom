@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import {
   BookOpen,
   Eye,
@@ -61,7 +61,14 @@ interface CustomMaterial {
 export default function TeacherCoursesManagementView() {
   const [selectedClass, setSelectedClass] = useState<string>('1/A')
   const [selectedCourseId, setSelectedCourseId] = useState<string>('turkce')
-  const [activeTab, setActiveTab] = useState<'books' | 'materials' | 'exams' | 'notes'>('books')
+  const [activeTab, setActiveTab] = useState<'topics' | 'books' | 'materials' | 'exams' | 'notes'>('topics')
+
+  // Course Topics & Progress State
+  const [completedTopicIds, setCompletedTopicIds] = useState<string[]>([])
+  const [activeTopicId, setActiveTopicId] = useState<string>('')
+  const [customTopics, setCustomTopics] = useState<Record<string, { id: string; title: string; week: number; completed?: boolean }[]>>({})
+  const [newTopicTitle, setNewTopicTitle] = useState('')
+  const [showAddTopicForm, setShowAddTopicForm] = useState(false)
 
   // Teacher hidden books state
   const [hiddenBookIds, setHiddenBookIds] = useState<number[]>([])
@@ -95,6 +102,93 @@ export default function TeacherCoursesManagementView() {
       } catch (_) {}
     }
   }, [])
+
+  // Load topic progress and custom topics
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const rawProgress = localStorage.getItem(`oxonom_course_progress_${selectedCourseId}`)
+        if (rawProgress) {
+          const parsed = JSON.parse(rawProgress)
+          if (Array.isArray(parsed.completedTopicIds)) setCompletedTopicIds(parsed.completedTopicIds)
+          if (parsed.activeTopicId) setActiveTopicId(parsed.activeTopicId)
+        } else {
+          const crs = GRADE_1_COURSES.find((c) => c.id === selectedCourseId) || GRADE_1_COURSES[0]
+          const defaultCompleted = crs.topics.filter((t) => t.completed).map((t) => t.id)
+          const defaultActive = crs.topics.find((t) => !t.completed)?.id || crs.topics[0]?.id || ''
+          setCompletedTopicIds(defaultCompleted)
+          setActiveTopicId(defaultActive)
+        }
+
+        const rawCustom = localStorage.getItem('oxonom_course_custom_topics')
+        if (rawCustom) {
+          setCustomTopics(JSON.parse(rawCustom))
+        }
+      } catch (_) {}
+    }
+  }, [selectedCourseId])
+
+  const currentCourseTopics = useMemo(() => {
+    const crs = GRADE_1_COURSES.find((c) => c.id === selectedCourseId) || GRADE_1_COURSES[0]
+    const custom = customTopics[selectedCourseId] || []
+    return [...crs.topics, ...custom]
+  }, [selectedCourseId, customTopics])
+
+  const handleToggleTopicComplete = (topicId: string) => {
+    const isCompleted = completedTopicIds.includes(topicId)
+    const updated = isCompleted
+      ? completedTopicIds.filter((id) => id !== topicId)
+      : [...completedTopicIds, topicId]
+    
+    setCompletedTopicIds(updated)
+    if (typeof window !== 'undefined') {
+      try {
+        const payload = { completedTopicIds: updated, activeTopicId }
+        localStorage.setItem(`oxonom_course_progress_${selectedCourseId}`, JSON.stringify(payload))
+        window.dispatchEvent(new CustomEvent('oxonom_course_progress_updated', { detail: { courseId: selectedCourseId, ...payload } }))
+        toast.success(isCompleted ? 'Konu durumu güncellendi.' : 'Konu tamamlandı olarak işaretlendi!')
+      } catch (_) {}
+    }
+  }
+
+  const handleSetActiveTopic = (topicId: string) => {
+    setActiveTopicId(topicId)
+    if (typeof window !== 'undefined') {
+      try {
+        const payload = { completedTopicIds, activeTopicId: topicId }
+        localStorage.setItem(`oxonom_course_progress_${selectedCourseId}`, JSON.stringify(payload))
+        window.dispatchEvent(new CustomEvent('oxonom_course_progress_updated', { detail: { courseId: selectedCourseId, ...payload } }))
+        toast.success('Şu anki aktif işlenen konu güncellendi! Öğrenci paneline yansıtıldı.')
+      } catch (_) {}
+    }
+  }
+
+  const handleAddCustomTopic = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newTopicTitle.trim()) return
+
+    const newTopic = {
+      id: `custom-top-${Date.now()}`,
+      title: newTopicTitle.trim(),
+      week: currentCourseTopics.length + 1,
+      completed: false,
+    }
+
+    const updatedMap = {
+      ...customTopics,
+      [selectedCourseId]: [...(customTopics[selectedCourseId] || []), newTopic],
+    }
+    setCustomTopics(updatedMap)
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('oxonom_course_custom_topics', JSON.stringify(updatedMap))
+        window.dispatchEvent(new CustomEvent('oxonom_course_progress_updated', { detail: { courseId: selectedCourseId } }))
+        toast.success('Yeni konu müfredat listesine eklendi!')
+        setNewTopicTitle('')
+        setShowAddTopicForm(false)
+      } catch (_) {}
+    }
+  }
 
   // Load course materials when selectedCourseId changes
   useEffect(() => {
@@ -405,6 +499,19 @@ export default function TeacherCoursesManagementView() {
         <div className="pt-2 flex flex-wrap gap-2">
           <button
             type="button"
+            onClick={() => setActiveTab('topics')}
+            className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+              activeTab === 'topics'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            }`}
+          >
+            <CheckCircle2 size={14} />
+            <span>Haftalık Konu İlerlemesi & Kazanımlar ({currentCourseTopics.length})</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setActiveTab('books')}
             className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
               activeTab === 'books'
@@ -456,6 +563,147 @@ export default function TeacherCoursesManagementView() {
           </button>
         </div>
       </div>
+
+      {/* ── TAB 0: HAFTALIK KONU İLERLEMESİ VE KAZANIM YÖNETİMİ ── */}
+      {activeTab === 'topics' && (
+        <div className="space-y-5">
+          <div className="p-4 sm:p-5 rounded-3xl bg-indigo-50/60 dark:bg-indigo-950/20 border border-indigo-200/60 dark:border-indigo-800/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-2xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                <CheckCircle2 size={22} />
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-gray-900 dark:text-white">
+                  Haftalık Ders Kazanımları ve Konu İlerleme Paneli
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  Öğrencilerinizin hangi konuda olduğunuzu ve müfredat ilerlemenizi takip edebilmesi için güncel aktif konuyu seçin veya tamamlananları işaretleyin.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowAddTopicForm(!showAddTopicForm)}
+                className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+              >
+                <Plus size={15} />
+                <span>Yeni Konu Ekle</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Form to add custom topic */}
+          {showAddTopicForm && (
+            <form onSubmit={handleAddCustomTopic} className="p-5 rounded-3xl bg-white dark:bg-[#0E1526] border border-indigo-200 dark:border-indigo-800/70 shadow-xs space-y-3">
+              <h4 className="text-xs font-black text-gray-900 dark:text-white">Yeni Müfredat Konusu / Kazanım Başlığı</h4>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  required
+                  value={newTopicTitle}
+                  onChange={(e) => setNewTopicTitle(e.target.value)}
+                  placeholder="Örn: Harfleri Tanıyalım: E ve L Sesleri ile Hece Oluşturma"
+                  className="flex-1 h-10 px-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700 text-xs font-bold text-gray-900 dark:text-white placeholder-gray-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+                />
+                <button
+                  type="submit"
+                  className="px-4 h-10 rounded-xl bg-indigo-600 text-white font-black text-xs hover:bg-indigo-500 transition-colors cursor-pointer"
+                >
+                  Ekle
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* Topics List with Easy Controls */}
+          <div className="space-y-3">
+            {currentCourseTopics.map((topic: any, idx: number) => {
+              const isCompleted = completedTopicIds.includes(topic.id)
+              const isActive = activeTopicId === topic.id
+
+              return (
+                <div
+                  key={topic.id}
+                  className={`p-4 rounded-3xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 ${
+                    isActive
+                      ? 'bg-cyan-50/70 dark:bg-cyan-950/30 border-cyan-300 dark:border-cyan-800 ring-2 ring-cyan-500/30 shadow-xs'
+                      : isCompleted
+                      ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200/80 dark:border-emerald-800/60'
+                      : 'bg-white dark:bg-[#0E1526] border-gray-200/80 dark:border-gray-800/80 shadow-xs'
+                  }`}
+                >
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <button
+                      type="button"
+                      onClick={() => handleToggleTopicComplete(topic.id)}
+                      className={`w-7 h-7 rounded-xl flex items-center justify-center transition-all cursor-pointer shrink-0 ${
+                        isCompleted
+                          ? 'bg-emerald-500 text-white shadow-xs'
+                          : 'bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-transparent hover:text-gray-400'
+                      }`}
+                      title={isCompleted ? 'Tamamlandı (Kaldırmak için tıkla)' : 'Tamamlandı olarak işaretle'}
+                    >
+                      <Check size={16} strokeWidth={3} />
+                    </button>
+
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[10px] font-black px-2 py-0.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
+                          {topic.week || idx + 1}. Hafta
+                        </span>
+                        <h4 className={`text-xs sm:text-sm font-black truncate ${isActive ? 'text-cyan-950 dark:text-cyan-100' : 'text-gray-900 dark:text-white'}`}>
+                          {topic.title}
+                        </h4>
+                        {isActive && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-black px-2.5 py-0.5 rounded-full bg-cyan-500 text-white shadow-xs animate-pulse">
+                            🎯 Şu Anda İşleniyor (Aktif)
+                          </span>
+                        )}
+                        {isCompleted && !isActive && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300">
+                            ✓ Tamamlandı
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">
+                        1. Sınıf MEB Maarif Modeli Ders İçi Etkinlik ve Pekiştirme Kazanımı
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                    <button
+                      type="button"
+                      onClick={() => handleSetActiveTopic(topic.id)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+                        isActive
+                          ? 'bg-cyan-600 text-white shadow-xs'
+                          : 'bg-gray-100 dark:bg-gray-800 hover:bg-cyan-50 hover:text-cyan-700 dark:hover:bg-cyan-950/40 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700'
+                      }`}
+                    >
+                      <span>{isActive ? '✓ Aktif İşlenen Konu' : '🎯 Bu Konuyu Aktif Yap'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleToggleTopicComplete(topic.id)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        isCompleted
+                          ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300'
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-gray-800 dark:hover:text-white'
+                      }`}
+                    >
+                      {isCompleted ? 'Tamamlandı' : 'Tamamla'}
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ── TAB 1: MEB TEXTBOOKS VISIBILITY TOGGLE ── */}
       {activeTab === 'books' && (

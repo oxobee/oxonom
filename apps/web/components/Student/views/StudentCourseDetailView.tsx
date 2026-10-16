@@ -29,6 +29,12 @@ import {
   FileCheck,
   Send,
   RefreshCw,
+  Trophy,
+  BarChart3,
+  AlertCircle,
+  X,
+  ChevronRight,
+  Play,
 } from 'lucide-react'
 import {
   STUDENT_COURSES,
@@ -90,9 +96,27 @@ export default function StudentCourseDetailView({ courseId }: StudentCourseDetai
   const [newNoteContent, setNewNoteContent] = useState('')
   const [showNoteForm, setShowNoteForm] = useState(false)
 
-  // Interactive Quiz state
+  // Synchronized Topic Progress State
+  const [completedTopicIds, setCompletedTopicIds] = useState<string[]>([])
+  const [activeTopicId, setActiveTopicId] = useState<string>('')
+  const [customCourseTopics, setCustomCourseTopics] = useState<any[]>([])
+
+  // Interactive Quiz State
+  const [quizSubTab, setQuizSubTab] = useState<'current' | 'history'>('current')
+  const [selectedTopicForQuiz, setSelectedTopicForQuiz] = useState<any>(null)
   const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({})
   const [quizSubmitted, setQuizSubmitted] = useState(false)
+  const [showResultModal, setShowResultModal] = useState(false)
+  const [pastQuizzes, setPastQuizzes] = useState<any[]>([])
+  const [lastQuizStats, setLastQuizStats] = useState<{
+    total: number
+    correct: number
+    wrong: number
+    unanswered: number
+    percentage: number
+    topicTitle: string
+    date: string
+  } | null>(null)
 
   const syncAll = () => {
     const prof = getSynchronizedStudentProfile()
@@ -120,6 +144,33 @@ export default function StudentCourseDetailView({ courseId }: StudentCourseDetai
       }
     } catch (_) {}
 
+    // Topic progress synchronization
+    try {
+      const rawProgress = localStorage.getItem(`oxonom_course_progress_${courseId}`)
+      if (rawProgress) {
+        const parsed = JSON.parse(rawProgress)
+        if (Array.isArray(parsed.completedTopicIds)) setCompletedTopicIds(parsed.completedTopicIds)
+        if (parsed.activeTopicId) setActiveTopicId(parsed.activeTopicId)
+      } else {
+        const crs = crss.find((c) => c.id === courseId) || crss[0]
+        const defCompleted = crs.topics.filter((t) => t.completed).map((t) => t.id)
+        const defActive = crs.topics.find((t) => !t.completed)?.id || crs.topics[0]?.id || ''
+        setCompletedTopicIds(defCompleted)
+        setActiveTopicId(defActive)
+      }
+
+      const rawCustom = localStorage.getItem('oxonom_course_custom_topics')
+      if (rawCustom) {
+        const customMap = JSON.parse(rawCustom)
+        setCustomCourseTopics(customMap[courseId] || [])
+      }
+
+      const rawPast = localStorage.getItem(`oxonom_past_quizzes_${courseId}`)
+      if (rawPast) {
+        setPastQuizzes(JSON.parse(rawPast))
+      }
+    } catch (_) {}
+
     // Synchronize Defterim notes matching course
     try {
       const allNotes = getStoredStudentNotes()
@@ -140,6 +191,7 @@ export default function StudentCourseDetailView({ courseId }: StudentCourseDetai
     window.addEventListener('oxonom_teacher_profile_updated', syncAll)
     window.addEventListener('oxonom_student_notes_updated', syncAll)
     window.addEventListener('oxonom_teacher_hidden_books_updated', syncAll)
+    window.addEventListener('oxonom_course_progress_updated', syncAll)
     window.addEventListener('storage', syncAll)
 
     return () => {
@@ -147,6 +199,7 @@ export default function StudentCourseDetailView({ courseId }: StudentCourseDetai
       window.removeEventListener('oxonom_teacher_profile_updated', syncAll)
       window.removeEventListener('oxonom_student_notes_updated', syncAll)
       window.removeEventListener('oxonom_teacher_hidden_books_updated', syncAll)
+      window.removeEventListener('oxonom_course_progress_updated', syncAll)
       window.removeEventListener('storage', syncAll)
     }
   }, [courseId])
@@ -181,9 +234,32 @@ export default function StudentCourseDetailView({ courseId }: StudentCourseDetai
     return false
   })
 
-  // Topics progress calculation
-  const completedTopicsCount = course.topics.filter((t) => t.completed).length
-  const totalTopicsCount = course.topics.length
+  // Topics list combining standard and teacher-added custom topics
+  const allCourseTopics = React.useMemo(() => {
+    const base = course.topics || []
+    const custom = (customCourseTopics || []).map((ct: any, idx: number) => ({
+      id: ct.id,
+      title: ct.title,
+      completed: ct.completed || false,
+      week: ct.week || (base.length + idx + 1),
+    }))
+    return [...base, ...custom]
+  }, [course.topics, customCourseTopics])
+
+  // Effective Active Topic (teacher selected, or user selected for quiz, or first unfinished)
+  const effectiveActiveTopic = React.useMemo(() => {
+    if (selectedTopicForQuiz) return selectedTopicForQuiz
+    if (activeTopicId) {
+      const found = allCourseTopics.find((t) => t.id === activeTopicId)
+      if (found) return found
+    }
+    const firstUnfinished = allCourseTopics.find((t) => !completedTopicIds.includes(t.id))
+    return firstUnfinished || allCourseTopics[0] || { id: 'top-1', title: 'Temel Ders Kazanımları', week: 1 }
+  }, [selectedTopicForQuiz, activeTopicId, allCourseTopics, completedTopicIds])
+
+  // Topics progress calculation based on synchronized topics
+  const completedTopicsCount = allCourseTopics.filter((t) => completedTopicIds.includes(t.id)).length
+  const totalTopicsCount = allCourseTopics.length
   const progressPercent = totalTopicsCount > 0 ? Math.round((completedTopicsCount / totalTopicsCount) * 100) : 0
 
   // File Download Handler
@@ -268,29 +344,290 @@ export default function StudentCourseDetailView({ courseId }: StudentCourseDetai
     }
   }
 
-  // Interactive Quiz questions mock for the course
-  const sampleQuizQuestions = [
-    {
-      id: 'q1',
-      question: `${course.name} dersi 1. ünite kazanımları ile ilgili temel soru: Aşağıdakilerden hangisi doğrudur?`,
-      options: [
-        { key: 'A', text: 'Öğrenilen temel kavramların düzenli tekrar edilmesi başarımı pekiştirir.' },
-        { key: 'B', text: 'Ders kitapları sadece sınav günleri incelenmelidir.' },
-        { key: 'C', text: 'Öğretmen anlatırken not tutmaya gerek yoktur.' },
-      ],
-      correct: 'A',
-    },
-    {
-      id: 'q2',
-      question: `Haftalık ders programına göre ${course.name} dersi nerede işlenmektedir?`,
-      options: [
-        { key: 'A', text: `${course.roomType}` },
-        { key: 'B', text: 'Müdür Odası' },
-        { key: 'C', text: 'Yemekhane' },
-      ],
-      correct: 'A',
-    },
-  ]
+  // Multi-type dynamic question generator based on active topic & MEB curriculum
+  const currentQuizQuestions = React.useMemo(() => {
+    const topicTitle = effectiveActiveTopic.title || 'Temel Kazanım'
+    const norm = course.name.toLowerCase()
+
+    if (norm.includes('türkçe') || norm.includes('okuma')) {
+      return [
+        {
+          id: 'q1',
+          type: 'single' as const,
+          typeLabel: 'Çoktan Seçmeli',
+          question: `"${topicTitle}" konusunda harfleri ve sesleri öğrenirken aşağıdakilerden hangisine en çok dikkat etmeliyiz?`,
+          options: [
+            { key: 'A', text: 'Harfin ağzımızdan çıkış sesine ve doğru yazılış yönüne' },
+            { key: 'B', text: 'Sadece sayfayı olabildiğince acele bitirmeye' },
+            { key: 'C', text: 'Satır çizgilerini dikkate almadan yazmaya' },
+            { key: 'D', text: 'Kitabın örnek görsellerine hiç bakmamaya' },
+          ],
+          correct: 'A',
+          explanation: '1. Sınıf Türkçe müfredatında sesin doğru kavranması ve satır çizgilerine uygun yazım esastır.',
+        },
+        {
+          id: 'q2',
+          type: 'true_false' as const,
+          typeLabel: 'Doğru / Yanlış',
+          question: `"${topicTitle}" konusunda öğrendiğimiz heceleri birleştirerek yeni ve anlamlı kelimeler oluşturabiliriz.`,
+          options: [
+            { key: 'D', text: 'Doğru' },
+            { key: 'Y', text: 'Yanlış' },
+          ],
+          correct: 'D',
+          explanation: 'Seslerden heceler, hecelerden anlamlı sözcükler türetilir.',
+        },
+        {
+          id: 'q3',
+          type: 'fill_in' as const,
+          typeLabel: 'Kavram Doldurma',
+          question: `Bir cümlenin ilk harfi her zaman ________ harfle başlar ve sonuna nokta konur.`,
+          options: [
+            { key: 'A', text: 'Büyük' },
+            { key: 'B', text: 'Küçük' },
+            { key: 'C', text: 'Noktalı' },
+          ],
+          correct: 'A',
+          explanation: 'Türkçede tüm cümleler büyük harfle başlar.',
+        },
+        {
+          id: 'q4',
+          type: 'concept' as const,
+          typeLabel: 'Kavram Analizi',
+          question: `Aşağıdaki kelimelerden hangisi "${topicTitle}" çalışmalarında 2 heceli olarak okunur?`,
+          options: [
+            { key: 'A', text: 'O-kul (2 Hece)' },
+            { key: 'B', text: 'Ka-lem-lik (3 Hece)' },
+            { key: 'C', text: 'Sil-gi-ler-den (4 Hece)' },
+            { key: 'D', text: 'Kü-tüp-ha-ne (4 Hece)' },
+          ],
+          correct: 'A',
+          explanation: 'O-kul sözcüğü iki ses grubundan oluşur.',
+        },
+      ]
+    }
+
+    if (norm.includes('matematik')) {
+      return [
+        {
+          id: 'q1',
+          type: 'single' as const,
+          typeLabel: 'Çoktan Seçmeli',
+          question: `"${topicTitle}" kapsamında 1'den 10'a kadar birer ritmik sayarken 4'ten sonra hangi sayı gelir?`,
+          options: [
+            { key: 'A', text: '5' },
+            { key: 'B', text: '3' },
+            { key: 'C', text: '6' },
+            { key: 'D', text: '2' },
+          ],
+          correct: 'A',
+          explanation: 'İleriye doğru birer ritmik saymada: 1, 2, 3, 4, 5 gelir.',
+        },
+        {
+          id: 'q2',
+          type: 'true_false' as const,
+          typeLabel: 'Doğru / Yanlış',
+          question: `Toplama işleminde 0 (sıfır) sayısı etkisiz elemandır ve sayının değerini değiştirmez.`,
+          options: [
+            { key: 'D', text: 'Doğru' },
+            { key: 'Y', text: 'Yanlış' },
+          ],
+          correct: 'D',
+          explanation: 'Örneğin 5 + 0 = 5 olur.',
+        },
+        {
+          id: 'q3',
+          type: 'fill_in' as const,
+          typeLabel: 'İşlem Tamamlama',
+          question: `Elimizde 3 elma vardı, öğretmenimiz 2 elma daha verdi. Toplamda ________ elmamız olur. (3 + 2 = ?)`,
+          options: [
+            { key: 'A', text: '5 elma' },
+            { key: 'B', text: '4 elma' },
+            { key: 'C', text: '6 elma' },
+          ],
+          correct: 'A',
+          explanation: '3 + 2 = 5 eder.',
+        },
+        {
+          id: 'q4',
+          type: 'concept' as const,
+          typeLabel: 'Geometrik Kavram',
+          question: `Köşesi ve kenarı olmayan, madeni para veya tabak gibi yuvarlak olan şekil hangisidir?`,
+          options: [
+            { key: 'A', text: 'Çember / Daire' },
+            { key: 'B', text: 'Kare' },
+            { key: 'C', text: 'Üçgen' },
+            { key: 'D', text: 'Dikdörtgen' },
+          ],
+          correct: 'A',
+          explanation: 'Daire yuvarlak olup köşesi bulunmaz.',
+        },
+      ]
+    }
+
+    if (norm.includes('hayat') || norm.includes('sosyal')) {
+      return [
+        {
+          id: 'q1',
+          type: 'single' as const,
+          typeLabel: 'Çoktan Seçmeli',
+          question: `"${topicTitle}" konusuna göre sınıfta söz alıp konuşmak istediğimizde ilk olarak ne yapmalıyız?`,
+          options: [
+            { key: 'A', text: 'Parmak kaldırıp öğretmenimizden söz istemeliyiz.' },
+            { key: 'B', text: 'Ayağa fırlayıp yüksek sesle konuşmalıyız.' },
+            { key: 'C', text: 'Arkadaşımızın sözünü kesmeliyiz.' },
+            { key: 'D', text: 'Sıraya vurarak dikkat çekmeliyiz.' },
+          ],
+          correct: 'A',
+          explanation: 'Sınıf içi nezaket kuralı olarak parmak kaldırılır.',
+        },
+        {
+          id: 'q2',
+          type: 'true_false' as const,
+          typeLabel: 'Doğru / Yanlış',
+          question: `Okulumuzdaki lavaboları, suyu ve lambaları tasarruflu kullanmak hepimizin sorumluluğudur.`,
+          options: [
+            { key: 'D', text: 'Doğru' },
+            { key: 'Y', text: 'Yanlış' },
+          ],
+          correct: 'D',
+          explanation: 'Tasarruf ve kaynak koruma yurttaşlık bilincidir.',
+        },
+        {
+          id: 'q3',
+          type: 'fill_in' as const,
+          typeLabel: 'Kavram Doldurma',
+          question: `Sabah okula geldiğimizde arkadaşlarımıza ve öğretmenimize ________ demeliyiz.`,
+          options: [
+            { key: 'A', text: 'Günaydın' },
+            { key: 'B', text: 'İyi geceler' },
+            { key: 'C', text: 'Görüşürüz' },
+          ],
+          correct: 'A',
+          explanation: 'Sabah selamlaşması saygı ve sevginin ifadesidir.',
+        },
+        {
+          id: 'q4',
+          type: 'concept' as const,
+          typeLabel: 'Davranış Kuralı',
+          question: `Teneffüste okul koridorunda hareket ederken hangisi en doğrudur?`,
+          options: [
+            { key: 'A', text: 'Sakin ve dikkatli adımlarla sağdan yürümek' },
+            { key: 'B', text: 'Koşarak diğer öğrencilere çarpmak' },
+            { key: 'C', text: 'Merdiven korkuluklarından kaymak' },
+            { key: 'D', text: 'Yüksek sesle bağırmak' },
+          ],
+          correct: 'A',
+          explanation: 'Okul güvenliği için koridorlarda koşulmaz.',
+        },
+      ]
+    }
+
+    // Default dynamic questions
+    return [
+      {
+        id: 'q1',
+        type: 'single' as const,
+        typeLabel: 'Çoktan Seçmeli',
+        question: `"${topicTitle}" konusundaki temel bilgileri pekiştirmek için hangisi en etkilidir?`,
+        options: [
+          { key: 'A', text: 'Ders kitabını incelemek ve etkinlikleri dikkatle tamamlamak' },
+          { key: 'B', text: 'Konuyu hiç tekrar etmemek' },
+          { key: 'C', text: 'Ders materyallerini evde unutmak' },
+          { key: 'D', text: 'Öğretmenin uyarılarını dinlememek' },
+        ],
+        correct: 'A',
+        explanation: 'Düzenli tekrar ve çalışma başarıyı getirir.',
+      },
+      {
+        id: 'q2',
+        type: 'true_false' as const,
+        typeLabel: 'Doğru / Yanlış',
+        question: `"${topicTitle}" kazanımı bu haftanın temel müfredat hedefleri arasındadır.`,
+        options: [
+          { key: 'D', text: 'Doğru' },
+          { key: 'Y', text: 'Yanlış' },
+        ],
+        correct: 'D',
+        explanation: 'MEB Maarif Modeli çerçevesinde haftalık kazanımlar sıralıdır.',
+      },
+      {
+        id: 'q3',
+        type: 'fill_in' as const,
+        typeLabel: 'Kavram Doldurma',
+        question: `Başarılı bir öğrenci olmak için her gün derslerimizi düzenli olarak ________ etmeliyiz.`,
+        options: [
+          { key: 'A', text: 'Tekrar' },
+          { key: 'B', text: 'İhmal' },
+          { key: 'C', text: 'Ertesi güne terk' },
+        ],
+        correct: 'A',
+        explanation: 'Tekrar bilginin kalıcı olmasını sağlar.',
+      },
+      {
+        id: 'q4',
+        type: 'concept' as const,
+        typeLabel: 'Kazanım Analizi',
+        question: `Bu derste işlenen "${topicTitle}" konusunun temel amacı nedir?`,
+        options: [
+          { key: 'A', text: 'Öğrenilen bilgiyi ve beceriyi günlük hayatta uygulayabilmek' },
+          { key: 'B', text: 'Sadece sınavda puan alıp unutmak' },
+          { key: 'C', text: 'Ders saatini doldurmak' },
+          { key: 'D', text: 'Kitaptaki boşlukları rastgele doldurmak' },
+        ],
+        correct: 'A',
+        explanation: 'Eğitimin amacı edinilen bilgiyi yaşam becerisine dönüştürmektir.',
+      },
+    ]
+  }, [course.name, effectiveActiveTopic])
+
+  // Handle Complete Quiz & Save Results
+  const handleCompleteQuiz = () => {
+    const total = currentQuizQuestions.length
+    let correct = 0
+    let wrong = 0
+    let unanswered = 0
+
+    currentQuizQuestions.forEach((q) => {
+      const ans = quizAnswers[q.id]
+      if (!ans) {
+        unanswered++
+      } else if (ans === q.correct) {
+        correct++
+      } else {
+        wrong++
+      }
+    })
+
+    const percentage = total > 0 ? Math.round((correct / total) * 100) : 0
+    const now = new Date()
+    const dateStr = `${now.getDate()} ${now.toLocaleString('tr-TR', { month: 'long' })} ${now.getFullYear()}, ${now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}`
+
+    const statsObj = {
+      id: `quiz-run-${Date.now()}`,
+      date: dateStr,
+      topicId: effectiveActiveTopic.id,
+      topicTitle: effectiveActiveTopic.title,
+      week: effectiveActiveTopic.week || 1,
+      total,
+      correct,
+      wrong,
+      unanswered,
+      percentage,
+    }
+
+    setLastQuizStats(statsObj)
+    setQuizSubmitted(true)
+    setShowResultModal(true)
+
+    const updatedPast = [statsObj, ...pastQuizzes]
+    setPastQuizzes(updatedPast)
+    try {
+      localStorage.setItem(`oxonom_past_quizzes_${courseId}`, JSON.stringify(updatedPast))
+    } catch (_) {}
+
+    toast.success(`Test tamamlandı! Başarı Oranınız: %${percentage}`)
+  }
 
   const filteredMaterials = courseMaterials.filter((m) => {
     if (materialFilter === 'all') return true
@@ -463,52 +800,113 @@ export default function StudentCourseDetailView({ courseId }: StudentCourseDetai
       {/* ── TAB 1: MÜFREDAT KONULARI ── */}
       {activeTab === 'topics' && (
         <div className="p-6 rounded-3xl bg-white dark:bg-[#0E1526] border border-gray-200/80 dark:border-gray-800/80 shadow-xs space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-extrabold text-gray-900 dark:text-white">
-              Haftalık Ders Kazanımları ve Konu İlerlemesi
-            </h2>
-            <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400">
-              {completedTopicsCount} / {totalTopicsCount} Tamamlandı
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
+                <Layers size={18} className="text-cyan-600 dark:text-cyan-400" />
+                Haftalık Ders Kazanımları ve Konu İlerlemesi
+              </h2>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Öğretmeninizin belirlediği aktif konu ve tamamlanan üniteler renklerle belirtilmiştir.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-xs font-bold px-3 py-1.5 rounded-xl bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300 border border-cyan-200/60 dark:border-cyan-800/60 self-start sm:self-auto">
+              <span>{completedTopicsCount} / {totalTopicsCount} Tamamlandı</span>
+              <span>(%{progressPercent})</span>
+            </div>
+          </div>
+
+          {/* Color legend guide */}
+          <div className="flex flex-wrap items-center gap-2.5 pt-2 pb-1 text-[11px] font-semibold text-gray-500 border-b border-gray-100 dark:border-gray-800/80">
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+              <span>Geçilen Konular</span>
+            </span>
+            <span>•</span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-cyan-500 animate-pulse" />
+              <span>En Son İşlenen (Aktif)</span>
+            </span>
+            <span>•</span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-gray-400" />
+              <span>Gelecek Konular</span>
             </span>
           </div>
 
-          <div className="space-y-2.5">
-            {course.topics.map((topic) => (
-              <div
-                key={topic.id}
-                className={`p-4 rounded-2xl border flex items-center justify-between gap-3 ${
-                  topic.completed
-                    ? 'bg-emerald-500/5 dark:bg-emerald-950/20 border-emerald-500/20 text-gray-900 dark:text-white'
-                    : 'bg-gray-50 dark:bg-[#131C31] border-gray-200/60 dark:border-gray-800/60 text-gray-600 dark:text-gray-300'
-                }`}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  {topic.completed ? (
-                    <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
-                  ) : (
-                    <Circle size={18} className="text-gray-400 shrink-0" />
-                  )}
-                  <div className="min-w-0">
-                    <div className="text-xs font-bold leading-tight truncate">
-                      {topic.title}
-                    </div>
-                    <div className="text-[10px] text-gray-400 mt-0.5">
-                      {topic.week}. Hafta Kazanımı · MEB Türkiye Yüzyılı Maarif Modeli
+          <div className="space-y-3 pt-1">
+            {allCourseTopics.map((topic, index) => {
+              const isCompleted = completedTopicIds.includes(topic.id)
+              const isActive =
+                topic.id === activeTopicId ||
+                (!isCompleted && allCourseTopics.findIndex((t) => !completedTopicIds.includes(t.id)) === index)
+              const isUpcoming = !isCompleted && !isActive
+
+              let containerStyle = ''
+              let badgeStyle = ''
+              let badgeText = ''
+              let iconNode = null
+
+              if (isCompleted) {
+                containerStyle = 'bg-emerald-500/5 dark:bg-emerald-950/20 border-emerald-500/30'
+                badgeStyle = 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20'
+                badgeText = '✓ Geçilen / Tamamlandı'
+                iconNode = <CheckCircle2 size={19} className="text-emerald-500 shrink-0" />
+              } else if (isActive) {
+                containerStyle =
+                  'bg-cyan-500/10 dark:bg-cyan-950/30 border-cyan-500/60 ring-2 ring-cyan-500/30 shadow-xs'
+                badgeStyle = 'bg-cyan-600 text-white shadow-xs'
+                badgeText = '🎯 En Son İşlenen Konu'
+                iconNode = <Sparkles size={19} className="text-cyan-600 dark:text-cyan-400 shrink-0 animate-pulse" />
+              } else {
+                containerStyle =
+                  'bg-gray-50/70 dark:bg-[#131C31]/70 border-gray-200/60 dark:border-gray-800/60 opacity-80'
+                badgeStyle = 'bg-gray-200 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+                badgeText = 'Sıradaki Konu'
+                iconNode = <Circle size={19} className="text-gray-400 shrink-0" />
+              }
+
+              return (
+                <div
+                  key={topic.id}
+                  className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${containerStyle}`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    {iconNode}
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-bold text-gray-900 dark:text-white leading-tight">
+                          {topic.title}
+                        </span>
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${badgeStyle}`}>
+                          {badgeText}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-gray-400 mt-0.5">
+                        {topic.week ? `${topic.week}. Hafta Kazanımı · ` : ''}MEB Türkiye Yüzyılı Maarif Modeli
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <span
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded-md shrink-0 ${
-                    topic.completed
-                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                      : 'bg-gray-200 dark:bg-gray-800 text-gray-500'
-                  }`}
-                >
-                  {topic.completed ? 'Tamamlandı' : 'İşlenecek'}
-                </span>
-              </div>
-            ))}
+                  <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedTopicForQuiz(topic)
+                        setActiveTab('quizzes')
+                        setQuizSubTab('current')
+                        setQuizSubmitted(false)
+                        setQuizAnswers({})
+                      }}
+                      className="px-3.5 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-extrabold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+                    >
+                      <Sparkles size={13} />
+                      <span>Test Yap</span>
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
@@ -798,97 +1196,433 @@ export default function StudentCourseDetailView({ courseId }: StudentCourseDetai
 
       {/* ── TAB 5: TESTLER & ETKİNLİKLER ── */}
       {activeTab === 'quizzes' && (
-        <div className="p-6 rounded-3xl bg-white dark:bg-[#0E1526] border border-gray-200/80 dark:border-gray-800/80 shadow-xs space-y-5">
-          <div className="space-y-1">
-            <h2 className="text-base font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
-              <Sparkles size={18} className="text-cyan-600 dark:text-cyan-400" />
-              {course.name} İnteraktif Pekiştirme ve Tarama Testi
-            </h2>
-            <p className="text-xs text-gray-400">
-              Öğrendiğiniz kazanımları pekiştirmek için soruları yanıtlayın ve sonucunuzu görün.
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            {sampleQuizQuestions.map((q, idx) => (
-              <div
-                key={q.id}
-                className="p-4 rounded-2xl bg-gray-50 dark:bg-[#131C31] border border-gray-200/60 dark:border-gray-800/60 space-y-3"
-              >
-                <div className="text-xs font-bold text-gray-900 dark:text-white">
-                  {idx + 1}. {q.question}
+        <div className="space-y-6">
+          {/* Hero Banner: Auto-generated quiz prompt based on last active topic */}
+          <div className="p-5 lg:p-6 rounded-3xl bg-gradient-to-r from-cyan-600 to-indigo-600 text-white shadow-md relative overflow-hidden">
+            <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1.5 max-w-2xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-black tracking-wide">
+                  <Sparkles size={13} />
+                  <span>Müfredat Pekiştirme & Günlük Test</span>
                 </div>
-
-                <div className="space-y-2">
-                  {q.options.map((opt) => {
-                    const isSelected = quizAnswers[q.id] === opt.key
-                    const isCorrect = opt.key === q.correct
-                    let btnStyle = 'bg-white dark:bg-[#0E1526] border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300'
-                    if (quizSubmitted) {
-                      if (isCorrect) {
-                        btnStyle = 'bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400 font-bold'
-                      } else if (isSelected && !isCorrect) {
-                        btnStyle = 'bg-rose-500/10 border-rose-500 text-rose-600 dark:text-rose-400'
-                      }
-                    } else if (isSelected) {
-                      btnStyle = 'bg-cyan-500/10 border-cyan-500 text-cyan-600 dark:text-cyan-400 font-bold'
-                    }
-
-                    return (
-                      <button
-                        key={opt.key}
-                        type="button"
-                        onClick={() => {
-                          if (quizSubmitted) return
-                          setQuizAnswers((prev) => ({ ...prev, [q.id]: opt.key }))
-                        }}
-                        className={`w-full p-3 rounded-xl border text-left text-xs transition-all flex items-center gap-3 cursor-pointer ${btnStyle}`}
-                      >
-                        <span className="w-6 h-6 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center font-bold text-[11px] shrink-0">
-                          {opt.key}
-                        </span>
-                        <span className="flex-1">{opt.text}</span>
-                        {quizSubmitted && isCorrect && (
-                          <Check size={16} className="text-emerald-500 shrink-0" />
-                        )}
-                      </button>
-                    )
-                  })}
-                </div>
+                <h3 className="text-lg lg:text-xl font-black tracking-tight">
+                  Bu derste en son "{effectiveActiveTopic.title}" konusunu işlediniz.
+                </h3>
+                <p className="text-xs text-white/90 leading-relaxed">
+                  Aşağıda konu ile ilgili MEB Türkiye Yüzyılı Maarif Modeli'ne uygun denemeler ve çok yönlü soruları çözerek kendinizi test edebilirsiniz.
+                </p>
               </div>
-            ))}
 
-            <div className="pt-2 flex items-center gap-3">
-              {!quizSubmitted ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (Object.keys(quizAnswers).length < sampleQuizQuestions.length) {
-                      toast.error('Lütfen tüm soruları yanıtlayınız.')
-                      return
-                    }
-                    setQuizSubmitted(true)
-                    toast.success('Test tamamlandı! Tebrikler.')
-                  }}
-                  className="px-5 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-extrabold text-xs shadow-xs transition-colors cursor-pointer"
-                >
-                  Testi Tamamla ve Puanımı Göster
-                </button>
-              ) : (
+              <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
                 <button
                   type="button"
                   onClick={() => {
                     setQuizAnswers({})
                     setQuizSubmitted(false)
+                    setShowResultModal(false)
                   }}
-                  className="px-5 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 text-gray-700 dark:text-gray-300 font-extrabold text-xs transition-colors cursor-pointer flex items-center gap-1.5"
+                  className="px-4 py-2 rounded-xl bg-white text-cyan-700 hover:bg-cyan-50 font-black text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
                 >
                   <RefreshCw size={14} />
-                  <span>Tekrar Çöz</span>
+                  <span>Testi Sıfırla</span>
                 </button>
-              )}
+              </div>
             </div>
           </div>
+
+          {/* Subtabs: Günlük Test vs Geçmiş Testler */}
+          <div className="flex items-center gap-2 border-b border-gray-200 dark:border-gray-800 pb-2">
+            <button
+              type="button"
+              onClick={() => setQuizSubTab('current')}
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+                quizSubTab === 'current'
+                  ? 'bg-cyan-600 text-white shadow-xs'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+              }`}
+            >
+              <Sparkles size={14} />
+              <span>Günlük Konu Testi ({currentQuizQuestions.length} Soru)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setQuizSubTab('history')}
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+                quizSubTab === 'history'
+                  ? 'bg-cyan-600 text-white shadow-xs'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+              }`}
+            >
+              <BarChart3 size={14} />
+              <span>Geçmiş Testler & Denemeler ({pastQuizzes.length})</span>
+            </button>
+          </div>
+
+          {/* SUBTAB 1: GÜNLÜK TEST */}
+          {quizSubTab === 'current' && (
+            <div className="p-6 rounded-3xl bg-white dark:bg-[#0E1526] border border-gray-200/80 dark:border-gray-800/80 shadow-xs space-y-6">
+              <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-gray-800">
+                <div>
+                  <h4 className="text-sm font-black text-gray-900 dark:text-white">
+                    {effectiveActiveTopic.title} — Kazanım Pekiştirme Soruları
+                  </h4>
+                  <p className="text-[11px] text-gray-400">
+                    Çoktan seçmeli, doğru-yanlış ve kavram tamamlama türlerinde karma MEB soruları.
+                  </p>
+                </div>
+                <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400">
+                  {Object.keys(quizAnswers).length} / {currentQuizQuestions.length} Yanıtlandı
+                </span>
+              </div>
+
+              <div className="space-y-5">
+                {currentQuizQuestions.map((q, idx) => {
+                  const isAnswered = !!quizAnswers[q.id]
+                  const isCorrect = quizAnswers[q.id] === q.correct
+
+                  return (
+                    <div
+                      key={q.id}
+                      className="p-5 rounded-2xl bg-gray-50 dark:bg-[#131C31] border border-gray-200/70 dark:border-gray-800/70 space-y-3.5"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="w-6 h-6 rounded-lg bg-cyan-600 text-white font-black text-xs flex items-center justify-center shrink-0">
+                            {idx + 1}
+                          </span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-300 border border-cyan-200/50 dark:border-cyan-800/50">
+                            {q.typeLabel}
+                          </span>
+                        </div>
+                        {quizSubmitted && (
+                          <span
+                            className={`text-[10px] font-bold px-2.5 py-0.5 rounded-md ${
+                              isCorrect
+                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                            }`}
+                          >
+                            {isCorrect ? '✓ Doğru Yanıt' : isAnswered ? '✗ Hatalı Yanıt' : 'Boş Bırakıldı'}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="text-xs lg:text-sm font-bold text-gray-900 dark:text-white leading-relaxed">
+                        {q.question}
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                        {q.options.map((opt) => {
+                          const isSelected = quizAnswers[q.id] === opt.key
+                          let optionClass =
+                            'bg-white dark:bg-[#0E1526] border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:border-cyan-500/60'
+
+                          if (quizSubmitted) {
+                            if (opt.key === q.correct) {
+                              optionClass =
+                                'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-200 font-black ring-1 ring-emerald-500/40'
+                            } else if (isSelected && opt.key !== q.correct) {
+                              optionClass =
+                                'bg-rose-50 dark:bg-rose-950/40 border-rose-500 text-rose-800 dark:text-rose-200 line-through'
+                            } else {
+                              optionClass = 'bg-white/50 dark:bg-[#0E1526]/50 border-gray-200 dark:border-gray-800 text-gray-400'
+                            }
+                          } else if (isSelected) {
+                            optionClass =
+                              'bg-cyan-50 dark:bg-cyan-950/40 border-cyan-500 text-cyan-800 dark:text-cyan-200 font-bold ring-2 ring-cyan-500/30'
+                          }
+
+                          return (
+                            <button
+                              key={opt.key}
+                              type="button"
+                              disabled={quizSubmitted}
+                              onClick={() => {
+                                setQuizAnswers((prev) => ({ ...prev, [q.id]: opt.key }))
+                              }}
+                              className={`p-3 rounded-xl border text-left text-xs transition-all flex items-center gap-3 cursor-pointer ${optionClass}`}
+                            >
+                              <span className="w-6 h-6 rounded-lg bg-gray-100 dark:bg-gray-800 font-black text-[11px] flex items-center justify-center shrink-0">
+                                {opt.key}
+                              </span>
+                              <span className="flex-1 leading-snug">{opt.text}</span>
+                              {quizSubmitted && opt.key === q.correct && (
+                                <Check size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                              )}
+                            </button>
+                          )
+                        })}
+                      </div>
+
+                      {quizSubmitted && q.explanation && (
+                        <div className="p-3 rounded-xl bg-cyan-50/70 dark:bg-cyan-950/30 border border-cyan-200/50 dark:border-cyan-800/50 text-[11px] text-cyan-900 dark:text-cyan-200 flex items-start gap-2">
+                          <Sparkles size={14} className="text-cyan-600 dark:text-cyan-400 shrink-0 mt-0.5" />
+                          <span>
+                            <strong>Kazanım Notu:</strong> {q.explanation}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Bottom Actions */}
+              <div className="pt-4 border-t border-gray-100 dark:border-gray-800 flex flex-wrap items-center justify-between gap-3">
+                <div className="text-xs text-gray-500">
+                  Toplam {currentQuizQuestions.length} sorudan {Object.keys(quizAnswers).length} tanesini işaretlediniz.
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {!quizSubmitted ? (
+                    <button
+                      type="button"
+                      onClick={handleCompleteQuiz}
+                      className="px-6 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-black text-xs shadow-md transition-colors cursor-pointer flex items-center gap-2"
+                    >
+                      <Trophy size={14} />
+                      <span>Testi Tamamla ve Sonuçları Göster</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setShowResultModal(true)}
+                      className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-xs transition-colors cursor-pointer flex items-center gap-2"
+                    >
+                      <BarChart3 size={14} />
+                      <span>Grafiksel Sonuç Kartını Aç</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* SUBTAB 2: GEÇMİŞ TESTLER & DENEMELER */}
+          {quizSubTab === 'history' && (
+            <div className="p-6 rounded-3xl bg-white dark:bg-[#0E1526] border border-gray-200/80 dark:border-gray-800/80 shadow-xs space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-black text-gray-900 dark:text-white">
+                    {course.name} Çözülen Deneme & Test Geçmişi
+                  </h4>
+                  <p className="text-[11px] text-gray-400">
+                    Öğrencinin tamamladığı testler, doğru-yanlış grafikleri ve başarı oranları.
+                  </p>
+                </div>
+                <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400">
+                  {pastQuizzes.length} Test Çözüldü
+                </span>
+              </div>
+
+              {pastQuizzes.length === 0 ? (
+                <div className="p-10 text-center text-xs text-gray-400 border border-dashed border-gray-200 dark:border-gray-800 rounded-2xl space-y-2">
+                  <Sparkles size={24} className="mx-auto text-gray-300 dark:text-gray-600" />
+                  <p>Bu ders için henüz tamamlanmış bir deneme veya günlük test kaydı bulunmuyor.</p>
+                  <button
+                    type="button"
+                    onClick={() => setQuizSubTab('current')}
+                    className="px-4 py-1.5 rounded-xl bg-cyan-600 text-white text-xs font-bold inline-flex items-center gap-1.5 mt-2 cursor-pointer"
+                  >
+                    <span>Hemen Günlük Testi Çöz</span>
+                    <ChevronRight size={13} />
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {pastQuizzes.map((pq: any, pIdx: number) => (
+                    <div
+                      key={pq.id || pIdx}
+                      className="p-4 rounded-2xl bg-gray-50 dark:bg-[#131C31] border border-gray-200/60 dark:border-gray-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        {/* Circular Score Ring */}
+                        <div className="relative w-12 h-12 flex items-center justify-center shrink-0">
+                          <svg className="w-12 h-12 -rotate-90" viewBox="0 0 36 36">
+                            <path
+                              className="text-gray-200 dark:text-gray-700"
+                              strokeWidth="3.5"
+                              stroke="currentColor"
+                              fill="none"
+                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            />
+                            <path
+                              className="text-cyan-500"
+                              strokeDasharray={`${pq.percentage || 0}, 100`}
+                              strokeWidth="3.5"
+                              strokeLinecap="round"
+                              stroke="currentColor"
+                              fill="none"
+                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                            />
+                          </svg>
+                          <span className="absolute text-[11px] font-black text-gray-900 dark:text-white">
+                            %{pq.percentage}
+                          </span>
+                        </div>
+
+                        <div className="min-w-0">
+                          <div className="text-xs font-bold text-gray-900 dark:text-white truncate">
+                            {pq.topicTitle}
+                          </div>
+                          <div className="text-[10px] text-gray-400 mt-0.5 flex items-center gap-2">
+                            <span>{pq.date}</span>
+                            <span>•</span>
+                            <span>{pq.week ? `${pq.week}. Hafta` : 'Kazanım Testi'}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
+                        <div className="flex items-center gap-1.5 text-xs font-bold">
+                          <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                            {pq.correct} D
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                            {pq.wrong} Y
+                          </span>
+                          {pq.unanswered > 0 && (
+                            <span className="px-2 py-0.5 rounded-md bg-gray-200 dark:bg-gray-800 text-gray-500">
+                              {pq.unanswered} B
+                            </span>
+                          )}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLastQuizStats(pq)
+                            setShowResultModal(true)
+                          }}
+                          className="px-3 py-1.5 rounded-xl bg-white dark:bg-[#0E1526] border border-gray-200 dark:border-gray-800 text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-cyan-600 transition-colors cursor-pointer"
+                        >
+                          İncele
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── GRAPHICAL POST-TEST COMPLETION MODAL ── */}
+          {showResultModal && lastQuizStats && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+              <div className="w-full max-w-lg bg-white dark:bg-[#0E1526] rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl p-6 lg:p-8 space-y-6 animate-in fade-in zoom-in-95 duration-200">
+                <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-gray-800">
+                  <div className="flex items-center gap-2">
+                    <Trophy size={20} className="text-amber-500" />
+                    <h3 className="text-base font-black text-gray-900 dark:text-white">
+                      Test Değerlendirme & Başarı Raporu
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowResultModal(false)}
+                    className="w-8 h-8 rounded-xl text-gray-400 hover:text-gray-900 dark:hover:text-white flex items-center justify-center cursor-pointer"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                <div className="text-center space-y-3">
+                  <div className="relative w-28 h-28 mx-auto flex items-center justify-center">
+                    <svg className="w-28 h-28 -rotate-90" viewBox="0 0 36 36">
+                      <path
+                        className="text-gray-100 dark:text-gray-800"
+                        strokeWidth="3.5"
+                        stroke="currentColor"
+                        fill="none"
+                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      />
+                      <path
+                        className="text-cyan-500"
+                        strokeDasharray={`${lastQuizStats.percentage}, 100`}
+                        strokeWidth="3.5"
+                        strokeLinecap="round"
+                        stroke="currentColor"
+                        fill="none"
+                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                      />
+                    </svg>
+                    <div className="absolute text-center">
+                      <div className="text-2xl font-black text-gray-900 dark:text-white">
+                        %{lastQuizStats.percentage}
+                      </div>
+                      <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                        Başarı
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-extrabold text-gray-900 dark:text-white">
+                      {lastQuizStats.topicTitle}
+                    </h4>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {lastQuizStats.percentage >= 80
+                        ? '🌟 Harika Bir Performans! Takdir Düzeyinde Başarı.'
+                        : lastQuizStats.percentage >= 50
+                        ? '👍 İyi İlerleme! Eksik soruları tekrar ederek tam puan alabilirsiniz.'
+                        : '💡 Konuyu kitaptan tekrar okumanız ve testi yeniden denemeniz tavsiye edilir.'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* 4 Stat Cards */}
+                <div className="grid grid-cols-4 gap-2 pt-2">
+                  <div className="p-3 rounded-2xl bg-gray-50 dark:bg-[#131C31] text-center space-y-1">
+                    <span className="text-[10px] font-bold text-gray-400">Toplam</span>
+                    <div className="text-base font-black text-gray-900 dark:text-white">
+                      {lastQuizStats.total}
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 text-center space-y-1 border border-emerald-500/20">
+                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">Doğru</span>
+                    <div className="text-base font-black text-emerald-600 dark:text-emerald-400">
+                      {lastQuizStats.correct}
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/30 text-center space-y-1 border border-rose-500/20">
+                    <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400">Yanlış</span>
+                    <div className="text-base font-black text-rose-600 dark:text-rose-400">
+                      {lastQuizStats.wrong}
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-2xl bg-gray-100 dark:bg-gray-800 text-center space-y-1">
+                    <span className="text-[10px] font-bold text-gray-400">Boş</span>
+                    <div className="text-base font-black text-gray-600 dark:text-gray-300">
+                      {lastQuizStats.unanswered}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer Buttons */}
+                <div className="pt-2 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowResultModal(false)
+                      setQuizAnswers({})
+                      setQuizSubmitted(false)
+                    }}
+                    className="px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 text-xs font-bold text-gray-700 dark:text-gray-300 transition-colors cursor-pointer"
+                  >
+                    Tekrar Çöz
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowResultModal(false)}
+                    className="px-5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-black transition-colors shadow-xs cursor-pointer"
+                  >
+                    Kapat & İncele
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -15,7 +15,11 @@ import {
   ShieldCheck,
   Sparkles,
 } from 'lucide-react'
-import { STUDENT_ANNOUNCEMENTS, type StudentAnnouncement } from '@/lib/student/studentData'
+import {
+  STUDENT_ANNOUNCEMENTS,
+  getSynchronizedStudentAnnouncements,
+  type StudentAnnouncement,
+} from '@/lib/student/studentData'
 import toast from 'react-hot-toast'
 import MockBadge from '@components/Common/MockBadge'
 
@@ -60,9 +64,26 @@ export default function StudentCommunicationView({
   initialTab = 'all',
 }: StudentCommunicationViewProps) {
   const [activeTab, setActiveTab] = useState<'all' | 'announcements' | 'messages' | 'notifications'>(initialTab)
+  const [announcements, setAnnouncements] = useState<StudentAnnouncement[]>(() => getSynchronizedStudentAnnouncements())
   const [messages, setMessages] = useState<TeacherMessage[]>(INITIAL_MESSAGES)
   const [selectedMessage, setSelectedMessage] = useState<TeacherMessage | null>(null)
   const [replyText, setReplyText] = useState('')
+
+  const syncAnnouncements = () => {
+    setAnnouncements(getSynchronizedStudentAnnouncements())
+  }
+
+  React.useEffect(() => {
+    syncAnnouncements()
+    window.addEventListener('oxonom_student_announcements_updated', syncAnnouncements)
+    window.addEventListener('oxonom_student_updated', syncAnnouncements)
+    window.addEventListener('storage', syncAnnouncements)
+    return () => {
+      window.removeEventListener('oxonom_student_announcements_updated', syncAnnouncements)
+      window.removeEventListener('oxonom_student_updated', syncAnnouncements)
+      window.removeEventListener('storage', syncAnnouncements)
+    }
+  }, [])
 
   const handleSendReply = (e: React.FormEvent) => {
     e.preventDefault()
@@ -115,7 +136,7 @@ export default function StudentCommunicationView({
                 : 'text-gray-600 dark:text-gray-400'
             }`}
           >
-            Duyurular ({STUDENT_ANNOUNCEMENTS.length})
+            Duyurular ({announcements.length})
           </button>
           <button
             type="button"
@@ -141,43 +162,73 @@ export default function StudentCommunicationView({
             </div>
 
             <div className="space-y-4">
-              {STUDENT_ANNOUNCEMENTS.map((ann) => (
-                <div
-                  key={ann.id}
-                  className="p-6 rounded-3xl bg-white dark:bg-[#0E1526] border border-gray-200/80 dark:border-gray-800/80 shadow-xs space-y-3"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-xs shrink-0">
-                        {ann.author.slice(0, 1)}
-                      </div>
-                      <div>
-                        <div className="text-xs font-extrabold text-gray-900 dark:text-white">
-                          {ann.author}
+              {announcements.map((ann) => {
+                let priorityBadge = null
+                if (ann.priority === 'emergency') {
+                  priorityBadge = (
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30">
+                      🚨 Acil / Kritik
+                    </span>
+                  )
+                } else if (ann.priority === 'important') {
+                  priorityBadge = (
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                      ⚠️ Önemli
+                    </span>
+                  )
+                } else if (ann.priority === 'normal') {
+                  priorityBadge = (
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                      ✓ Normal
+                    </span>
+                  )
+                } else {
+                  priorityBadge = (
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30">
+                      ℹ️ Bilgi
+                    </span>
+                  )
+                }
+
+                return (
+                  <div
+                    key={ann.id}
+                    className="p-6 rounded-3xl bg-white dark:bg-[#0E1526] border border-gray-200/80 dark:border-gray-800/80 shadow-xs space-y-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-xs shrink-0">
+                          {ann.author.slice(0, 1)}
                         </div>
-                        <div className="text-[10px] text-gray-400">{ann.authorRole}</div>
+                        <div>
+                          <div className="text-xs font-extrabold text-gray-900 dark:text-white">
+                            {ann.author}
+                          </div>
+                          <div className="text-[10px] text-gray-400">{ann.authorRole}</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {priorityBadge}
+                        {ann.isPinned && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                            <Pin size={10} />
+                            Sabitli
+                          </span>
+                        )}
+                        <span className="text-[11px] text-gray-400">{ann.date}</span>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      {ann.isPinned && (
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                          <Pin size={10} />
-                          Sabitli
-                        </span>
-                      )}
-                      <span className="text-[11px] text-gray-400">{ann.date}</span>
-                    </div>
+                    <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
+                      {ann.title}
+                    </h3>
+                    <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+                      {ann.content}
+                    </p>
                   </div>
-
-                  <h3 className="text-sm font-extrabold text-gray-900 dark:text-white">
-                    {ann.title}
-                  </h3>
-                  <p className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
-                    {ann.content}
-                  </p>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         )}

@@ -686,18 +686,18 @@ export default function StudentDashboardView() {
       avatarBg: 'from-emerald-500 to-teal-600',
       scoreColor: 'text-emerald-600 dark:text-emerald-400',
       statusColor: 'text-emerald-600 dark:text-emerald-400',
-      statusLabel: 'Yüksek Başarı / Takdir Seviyesi',
+      statusLabel: 'Üstün Başarı / Takdir Seviyesi',
     }
   }, [profile.gpa])
 
-  // Core actual courses of 9-A curriculum (100% REAL DATA, NO MOCK) with richer, distinguishable pastel tones
+  // Core actual courses of 1/A curriculum (100% REAL DATA, NO MOCK) with richer, distinguishable pastel tones
   const realCoreCourses = [
     {
-      id: 'turk-dili-ve-edebiyati',
-      name: 'Türk Dili ve Edebiyatı',
-      teacher: 'Ebru TEKNECİ',
-      hours: '5 Saat / Hafta',
-      icon: Headphones,
+      id: 'turkce',
+      name: 'Türkçe',
+      teacher: 'Özlem ZOR',
+      hours: '10 Saat / Hafta',
+      icon: BookOpen,
       bg: 'bg-[#EDE9FE] dark:bg-[#2E1065]/40',
       border: 'border-[#DDD6FE] dark:border-purple-800/60',
       iconBg: 'bg-purple-600/15 text-purple-700 dark:text-purple-300',
@@ -705,29 +705,29 @@ export default function StudentDashboardView() {
     {
       id: 'matematik',
       name: 'Matematik',
-      teacher: 'Ebru TEKNECİ',
-      hours: '6 Saat / Hafta',
-      icon: Mic,
+      teacher: 'Özlem ZOR',
+      hours: '5 Saat / Hafta',
+      icon: Lightbulb,
       bg: 'bg-[#FFE4E6] dark:bg-[#881337]/40',
       border: 'border-[#FECDD3] dark:border-rose-800/60',
       iconBg: 'bg-rose-600/15 text-rose-700 dark:text-rose-300',
     },
     {
-      id: 'bilisim-ve-kodlama',
-      name: 'Bilişim & Kodlama',
-      teacher: 'Ebru TEKNECİ',
-      hours: '2 Saat / Hafta',
-      icon: Lightbulb,
+      id: 'hayat-bilgisi',
+      name: 'Hayat Bilgisi',
+      teacher: 'Özlem ZOR',
+      hours: '4 Saat / Hafta',
+      icon: Compass,
       bg: 'bg-[#DCFCE7] dark:bg-[#052E16]/40',
       border: 'border-[#BBF7D0] dark:border-emerald-800/60',
       iconBg: 'bg-emerald-600/15 text-emerald-700 dark:text-emerald-300',
     },
     {
-      id: 'yabanci-dil',
+      id: 'yabanci-dil-ingilizce',
       name: 'Yabancı Dil (İngilizce)',
-      teacher: 'Yabancı Dil Zümresi',
-      hours: '4 Saat / Hafta',
-      icon: Compass,
+      teacher: 'Nilgün KAYA',
+      hours: '2 Saat / Hafta',
+      icon: Headphones,
       bg: 'bg-[#FEF3C7] dark:bg-[#78350F]/40',
       border: 'border-[#FDE68A] dark:border-amber-800/60',
       iconBg: 'bg-amber-600/15 text-amber-700 dark:text-amber-300',
@@ -737,8 +737,8 @@ export default function StudentDashboardView() {
   const activeSubjectName =
     (activeOrNextLesson as any)?.subjectName ||
     activeOrNextLesson?.subject ||
-    'Türk Dili ve Edebiyatı'
-  const activeTeacherName = activeOrNextLesson?.teacherName || profile.mentorTeacher || 'Ebru TEKNECİ'
+    'Türkçe'
+  const activeTeacherName = activeOrNextLesson?.teacherName || profile.mentorTeacher || 'Özlem ZOR'
   const activeRoomName = activeOrNextLesson?.roomName || `Derslik ${profile.className}`
 
   // Smart Academic Performance Calculation
@@ -1048,52 +1048,8 @@ export default function StudentDashboardView() {
               </Link>
             </div>
 
-            {/* Real Active Lesson Card */}
-            <motion.div
-              whileHover={{ y: -2 }}
-              transition={{ duration: 0.2 }}
-              className="p-4 sm:p-5 rounded-[28px] bg-white dark:bg-[#111A2E] border border-blue-100/80 dark:border-blue-900/40 shadow-[0_8px_30px_rgb(29,119,255,0.04)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-            >
-              <div className="flex items-center gap-4 min-w-0">
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-tr from-blue-500 to-indigo-600 text-white flex items-center justify-center font-black text-xl shrink-0 shadow-md shadow-blue-500/20">
-                  <GraduationCap size={28} />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/40 text-[#1D77FF] border border-blue-200/50">
-                      Aktif Müfredat
-                    </span>
-                    <span className="text-[11px] font-bold text-slate-400">
-                      {activeOrNextLesson ? `${activeOrNextLesson.period}. Ders Saati` : 'Dönem Planı'}
-                    </span>
-                  </div>
-                  <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white truncate mt-1">
-                    {profile.className} {activeSubjectName}
-                  </h3>
-                  <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-semibold">
-                    <span>{activeTeacherName}</span>
-                    <span>•</span>
-                    <span className="flex items-center gap-1">
-                      <MapPin size={11} />
-                      {activeRoomName}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="w-full sm:w-auto">
-                <Link
-                  href="/student/courses"
-                  className="w-full sm:w-auto px-6 py-3 rounded-full bg-[#1D77FF] hover:bg-blue-600 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-blue-500/25 shrink-0 transition-all"
-                >
-                  <Play size={14} className="fill-white" />
-                  <span>Derse Git</span>
-                </Link>
-              </motion.div>
-            </motion.div>
-
             {/* Live Class Radar integrated seamlessly */}
-            <LiveClassRadar role="student" initialClassCode={profile.className || '9-A'} />
+            <LiveClassRadar role="student" initialClassCode={profile.className || '1/A'} />
           </div>
 
           {/* ── REHBERLİK & ÖĞRETMEN GÖRÜŞÜ VE YAKLAŞAN SINAV ÖZETİ (Aradaki boşluğu dolduran alan) ── */}
@@ -1202,11 +1158,381 @@ export default function StudentDashboardView() {
               )}
             </div>
           </div>
+
+          {/* ── HAFTALIK DERS PROGRAMI (Müdürlük Onaylı Canlı Senkronize Matrix) ── */}
+          <div className="p-6 sm:p-7 rounded-[32px] bg-white dark:bg-[#111A2E] border border-blue-100/80 dark:border-blue-900/40 shadow-[0_8px_30px_rgb(29,119,255,0.04)] space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#1D77FF]/10 text-[#1D77FF] flex items-center justify-center shrink-0">
+                  <Calendar size={20} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+                      Haftalık Ders Programı ({profile.className})
+                    </h2>
+                    <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                      Canlı Senkronize
+                    </span>
+                    <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-blue-500/10 text-[#1D77FF] border border-blue-500/20">
+                      Müdürlük Onaylı
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Okul müdürlüğü tarafından onaylanan haftalık MEB ders akışı ({weeklySchedule.length || 30} Saat / Hafta)
+                  </p>
+                </div>
+              </div>
+
+              {/* View Switcher & Link to full schedule */}
+              <div className="flex items-center gap-2 self-start sm:self-auto shrink-0 flex-wrap">
+                <div className="flex items-center p-1 rounded-2xl bg-slate-100 dark:bg-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setScheduleViewMode('matrix')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                      scheduleViewMode === 'matrix'
+                        ? 'bg-white dark:bg-[#111A2E] text-[#1D77FF] shadow-xs'
+                        : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <Table size={13} />
+                    <span>Tablo</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setScheduleViewMode('list')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                      scheduleViewMode === 'list'
+                        ? 'bg-white dark:bg-[#111A2E] text-[#1D77FF] shadow-xs'
+                        : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    <List size={13} />
+                    <span>Günlük Liste</span>
+                  </button>
+                </div>
+
+                <Link
+                  href="/student/courses?tab=schedule"
+                  className="text-xs font-black text-[#1D77FF] hover:underline flex items-center gap-1 pl-1"
+                >
+                  <span>Tam Ekran</span>
+                  <ChevronRight size={14} />
+                </Link>
+              </div>
+            </div>
+
+            {/* TABLO MATRİS GÖRÜNÜMÜ: 5 Gün x Periyotlar */}
+            {scheduleViewMode === 'matrix' && (
+              <div className="w-full max-w-full rounded-2xl border border-blue-100/70 dark:border-blue-900/40 overflow-hidden">
+                <div className="w-full max-w-full overflow-x-auto touch-pan-x custom-scrollbar">
+                  <table className="w-full text-left border-collapse min-w-[620px]">
+                    <thead>
+                      <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-blue-100/80 dark:border-blue-900/60 text-[10px] font-black text-slate-600 dark:text-slate-300">
+                        <th className="p-3 w-28 text-center shrink-0">Saat / Periyot</th>
+                        {DAYS_LIST.map((day) => {
+                          const dayCount = weeklySchedule.filter((e) => e.day === day.key).length
+                          const isToday = todayKey === day.key
+                          return (
+                            <th key={day.key} className="p-2.5 text-center">
+                              <div className="flex items-center justify-center gap-1.5">
+                                <span>{day.label}</span>
+                                {isToday && (
+                                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="Bugün" />
+                                )}
+                              </div>
+                              <div className="text-[9px] font-bold text-slate-400 mt-0.5">
+                                {dayCount} Ders
+                              </div>
+                            </th>
+                          )
+                        })}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-blue-50 dark:divide-blue-950/40 text-xs">
+                      {schedulePeriods.map((period) => (
+                        <tr
+                          key={period.periodNumber}
+                          className="hover:bg-blue-50/30 dark:hover:bg-slate-800/30 transition-colors"
+                        >
+                          {/* Period & Time Column */}
+                          <td className="p-2.5 text-center bg-slate-50/50 dark:bg-slate-900/30 border-r border-blue-50 dark:border-blue-950/50 shrink-0">
+                            <div className="font-black text-slate-800 dark:text-slate-200 text-xs">
+                              {period.periodNumber}. Ders
+                            </div>
+                            <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                              {period.time}
+                            </div>
+                          </td>
+
+                          {/* Day Columns */}
+                          {DAYS_LIST.map((day) => {
+                            const match = weeklySchedule.find(
+                              (e) => e.day === day.key && e.period === period.periodNumber
+                            )
+                            const subjectName = (match as any)?.subjectName || match?.subject || ''
+                            const style = match
+                              ? getStudentDashboardSubjectColor(subjectName, (match as any).color)
+                              : null
+
+                            const lessonNotes = match
+                              ? getLessonNotes(day.key, period.periodNumber, subjectName)
+                              : []
+                            const hasNotes = lessonNotes.length > 0
+
+                            return (
+                              <td
+                                key={day.key}
+                                className="p-1.5 align-top border-r last:border-r-0 border-blue-50 dark:border-blue-950/40"
+                              >
+                                {match ? (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleOpenLessonNoteModal(
+                                        match,
+                                        day.label,
+                                        day.key,
+                                        period.periodNumber,
+                                        period.time
+                                      )
+                                    }
+                                    className={`w-full text-left block p-2 rounded-2xl border transition-all hover:shadow-md hover:scale-[1.01] cursor-pointer relative group ${style?.bg} ${style?.border} ${style?.text}`}
+                                  >
+                                    <div className="flex items-start justify-between gap-1">
+                                      <div className="font-black text-[11px] leading-tight truncate flex-1">
+                                        {subjectName}
+                                      </div>
+                                      {hasNotes && (
+                                        <span
+                                          title={`${lessonNotes.length} Not Kayıtlı`}
+                                          className="shrink-0 px-1.5 py-0.5 rounded-full bg-amber-500 text-white font-black text-[8px] flex items-center gap-0.5 shadow-xs"
+                                        >
+                                          <FileText size={8} />
+                                          <span>{lessonNotes.length}</span>
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="text-[9px] opacity-80 truncate mt-1">
+                                      {match.teacherName || 'Öğretmen'}
+                                    </div>
+                                    <div className="flex items-center justify-between text-[8px] opacity-75 mt-1">
+                                      <span className="truncate">
+                                        {match.roomName?.split('(')[0]?.trim() || `Derslik ${profile.className}`}
+                                      </span>
+                                      {hasNotes ? (
+                                        <span className="font-bold text-[8px] text-amber-600 dark:text-amber-400">
+                                          Not Var
+                                        </span>
+                                      ) : (
+                                        <span className="opacity-0 group-hover:opacity-100 text-[8px] transition-opacity font-bold text-[#1D77FF]">
+                                          + Not
+                                        </span>
+                                      )}
+                                    </div>
+                                  </button>
+                                ) : (
+                                  <div className="w-full h-14 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-slate-400 text-[9px] font-bold">
+                                    <span>Boş</span>
+                                  </div>
+                                )}
+                              </td>
+                            )
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* GÜNLÜK LİSTE GÖRÜNÜMÜ */}
+            {scheduleViewMode === 'list' && (
+              <div className="space-y-4 w-full min-w-0">
+                {/* Day Selector Pill Tabs */}
+                <div className="grid grid-cols-5 gap-1 sm:gap-2 p-1 sm:p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-800 w-full min-w-0">
+                  {DAYS_LIST.map((day) => {
+                    const isSelected = selectedScheduleDay === day.key
+                    const isToday = todayKey === day.key
+                    const count = weeklySchedule.filter((e) => e.day === day.key).length
+
+                    return (
+                      <button
+                        key={day.key}
+                        type="button"
+                        onClick={() => setSelectedScheduleDay(day.key)}
+                        className={`py-2 px-1 sm:px-2 rounded-xl text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 min-w-0 ${
+                          isSelected
+                            ? 'bg-white dark:bg-[#111A2E] text-[#1D77FF] font-black shadow-xs'
+                            : 'text-slate-500 hover:text-slate-900 dark:hover:text-white font-bold'
+                        }`}
+                      >
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs">{day.label}</span>
+                          {isToday && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" title="Bugün" />
+                          )}
+                        </div>
+                        <span className="text-[10px] text-slate-400 hidden sm:inline">
+                          {count > 0 ? `${count} Ders` : '—'}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+
+                {/* Day's Lessons List */}
+                <div className="space-y-2.5">
+                  {selectedDayClasses.length > 0 ? (
+                    selectedDayClasses.map((item, idx) => {
+                      const periodTime =
+                        MIDDLE_PERIODS.find((p) => p.periodNumber === item.period)?.time ||
+                        (item as any).timeSlot ||
+                        '09:25 - 10:05'
+                      const subjectName = (item as any).subjectName || item.subject || 'Ders'
+                      const dayLabel = DAYS_LIST.find((d) => d.key === selectedScheduleDay)?.label || 'Seçili Gün'
+                      const lessonNotes = getLessonNotes(selectedScheduleDay, item.period, subjectName)
+                      const hasNotes = lessonNotes.length > 0
+
+                      return (
+                        <div
+                          key={item.id || idx}
+                          onClick={() =>
+                            handleOpenLessonNoteModal(
+                              item,
+                              dayLabel,
+                              selectedScheduleDay,
+                              item.period,
+                              periodTime
+                            )
+                          }
+                          className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-blue-50 dark:border-blue-900/30 flex items-center justify-between gap-3 hover:border-blue-300 dark:hover:border-blue-700 transition-all cursor-pointer group"
+                        >
+                          <div className="flex items-center gap-3.5 min-w-0">
+                            <div className="w-12 h-12 rounded-2xl bg-[#1D77FF]/10 text-[#1D77FF] border border-blue-200/50 flex flex-col items-center justify-center shrink-0">
+                              <span className="text-sm font-black">{item.period}</span>
+                              <span className="text-[8px] font-bold uppercase text-slate-400">Ders</span>
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white truncate">
+                                  {subjectName}
+                                </span>
+                                {hasNotes && (
+                                  <span className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                                    <FileText size={10} />
+                                    <span>{lessonNotes.length} Not</span>
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5 flex-wrap">
+                                <span className="font-semibold text-slate-700 dark:text-slate-300">
+                                  {item.teacherName || 'Öğretmen'}
+                                </span>
+                                <span>•</span>
+                                <span className="flex items-center gap-1">
+                                  <MapPin size={11} />
+                                  {item.roomName || `Derslik ${profile.className}`}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="text-right shrink-0">
+                            <div className="text-xs font-black text-slate-700 dark:text-slate-300">
+                              {periodTime}
+                            </div>
+                            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
+                              40 Dk
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    })
+                  ) : (
+                    <div className="p-8 text-center text-slate-400 text-xs bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+                      Bu gün için planlanmış ders saati bulunmamaktadır.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* ── RIGHT COLUMN: AUTHENTIC REAL DATA WIDGETS (lg:col-span-4) ── */}
         <div className="lg:col-span-4 space-y-4 sm:space-y-5">
-          {/* ── WIDGET 1: GÜNLÜK HEDEF & PLANLAYICI GÖREVLERİ (REAL DATA) ── */}
+          {/* ── WIDGET 1: AKADEMİK BAŞARI & RESMİ STATÜ (100% REAL DATA, NO FAKE NAMES) ── */}
+          <div className="p-6 rounded-[32px] bg-white dark:bg-[#111A2E] border border-blue-100/80 dark:border-blue-900/40 shadow-[0_8px_30px_rgb(29,119,255,0.04)] space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-black text-slate-900 dark:text-white">
+                Akademik Durumum
+              </h3>
+              <Link
+                href="/student/progress"
+                className="text-xs font-bold text-[#1D77FF] hover:underline"
+              >
+                Detay &gt;
+              </Link>
+            </div>
+
+            {/* Dynamic Color-Coded Official Student Standing Row */}
+            <div className={`p-4 rounded-2xl ${academicStatusTheme.cardBg} border ${academicStatusTheme.cardBorder} space-y-2 transition-all`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className={`w-9 h-9 rounded-full bg-gradient-to-tr ${academicStatusTheme.avatarBg} text-white font-black text-xs flex items-center justify-center shadow-xs`}>
+                    {profile.firstName.slice(0, 1)}
+                    {profile.lastName.slice(0, 1)}
+                  </div>
+                  <div>
+                    <div className="text-xs font-black text-slate-900 dark:text-white">
+                      {profile.name}
+                    </div>
+                    <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                      {profile.className} • No: {profile.studentNo}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <div className={`text-sm font-black ${academicStatusTheme.scoreColor}`}>
+                    {profile.gpa > 0 ? `${profile.gpa} Ort.` : '0.0 Ort.'}
+                  </div>
+                  <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                    Sınıf {profile.classRank}.'si
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between text-[11px]">
+                <span className="text-slate-500 dark:text-slate-400">Akademik Durum:</span>
+                <span className={`font-bold ${academicStatusTheme.statusColor}`}>
+                  {academicStatusTheme.statusLabel}
+                </span>
+              </div>
+            </div>
+
+            {/* Attendance & Class Details */}
+            <div className="grid grid-cols-2 gap-2 text-center">
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-[#15213B] border border-blue-50 dark:border-blue-900/30">
+                <div className="text-[10px] text-slate-400 font-bold uppercase">Devam Oranı</div>
+                <div className="text-base font-black text-emerald-600 mt-0.5">
+                  %{profile.attendanceRate}
+                </div>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-[#15213B] border border-blue-50 dark:border-blue-900/30">
+                <div className="text-[10px] text-slate-400 font-bold uppercase">Devamsızlık</div>
+                <div className="text-base font-black text-slate-800 dark:text-slate-100 mt-0.5">
+                  {profile.absentDays || 0} Gün
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── WIDGET 2: GÜNLÜK HEDEF & PLANLAYICI GÖREVLERİ (REAL DATA) ── */}
           <div className="p-6 rounded-[32px] bg-white dark:bg-[#111A2E] border border-blue-100/80 dark:border-blue-900/40 shadow-[0_8px_30px_rgb(29,119,255,0.04)] space-y-5">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-black text-slate-900 dark:text-white">
@@ -1317,74 +1643,6 @@ export default function StudentDashboardView() {
             </div>
           </div>
 
-          {/* ── WIDGET 2: AKADEMİK BAŞARI & RESMİ STATÜ (100% REAL DATA, NO FAKE NAMES) ── */}
-          <div className="p-6 rounded-[32px] bg-white dark:bg-[#111A2E] border border-blue-100/80 dark:border-blue-900/40 shadow-[0_8px_30px_rgb(29,119,255,0.04)] space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-black text-slate-900 dark:text-white">
-                Akademik Durumum
-              </h3>
-              <Link
-                href="/student/progress"
-                className="text-xs font-bold text-[#1D77FF] hover:underline"
-              >
-                Detay &gt;
-              </Link>
-            </div>
-
-            {/* Dynamic Color-Coded Official Student Standing Row */}
-            <div className={`p-4 rounded-2xl ${academicStatusTheme.cardBg} border ${academicStatusTheme.cardBorder} space-y-2 transition-all`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className={`w-9 h-9 rounded-full bg-gradient-to-tr ${academicStatusTheme.avatarBg} text-white font-black text-xs flex items-center justify-center shadow-xs`}>
-                    {profile.firstName.slice(0, 1)}
-                    {profile.lastName.slice(0, 1)}
-                  </div>
-                  <div>
-                    <div className="text-xs font-black text-slate-900 dark:text-white">
-                      {profile.name}
-                    </div>
-                    <div className="text-[10px] text-slate-500 dark:text-slate-400">
-                      {profile.className} • No: {profile.studentNo}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-right">
-                  <div className={`text-sm font-black ${academicStatusTheme.scoreColor}`}>
-                    {profile.gpa > 0 ? `${profile.gpa} Ort.` : '0.0 Ort.'}
-                  </div>
-                  <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400">
-                    Sınıf {profile.classRank}.'si
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800/60 flex items-center justify-between text-[11px]">
-                <span className="text-slate-500 dark:text-slate-400">Akademik Durum:</span>
-                <span className={`font-bold ${academicStatusTheme.statusColor}`}>
-                  {academicStatusTheme.statusLabel}
-                </span>
-              </div>
-            </div>
-
-            {/* Attendance & Class Details */}
-            <div className="grid grid-cols-2 gap-2 text-center">
-              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-[#15213B] border border-blue-50 dark:border-blue-900/30">
-                <div className="text-[10px] text-slate-400 font-bold uppercase">Devam Oranı</div>
-                <div className="text-base font-black text-emerald-600 mt-0.5">
-                  %{profile.attendanceRate}
-                </div>
-              </div>
-
-              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-[#15213B] border border-blue-50 dark:border-blue-900/30">
-                <div className="text-[10px] text-slate-400 font-bold uppercase">Devamsızlık</div>
-                <div className="text-base font-black text-slate-800 dark:text-slate-100 mt-0.5">
-                  {profile.absentDays || 0} Gün
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* ── WIDGET 3: ÖDEV VE ÇALIŞMA DURUMU (YENİLENMİŞ & ANLAŞILIR) ── */}
           <div className="p-5 sm:p-6 rounded-[28px] sm:rounded-[32px] bg-white dark:bg-[#111A2E] border border-blue-100/80 dark:border-blue-900/40 shadow-[0_8px_30px_rgb(29,119,255,0.04)] space-y-4">
             <div className="flex items-center justify-between">
@@ -1474,7 +1732,7 @@ export default function StudentDashboardView() {
                   Derslerim & Gelişim Alanları
                 </h3>
                 <p className="text-[10px] text-slate-400 font-bold mt-0.5">
-                  9-A MEB Haftalık Müfredat Branşları
+                  {profile.className} MEB Haftalık Müfredat Branşları
                 </p>
               </div>
               <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/40 text-[#1D77FF] border border-blue-200/50">
@@ -1543,307 +1801,6 @@ export default function StudentDashboardView() {
 
       {/* ── FULL WIDTH TIMETABLE & DETAILED CONTENT SECTION ── */}
       <div className="space-y-6">
-        {/* ── HAFTALIK DERS PROGRAMI (Müdürlük Onaylı Canlı Senkronize Matrix) ── */}
-        <div className="p-6 sm:p-7 rounded-[32px] bg-white dark:bg-[#111A2E] border border-blue-100/80 dark:border-blue-900/40 shadow-[0_8px_30px_rgb(29,119,255,0.04)] space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#1D77FF]/10 text-[#1D77FF] flex items-center justify-center shrink-0">
-                <Calendar size={20} />
-              </div>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
-                    Haftalık Ders Programı ({profile.className})
-                  </h2>
-                  <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                    Canlı Senkronize
-                  </span>
-                  <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-blue-500/10 text-[#1D77FF] border border-blue-500/20">
-                    Müdürlük Onaylı
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-400 mt-0.5">
-                  Okul müdürlüğü tarafından onaylanan haftalık MEB ders akışı ({weeklySchedule.length || 30} Saat / Hafta)
-                </p>
-              </div>
-            </div>
-
-            {/* View Switcher & Link to full schedule */}
-            <div className="flex items-center gap-2 self-start sm:self-auto shrink-0 flex-wrap">
-              <div className="flex items-center p-1 rounded-2xl bg-slate-100 dark:bg-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setScheduleViewMode('matrix')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
-                    scheduleViewMode === 'matrix'
-                      ? 'bg-white dark:bg-[#111A2E] text-[#1D77FF] shadow-xs'
-                      : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  <Table size={13} />
-                  <span>Tablo</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setScheduleViewMode('list')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
-                    scheduleViewMode === 'list'
-                      ? 'bg-white dark:bg-[#111A2E] text-[#1D77FF] shadow-xs'
-                      : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  <List size={13} />
-                  <span>Günlük Liste</span>
-                </button>
-              </div>
-
-              <Link
-                href="/student/courses?tab=schedule"
-                className="text-xs font-black text-[#1D77FF] hover:underline flex items-center gap-1 pl-1"
-              >
-                <span>Tam Ekran</span>
-                <ChevronRight size={14} />
-              </Link>
-            </div>
-          </div>
-
-          {/* TABLO MATRİS GÖRÜNÜMÜ: 5 Gün x Periyotlar */}
-          {scheduleViewMode === 'matrix' && (
-            <div className="w-full max-w-full rounded-2xl border border-blue-100/70 dark:border-blue-900/40 overflow-hidden">
-              <div className="w-full max-w-full overflow-x-auto touch-pan-x custom-scrollbar">
-                <table className="w-full text-left border-collapse min-w-[620px]">
-                  <thead>
-                    <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-blue-100/80 dark:border-blue-900/60 text-[10px] font-black text-slate-600 dark:text-slate-300">
-                      <th className="p-3 w-28 text-center shrink-0">Saat / Periyot</th>
-                      {DAYS_LIST.map((day) => {
-                        const dayCount = weeklySchedule.filter((e) => e.day === day.key).length
-                        const isToday = todayKey === day.key
-                        return (
-                          <th key={day.key} className="p-2.5 text-center">
-                            <div className="flex items-center justify-center gap-1.5">
-                              <span>{day.label}</span>
-                              {isToday && (
-                                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" title="Bugün" />
-                              )}
-                            </div>
-                            <div className="text-[9px] font-bold text-slate-400 mt-0.5">
-                              {dayCount} Ders
-                            </div>
-                          </th>
-                        )
-                      })}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-blue-50 dark:divide-blue-950/40 text-xs">
-                    {schedulePeriods.map((period) => (
-                      <tr
-                        key={period.periodNumber}
-                        className="hover:bg-blue-50/30 dark:hover:bg-slate-800/30 transition-colors"
-                      >
-                        {/* Period & Time Column */}
-                        <td className="p-2.5 text-center bg-slate-50/50 dark:bg-slate-900/30 border-r border-blue-50 dark:border-blue-950/50 shrink-0">
-                          <div className="font-black text-slate-800 dark:text-slate-200 text-xs">
-                            {period.periodNumber}. Ders
-                          </div>
-                          <div className="text-[10px] text-slate-400 font-mono mt-0.5">
-                            {period.time}
-                          </div>
-                        </td>
-
-                        {/* Day Columns */}
-                        {DAYS_LIST.map((day) => {
-                          const match = weeklySchedule.find(
-                            (e) => e.day === day.key && e.period === period.periodNumber
-                          )
-                          const subjectName = (match as any)?.subjectName || match?.subject || ''
-                          const style = match
-                            ? getStudentDashboardSubjectColor(subjectName, (match as any).color)
-                            : null
-
-                          const lessonNotes = match
-                            ? getLessonNotes(day.key, period.periodNumber, subjectName)
-                            : []
-                          const hasNotes = lessonNotes.length > 0
-
-                          return (
-                            <td
-                              key={day.key}
-                              className="p-1.5 align-top border-r last:border-r-0 border-blue-50 dark:border-blue-950/40"
-                            >
-                              {match ? (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleOpenLessonNoteModal(
-                                      match,
-                                      day.label,
-                                      day.key,
-                                      period.periodNumber,
-                                      period.time
-                                    )
-                                  }
-                                  className={`w-full text-left block p-2 rounded-2xl border transition-all hover:shadow-md hover:scale-[1.01] cursor-pointer relative group ${style?.bg} ${style?.border} ${style?.text}`}
-                                >
-                                  <div className="flex items-start justify-between gap-1">
-                                    <div className="font-black text-[11px] leading-tight truncate flex-1">
-                                      {subjectName}
-                                    </div>
-                                    {hasNotes && (
-                                      <span
-                                        title={`${lessonNotes.length} Not Kayıtlı`}
-                                        className="shrink-0 px-1.5 py-0.5 rounded-full bg-amber-500 text-white font-black text-[8px] flex items-center gap-0.5 shadow-xs"
-                                      >
-                                        <FileText size={8} />
-                                        <span>{lessonNotes.length}</span>
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="text-[9px] opacity-80 truncate mt-1">
-                                    {match.teacherName || 'Öğretmen'}
-                                  </div>
-                                  <div className="flex items-center justify-between text-[8px] opacity-75 mt-1">
-                                    <span className="truncate">
-                                      {match.roomName?.split('(')[0]?.trim() || '9-A'}
-                                    </span>
-                                    {hasNotes ? (
-                                      <span className="font-bold text-[8px] text-amber-600 dark:text-amber-400">
-                                        Not Var
-                                      </span>
-                                    ) : (
-                                      <span className="opacity-0 group-hover:opacity-100 text-[8px] transition-opacity font-bold text-[#1D77FF]">
-                                        + Not
-                                      </span>
-                                    )}
-                                  </div>
-                                </button>
-                              ) : (
-                                <div className="w-full h-14 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center text-slate-400 text-[9px] font-bold">
-                                  <span>Boş</span>
-                                </div>
-                              )}
-                            </td>
-                          )
-                        })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* GÜNLÜK LİSTE GÖRÜNÜMÜ */}
-          {scheduleViewMode === 'list' && (
-            <div className="space-y-4 w-full min-w-0">
-              {/* Day Selector Pill Tabs */}
-              <div className="grid grid-cols-5 gap-1 sm:gap-2 p-1 sm:p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-800 w-full min-w-0">
-                {DAYS_LIST.map((day) => {
-                  const isSelected = selectedScheduleDay === day.key
-                  const isToday = todayKey === day.key
-                  const count = weeklySchedule.filter((e) => e.day === day.key).length
-
-                  return (
-                    <button
-                      key={day.key}
-                      type="button"
-                      onClick={() => setSelectedScheduleDay(day.key)}
-                      className={`py-2 px-1 sm:px-2 rounded-xl text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 min-w-0 ${
-                        isSelected
-                          ? 'bg-white dark:bg-[#111A2E] text-[#1D77FF] font-black shadow-xs'
-                          : 'text-slate-500 hover:text-slate-900 dark:hover:text-white font-bold'
-                      }`}
-                    >
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs">{day.label}</span>
-                        {isToday && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" title="Bugün" />
-                        )}
-                      </div>
-                      <span className="text-[10px] text-slate-400 hidden sm:inline">
-                        {count > 0 ? `${count} Ders` : '—'}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
-
-              {/* Day's Lessons List */}
-              <div className="space-y-2.5">
-                {selectedDayClasses.length > 0 ? (
-                  selectedDayClasses.map((item, idx) => {
-                    const periodTime =
-                      MIDDLE_PERIODS.find((p) => p.periodNumber === item.period)?.time ||
-                      (item as any).timeSlot ||
-                      '09:25 - 10:05'
-                    const subjectName = (item as any).subjectName || item.subject || 'Ders'
-                    const dayLabel = DAYS_LIST.find((d) => d.key === selectedScheduleDay)?.label || 'Seçili Gün'
-                    const lessonNotes = getLessonNotes(selectedScheduleDay, item.period, subjectName)
-                    const hasNotes = lessonNotes.length > 0
-
-                    return (
-                      <div
-                        key={item.id || idx}
-                        onClick={() =>
-                          handleOpenLessonNoteModal(
-                            item,
-                            dayLabel,
-                            selectedScheduleDay,
-                            item.period,
-                            periodTime
-                          )
-                        }
-                        className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-blue-50 dark:border-blue-900/30 flex items-center justify-between gap-3 hover:border-blue-300 dark:hover:border-blue-700 transition-all cursor-pointer group"
-                      >
-                        <div className="flex items-center gap-3.5 min-w-0">
-                          <div className="w-12 h-12 rounded-2xl bg-[#1D77FF]/10 text-[#1D77FF] border border-blue-200/50 flex flex-col items-center justify-center shrink-0">
-                            <span className="text-sm font-black">{item.period}</span>
-                            <span className="text-[8px] font-bold uppercase text-slate-400">Ders</span>
-                          </div>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white truncate">
-                                {subjectName}
-                              </span>
-                              {hasNotes && (
-                                <span className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
-                                  <FileText size={10} />
-                                  <span>{lessonNotes.length} Not</span>
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5 flex-wrap">
-                              <span className="font-semibold text-slate-700 dark:text-slate-300">
-                                {item.teacherName || 'Öğretmen'}
-                              </span>
-                              <span>•</span>
-                              <span className="flex items-center gap-1">
-                                <MapPin size={11} />
-                                {item.roomName || 'Derslik 9-A'}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="text-right shrink-0">
-                          <div className="text-xs font-black text-slate-700 dark:text-slate-300">
-                            {periodTime}
-                          </div>
-                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
-                            40 Dk
-                          </span>
-                        </div>
-                      </div>
-                    )
-                  })
-                ) : (
-                  <div className="p-8 text-center text-slate-400 text-xs bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
-                    Bu gün için planlanmış ders saati bulunmamaktadır.
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
 
         {/* ── 2 COLUMNS: YAKLAŞAN SINAVLAR & BEKLEYEN ÖDEVLER (REAL DATA) ── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
