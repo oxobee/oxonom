@@ -17,6 +17,7 @@ import {
   Coffee,
   Utensils,
   ChevronRight,
+  ChevronDown,
   BookOpen,
   GraduationCap,
   Bell,
@@ -61,6 +62,7 @@ export interface LiveClassRadarProps {
   showClassSelector?: boolean
   className?: string
   titleOverride?: string
+  initialExpanded?: boolean
 }
 
 const CLASS_LIST = ['9-A', '9-B', '10-A', '11-A', '12-A']
@@ -185,10 +187,12 @@ export default function LiveClassRadar({
   showClassSelector = false,
   className = '',
   titleOverride,
+  initialExpanded = false,
 }: LiveClassRadarProps) {
   const [selectedClass, setSelectedClass] = useState<string>(initialClassCode)
   const [scheduleData, setScheduleData] = useState<ScheduleEntry[]>([])
   const [currentTime, setCurrentTime] = useState<Date>(new Date())
+  const [isExpanded, setIsExpanded] = useState<boolean>(initialExpanded)
 
   // Simulation mode allows testing live animations regardless of current computer clock (e.g. night time)
   // Default is 'realtime' (100% authentic clock)
@@ -430,371 +434,564 @@ export default function LiveClassRadar({
 
   return (
     <div
-      className={`rounded-3xl bg-white dark:bg-[#0E1526] border border-gray-200/90 dark:border-gray-800/90 shadow-md overflow-hidden relative ${className}`}
+      className={`rounded-3xl bg-white dark:bg-[#0E1526] border border-gray-200/90 dark:border-gray-800/90 shadow-sm overflow-hidden transition-all duration-300 relative ${className}`}
     >
-      {/* ── LIGHT MINIMAL HEADER BAR ── */}
-      <div className="relative bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-white dark:from-[#111A2E] dark:via-[#131D33] dark:to-[#111A2E] border-b border-blue-100/70 dark:border-blue-900/40 p-4 sm:p-5 overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          {/* Title & Live Status */}
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <div className="w-8 h-8 rounded-xl bg-[#1D77FF]/10 text-[#1D77FF] flex items-center justify-center shrink-0">
-              <Radio size={16} className="animate-pulse" />
-            </div>
-
-            <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-base sm:text-lg font-black tracking-tight text-slate-900 dark:text-white">
-                {titleOverride || 'Canlı Ders Takibi'}
-              </h2>
-              <span className="px-2.5 py-0.5 rounded-lg text-[11px] font-black bg-blue-100/70 dark:bg-blue-900/40 text-[#1D77FF] dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/40">
-                {selectedClass} Şubesi
-              </span>
-              {timeMode === 'simulated' && (
-                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
-                  Demo ({formattedClock})
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Principal Classroom Switcher */}
-          {(showClassSelector || role === 'principal') && (
-            <div className="bg-white dark:bg-[#15213B] p-1 rounded-2xl border border-blue-100/80 dark:border-blue-900/40 flex items-center gap-1 shadow-xs self-start sm:self-auto">
-              {CLASS_LIST.map((cls) => (
-                <button
-                  key={cls}
-                  onClick={() => setSelectedClass(cls)}
-                  className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all ${
-                    selectedClass === cls
-                      ? 'bg-[#1D77FF] text-white shadow-xs'
-                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800'
+      {/* ── 1. COMPACT COLLAPSIBLE SUMMARY CARD (Default View on Load) ── */}
+      <div
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="p-3.5 sm:p-4.5 bg-gradient-to-r from-blue-50/60 via-indigo-50/30 to-white dark:from-[#10182E] dark:via-[#131D36] dark:to-[#10182E] cursor-pointer hover:bg-blue-50/80 dark:hover:bg-[#14203D] transition-all select-none"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4">
+          {/* Left: Mini Radial Progress Ring (Özet Grafik) + Özet Bilgiler */}
+          <div className="flex items-center gap-3 sm:gap-3.5 min-w-0">
+            {/* Özet Grafik: Circular Progress Ring with Period or Status Icon */}
+            <div className="relative w-12 h-12 sm:w-13 sm:h-13 shrink-0 flex items-center justify-center">
+              <svg className="w-12 h-12 sm:w-13 sm:h-13 -rotate-90 transform" viewBox="0 0 52 52">
+                <circle
+                  cx="26"
+                  cy="26"
+                  r="20"
+                  className="stroke-slate-200/80 dark:stroke-slate-800"
+                  strokeWidth="3.5"
+                  fill="transparent"
+                />
+                <circle
+                  cx="26"
+                  cy="26"
+                  r="20"
+                  className={`transition-all duration-700 ${
+                    liveState.status === 'in_lesson'
+                      ? 'stroke-[#1D77FF]'
+                      : liveState.status === 'recess_break'
+                      ? 'stroke-amber-500'
+                      : liveState.status === 'lunch_break'
+                      ? 'stroke-orange-500'
+                      : liveState.status === 'before_school'
+                      ? 'stroke-blue-400'
+                      : 'stroke-purple-500'
                   }`}
-                >
-                  {cls}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+                  strokeWidth="3.5"
+                  strokeDasharray={2 * Math.PI * 20}
+                  strokeDashoffset={2 * Math.PI * 20 - (liveState.elapsedPercent / 100) * 2 * Math.PI * 20}
+                  strokeLinecap="round"
+                  fill="transparent"
+                />
+              </svg>
 
-      {/* ── TOP GRAPHIC AREA: MEVCUT DERSİN İŞ SÜRESİ & DETAYLARI ── */}
-      <div className="p-4 sm:p-6 bg-gradient-to-b from-gray-50/70 to-white dark:from-[#0E1526] dark:to-[#121A2F] border-b border-gray-200/80 dark:border-gray-800/80">
-        <div className="w-full space-y-4">
-          {/* Header: Status Pill + Live Lesson State Info (Countdown timer removed per user request) */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-gray-100 dark:border-gray-800">
-            <div className="flex items-center gap-2">
-              {liveState.status === 'in_lesson' ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-500 text-white shadow-sm shadow-emerald-500/30 animate-pulse">
-                  <span className="w-2 h-2 rounded-full bg-white" />
-                  <span>Şu Anda İşleniyor</span>
-                </span>
-              ) : liveState.status === 'recess_break' ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-500 text-white shadow-sm shadow-amber-500/30">
-                  <Coffee size={14} />
-                  <span>Teneffüs Arası</span>
-                </span>
-              ) : liveState.status === 'lunch_break' ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-orange-500 text-white shadow-sm shadow-orange-500/30">
-                  <Utensils size={14} />
-                  <span>Öğle Arası</span>
-                </span>
-              ) : liveState.status === 'before_school' ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-blue-500 text-white shadow-sm">
-                  <Bell size={14} />
-                  <span>Canlı Ders Henüz Başlamadı</span>
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-purple-600 text-white shadow-sm">
-                  <CheckCircle2 size={14} />
-                  <span>Dersler Bitti</span>
-                </span>
-              )}
-
-              <span className="text-xs font-extrabold text-gray-500 dark:text-gray-400">
-                {liveState.label}
-              </span>
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                {liveState.status === 'in_lesson' ? (
+                  <>
+                    <span className="text-xs font-black text-slate-900 dark:text-white leading-none">
+                      {liveState.activePeriod?.period}
+                    </span>
+                    <span className="text-[7px] font-extrabold text-[#1D77FF] uppercase tracking-tighter mt-0.5">
+                      DERS
+                    </span>
+                  </>
+                ) : liveState.status === 'recess_break' ? (
+                  <Coffee size={15} className="text-amber-500" />
+                ) : liveState.status === 'lunch_break' ? (
+                  <Utensils size={15} className="text-orange-500" />
+                ) : liveState.status === 'before_school' ? (
+                  <Clock size={15} className="text-[#1D77FF]" />
+                ) : (
+                  <CheckCircle2 size={15} className="text-purple-500" />
+                )}
+              </div>
             </div>
 
-            {/* Live Lesson Status Indicator (No countdown timer) */}
-            {liveState.status === 'in_lesson' ? (
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800/50 text-xs font-black shadow-xs shrink-0 self-start sm:self-auto">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>Canlı Ders Devam Ediyor</span>
+            {/* Özet Bilgiler */}
+            <div className="min-w-0 space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm sm:text-base font-black text-slate-900 dark:text-white tracking-tight">
+                  {titleOverride || 'Canlı Ders Takibi'}
+                </span>
+                <span className="px-2 py-0.5 rounded-lg text-[10.5px] font-black bg-blue-100/70 dark:bg-blue-900/40 text-[#1D77FF] dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/40">
+                  {selectedClass} Şubesi
+                </span>
+
+                {/* Status badge */}
+                {liveState.status === 'in_lesson' ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500 text-white shadow-xs">
+                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                    <span>Şu Anda İşleniyor</span>
+                  </span>
+                ) : liveState.status === 'recess_break' ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500 text-white shadow-xs">
+                    <Coffee size={11} />
+                    <span>Teneffüs Arası</span>
+                  </span>
+                ) : liveState.status === 'lunch_break' ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-orange-500 text-white shadow-xs">
+                    <Utensils size={11} />
+                    <span>Öğle Arası</span>
+                  </span>
+                ) : liveState.status === 'before_school' ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-blue-500 text-white shadow-xs">
+                    <Clock size={11} />
+                    <span>Canlı Ders Henüz Başlamadı</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-purple-600 text-white shadow-xs">
+                    <CheckCircle2 size={11} />
+                    <span>Dersler Bitti</span>
+                  </span>
+                )}
               </div>
-            ) : (
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-slate-100/80 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/60 text-xs font-bold shadow-xs shrink-0 self-start sm:self-auto">
-                <Clock size={15} className="text-[#1D77FF]" />
-                <span className="font-extrabold text-slate-800 dark:text-slate-200">Canlı ders henüz başlamadı</span>
+
+              {/* Lesson subtitle info */}
+              <div className="text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2 flex-wrap">
+                {liveState.status === 'in_lesson' && liveState.activeLesson ? (
+                  <>
+                    <strong className="font-black text-slate-900 dark:text-white">
+                      {liveState.activeLesson.subject}
+                    </strong>
+                    <span>·</span>
+                    <span className="font-semibold text-slate-500 dark:text-slate-400">
+                      {liveState.activePeriod?.startTime} - {liveState.activePeriod?.endTime}
+                    </span>
+                    <span>·</span>
+                    <span className="font-medium truncate max-w-[140px] sm:max-w-none">
+                      {liveState.activeLesson.teacherName}
+                    </span>
+                    <span>·</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-bold inline-flex items-center gap-1">
+                      <Tv size={12} /> Tahta Aktif
+                    </span>
+                  </>
+                ) : liveState.status === 'recess_break' || liveState.status === 'lunch_break' ? (
+                  <>
+                    <span className="font-bold text-amber-600 dark:text-amber-400">
+                      Sıradaki: {liveState.nextPeriod?.period}. Ders {liveState.nextLesson?.subject || ''} ({liveState.nextPeriod?.startTime})
+                    </span>
+                    <span>·</span>
+                    <span>{liveState.remainingMinutes} dk sonra başlıyor</span>
+                  </>
+                ) : liveState.status === 'before_school' ? (
+                  <span className="font-medium text-slate-600 dark:text-slate-300">
+                    Günün ilk dersi: 1. Ders {liveState.nextLesson?.subject || 'Hazırlık'} (08:30)
+                  </span>
+                ) : (
+                  <span className="text-slate-500 dark:text-slate-400">
+                    Günün 6 dersi tamamlandı · 350 dk MEB akışı sona erdi
+                  </span>
+                )}
               </div>
-            )}
+
+              {/* Mini linear progress */}
+              <div className="flex items-center gap-2 pt-0.5 max-w-xs sm:max-w-sm">
+                <div className="h-1.5 flex-1 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${
+                      liveState.status === 'in_lesson'
+                        ? 'bg-gradient-to-r from-[#1D77FF] to-indigo-600'
+                        : liveState.status === 'recess_break' || liveState.status === 'lunch_break'
+                        ? 'bg-gradient-to-r from-amber-400 to-orange-500'
+                        : 'bg-[#1D77FF]'
+                    }`}
+                    style={{ width: `${liveState.elapsedPercent}%` }}
+                  />
+                </div>
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 font-mono shrink-0">
+                  %{liveState.elapsedPercent}
+                </span>
+              </div>
+            </div>
           </div>
 
-          {/* Active Lesson / Break Title & Info */}
-          <div className="space-y-1">
-            {liveState.status === 'in_lesson' && liveState.activeLesson ? (
-              <>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">
-                    {liveState.activeLesson.subject}
-                  </h3>
-                  <span
-                    className={`text-xs font-black px-2.5 py-0.5 rounded-lg text-white ${activeSubjectTheme.badge}`}
+          {/* Right: Class Switcher (if principal) + Expand / Collapse Button */}
+          <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
+            {/* Principal Classroom Switcher */}
+            {(showClassSelector || role === 'principal') && (
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="bg-white dark:bg-[#15213B] p-0.5 rounded-xl border border-blue-100/80 dark:border-blue-900/40 flex items-center gap-0.5 shadow-xs"
+              >
+                {CLASS_LIST.map((cls) => (
+                  <button
+                    key={cls}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setSelectedClass(cls)
+                    }}
+                    className={`px-2 py-0.5 rounded-lg text-[11px] font-bold transition-all ${
+                      selectedClass === cls
+                        ? 'bg-[#1D77FF] text-white shadow-xs'
+                        : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
                   >
-                    {liveState.activePeriod?.period}. Ders ({liveState.activePeriod?.startTime} -{' '}
-                    {liveState.activePeriod?.endTime})
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-300 flex-wrap pt-1">
-                  <span className="flex items-center gap-1 font-semibold">
-                    <GraduationCap size={15} className="text-indigo-500" />
-                    <span>Öğretmen: {liveState.activeLesson.teacherName}</span>
-                  </span>
-                  <span>·</span>
-                  <span className="flex items-center gap-1 font-semibold">
-                    <MapPin size={14} className="text-emerald-500" />
-                    <span>{liveState.activeLesson.roomName || `Derslik ${selectedClass}`}</span>
-                  </span>
-                  <span>·</span>
-                  <span className="flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
-                    <Tv size={14} />
-                    <span>Akıllı Tahta Aktif</span>
-                  </span>
-                </div>
-              </>
-            ) : liveState.status === 'recess_break' || liveState.status === 'lunch_break' ? (
-              <>
-                <h3 className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 flex items-center gap-2">
-                  {liveState.status === 'lunch_break' ? <Utensils size={24} /> : <Coffee size={24} />}
-                  <span>{liveState.label}</span>
-                </h3>
-                <p className="text-xs text-gray-600 dark:text-gray-300">
-                  Sıradaki ders:{' '}
-                  <span className="font-extrabold text-indigo-600 dark:text-indigo-400">
-                    {liveState.nextPeriod?.period}. Ders {liveState.nextLesson?.subject}
-                  </span>{' '}
-                  ({liveState.nextPeriod?.startTime}) — Dersliğinize geçmek için hazırlanabilirsiniz.
-                </p>
-              </>
-            ) : liveState.status === 'before_school' ? (
-              <>
-                <h3 className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400 flex items-center gap-2">
-                  <Clock size={22} className="text-[#1D77FF]" />
-                  <span>Canlı ders henüz başlamadı</span>
-                </h3>
-                <p className="text-xs text-gray-600 dark:text-gray-300">
-                  Günün ilk dersi:{' '}
-                  <span className="font-bold text-gray-900 dark:text-white">
-                    1. Ders {liveState.nextLesson?.subject || 'Derslik Hazırlığı'}
-                  </span>{' '}
-                  saat 08:30&apos;da başlayacak.
-                </p>
-              </>
-            ) : (
-              <>
-                <h3 className="text-xl sm:text-2xl font-black text-purple-600 dark:text-purple-400">
-                  Bugünkü 6 Ders Başarıyla Tamamlandı 🎉
-                </h3>
-                <p className="text-xs text-gray-600 dark:text-gray-300">
-                  Tüm dersler MEB müfredatına uygun olarak işlendi. Yarının programını kontrol edebilirsiniz.
-                </p>
-              </>
+                    {cls}
+                  </button>
+                ))}
+              </div>
             )}
-          </div>
 
-          {/* Linear Progress Bar with Milestones */}
-          <div className="space-y-1.5 pt-1">
-            <div className="flex items-center justify-between text-[11px] font-bold text-gray-500 dark:text-gray-400">
-              <span>Geçen: {liveState.elapsedMinutes} dk</span>
-              <span className="font-extrabold text-gray-900 dark:text-white">
-                {liveState.status === 'in_lesson' ? 'Ders İlerleme Çubuğu' : 'Zaman Akışı'}
-              </span>
-              <span>Kalan: {liveState.remainingMinutes} dk</span>
-            </div>
-
-            {/* Bar track */}
-            <div className="h-3.5 w-full bg-gray-200/80 dark:bg-gray-800 rounded-full overflow-hidden p-0.5 relative">
-              <motion.div
-                className={`h-full rounded-full transition-all duration-500 ${
-                  liveState.status === 'in_lesson'
-                    ? 'bg-gradient-to-r from-[#1D77FF] via-blue-500 to-indigo-600 shadow-sm shadow-blue-500/30'
-                    : liveState.status === 'lunch_break' || liveState.status === 'recess_break'
-                    ? 'bg-gradient-to-r from-amber-400 to-orange-500'
-                    : 'bg-[#1D77FF]'
-                }`}
-                style={{ width: `${liveState.elapsedPercent}%` }}
+            {/* Expand / Collapse Button */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                setIsExpanded(!isExpanded)
+              }}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-[#EAF2FF] hover:bg-[#D5E5FF] dark:bg-[#1A2849] dark:hover:bg-[#223560] text-[#1D77FF] dark:text-[#5BA0FF] text-xs font-black transition-all cursor-pointer shadow-xs active:scale-95"
+            >
+              <span>{isExpanded ? 'Daralt' : 'Tüm Akışı Gör'}</span>
+              <ChevronDown
+                size={14}
+                className={`transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}
               />
-            </div>
-
-            {/* Milestones labels */}
-            <div className="flex justify-between text-[10px] text-gray-400 px-1 font-mono">
-              <span>0 dk</span>
-              <span>10 dk</span>
-              <span>20 dk</span>
-              <span>30 dk</span>
-              <span>40 dk</span>
-            </div>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* ── İNFOGRAFİK VE ANİMASYONLU GÜNLÜK AKIŞ STEPPER (1-6. DERSLER & ARALAR) ── */}
-      <div className="p-4 sm:p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-sm sm:text-base font-black text-gray-900 dark:text-white flex items-center gap-2">
-              <Sparkles size={17} className="text-amber-500" />
-              <span>Canlı Ders Akışı</span>
-            </h3>
-          </div>
+      {/* ── 2. EXPANDED FULL INFORMATION CARD (Tıklandığında Genişleyen Alan) ── */}
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.32, ease: 'easeInOut' }}
+            className="overflow-hidden border-t border-blue-100/70 dark:border-blue-900/40"
+          >
+            {/* ── TOP GRAPHIC AREA: MEVCUT DERSİN İŞ SÜRESİ & DETAYLARI ── */}
+            <div className="p-4 sm:p-6 bg-gradient-to-b from-gray-50/70 to-white dark:from-[#0E1526] dark:to-[#121A2F] border-b border-gray-200/80 dark:border-gray-800/80">
+              <div className="w-full space-y-4">
+                {/* Header: Status Pill + Live Lesson State Info */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-gray-100 dark:border-gray-800">
+                  <div className="flex items-center gap-2">
+                    {liveState.status === 'in_lesson' ? (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-500 text-white shadow-sm shadow-emerald-500/30 animate-pulse">
+                        <span className="w-2 h-2 rounded-full bg-white" />
+                        <span>Şu Anda İşleniyor</span>
+                      </span>
+                    ) : liveState.status === 'recess_break' ? (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-500 text-white shadow-sm shadow-amber-500/30">
+                        <Coffee size={14} />
+                        <span>Teneffüs Arası</span>
+                      </span>
+                    ) : liveState.status === 'lunch_break' ? (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-orange-500 text-white shadow-sm shadow-orange-500/30">
+                        <Utensils size={14} />
+                        <span>Öğle Arası</span>
+                      </span>
+                    ) : liveState.status === 'before_school' ? (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-blue-500 text-white shadow-sm">
+                        <Bell size={14} />
+                        <span>Canlı Ders Henüz Başlamadı</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-purple-600 text-white shadow-sm">
+                        <CheckCircle2 size={14} />
+                        <span>Dersler Bitti</span>
+                      </span>
+                    )}
 
-          <span className="text-xs font-mono font-bold text-gray-400 hidden sm:inline-block">
-            08:30 — 14:20 (Toplam 350 Dk)
-          </span>
-        </div>
+                    <span className="text-xs font-extrabold text-gray-500 dark:text-gray-400">
+                      {liveState.label}
+                    </span>
+                  </div>
 
-        {/* PERIODS TIMELINE GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5 sm:gap-4">
-          {MEB_PERIOD_CONFIG.map((periodConfig, idx) => {
-            const lesson = todayLessons.find((l) => l.period === periodConfig.period)
-            const subject = lesson?.subject || 'Belirlenmedi'
-            const teacher = lesson?.teacherName || 'Atanmadı'
-            const room = lesson?.roomName || `Derslik ${selectedClass}`
-            const colorTheme = getSubjectColorTheme(subject)
+                  {/* Live Lesson Status Indicator */}
+                  {liveState.status === 'in_lesson' ? (
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800/50 text-xs font-black shadow-xs shrink-0 self-start sm:self-auto">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span>Canlı Ders Devam Ediyor</span>
+                    </div>
+                  ) : (
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-slate-100/80 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/60 text-xs font-bold shadow-xs shrink-0 self-start sm:self-auto">
+                      <Clock size={15} className="text-[#1D77FF]" />
+                      <span className="font-extrabold text-slate-800 dark:text-slate-200">Canlı ders henüz başlamadı</span>
+                    </div>
+                  )}
+                </div>
 
-            // Determine status for this period
-            const nowMin = effectiveCurrentMinutes
-            const isPast = nowMin >= periodConfig.endMinutes
-            const isCurrent = nowMin >= periodConfig.startMinutes && nowMin < periodConfig.endMinutes
-            const isFuture = nowMin < periodConfig.startMinutes
+                {/* Active Lesson / Break Title & Info */}
+                <div className="space-y-1">
+                  {liveState.status === 'in_lesson' && liveState.activeLesson ? (
+                    <>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">
+                          {liveState.activeLesson.subject}
+                        </h3>
+                        <span
+                          className={`text-xs font-black px-2.5 py-0.5 rounded-lg text-white ${activeSubjectTheme.badge}`}
+                        >
+                          {liveState.activePeriod?.period}. Ders ({liveState.activePeriod?.startTime} -{' '}
+                          {liveState.activePeriod?.endTime})
+                        </span>
+                      </div>
 
-            return (
-              <React.Fragment key={periodConfig.period}>
-                {/* Period Card */}
-                <div
-                  className={`relative rounded-2xl p-4 transition-all duration-300 flex flex-col justify-between space-y-3 ${
-                    isPast
-                      ? 'opacity-40 grayscale hover:grayscale-0 hover:opacity-80 bg-gray-100/70 dark:bg-gray-800/40 border border-gray-200/60 dark:border-gray-800/60'
-                      : isCurrent
-                      ? `bg-gradient-to-br from-white via-indigo-50/50 to-white dark:from-[#131C31] dark:via-[#18233C] dark:to-[#131C31] border-2 ${activeSubjectTheme.border} ring-4 ring-indigo-500/15 shadow-xl ${activeSubjectTheme.glow}`
-                      : `bg-white dark:bg-[#131C31] border ${colorTheme.border} shadow-xs hover:shadow-md`
-                  }`}
-                >
-                  {/* Top Bar: Period Number & Status Badge */}
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`text-xs font-black px-2.5 py-0.5 rounded-lg ${
+                      <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-300 flex-wrap pt-1">
+                        <span className="flex items-center gap-1 font-semibold">
+                          <GraduationCap size={15} className="text-indigo-500" />
+                          <span>Öğretmen: {liveState.activeLesson.teacherName}</span>
+                        </span>
+                        <span>·</span>
+                        <span className="flex items-center gap-1 font-semibold">
+                          <MapPin size={14} className="text-emerald-500" />
+                          <span>{liveState.activeLesson.roomName || `Derslik ${selectedClass}`}</span>
+                        </span>
+                        <span>·</span>
+                        <span className="flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
+                          <Tv size={14} />
+                          <span>Akıllı Tahta Aktif</span>
+                        </span>
+                      </div>
+                    </>
+                  ) : liveState.status === 'recess_break' || liveState.status === 'lunch_break' ? (
+                    <>
+                      <h3 className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                        {liveState.status === 'lunch_break' ? <Utensils size={24} /> : <Coffee size={24} />}
+                        <span>{liveState.label}</span>
+                      </h3>
+                      <p className="text-xs text-gray-600 dark:text-gray-300">
+                        Sıradaki ders:{' '}
+                        <span className="font-extrabold text-indigo-600 dark:text-indigo-400">
+                          {liveState.nextPeriod?.period}. Ders {liveState.nextLesson?.subject}
+                        </span>{' '}
+                        ({liveState.nextPeriod?.startTime}) — Dersliğinize geçmek için hazırlanabilirsiniz.
+                      </p>
+                    </>
+                  ) : liveState.status === 'before_school' ? (
+                    <>
+                      <h3 className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400 flex items-center gap-2">
+                        <Clock size={22} className="text-[#1D77FF]" />
+                        <span>Canlı ders henüz başlamadı</span>
+                      </h3>
+                      <p className="text-xs text-gray-600 dark:text-gray-300">
+                        Günün ilk dersi:{' '}
+                        <span className="font-bold text-gray-900 dark:text-white">
+                          1. Ders {liveState.nextLesson?.subject || 'Derslik Hazırlığı'}
+                        </span>{' '}
+                        saat 08:30&apos;da başlayacak.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <h3 className="text-xl sm:text-2xl font-black text-purple-600 dark:text-purple-400">
+                        Bugünkü 6 Ders Başarıyla Tamamlandı 🎉
+                      </h3>
+                      <p className="text-xs text-gray-600 dark:text-gray-300">
+                        Tüm dersler MEB müfredatına uygun olarak işlendi. Yarının programını kontrol edebilirsiniz.
+                      </p>
+                    </>
+                  )}
+                </div>
+
+                {/* Linear Progress Bar with Milestones */}
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex items-center justify-between text-[11px] font-bold text-gray-500 dark:text-gray-400">
+                    <span>Geçen: {liveState.elapsedMinutes} dk</span>
+                    <span className="font-extrabold text-gray-900 dark:text-white">
+                      {liveState.status === 'in_lesson' ? 'Ders İlerleme Çubuğu' : 'Zaman Akışı'}
+                    </span>
+                    <span>Kalan: {liveState.remainingMinutes} dk</span>
+                  </div>
+
+                  {/* Bar track */}
+                  <div className="h-3.5 w-full bg-gray-200/80 dark:bg-gray-800 rounded-full overflow-hidden p-0.5 relative">
+                    <motion.div
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        liveState.status === 'in_lesson'
+                          ? 'bg-gradient-to-r from-[#1D77FF] via-blue-500 to-indigo-600 shadow-sm shadow-blue-500/30'
+                          : liveState.status === 'lunch_break' || liveState.status === 'recess_break'
+                          ? 'bg-gradient-to-r from-amber-400 to-orange-500'
+                          : 'bg-[#1D77FF]'
+                      }`}
+                      style={{ width: `${liveState.elapsedPercent}%` }}
+                    />
+                  </div>
+
+                  {/* Milestones labels */}
+                  <div className="flex justify-between text-[10px] text-gray-400 px-1 font-mono">
+                    <span>0 dk</span>
+                    <span>10 dk</span>
+                    <span>20 dk</span>
+                    <span>30 dk</span>
+                    <span>40 dk</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── İNFOGRAFİK VE ANİMASYONLU GÜNLÜK AKIŞ STEPPER (1-6. DERSLER & ARALAR) ── */}
+            <div className="p-4 sm:p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm sm:text-base font-black text-gray-900 dark:text-white flex items-center gap-2">
+                    <Sparkles size={17} className="text-amber-500" />
+                    <span>Canlı Ders Akışı</span>
+                  </h3>
+                </div>
+
+                <span className="text-xs font-mono font-bold text-gray-400 hidden sm:inline-block">
+                  08:30 — 14:20 (Toplam 350 Dk)
+                </span>
+              </div>
+
+              {/* PERIODS TIMELINE GRID */}
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5 sm:gap-4">
+                {MEB_PERIOD_CONFIG.map((periodConfig) => {
+                  const lesson = todayLessons.find((l) => l.period === periodConfig.period)
+                  const subject = lesson?.subject || 'Belirlenmedi'
+                  const teacher = lesson?.teacherName || 'Atanmadı'
+                  const room = lesson?.roomName || `Derslik ${selectedClass}`
+                  const colorTheme = getSubjectColorTheme(subject)
+
+                  // Determine status for this period
+                  const nowMin = effectiveCurrentMinutes
+                  const isPast = nowMin >= periodConfig.endMinutes
+                  const isCurrent = nowMin >= periodConfig.startMinutes && nowMin < periodConfig.endMinutes
+                  const isFuture = nowMin < periodConfig.startMinutes
+
+                  return (
+                    <React.Fragment key={periodConfig.period}>
+                      {/* Period Card */}
+                      <div
+                        className={`relative rounded-2xl p-4 transition-all duration-300 flex flex-col justify-between space-y-3 ${
                           isPast
-                            ? 'bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                            ? 'opacity-40 grayscale hover:grayscale-0 hover:opacity-80 bg-gray-100/70 dark:bg-gray-800/40 border border-gray-200/60 dark:border-gray-800/60'
                             : isCurrent
-                            ? 'bg-emerald-600 text-white font-black animate-pulse'
-                            : colorTheme.badge
+                            ? `bg-gradient-to-br from-white via-indigo-50/50 to-white dark:from-[#131C31] dark:via-[#18233C] dark:to-[#131C31] border-2 ${activeSubjectTheme.border} ring-4 ring-indigo-500/15 shadow-xl ${activeSubjectTheme.glow}`
+                            : `bg-white dark:bg-[#131C31] border ${colorTheme.border} shadow-xs hover:shadow-md`
                         }`}
                       >
-                        {periodConfig.period}. DERS
-                      </span>
+                        {/* Top Bar: Period Number & Status Badge */}
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`text-xs font-black px-2.5 py-0.5 rounded-lg ${
+                                isPast
+                                  ? 'bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                                  : isCurrent
+                                  ? 'bg-emerald-600 text-white font-black animate-pulse'
+                                  : colorTheme.badge
+                              }`}
+                            >
+                              {periodConfig.period}. DERS
+                            </span>
 
-                      <span className="text-[11px] font-mono font-bold text-gray-500 dark:text-gray-400">
-                        {periodConfig.startTime} - {periodConfig.endTime}
-                      </span>
-                    </div>
+                            <span className="text-[11px] font-mono font-bold text-gray-500 dark:text-gray-400">
+                              {periodConfig.startTime} - {periodConfig.endTime}
+                            </span>
+                          </div>
 
-                    {/* Status indicator */}
-                    {isPast && (
-                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                        <CheckCircle2 size={12} />
-                        <span>Tamamlandı</span>
-                      </span>
-                    )}
+                          {/* Status indicator */}
+                          {isPast && (
+                            <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                              <CheckCircle2 size={12} />
+                              <span>Tamamlandı</span>
+                            </span>
+                          )}
 
-                    {isCurrent && (
-                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500 text-white flex items-center gap-1 shadow-sm">
-                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                        <span>CANLI İŞLENİYOR</span>
-                      </span>
-                    )}
+                          {isCurrent && (
+                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500 text-white flex items-center gap-1 shadow-sm">
+                              <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                              <span>CANLI İŞLENİYOR</span>
+                            </span>
+                          )}
 
-                    {isFuture && (
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${colorTheme.bg} ${colorTheme.text} border ${colorTheme.border}`}
-                      >
-                        Gelecek Ders
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Body: Subject Title & Details */}
-                  <div className="space-y-1.5">
-                    <h4
-                      className={`text-sm sm:text-base font-black leading-snug ${
-                        isPast
-                          ? 'text-gray-600 dark:text-gray-400 line-through'
-                          : isCurrent
-                          ? 'text-gray-900 dark:text-white'
-                          : 'text-gray-900 dark:text-white'
-                      }`}
-                    >
-                      {subject}
-                    </h4>
-
-                    <div className="space-y-1 text-[11px] text-gray-500 dark:text-gray-400">
-                      <div className="flex items-center gap-1.5">
-                        <GraduationCap size={13} className="text-indigo-500" />
-                        <span className="font-semibold text-gray-700 dark:text-gray-300 truncate">
-                          {teacher}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <MapPin size={13} className="text-emerald-500" />
-                        <span className="truncate">{room}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Footer: Live Progress / Countdown */}
-                  <div className="pt-2 border-t border-gray-100 dark:border-gray-800/80 flex items-center justify-between text-[11px]">
-                    {isPast && (
-                      <span className="text-gray-400 font-medium">40 dk işlendi · Yoklama alındı</span>
-                    )}
-
-                    {isCurrent && (
-                      <div className="w-full space-y-1">
-                        <div className="flex items-center justify-between text-[10.5px] font-bold">
-                          <span className="text-indigo-600 dark:text-cyan-400">
-                            Geçen: {liveState.elapsedMinutes} dk
-                          </span>
-                          <span className="text-emerald-600 dark:text-emerald-400 font-mono">
-                            {formatCountdown(liveState.remainingSeconds)} kaldı
-                          </span>
+                          {isFuture && (
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${colorTheme.bg} ${colorTheme.text} border ${colorTheme.border}`}
+                            >
+                              Gelecek Ders
+                            </span>
+                          )}
                         </div>
-                        <div className="h-2 w-full bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full"
-                            style={{ width: `${liveState.elapsedPercent}%` }}
-                          />
+
+                        {/* Body: Subject Title & Details */}
+                        <div className="space-y-1.5">
+                          <h4
+                            className={`text-sm sm:text-base font-black leading-snug ${
+                              isPast
+                                ? 'text-gray-600 dark:text-gray-400 line-through'
+                                : isCurrent
+                                ? 'text-gray-900 dark:text-white'
+                                : 'text-gray-900 dark:text-white'
+                            }`}
+                          >
+                            {subject}
+                          </h4>
+
+                          <div className="space-y-1 text-[11px] text-gray-500 dark:text-gray-400">
+                            <div className="flex items-center gap-1.5">
+                              <GraduationCap size={13} className="text-indigo-500" />
+                              <span className="font-semibold text-gray-700 dark:text-gray-300 truncate">
+                                {teacher}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <MapPin size={13} className="text-emerald-500" />
+                              <span className="truncate">{room}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Footer: Live Progress / Countdown */}
+                        <div className="pt-2 border-t border-gray-100 dark:border-gray-800/80 flex items-center justify-between text-[11px]">
+                          {isPast && (
+                            <span className="text-gray-400 font-medium">40 dk işlendi · Yoklama alındı</span>
+                          )}
+
+                          {isCurrent && (
+                            <div className="w-full space-y-1">
+                              <div className="flex items-center justify-between text-[10.5px] font-bold">
+                                <span className="text-indigo-600 dark:text-cyan-400">
+                                  Geçen: {liveState.elapsedMinutes} dk
+                                </span>
+                                <span className="text-emerald-600 dark:text-emerald-400 font-mono">
+                                  {formatCountdown(liveState.remainingSeconds)} kaldı
+                                </span>
+                              </div>
+                              <div className="h-2 w-full bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full"
+                                  style={{ width: `${liveState.elapsedPercent}%` }}
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          {isFuture && (
+                            <div className="flex items-center justify-between w-full text-gray-400">
+                              <span className="flex items-center gap-1">
+                                <Clock size={12} />
+                                <span>
+                                  {Math.ceil(periodConfig.startMinutes - nowMin)} dk sonra başlayacak
+                                </span>
+                              </span>
+                              <span className="font-bold text-gray-600 dark:text-gray-300">40 Dk</span>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    )}
+                    </React.Fragment>
+                  )
+                })}
+              </div>
+            </div>
 
-                    {isFuture && (
-                      <div className="flex items-center justify-between w-full text-gray-400">
-                        <span className="flex items-center gap-1">
-                          <Clock size={12} />
-                          <span>
-                            {Math.ceil(periodConfig.startMinutes - nowMin)} dk sonra başlayacak
-                          </span>
-                        </span>
-                        <span className="font-bold text-gray-600 dark:text-gray-300">40 Dk</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </React.Fragment>
-            )
-          })}
-        </div>
-      </div>
+            {/* ── BOTTOM COLLAPSE TRIGGER BAR ── */}
+            <div className="p-3 sm:px-6 bg-slate-50 dark:bg-[#10182E]/60 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+              <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                MEB Haftalık Canlı Ders Akışı · 08:30 - 14:20
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsExpanded(false)}
+                className="text-xs font-bold text-[#1D77FF] dark:text-[#5BA0FF] hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <span>Akışı Daralt</span>
+                <ChevronDown size={13} className="rotate-180" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

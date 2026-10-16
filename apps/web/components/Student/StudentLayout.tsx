@@ -222,14 +222,14 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
         <div className="px-4 pb-2">
           <div
             onClick={() => setIsPlusModalOpen(true)}
-            className="p-3.5 rounded-3xl bg-gradient-to-b from-[#FFF9EE] via-[#F4F8FF] to-[#EDF4FF] dark:from-[#19243E] dark:to-[#121B30] border border-amber-300/60 dark:border-amber-500/30 relative overflow-hidden shadow-xs cursor-pointer hover:border-amber-400 transition-all group"
+            className="p-3.5 rounded-3xl bg-gradient-to-b from-[#FFF9EE] via-[#F6FAFF] to-[#EDF4FF] dark:from-[#1A2644] dark:via-[#141F38] dark:to-[#0F172B] border border-amber-300/70 dark:border-amber-500/30 relative overflow-hidden shadow-xs cursor-pointer hover:border-amber-400 dark:hover:border-amber-400/60 transition-all group"
           >
             <div className="flex items-center justify-between gap-2 mb-1.5">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded-lg bg-amber-400/20 text-amber-500 flex items-center justify-center shrink-0">
                   <Crown size={14} className="fill-amber-400 text-amber-500" />
                 </div>
-                <span className="text-xs font-black text-slate-800 dark:text-slate-100">
+                <span className="text-xs font-black text-slate-900 dark:text-white">
                   Oxonom Plus
                 </span>
               </div>
@@ -237,8 +237,8 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
                 199 ₺
               </span>
             </div>
-            <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-snug mb-2.5">
-              <span className="line-through text-slate-400">899 ₺</span> yerine tüm ders kitapları, yapay zekâ ve soru havuzu elinin altında!
+            <p className="text-[10px] text-slate-600 dark:text-slate-300 leading-snug mb-2.5">
+              <span className="line-through text-slate-400 dark:text-slate-500">899 ₺</span> yerine tüm ders kitapları, yapay zekâ ve soru havuzu elinin altında!
             </p>
             <button
               type="button"
@@ -488,7 +488,7 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
                     setIsMoreSheetOpen(false)
                     setIsPlusModalOpen(true)
                   }}
-                  className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-orange-500/15 to-blue-500/10 border border-amber-400/50 flex items-center justify-between cursor-pointer shadow-xs active:scale-[0.98] transition-transform"
+                  className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-blue-500/10 dark:from-[#1A2644] dark:via-[#141F38] dark:to-[#0F172B] border border-amber-400/50 dark:border-amber-500/30 flex items-center justify-between cursor-pointer shadow-xs active:scale-[0.98] transition-transform"
                 >
                   <div className="flex items-center gap-2.5">
                     <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-400 to-amber-500 text-white flex items-center justify-center shadow-xs shrink-0">
@@ -501,8 +501,8 @@ export default function StudentLayout({ children }: StudentLayoutProps) {
                           199 ₺
                         </span>
                       </div>
-                      <div className="text-[10px] text-slate-500 dark:text-slate-400">
-                        <span className="line-through text-slate-400">899 ₺</span> yerine %78 indirim fırsatı
+                      <div className="text-[10px] text-slate-600 dark:text-slate-300">
+                        <span className="line-through text-slate-400 dark:text-slate-500">899 ₺</span> yerine %78 indirim fırsatı
                       </div>
                     </div>
                   </div>

@@ -848,25 +848,55 @@ export default function StudentDashboardView() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start w-full min-w-0">
         {/* ── LEFT MAIN COLUMN (lg:col-span-8) ── */}
         <div className="lg:col-span-8 space-y-6 lg:space-y-7 min-w-0 w-full">
-          {/* ── VIBRANT GRADIENT BLUE HERO SLIDER (Sabit Sağ Üst Oklar & 3D Sürükleme) ── */}
+          {/* ── VIBRANT GRADIENT BLUE HERO SLIDER (Sabit Yükseklik, Güzel Pattern & 3D Sürükleme) ── */}
           <div
-            className="relative mt-2 sm:mt-4 lg:mt-6 rounded-[28px] sm:rounded-[32px] bg-gradient-to-br from-[#1E4FD8] via-[#1D77FF] to-[#0A58D0] dark:from-[#0E1A38] dark:via-[#162D63] dark:to-[#0F224D] border border-blue-400/30 dark:border-blue-800/40 p-5 sm:p-7 text-white shadow-[0_16px_45px_rgba(29,119,255,0.18)] overflow-hidden select-none"
+            className="relative mt-2 sm:mt-4 lg:mt-6 rounded-[28px] sm:rounded-[32px] bg-gradient-to-br from-[#1250DF] via-[#1D77FF] to-[#0A4CC2] dark:from-[#0B1528] dark:via-[#102454] dark:to-[#0A1633] border border-blue-400/40 dark:border-blue-800/50 p-5 sm:p-6 lg:p-7 text-white shadow-[0_16px_45px_rgba(29,119,255,0.18)] overflow-hidden select-none h-[255px] sm:h-[235px] lg:h-[235px] flex flex-col justify-between"
             style={{ perspective: 1000 }}
           >
-            {/* ── SUBTLE NON-DISTRACTING ANIMATED PATTERNS (Göz yormayan yumuşak desenler) ── */}
+            {/* ── HIGH-DEFINITION EDUCATIONAL & GEOMETRIC PATTERN (Daha Belirgin Güzel Pattern) ── */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-[28px] sm:rounded-[32px]">
+              {/* Dynamic Grid with Crosshairs & Dots */}
               <svg
-                className="absolute inset-0 w-full h-full opacity-10 text-white"
+                className="absolute inset-0 w-full h-full opacity-20 dark:opacity-25 text-white"
                 xmlns="http://www.w3.org/2000/svg"
               >
                 <defs>
-                  <pattern id="hero-pattern-dots" width="28" height="28" patternUnits="userSpaceOnUse">
-                    <circle cx="2" cy="2" r="1.25" fill="currentColor" />
+                  <pattern id="hero-pattern-grid" width="36" height="36" patternUnits="userSpaceOnUse">
+                    <path d="M 36 0 L 0 0 0 36" fill="none" stroke="currentColor" strokeWidth="0.8" strokeDasharray="2,3" />
+                    <circle cx="36" cy="0" r="1.5" fill="currentColor" opacity="0.9" />
+                    <circle cx="0" cy="36" r="1.5" fill="currentColor" opacity="0.9" />
+                    <circle cx="18" cy="18" r="0.75" fill="currentColor" opacity="0.6" />
                   </pattern>
+                  <linearGradient id="hero-pattern-mask" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#ffffff" stopOpacity="0.9" />
+                    <stop offset="50%" stopColor="#ffffff" stopOpacity="0.6" />
+                    <stop offset="100%" stopColor="#ffffff" stopOpacity="0.3" />
+                  </linearGradient>
+                  <mask id="hero-mask-layer">
+                    <rect width="100%" height="100%" fill="url(#hero-pattern-mask)" />
+                  </mask>
                 </defs>
-                <rect width="100%" height="100%" fill="url(#hero-pattern-dots)" />
+                <rect width="100%" height="100%" fill="url(#hero-pattern-grid)" mask="url(#hero-mask-layer)" />
               </svg>
 
+              {/* Tech / Math Accent Constellation */}
+              <svg
+                className="absolute right-0 top-0 w-80 h-full opacity-25 text-white pointer-events-none hidden sm:block"
+                viewBox="0 0 320 240"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path d="M30 0L110 70H210L270 15" stroke="currentColor" strokeWidth="1.2" strokeDasharray="4 4" />
+                <path d="M150 70L190 115L270 115" stroke="currentColor" strokeWidth="1.2" />
+                <path d="M190 115L230 155H310" stroke="currentColor" strokeWidth="1.2" strokeDasharray="4 4" />
+                <circle cx="110" cy="70" r="3" fill="currentColor" />
+                <circle cx="210" cy="70" r="3" fill="currentColor" />
+                <circle cx="190" cy="115" r="3.5" fill="currentColor" />
+                <circle cx="230" cy="155" r="3" fill="currentColor" />
+                <circle cx="270" cy="15" r="3" fill="currentColor" />
+              </svg>
+
+              {/* Ambient Glowing Orbs */}
               <motion.div
                 animate={{
                   x: [0, 20, 0],
@@ -874,7 +904,7 @@ export default function StudentDashboardView() {
                   scale: [1, 1.06, 1],
                 }}
                 transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
-                className="absolute -top-16 -right-16 w-64 h-64 bg-cyan-400/20 rounded-full blur-3xl pointer-events-none"
+                className="absolute -top-16 -right-16 w-64 h-64 bg-cyan-400/25 rounded-full blur-3xl pointer-events-none"
               />
               <motion.div
                 animate={{
@@ -883,7 +913,7 @@ export default function StudentDashboardView() {
                   scale: [1, 1.08, 1],
                 }}
                 transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-                className="absolute -bottom-16 -left-16 w-72 h-72 bg-blue-300/20 rounded-full blur-3xl pointer-events-none"
+                className="absolute -bottom-16 -left-16 w-72 h-72 bg-blue-300/25 rounded-full blur-3xl pointer-events-none"
               />
             </div>
 
@@ -910,7 +940,7 @@ export default function StudentDashboardView() {
             </div>
 
             {/* ── 3D DRAGGABLE SLIDER İÇERİĞİ (Sürükleyerek diğer slidera geçiş) ── */}
-            <div className="relative z-10 w-full" style={{ transformStyle: 'preserve-3d' }}>
+            <div className="relative z-10 w-full h-full" style={{ transformStyle: 'preserve-3d' }}>
               <AnimatePresence custom={heroDirection} mode="wait">
                 <motion.div
                   key={heroPage}
@@ -929,34 +959,34 @@ export default function StudentDashboardView() {
                       paginateHero(-1)
                     }
                   }}
-                  className="flex flex-col justify-between w-full space-y-3 sm:space-y-4 cursor-grab active:cursor-grabbing"
+                  className="h-full flex flex-col justify-between w-full cursor-grab active:cursor-grabbing"
                   style={{ transformStyle: 'preserve-3d' }}
                 >
                   {/* Badge */}
-                  <div className="flex items-center gap-2 self-start pr-20">
+                  <div className="flex items-center gap-2 self-start pr-20 shrink-0">
                     <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[11px] font-black text-white border border-white/30 shadow-xs">
                       <span className="text-xs">{heroSlides[heroSlideIndex].tagEmoji}</span>
-                      <span>{heroSlides[heroSlideIndex].tag}</span>
+                      <span className="truncate max-w-[260px] sm:max-w-none">{heroSlides[heroSlideIndex].tag}</span>
                     </div>
                   </div>
 
                   {/* Title & Description */}
-                  <div>
-                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight">
+                  <div className="my-auto py-1 space-y-1">
+                    <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight leading-tight line-clamp-1">
                       {heroSlides[heroSlideIndex].title}
                     </h1>
-                    <p className="text-xs sm:text-sm font-medium text-blue-100/90 mt-1.5 leading-relaxed max-w-xl">
+                    <p className="text-xs sm:text-sm font-medium text-blue-100/90 leading-relaxed max-w-xl line-clamp-2">
                       {heroSlides[heroSlideIndex].description}
                     </p>
                   </div>
 
                   {/* Action Buttons & Indicator Dots */}
-                  <div className="pt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="pt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 shrink-0">
                     <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap">
                       <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                         <Link
                           href={heroSlides[heroSlideIndex].primaryBtn.href}
-                          className="inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-full bg-white hover:bg-blue-50 text-[#1D77FF] font-black text-xs sm:text-sm shadow-lg shadow-black/15 transition-all"
+                          className="inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-2 sm:py-2.5 rounded-full bg-white hover:bg-blue-50 text-[#1D77FF] font-black text-xs sm:text-sm shadow-lg shadow-black/15 transition-all"
                         >
                           <span>{heroSlides[heroSlideIndex].primaryBtn.label}</span>
                           {React.createElement(heroSlides[heroSlideIndex].primaryBtn.icon, {
@@ -968,7 +998,7 @@ export default function StudentDashboardView() {
                       <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                         <Link
                           href={heroSlides[heroSlideIndex].secondaryBtn.href}
-                          className="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-full bg-white/15 hover:bg-white/25 text-white backdrop-blur-md font-bold text-xs sm:text-sm border border-white/25 shadow-xs transition-all"
+                          className="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-white/15 hover:bg-white/25 text-white backdrop-blur-md font-bold text-xs sm:text-sm border border-white/25 shadow-xs transition-all"
                         >
                           {React.createElement(heroSlides[heroSlideIndex].secondaryBtn.icon, {
                             size: 14,
