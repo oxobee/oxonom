@@ -53,11 +53,9 @@ export default function MobileBookReader({
   initialPage,
   onClose,
 }: MobileBookReaderProps) {
-  // Reading Mode: 'interactive' (MEB Flipbook) or 'pdf'
+  // Reading Mode: Clean PDF View by default (User Rule: Normal PDF Kitap, no pen/drawing clutter)
   const hasInteractive = !!book.etkilesimliKitapUrl
-  const [readingMode, setReadingMode] = useState<'interactive' | 'pdf'>(() => {
-    return hasInteractive ? 'interactive' : 'pdf'
-  })
+  const [readingMode, setReadingMode] = useState<'interactive' | 'pdf'>('pdf')
 
   // Reading Theme: 'dark' | 'light' | 'sepia'
   const [readerTheme, setReaderTheme] = useState<'dark' | 'light' | 'sepia'>('dark')
@@ -314,34 +312,6 @@ export default function MobileBookReader({
           </div>
         </div>
 
-        {/* Center: Reading Mode Switcher (If interactive version exists) */}
-        {hasInteractive && (
-          <div className="hidden md:flex items-center p-0.5 rounded-xl bg-black/10 dark:bg-white/10 mx-2">
-            <button
-              type="button"
-              onClick={() => setReadingMode('interactive')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                readingMode === 'interactive'
-                  ? 'bg-[#1D77FF] text-white shadow-xs'
-                  : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
-              }`}
-            >
-              Etkileşimli Kitap
-            </button>
-            <button
-              type="button"
-              onClick={() => setReadingMode('pdf')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                readingMode === 'pdf'
-                  ? 'bg-[#1D77FF] text-white shadow-xs'
-                  : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
-              }`}
-            >
-              PDF Okuyucu
-            </button>
-          </div>
-        )}
-
         {/* Right: Quick Action Controls */}
         <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
           {/* Quick Bookmark Button */}
@@ -410,11 +380,11 @@ export default function MobileBookReader({
             {readerTheme === 'dark' ? '🌙' : readerTheme === 'sepia' ? '📜' : '☀️'}
           </button>
 
-          {/* Fullscreen toggle */}
+          {/* Fullscreen toggle (Mobile & Desktop) */}
           <button
             type="button"
             onClick={handleToggleFullscreen}
-            className={`hidden sm:flex w-9 h-9 rounded-xl items-center justify-center transition-all cursor-pointer active:scale-95 ${
+            className={`flex w-9 h-9 rounded-xl items-center justify-center transition-all cursor-pointer active:scale-95 ${
               readerTheme === 'dark'
                 ? 'bg-white/10 hover:bg-white/15 text-white'
                 : 'bg-black/5 hover:bg-black/10 text-gray-700'
@@ -437,64 +407,65 @@ export default function MobileBookReader({
         />
       </div>
 
-      {/* ── MAIN READER VIEWPORT (Touch gestures & Responsive) ── */}
+      {/* ── MAIN READER VIEWPORT (Edge-to-Edge Clean PDF Reading Experience) ── */}
       <main
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        className="flex-1 relative w-full h-full overflow-hidden flex items-center justify-center"
+        className="flex-1 relative w-full h-full overflow-hidden flex items-center justify-center bg-gray-100 dark:bg-gray-900"
       >
-        {readingMode === 'interactive' && book.etkilesimliKitapUrl ? (
-          // ── MODE 1: MEB RESMÎ ETKİLEŞİMLİ KİTAP (FLIPBOOK IFRAME) ──
-          <div className="relative w-full h-full flex flex-col">
+        {/* Floating Mobile Page Switcher (Left: Previous Page) */}
+        <button
+          type="button"
+          onClick={handlePrevPage}
+          disabled={currentPage <= 1}
+          className="md:hidden absolute left-2 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-black/65 backdrop-blur-md text-white flex items-center justify-center shadow-2xl active:scale-90 transition-all border border-white/20 disabled:opacity-0 disabled:pointer-events-none cursor-pointer"
+          aria-label="Önceki Sayfa"
+        >
+          <ChevronLeft size={24} strokeWidth={2.8} />
+        </button>
+
+        {/* Floating Mobile Page Switcher (Right: Next Page) */}
+        <button
+          type="button"
+          onClick={handleNextPage}
+          disabled={currentPage >= totalPages}
+          className="md:hidden absolute right-2 top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full bg-black/65 backdrop-blur-md text-white flex items-center justify-center shadow-2xl active:scale-90 transition-all border border-white/20 disabled:opacity-0 disabled:pointer-events-none cursor-pointer"
+          aria-label="Sonraki Sayfa"
+        >
+          <ChevronRight size={24} strokeWidth={2.8} />
+        </button>
+
+        {/* PDF Document Viewport */}
+        <div className="relative w-full h-full flex items-center justify-center overflow-hidden p-0">
+          {pdfProxyUrl ? (
+            <div
+              className="w-full h-full flex items-center justify-center transition-transform duration-200"
+              style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'center center' }}
+            >
+              <iframe
+                src={pdfProxyUrl}
+                title={`${book.title} — Sayfa ${currentPage}`}
+                className="w-full h-full border-0 bg-white"
+                allow="fullscreen"
+              />
+            </div>
+          ) : book.etkilesimliKitapUrl ? (
             <iframe
               src={book.etkilesimliKitapUrl}
               title={book.title}
-              className="w-full h-full border-0 bg-transparent flex-1"
-              allow="fullscreen; clipboard-read; clipboard-write"
+              className="w-full h-full border-0 bg-transparent"
+              allow="fullscreen"
             />
-            {/* Floating bottom note indicator for interactive mode */}
-            <div className="absolute top-3 left-3 pointer-events-none">
-              <span className="px-2.5 py-1 rounded-lg bg-black/60 backdrop-blur-md text-white text-[11px] font-bold border border-white/15 flex items-center gap-1.5 shadow-md">
-                <Sparkles size={13} className="text-cyan-300" />
-                <span>MEB Etkileşimli Kitap Aktif</span>
-              </span>
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-3 p-8 text-center max-w-sm">
+              <BookOpen size={48} className="text-gray-400 opacity-60" />
+              <h3 className="text-base font-extrabold">PDF Kaynağı Hazırlanıyor</h3>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                Bu kitap için dijital PDF akış bağlantısı kuruluyor.
+              </p>
             </div>
-          </div>
-        ) : (
-          // ── MODE 2: PDF OKUYUCU (PROXY STREAM & EMBEDDED ENGINE) ──
-          <div className="relative w-full h-full flex items-center justify-center overflow-auto p-0 sm:p-2">
-            {pdfProxyUrl ? (
-              <div
-                className="w-full h-full flex items-center justify-center transition-transform duration-200"
-                style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'center center' }}
-              >
-                <iframe
-                  src={pdfProxyUrl}
-                  title={`${book.title} — Sayfa ${currentPage}`}
-                  className="w-full h-full border-0 rounded-none sm:rounded-2xl shadow-xl bg-white"
-                  allow="fullscreen"
-                />
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center gap-3 p-8 text-center max-w-sm">
-                <BookOpen size={48} className="text-gray-400 opacity-60" />
-                <h3 className="text-base font-extrabold">PDF Kaynağı Hazırlanıyor</h3>
-                <p className="text-xs text-gray-400 leading-relaxed">
-                  Bu kitap için MEB sunucuları üzerinden dijital akış bağlantısı kuruluyor. Dilerseniz yukarıdaki Etkileşimli Kitap moduna geçiş yapabilirsiniz.
-                </p>
-                {book.etkilesimliKitapUrl && (
-                  <button
-                    type="button"
-                    onClick={() => setReadingMode('interactive')}
-                    className="px-4 py-2 rounded-xl bg-[#1D77FF] text-white text-xs font-bold cursor-pointer"
-                  >
-                    Etkileşimli Kitabı Aç
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+          )}
+        </div>
       </main>
 
       {/* ── BOTTOM THUMB-FRIENDLY ACTION BAR (Mobile-First Navigation) ── */}

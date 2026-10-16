@@ -708,41 +708,80 @@ export function normalizeClassroom(c: AdminClassroom): AdminClassroom {
   }
 }
 
-// Default Oxonom classroom (9/A with Ebru TEKNECİ, 1 student Erçil UĞURLU)
-export const DEFAULT_OXONOM_CLASSES: AdminClassroom[] = [
-  {
-    id: 301,
-    code: '9/A',
-    name: '9/A Şubesi',
-    gradeLevel: '9. Sınıf',
-    gradeNumber: 9,
-    orgId: 30,
-    roomName: 'Derslik 9/A (1. Kat)',
-    teacherName: 'Ebru TEKNECİ',
-    teacherBranch: 'Türk Dili ve Edebiyatı (Edebiyat Öğretmeni)',
-    teacherPhone: '+90 532 999 2803',
-    teacherEmail: 'ogretmen@oxonom.com',
-    studentCount: 1,
-    capacity: 24,
-    boysCount: 1,
-    girlsCount: 0,
-    presentToday: 1,
-    leaveToday: 0,
-    absentToday: 0,
-    attendanceRate: 100,
-    academicAverage: 98.8,
-    courseAverages: [
-      { course: 'Türk Dili ve Edebiyatı', average: 99.3, highest: 100, lowest: 98 },
-      { course: 'Matematik', average: 98.0, highest: 98, lowest: 96 },
-      { course: 'Bilişim & Kodlama', average: 99.0, highest: 100, lowest: 98 },
-    ],
-    boardStatus: 'online',
-    boardName: '9/A Akıllı Etkileşimli Tahta',
-    scheduleSummary: 'Haftalık 35 Saat (MEB Anadolu Lisesi)',
-    classPresident: 'Erçil UĞURLU',
-    parentRepresentative: 'Uğur UĞURLU (Müdür & Veli)',
-  },
-]
+// ── DEFAULT 1. SINIFTAN 8. SINIFA KADAR TÜM ŞUBELER (A, B, C, D — TOPLAM 32 ŞUBE) ──
+// User Rule: "mevcut tüm sınıf şubeleri sil ve 1.sınıftan 8.sınıfa kadar sınıf ve A'dan D'ye kadar her sınıfa şube ekle."
+export const GENERATE_CLASSES_1_TO_8_A_D = (): AdminClassroom[] => {
+  const classes: AdminClassroom[] = []
+  const branches = ['A', 'B', 'C', 'D']
+  const teachers = [
+    { name: 'Özlem ZOR', branch: 'Sınıf Öğretmeni' },
+    { name: 'Beyzanur SALMANLI', branch: 'Sınıf Öğretmeni' },
+    { name: 'Şevval ÇINAR', branch: 'Sınıf Öğretmeni' },
+    { name: 'İpek ŞAHİN', branch: 'Sınıf Öğretmeni' },
+    { name: 'Meryem MACİT', branch: 'Sınıf Öğretmeni' },
+    { name: 'Hilal KAYA', branch: 'Sınıf Öğretmeni' },
+    { name: 'Sümeyra Nur TAŞDEMİR', branch: 'Sınıf Öğretmeni' },
+    { name: 'Aslı ERGÜN', branch: 'Sınıf Öğretmeni' },
+    { name: 'Ebru TEKNECİ', branch: 'Türkçe / Edebiyat' },
+    { name: 'Orkun AYDIN', branch: 'Matematik' },
+    { name: 'Beritan ŞENATEŞ', branch: 'Fen Bilimleri' },
+    { name: 'Deniz ARSLAN', branch: 'Sosyal Bilgiler' },
+    { name: 'Canan YILDIRIM', branch: 'İngilizce' },
+    { name: 'Murat DEMİR', branch: 'Bilişim Teknolojileri' },
+    { name: 'Gülşah ÖZTÜRK', branch: 'Görsel Sanatlar' },
+    { name: 'Selim AKSOY', branch: 'Beden Eğitimi' },
+  ]
+
+  let idCounter = 101
+  for (let g = 1; g <= 8; g++) {
+    for (const b of branches) {
+      const teacherIdx = (idCounter - 101) % teachers.length
+      const teacher = teachers[teacherIdx]
+      const floor = Math.floor((g - 1) / 2) + 1
+      const roomNum = `${g}0${branches.indexOf(b) + 1}`
+      const studentCount = 22 + ((g * 3 + branches.indexOf(b)) % 7) // 22 to 28
+      const presentToday = studentCount - (idCounter % 3 === 0 ? 1 : 0)
+
+      classes.push({
+        id: idCounter,
+        code: `${g}/${b}`,
+        name: `${g}/${b} Şubesi`,
+        gradeLevel: `${g}. Sınıf`,
+        gradeNumber: g,
+        orgId: 30,
+        roomName: `${floor}. Kat · Derslik ${roomNum}`,
+        teacherName: teacher.name,
+        teacherBranch: teacher.branch,
+        teacherPhone: `+90 532 999 ${1000 + (idCounter % 900)}`,
+        teacherEmail: `${teacher.name.toLowerCase().replace(/[^a-z]/g, '')}@oxonom.com`,
+        studentCount,
+        capacity: 30,
+        boysCount: Math.floor(studentCount / 2),
+        girlsCount: Math.ceil(studentCount / 2),
+        presentToday,
+        leaveToday: studentCount - presentToday,
+        absentToday: 0,
+        attendanceRate: Number(((presentToday / studentCount) * 100).toFixed(1)),
+        academicAverage: Number((85 + (idCounter % 12) + 0.5).toFixed(1)),
+        courseAverages: [
+          { course: 'Türkçe', average: 89.0, highest: 100, lowest: 72 },
+          { course: 'Matematik', average: 86.5, highest: 100, lowest: 68 },
+          { course: g <= 4 ? 'Hayat Bilgisi' : 'Fen Bilimleri', average: 91.0, highest: 100, lowest: 75 },
+        ],
+        boardStatus: 'online',
+        boardName: `${g}/${b} Akıllı Tahta`,
+        scheduleSummary: `Haftalık ${g <= 4 ? 30 : 35} Saat`,
+        classPresident: `Öğrenci Temsilcisi ${g}/${b}`,
+        parentRepresentative: `Veli Temsilcisi ${g}/${b}`,
+      })
+      idCounter++
+    }
+  }
+
+  return classes
+}
+
+export const DEFAULT_OXONOM_CLASSES: AdminClassroom[] = GENERATE_CLASSES_1_TO_8_A_D()
 
 type ClassDetailTabKey =
   | 'genel'
@@ -905,7 +944,7 @@ export default function MAdminClassesClient({
         const saved = localStorage.getItem(`oxonom_admin_classes_${initialOrgId}`)
         if (saved) {
           const parsed = JSON.parse(saved)
-          if (Array.isArray(parsed) && parsed.length > 0) return parsed
+          if (Array.isArray(parsed) && parsed.length >= 10) return parsed
         }
       } catch (_) {}
     }
@@ -922,13 +961,16 @@ export default function MAdminClassesClient({
         )
         if (saved) {
           const parsed = JSON.parse(saved)
-          if (Array.isArray(parsed) && parsed.length > 0) {
+          if (Array.isArray(parsed) && parsed.length >= 10) {
             const normalized = parsed.map(normalizeClassroom)
             setClassesList(normalized)
             setSelectedGradeFilter('ALL')
             return
           }
         }
+        // Initialize with 1 to 8 (A to D) classes
+        localStorage.setItem(`oxonom_admin_classes_${selectedOrgId}`, JSON.stringify(defaultClasses))
+        localStorage.setItem('oxonom_admin_classes_30', JSON.stringify(defaultClasses))
       } catch (_) {}
     }
     setClassesList(defaultClasses)
@@ -1436,6 +1478,17 @@ export default function MAdminClassesClient({
     const branchLetter = formCode.replace(/^.*[\/-]/, '').trim().toUpperCase() || 'A'
     const finalCode = `${gradeNum}/${branchLetter}`
     const finalName = `${finalCode} Şubesi`
+
+    // Duplicate check: User Rule: "sınıf eklerken eğer eklenen sınıf ve şube varsa bu şube mevcut uyarısı versin"
+    const isDuplicate = classesList.some((c) => {
+      const existing = (c.code || '').trim().replace('-', '/').toUpperCase()
+      const target = finalCode.trim().replace('-', '/').toUpperCase()
+      return existing === target
+    })
+    if (isDuplicate) {
+      toast.error(`${finalCode} şubesi sistemde zaten mevcut! Lütfen farklı bir şube harfi veya kademe seçiniz.`)
+      return
+    }
 
     const newId = Date.now()
     const newClassItem: AdminClassroom = {

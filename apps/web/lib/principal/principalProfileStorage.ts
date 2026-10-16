@@ -71,6 +71,9 @@ const SCHOOL_INFO_KEY = 'oxonom_school_info'
 export function getStoredPrincipalProfile(): PrincipalProfile {
   if (typeof window === 'undefined') return DEFAULT_PRINCIPAL_PROFILE
 
+  // Trigger background server sync so mobile and desktop remain synchronized
+  ensurePrincipalProfileSynced()
+
   try {
     // 1. Try dedicated persistent principal profile first
     const savedPrincipal = localStorage.getItem(PRINCIPAL_PROFILE_KEY)
@@ -206,6 +209,15 @@ export function savePrincipalProfile(updates: Partial<PrincipalProfile>): Princi
     localStorage.setItem(PRINCIPAL_PROFILE_KEY, serialized)
     localStorage.setItem(ADMIN_SESSION_KEY, serialized)
 
+    // Synchronize to backend server so changes persist across all devices (Mobile & PC)
+    if (typeof fetch !== 'undefined') {
+      fetch('/api/principal/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(merged),
+      }).catch(() => {})
+    }
+
     // Notify all components in current window
     window.dispatchEvent(new CustomEvent('oxonom_admin_updated', { detail: merged }))
     window.dispatchEvent(new CustomEvent('oxonom_principal_updated', { detail: merged }))
@@ -214,6 +226,41 @@ export function savePrincipalProfile(updates: Partial<PrincipalProfile>): Princi
   } catch (_) {
     return { ...DEFAULT_PRINCIPAL_PROFILE, ...updates }
   }
+}
+
+let hasTriggeredServerSync = false
+
+/**
+ * Asynchronously fetches latest principal profile from server so phone and PC always show identical data
+ */
+export async function syncPrincipalProfileFromServer(): Promise<PrincipalProfile | null> {
+  if (typeof window === 'undefined') return null
+
+  try {
+    const res = await fetch('/api/principal/profile', { cache: 'no-store' })
+    if (!res.ok) return null
+    const data = await res.json()
+    if (data && data.success && data.profile) {
+      const serverProf = data.profile as PrincipalProfile
+      const serialized = JSON.stringify(serverProf)
+      localStorage.setItem(PRINCIPAL_PROFILE_KEY, serialized)
+      localStorage.setItem(ADMIN_SESSION_KEY, serialized)
+
+      window.dispatchEvent(new CustomEvent('oxonom_admin_updated', { detail: serverProf }))
+      window.dispatchEvent(new CustomEvent('oxonom_principal_updated', { detail: serverProf }))
+      return serverProf
+    }
+  } catch (_) {}
+  return null
+}
+
+/**
+ * Auto-triggers background server sync once per session
+ */
+export function ensurePrincipalProfileSynced(): void {
+  if (typeof window === 'undefined' || hasTriggeredServerSync) return
+  hasTriggeredServerSync = true
+  syncPrincipalProfileFromServer().catch(() => {})
 }
 
 /**

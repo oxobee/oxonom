@@ -260,12 +260,29 @@ export default function MAdminStudentsClient({
     return enriched
   }
 
+  // Helper: auto-generate next sequential available student number
+  const getNextAvailableStudentNo = (list: any[]): string => {
+    const numericNos = list
+      .map((s) => {
+        const raw = String(s.studentNo || '').trim()
+        const match = raw.match(/\d+/)
+        return match ? parseInt(match[0], 10) : 0
+      })
+      .filter((n) => n > 0)
+    if (numericNos.length === 0) return '101'
+    const maxNo = Math.max(...numericNos)
+    return String(maxNo + 1)
+  }
+
   // ── STUDENTS LIST WITH STRICT MULTI-TENANT ISOLATION (OXONOM OKULLARI) ──
   const [studentsList, setStudentsList] = useState<any[]>(() => {
     let baseList = getOrgStudents(30)
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem('oxonom_admin_students_list_30')
+        const saved =
+          localStorage.getItem('oxonom_admin_students_list_30') ||
+          localStorage.getItem('oxonom_admin_students_list_1') ||
+          localStorage.getItem('oxonom_m_students_v3')
         if (saved) {
           const parsed = JSON.parse(saved)
           if (Array.isArray(parsed) && parsed.length > 0) {
@@ -282,7 +299,10 @@ export default function MAdminStudentsClient({
     let baseList = getOrgStudents(selectedOrgId)
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem(`oxonom_admin_students_list_${selectedOrgId}`)
+        const saved =
+          localStorage.getItem(`oxonom_admin_students_list_${selectedOrgId}`) ||
+          localStorage.getItem('oxonom_admin_students_list_30') ||
+          localStorage.getItem('oxonom_m_students_v3')
         if (saved) {
           const parsed = JSON.parse(saved)
           if (Array.isArray(parsed) && parsed.length > 0) {
@@ -334,6 +354,10 @@ export default function MAdminStudentsClient({
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem(`oxonom_admin_students_list_${selectedOrgId}`, JSON.stringify(enriched))
+        localStorage.setItem('oxonom_admin_students_list_30', JSON.stringify(enriched))
+        localStorage.setItem('oxonom_m_students_v3', JSON.stringify(enriched))
+        window.dispatchEvent(new CustomEvent('oxonom_admin_students_updated'))
+        window.dispatchEvent(new CustomEvent('oxonom_student_updated'))
       } catch (_) {}
     }
   }
@@ -483,17 +507,40 @@ export default function MAdminStudentsClient({
       return
     }
 
+    // Duplicate Student Number Check
+    const trimmedNo = (newStudentNo || '').trim()
+    if (trimmedNo) {
+      const duplicateStudent = studentsList.find(
+        (s) => String(s.studentNo || '').trim().toLowerCase() === trimmedNo.toLowerCase()
+      )
+      if (duplicateStudent) {
+        toast.error(`"${trimmedNo}" okul numarası zaten sistemde kayıtlı (${duplicateStudent.name})! Lütfen farklı bir numara giriniz.`)
+        return
+      }
+    }
+
+    // Duplicate TC Check
+    const trimmedTc = newTcNo.trim()
+    const duplicateTc = studentsList.find(
+      (s) => String(s.tcNo || '').trim() === trimmedTc
+    )
+    if (duplicateTc) {
+      toast.error(`"${trimmedTc}" T.C. kimlik numarası zaten sistemde kayıtlı (${duplicateTc.name})!`)
+      return
+    }
+
+    const finalStudentNo = trimmedNo || getNextAvailableStudentNo(studentsList)
     const newId = Date.now()
     const fullName = `${newFirstName.trim()} ${newLastName.trim()}`
     const createdStudent = {
       id: newId,
       user_uuid: `user_${newId}`,
-      studentNo: newStudentNo || `2026-${Math.floor(100 + Math.random() * 900)}`,
+      studentNo: finalStudentNo,
       tcNo: newTcNo.trim(),
       name: fullName,
       first_name: newFirstName.trim(),
       last_name: newLastName.trim(),
-      className: newClassCode,
+      className: formatClassCode(newClassCode),
       gender: newGender,
       birthDate: newBirthDate,
       birthPlace: newBirthPlace,
@@ -577,19 +624,44 @@ export default function MAdminStudentsClient({
   // ── HANDLE NAKİL / TRANSFER ──
   const handleConfirmTransfer = () => {
     if (!studentToTransfer) return
+    const formattedTarget = formatClassCode(targetTransferClass)
     const updatedStudent = {
       ...studentToTransfer,
-      className: targetTransferClass,
+      className: formattedTarget,
+      class: formattedTarget,
     }
     const updatedList = studentsList.map((s) =>
       s.id === studentToTransfer.id ? updatedStudent : s
     )
     updateStudentsList(updatedList)
+
+    // Update selectedStudentForDetail and editClassCode so Tab 2 and view mode update immediately
     if (selectedStudentForDetail && selectedStudentForDetail.id === studentToTransfer.id) {
       setSelectedStudentForDetail(updatedStudent)
+      setEditClassCode(formattedTarget)
     }
+
+    // Also sync active student profile if applicable
+    try {
+      if (typeof window !== 'undefined') {
+        const rawProfile = localStorage.getItem('oxonom_student_profile')
+        if (rawProfile) {
+          const prof = JSON.parse(rawProfile)
+          if (
+            prof.id === studentToTransfer.id ||
+            prof.studentNo === studentToTransfer.studentNo ||
+            prof.name === studentToTransfer.name
+          ) {
+            prof.className = formattedTarget
+            prof.class = formattedTarget
+            localStorage.setItem('oxonom_student_profile', JSON.stringify(prof))
+          }
+        }
+      }
+    } catch (_) {}
+
     toast.success(
-      `${studentToTransfer.name} öğrencisi başarıyla ${targetTransferClass} şubesine nakil edildi.`
+      `${studentToTransfer.name} öğrencisi başarıyla ${formattedTarget} şubesine nakil edildi.`
     )
     setIsTransferModalOpen(false)
     setStudentToTransfer(null)
@@ -714,7 +786,10 @@ export default function MAdminStudentsClient({
           <button
             type="button"
             onClick={() => {
-              setNewClassCode(orgClassrooms[0]?.code || '9-A')
+              const defaultClass = classList.find((c) => c !== 'ALL') || orgClassrooms[0]?.code || '1/A'
+              setNewClassCode(formatClassCode(defaultClass))
+              setNewStudentNo(getNextAvailableStudentNo(studentsList))
+              setNewStudentTab('kimlik')
               setIsNewStudentModalOpen(true)
             }}
             className="h-11 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
@@ -2302,14 +2377,19 @@ export default function MAdminStudentsClient({
                         </select>
                       </div>
                       <div>
-                        <label className="block text-[11px] font-bold text-gray-600 dark:text-gray-300 mb-1">
-                          Okul Numarası
-                        </label>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-[11px] font-bold text-gray-600 dark:text-gray-300">
+                            Okul Numarası
+                          </label>
+                          <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-md">
+                            Sistem Sıralı Verdi
+                          </span>
+                        </div>
                         <input
                           type="text"
                           value={newStudentNo}
                           onChange={(e) => setNewStudentNo(e.target.value)}
-                          placeholder="2026-105"
+                          placeholder="102"
                           className="w-full h-10 px-3 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 font-bold"
                         />
                       </div>
