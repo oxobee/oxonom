@@ -163,11 +163,12 @@ export default function MAdminClient({
   const [realStats, setRealStats] = useState({
     studentCount: 1,
     studentName: 'Erçil UĞURLU',
-    teacherCount: 1,
-    teacherName: 'Ebru TEKNECİ',
-    classCount: 1,
-    className: '9/A',
+    teacherCount: 16,
+    teacherName: 'Özlem ZOR',
+    classCount: 32,
+    className: '1/A',
     parentCount: 1,
+    activeBoardsCount: 0,
   })
 
   // Load from persistent storage on mount and on update events
@@ -200,18 +201,31 @@ export default function MAdminClient({
           // Real counts for selectedOrgId
           const rawTeachers = localStorage.getItem(`oxonom_admin_teachers_${selectedOrgId}`)
           const teachers = rawTeachers ? JSON.parse(rawTeachers) : null
-          const tCount = Array.isArray(teachers) && teachers.length > 0 ? teachers.length : 1
-          const tName = Array.isArray(teachers) && teachers.length > 0 ? teachers[0].name : 'Ebru TEKNECİ'
+          const tCount = Array.isArray(teachers) && teachers.length > 0 ? teachers.length : 16
+          const tName = Array.isArray(teachers) && teachers.length > 0 ? teachers[0].name : 'Özlem ZOR'
 
-          const rawStudents = localStorage.getItem(`oxonom_admin_students_${selectedOrgId}`)
+          const rawStudents =
+            localStorage.getItem(`oxonom_admin_students_list_${selectedOrgId}`) ||
+            localStorage.getItem('oxonom_admin_students_list_30') ||
+            localStorage.getItem('oxonom_m_students_v3')
           const students = rawStudents ? JSON.parse(rawStudents) : null
           const sCount = Array.isArray(students) && students.length > 0 ? students.length : 1
-          const sName = Array.isArray(students) && students.length > 0 ? students[0].name : 'Erçil UĞURLU'
+          const sName = Array.isArray(students) && students.length > 0 ? (students[0]?.name || 'Erçil UĞURLU') : 'Erçil UĞURLU'
+          const sClass = Array.isArray(students) && students.length > 0 ? (students[0]?.className || '1/A') : '1/A'
 
           const rawClasses = localStorage.getItem(`oxonom_admin_classes_${selectedOrgId}`)
           const classes = rawClasses ? JSON.parse(rawClasses) : null
-          const cCount = Array.isArray(classes) && classes.length > 0 ? classes.length : 1
-          const cName = Array.isArray(classes) && classes.length > 0 ? (classes[0].code || '9/A') : '9/A'
+          const cCount = Array.isArray(classes) && classes.length >= 10 ? classes.length : 32
+          const cName = sClass.includes('/') ? sClass : sClass.replace('-', '/')
+
+          const rawBoards = localStorage.getItem('oxonom_principal_active_boards')
+          let activeBoardsCount = 0
+          if (rawBoards) {
+            try {
+              const bList = JSON.parse(rawBoards)
+              if (Array.isArray(bList)) activeBoardsCount = bList.length
+            } catch (_) {}
+          }
 
           setRealStats({
             studentCount: sCount,
@@ -219,8 +233,9 @@ export default function MAdminClient({
             teacherCount: tCount,
             teacherName: tName,
             classCount: cCount,
-            className: cName.includes('/') ? cName : cName.replace('-', '/'),
+            className: cName || '1/A',
             parentCount: sCount,
+            activeBoardsCount,
           })
         } catch (_) {}
       }
@@ -794,7 +809,7 @@ export default function MAdminClient({
               <ArrowUpRight size={13} className="text-gray-400 group-hover:text-blue-500 transition-colors" />
             </div>
             <div className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold mt-0.5 truncate">
-              {realStats.teacherName} (Edebiyat)
+              {realStats.teacherName} & Zümre
             </div>
           </Link>
 
@@ -808,7 +823,7 @@ export default function MAdminClient({
                 <Building2 size={20} />
               </div>
               <span className="text-xs font-extrabold text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/50 px-2 py-0.5 rounded-lg">
-                Ortaöğretim
+                1-8. Sınıflar (A-D)
               </span>
             </div>
             <div className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
@@ -819,35 +834,39 @@ export default function MAdminClient({
               <ArrowUpRight size={13} className="text-gray-400 group-hover:text-purple-500 transition-colors" />
             </div>
             <div className="text-[10px] text-purple-600 dark:text-purple-400 font-semibold mt-0.5 truncate">
-              {realStats.className} (Derslik 9-A)
+              {realStats.className} Aktif Şube
             </div>
           </Link>
 
-          {/* 4. Aktif Veli İletişimi */}
-          <div
-            onClick={() => setIsSmsModalOpen(true)}
-            className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-gray-800 rounded-3xl p-4 shadow-sm hover:border-amber-500/60 dark:hover:border-amber-500/50 hover:shadow-md transition-all group cursor-pointer"
+          {/* 4. Canlı Akıllı Tahta Durumu */}
+          <Link
+            href={getUrl('/m-admin-boards')}
+            className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-gray-800 rounded-3xl p-4 shadow-sm hover:border-blue-500/60 dark:hover:border-blue-500/50 hover:shadow-md transition-all group"
           >
             <div className="flex items-center justify-between mb-2.5">
-              <div className="w-10 h-10 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-900/40 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <HeartHandshake size={20} />
+              <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/40 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <Tv size={20} />
               </div>
-              <span className="text-xs font-extrabold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-lg flex items-center gap-1">
-                <MessageSquare size={11} />
-                <span>SMS Bildirimi</span>
+              <span className={`text-xs font-extrabold px-2 py-0.5 rounded-lg flex items-center gap-1 ${
+                realStats.activeBoardsCount > 0
+                  ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50'
+                  : 'text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${realStats.activeBoardsCount > 0 ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'}`} />
+                <span>{realStats.activeBoardsCount > 0 ? `${realStats.activeBoardsCount} Bağlı` : 'Hazır'}</span>
               </span>
             </div>
             <div className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
-              {realStats.parentCount} Veli
+              {realStats.activeBoardsCount} / {realStats.classCount}
             </div>
             <div className="text-xs font-bold text-gray-600 dark:text-gray-400 mt-1 flex items-center justify-between">
-              <span>Kayıtlı Veli</span>
-              <ArrowUpRight size={13} className="text-gray-400 group-hover:text-amber-500 transition-colors" />
+              <span>Akıllı Tahta</span>
+              <ArrowUpRight size={13} className="text-gray-400 group-hover:text-blue-500 transition-colors" />
             </div>
-            <div className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold mt-0.5 truncate">
-              Hızlı Duyuru Gönder
+            <div className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold mt-0.5 truncate">
+              Tahtaları Yönet &gt;
             </div>
-          </div>
+          </Link>
         </div>
       </section>
 

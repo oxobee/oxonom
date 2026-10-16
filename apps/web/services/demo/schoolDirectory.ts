@@ -85,27 +85,61 @@ export interface ClassroomItem {
   boards_count: number
 }
 
-// Exactly 1 Classroom: 9/A
-export const ALL_CLASSROOMS: ClassroomItem[] = [
-  {
-    id: 101,
-    usergroup_uuid: 'usergroup_9a_oxonom',
-    name: '9/A Şubesi',
-    code: '9/A',
-    join_code: 'OKUL-9A',
-    grade_level: '9. Sınıf',
-    org_id: 30,
-    school_name: 'Oxonom Okulları',
-    school_slug: 'oxonom',
-    description: 'Sınıf Rehber Öğretmeni: Ebru TEKNECİ (Türk Dili ve Edebiyatı) — Oxonom Okulları',
-    teacher_name: 'Ebru TEKNECİ',
-    teacher_email: 'ogretmen@oxonom.com',
-    student_count: 1,
-    boards_count: 0,
-  },
+// 32 Classrooms: 1/A through 8/D (MEB İlkokul & Ortaokul)
+const BRANCHES = ['A', 'B', 'C', 'D']
+const TEACHER_ROSTER = [
+  { name: 'Özlem ZOR', branch: 'Sınıf Öğretmeni (1/A)', email: 'ozlemzor@oxonom.com' },
+  { name: 'Beyzanur SALMANLI', branch: 'Sınıf Öğretmeni', email: 'beyzanur@oxonom.com' },
+  { name: 'Özge KABA', branch: 'Sınıf Öğretmeni', email: 'ozgekaba@oxonom.com' },
+  { name: 'İpek ŞAHİN', branch: 'Sınıf Öğretmeni', email: 'ipeksahin@oxonom.com' },
+  { name: 'Meryem MACİT', branch: 'Sınıf Öğretmeni', email: 'meryemmacit@oxonom.com' },
+  { name: 'Hilal KAYA', branch: 'Sınıf Öğretmeni', email: 'hilalkaya@oxonom.com' },
+  { name: 'Sümeyra Nur TAŞDEMİR', branch: 'Sınıf Öğretmeni', email: 'sumeyranur@oxonom.com' },
+  { name: 'Aslı ERGÜN', branch: 'Sınıf Öğretmeni', email: 'asliergun@oxonom.com' },
+  { name: 'Ebru TEKNECİ', branch: 'Türkçe / Edebiyat', email: 'ebrutekneci@oxonom.com' },
+  { name: 'Orkun AYDIN', branch: 'Matematik', email: 'orkunaydin@oxonom.com' },
+  { name: 'Beritan ŞENATEŞ', branch: 'Fen Bilimleri', email: 'beritans@oxonom.com' },
+  { name: 'Deniz ARSLAN', branch: 'Sosyal Bilgiler', email: 'denizarslan@oxonom.com' },
+  { name: 'Canan YILDIRIM', branch: 'İngilizce', email: 'cananyildirim@oxonom.com' },
+  { name: 'Murat DEMİR', branch: 'Bilişim Teknolojileri', email: 'muratdemir@oxonom.com' },
+  { name: 'Gülşah ÖZTÜRK', branch: 'Görsel Sanatlar', email: 'gulsahozturk@oxonom.com' },
+  { name: 'Selim AKSOY', branch: 'Beden Eğitimi', email: 'selimaksoy@oxonom.com' },
 ]
 
-// Authentic Student Profile: Erçil UĞURLU
+function buildSchoolClassrooms(): ClassroomItem[] {
+  const result: ClassroomItem[] = []
+  let id = 101
+  for (let g = 1; g <= 8; g++) {
+    for (const b of BRANCHES) {
+      const code = `${g}/${b}`
+      const teacher = TEACHER_ROSTER[(id - 101) % TEACHER_ROSTER.length]
+      // Only 1/A has 1 registered student (Erçil Uğurlu); all other classes start with 0
+      const is1A = code === '1/A'
+      result.push({
+        id,
+        usergroup_uuid: `usergroup_${g}${b.toLowerCase()}_oxonom`,
+        name: `${code} Şubesi`,
+        code,
+        join_code: `OKUL-${g}${b}`,
+        grade_level: `${g}. Sınıf`,
+        org_id: 30,
+        school_name: 'Oxonom Okulları',
+        school_slug: 'oxonom',
+        description: `Sınıf Rehber Öğretmeni: ${teacher.name} (${teacher.branch}) — Oxonom Okulları`,
+        teacher_name: is1A ? 'Özlem ZOR' : teacher.name,
+        teacher_email: is1A ? 'ozlemzor@oxonom.com' : teacher.email,
+        student_count: is1A ? 1 : 0,
+        boards_count: 0,
+      })
+      id++
+    }
+  }
+  return result
+}
+
+export const ALL_CLASSROOMS: ClassroomItem[] = buildSchoolClassrooms()
+
+// Authentic Student Profile: Erçil UĞURLU (strictly in 1/A)
 export const REAL_STUDENT = {
   id: 3001,
   user_uuid: 'user_ercil_ugurlu',
@@ -117,7 +151,7 @@ export const REAL_STUDENT = {
   email: 'ogrenci@oxonom.com',
   username: 'ogrenci',
   gender: 'Erkek' as const,
-  birthDate: '15.06.2010 (16 Yaşında)',
+  birthDate: '15.06.2018 (7 Yaşında)',
   bloodType: 'A Rh+',
   motherName: 'Ebru UĞURLU',
   motherPhone: '+90 532 999 1100',
@@ -156,16 +190,16 @@ export const REAL_STUDENT = {
   unexcusedDays: 0,
   assignmentsDone: 15,
   assignmentsTotal: 15,
-  notes: '9-A şubesi öğrencisi. Türk Dili ve Edebiyatı, Matematik ve Bilişim alanlarında üstün analitik ve edebi başarı.',
+  notes: '1/A şubesi öğrencisi. Türkçe, Matematik ve Hayat Bilgisi alanlarında üstün analitik ve edebi başarı.',
   specialHealthNote: 'Herhangi bir sağlık engeli veya kronik rahatsızlığı bulunmamaktadır.',
   disciplineStatus: 'Temiz Sicil — Onur Belgesi Sahibi Örnek Öğrenci',
   guidanceNotes: [
     {
       id: 'gn-30-1',
       date: '15.09.2026',
-      author: 'Ebru TEKNECİ (Edebiyat Öğretmeni & Sınıf Rehberi)',
+      author: 'Özlem ZOR (1/A Sınıf Rehber Öğretmeni)',
       category: 'Akademik' as const,
-      content: 'Öğrencinin edebiyat okumaları, kompozisyon yeteneği ve ders içi analitik katkısı takdir edilmektedir.',
+      content: 'Öğrencinin okuma-yazma hazırlığı, görsel algı ve ders içi analitik katkısı takdir edilmektedir.',
     },
     {
       id: 'gn-30-2',
@@ -176,14 +210,14 @@ export const REAL_STUDENT = {
     },
   ],
   grades: [
-    { courseName: 'Türk Dili ve Edebiyatı', teacherName: 'Ebru TEKNECİ', exam1: 98, exam2: 100, performance: 100, average: 99.3 },
-    { courseName: 'Matematik', teacherName: 'Ebru TEKNECİ', exam1: 96, exam2: 98, performance: 100, average: 98.0 },
-    { courseName: 'Bilişim & Kodlama', teacherName: 'Ebru TEKNECİ', exam1: 100, exam2: 98, performance: 100, average: 99.0 },
+    { courseName: 'Türkçe', teacherName: 'Özlem ZOR', exam1: 98, exam2: 100, performance: 100, average: 99.3 },
+    { courseName: 'Matematik', teacherName: 'Özlem ZOR', exam1: 96, exam2: 98, performance: 100, average: 98.0 },
+    { courseName: 'Hayat Bilgisi', teacherName: 'Özlem ZOR', exam1: 100, exam2: 98, performance: 100, average: 99.0 },
   ],
   classroomId: 101,
-  classroomName: '9/A Şubesi',
-  className: '9/A',
-  mentorTeacher: 'Ebru TEKNECİ (Edebiyat Öğretmeni)',
+  classroomName: '1/A Şubesi',
+  className: '1/A',
+  mentorTeacher: 'Özlem ZOR (Sınıf Öğretmeni)',
   schoolName: 'Oxonom Okulları',
   is_demo: false,
 }
@@ -191,16 +225,24 @@ export const REAL_STUDENT = {
 // Backwards-compatible alias for existing imports
 export const DEMO_STUDENT = REAL_STUDENT
 
-// Return strictly authentic students for the classroom (Erçil UĞURLU)
+// Return strictly authentic students: Erçil UĞURLU is strictly in 1/A; all other classes have 0 students
 export function generateClassStudents(classItem?: ClassroomItem) {
   const cls = classItem || ALL_CLASSROOMS[0]
+  const rawCode = (cls.code || '').replace('-', '/').trim().toUpperCase()
+  const rawName = (cls.name || '').replace('-', '/').trim().toUpperCase()
+
+  const is1A = rawCode === '1/A' || rawName.startsWith('1/A') || !classItem
+  if (!is1A) {
+    return []
+  }
+
   return [
     {
       ...REAL_STUDENT,
       classroomId: cls.id,
       classroomName: cls.name,
-      className: cls.code || '9/A',
-      mentorTeacher: cls.teacher_name || 'Ebru TEKNECİ',
+      className: '1/A',
+      mentorTeacher: 'Özlem ZOR (Sınıf Öğretmeni)',
       schoolName: cls.school_name || 'Oxonom Okulları',
       is_demo: false,
     },
@@ -360,7 +402,7 @@ export function generateClassroomBoards(classItem?: ClassroomItem): any[] {
 
 export const ALL_CLASSROOM_BOARDS: any[] = generateClassroomBoards(ALL_CLASSROOMS[0])
 
-// Generate classroom homework for 9-A
+// Generate classroom homework for 1/A
 export function generateClassroomAssignments(classItem?: ClassroomItem) {
   const cls = classItem || ALL_CLASSROOMS[0]
 
@@ -368,13 +410,13 @@ export function generateClassroomAssignments(classItem?: ClassroomItem) {
     {
       id: cls.id * 10 + 1,
       assignment_uuid: `asg_${cls.id}_1`,
-      title: `${cls.code} Türk Dili ve Edebiyatı: Makale Tahlili ve Deneme Yazımı`,
-      description: `Sevgili öğrencimiz Erçil UĞURLU, okunan edebi metin üzerine 250 kelimelik analitik bir deneme kaleme alınız.`,
+      title: `${cls.code} Türkçe: Ses ve Harf Bilgisi Okuma Çalışması`,
+      description: `Sevgili öğrencimiz Erçil UĞURLU, 'A-N-E-T-İ-L' ses grubu ile oluşturulan kelime ve cümleleri sesli okuyarak çalışma kağıdını tamamlayınız.`,
       grade_level: cls.grade_level,
-      grade_category: 'Anadolu Lisesi (9. Sınıf)',
-      subject: 'Türk Dili ve Edebiyatı',
+      grade_category: 'İlkokul (1. Sınıf)',
+      subject: 'Türkçe',
       tool_type: 'READING',
-      due_date: '2026-10-15T23:59:00',
+      due_date: '2026-10-18T23:59:00',
       max_score: 100,
       published: true,
       teacher_name: cls.teacher_name,
@@ -390,20 +432,20 @@ export function generateClassroomAssignments(classItem?: ClassroomItem) {
         status: 'GRADED',
         submission_date: '2026-10-08T14:30:00Z',
         score: 100,
-        teacher_feedback: 'Kapsamlı ve üstün bir edebi tahlil, tebrikler.',
+        teacher_feedback: 'Harika bir sesleme ve akıcı okuma çalışması, tebrikler.',
       },
     },
     {
       id: cls.id * 10 + 2,
       assignment_uuid: `asg_${cls.id}_2`,
-      title: `${cls.code} Matematik: Fonksiyon Grafikleri ve Uygulamaları`,
-      description: `Akıllı tahtayı kullanarak verilen 4 fonksiyonun grafiğini çiziniz ve tanım aralıklarını belirleyiniz.`,
+      title: `${cls.code} Matematik: 1-20 Arası Doğal Sayılar ve Nesne Sayma`,
+      description: `Akıllı tahtayı kullanarak verilen nesneleri sayınız, karşılık gelen rakamla eşleştiriniz ve basit toplama işlemlerini tamamlayınız.`,
       grade_level: cls.grade_level,
-      grade_category: 'Anadolu Lisesi (9. Sınıf)',
+      grade_category: 'İlkokul (1. Sınıf)',
       subject: 'Matematik',
       tool_type: 'WHITEBOARD',
       board_uuid: `board_${cls.id}_matematik`,
-      due_date: '2026-10-18T23:59:00',
+      due_date: '2026-10-20T23:59:00',
       max_score: 100,
       published: true,
       teacher_name: cls.teacher_name,
@@ -419,7 +461,7 @@ export function generateClassroomAssignments(classItem?: ClassroomItem) {
         status: 'GRADED',
         submission_date: '2026-10-09T10:15:00Z',
         score: 98,
-        teacher_feedback: 'Grafik çözümleri doğru, tebrikler.',
+        teacher_feedback: 'Sayı eşleştirmeleri ve sayma adımları eksiksiz, tebrikler.',
       },
     },
   ]

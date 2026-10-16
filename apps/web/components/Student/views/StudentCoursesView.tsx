@@ -246,7 +246,7 @@ export default function StudentCoursesView() {
           <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mt-1">
             {activeTab === 'courses'
               ? `2025-2026 Akademik yılında ${profile.className} şubesinde kayıtlı olduğun ${courses.length} ders ve ders öğretmenlerin.`
-              : `Okul müdürlüğü tarafından onaylanan 9-A şubesine ait haftalık 35 saatlik MEB ders çizelgesi.`}
+              : `Okul müdürlüğü tarafından onaylanan ${profile.className} şubesine ait haftalık ${weeklySchedule.length || 30} saatlik MEB ders çizelgesi.`}
           </p>
         </div>
 
@@ -275,7 +275,7 @@ export default function StudentCoursesView() {
               }`}
             >
               <Calendar size={14} />
-              <span>Haftalık Program ({weeklySchedule.length || 35}s)</span>
+              <span>Haftalık Program ({weeklySchedule.length || 30}s)</span>
             </button>
           </div>
 

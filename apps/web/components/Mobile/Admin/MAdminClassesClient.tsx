@@ -739,8 +739,9 @@ export const GENERATE_CLASSES_1_TO_8_A_D = (): AdminClassroom[] => {
       const teacher = teachers[teacherIdx]
       const floor = Math.floor((g - 1) / 2) + 1
       const roomNum = `${g}0${branches.indexOf(b) + 1}`
-      const studentCount = 22 + ((g * 3 + branches.indexOf(b)) % 7) // 22 to 28
-      const presentToday = studentCount - (idCounter % 3 === 0 ? 1 : 0)
+      const is1A = g === 1 && b === 'A'
+      const studentCount = is1A ? 1 : 0
+      const presentToday = studentCount
 
       classes.push({
         id: idCounter,
@@ -750,29 +751,29 @@ export const GENERATE_CLASSES_1_TO_8_A_D = (): AdminClassroom[] => {
         gradeNumber: g,
         orgId: 30,
         roomName: `${floor}. Kat · Derslik ${roomNum}`,
-        teacherName: teacher.name,
-        teacherBranch: teacher.branch,
-        teacherPhone: `+90 532 999 ${1000 + (idCounter % 900)}`,
-        teacherEmail: `${teacher.name.toLowerCase().replace(/[^a-z]/g, '')}@oxonom.com`,
+        teacherName: is1A ? 'Özlem ZOR' : teacher.name,
+        teacherBranch: is1A ? 'Sınıf Öğretmeni (1/A)' : teacher.branch,
+        teacherPhone: is1A ? '+90 532 999 1001' : `+90 532 999 ${1000 + (idCounter % 900)}`,
+        teacherEmail: is1A ? 'ozlemzor@oxonom.com' : `${teacher.name.toLowerCase().replace(/[^a-z]/g, '')}@oxonom.com`,
         studentCount,
         capacity: 30,
-        boysCount: Math.floor(studentCount / 2),
-        girlsCount: Math.ceil(studentCount / 2),
+        boysCount: is1A ? 1 : 0,
+        girlsCount: 0,
         presentToday,
-        leaveToday: studentCount - presentToday,
+        leaveToday: 0,
         absentToday: 0,
-        attendanceRate: Number(((presentToday / studentCount) * 100).toFixed(1)),
-        academicAverage: Number((85 + (idCounter % 12) + 0.5).toFixed(1)),
+        attendanceRate: 100,
+        academicAverage: is1A ? 98.8 : 0,
         courseAverages: [
-          { course: 'Türkçe', average: 89.0, highest: 100, lowest: 72 },
-          { course: 'Matematik', average: 86.5, highest: 100, lowest: 68 },
-          { course: g <= 4 ? 'Hayat Bilgisi' : 'Fen Bilimleri', average: 91.0, highest: 100, lowest: 75 },
+          { course: 'Türkçe', average: is1A ? 99.3 : 0, highest: 100, lowest: is1A ? 98 : 0 },
+          { course: 'Matematik', average: is1A ? 98.0 : 0, highest: 100, lowest: is1A ? 96 : 0 },
+          { course: g <= 4 ? 'Hayat Bilgisi' : 'Fen Bilimleri', average: is1A ? 99.0 : 0, highest: 100, lowest: is1A ? 98 : 0 },
         ],
-        boardStatus: 'online',
+        boardStatus: 'offline',
         boardName: `${g}/${b} Akıllı Tahta`,
         scheduleSummary: `Haftalık ${g <= 4 ? 30 : 35} Saat`,
-        classPresident: `Öğrenci Temsilcisi ${g}/${b}`,
-        parentRepresentative: `Veli Temsilcisi ${g}/${b}`,
+        classPresident: is1A ? 'Erçil UĞURLU' : `Öğrenci Temsilcisi ${g}/${b}`,
+        parentRepresentative: is1A ? 'Ebru UĞURLU' : `Veli Temsilcisi ${g}/${b}`,
       })
       idCounter++
     }
@@ -782,6 +783,77 @@ export const GENERATE_CLASSES_1_TO_8_A_D = (): AdminClassroom[] => {
 }
 
 export const DEFAULT_OXONOM_CLASSES: AdminClassroom[] = GENERATE_CLASSES_1_TO_8_A_D()
+
+export function reconcileClassesWithRealData(classes: AdminClassroom[], orgId: number = 30): AdminClassroom[] {
+  if (typeof window === 'undefined') return classes
+  try {
+    const rawStudents =
+      localStorage.getItem(`oxonom_admin_students_list_${orgId}`) ||
+      localStorage.getItem('oxonom_admin_students_list_30') ||
+      localStorage.getItem('oxonom_m_students_v3')
+    
+    let students: any[] = []
+    if (rawStudents) {
+      try {
+        const parsed = JSON.parse(rawStudents)
+        if (Array.isArray(parsed)) students = parsed
+      } catch (_) {}
+    }
+    if (students.length === 0) {
+      students = [{ id: 3001, name: 'Erçil UĞURLU', className: '1/A', studentNo: '101', gpa: 98.8, gender: 'Erkek' }]
+    }
+
+    const rawActiveBoards = localStorage.getItem('oxonom_principal_active_boards')
+    let activeBoards: any[] = []
+    if (rawActiveBoards) {
+      try {
+        const parsed = JSON.parse(rawActiveBoards)
+        if (Array.isArray(parsed)) activeBoards = parsed
+      } catch (_) {}
+    }
+
+    return classes.map((cls) => {
+      const clsCodeNorm = (cls.code || '').replace('-', '/').trim().toUpperCase()
+
+      const classStudents = students.filter((s: any) => {
+        const sClassNorm = (s.className || '').replace('-', '/').trim().toUpperCase()
+        return sClassNorm === clsCodeNorm || sClassNorm.startsWith(clsCodeNorm)
+      })
+
+      const studentCount = classStudents.length
+      const boysCount = classStudents.filter((s: any) => s.gender === 'Erkek').length
+      const girlsCount = classStudents.filter((s: any) => s.gender === 'Kız').length
+      const presentToday = studentCount
+
+      let academicAverage = 0
+      if (studentCount > 0) {
+        const sumGpa = classStudents.reduce((acc: number, s: any) => acc + (Number(s.gpa) || 98.8), 0)
+        academicAverage = Number((sumGpa / studentCount).toFixed(1))
+      }
+
+      const isBoardActive = activeBoards.some((b: any) => {
+        const bClassNorm = (b.className || '').replace('-', '/').trim().toUpperCase()
+        const bCodeNorm = (b.code || '').replace('-', '/').trim().toUpperCase()
+        return bClassNorm.includes(clsCodeNorm) || bCodeNorm.includes(clsCodeNorm)
+      })
+
+      return {
+        ...cls,
+        studentCount,
+        boysCount,
+        girlsCount,
+        presentToday,
+        leaveToday: 0,
+        absentToday: 0,
+        attendanceRate: 100,
+        academicAverage,
+        boardStatus: isBoardActive ? ('online' as const) : ('offline' as const),
+      }
+    })
+  } catch (_) {
+    return classes
+  }
+}
 
 type ClassDetailTabKey =
   | 'genel'
@@ -944,11 +1016,13 @@ export default function MAdminClassesClient({
         const saved = localStorage.getItem(`oxonom_admin_classes_${initialOrgId}`)
         if (saved) {
           const parsed = JSON.parse(saved)
-          if (Array.isArray(parsed) && parsed.length >= 10) return parsed
+          if (Array.isArray(parsed) && parsed.length >= 10) {
+            return reconcileClassesWithRealData(parsed.map(normalizeClassroom), initialOrgId)
+          }
         }
       } catch (_) {}
     }
-    return DEFAULT_OXONOM_CLASSES
+    return reconcileClassesWithRealData(DEFAULT_OXONOM_CLASSES.map(normalizeClassroom), initialOrgId)
   })
 
   // Synchronize when school org changes or load from localStorage
@@ -962,18 +1036,23 @@ export default function MAdminClassesClient({
         if (saved) {
           const parsed = JSON.parse(saved)
           if (Array.isArray(parsed) && parsed.length >= 10) {
-            const normalized = parsed.map(normalizeClassroom)
+            const normalized = reconcileClassesWithRealData(parsed.map(normalizeClassroom), selectedOrgId)
             setClassesList(normalized)
             setSelectedGradeFilter('ALL')
             return
           }
         }
         // Initialize with 1 to 8 (A to D) classes
-        localStorage.setItem(`oxonom_admin_classes_${selectedOrgId}`, JSON.stringify(defaultClasses))
-        localStorage.setItem('oxonom_admin_classes_30', JSON.stringify(defaultClasses))
+        const reconciled = reconcileClassesWithRealData(defaultClasses, selectedOrgId)
+        localStorage.setItem(`oxonom_admin_classes_${selectedOrgId}`, JSON.stringify(reconciled))
+        localStorage.setItem('oxonom_admin_classes_30', JSON.stringify(reconciled))
+        setClassesList(reconciled)
+        setSelectedGradeFilter('ALL')
+        return
       } catch (_) {}
     }
-    setClassesList(defaultClasses)
+    const reconciled = reconcileClassesWithRealData(defaultClasses, selectedOrgId)
+    setClassesList(reconciled)
     setSelectedGradeFilter('ALL')
   }, [selectedOrgId])
 
@@ -1616,9 +1695,10 @@ export default function MAdminClassesClient({
   }, [classesList])
 
   const overallAverage = useMemo(() => {
-    if (classesList.length === 0) return 0
-    const sum = classesList.reduce((acc, c) => acc + c.academicAverage, 0)
-    return (sum / classesList.length).toFixed(1)
+    const withStudents = classesList.filter((c) => c.studentCount > 0)
+    if (withStudents.length === 0) return '98.8'
+    const sum = withStudents.reduce((acc, c) => acc + c.academicAverage, 0)
+    return (sum / withStudents.length).toFixed(1)
   }, [classesList])
 
   const activeOrg =

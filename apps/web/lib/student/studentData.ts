@@ -74,14 +74,14 @@ export const DEFAULT_STUDENT_PROFILE: StudentProfile = {
   studentNo: '101',
   tcNo: '10000000146',
   gender: 'Erkek',
-  birthDate: '15.06.2010 (16 Yaşında)',
+  birthDate: '15.06.2018 (7 Yaşında)',
   bloodType: 'A Rh+',
   enrollmentDate: '01.09.2024',
-  className: '9-A',
-  gradeLevel: '9. Sınıf',
-  mentorTeacher: 'Ebru TEKNECİ (Türk Dili ve Edebiyatı)',
+  className: '1/A',
+  gradeLevel: '1. Sınıf',
+  mentorTeacher: 'Özlem ZOR (Sınıf Öğretmeni)',
   schoolName: 'Oxonom Okulları',
-  gpa: 0,
+  gpa: 98.8,
   classRank: 1,
   attendanceRate: 100,
   absentDays: 0,
@@ -114,122 +114,190 @@ export interface StudentCourse {
   materials: Array<{ id: string; title: string; type: 'pdf' | 'doc' | 'video'; size: string }>
 }
 
-export const STUDENT_COURSES: StudentCourse[] = [
+export const GRADE_1_COURSES: StudentCourse[] = [
   {
-    id: 'turk-dili-ve-edebiyati',
-    code: 'EDB-101',
-    name: 'Türk Dili ve Edebiyatı',
-    teacherName: 'Ebru TEKNECİ',
-    teacherBranch: 'Türk Dili ve Edebiyatı',
-    weeklyHours: 5,
-    classroom: '9-A',
-    roomType: 'Derslik 101',
-    color: 'indigo',
-    gradient: 'from-indigo-600 to-blue-700',
-    description: 'Şiir tahlili, divan ve halk edebiyatı gelenekleri, edebi sanatlar ve anlatım bozuklukları.',
+    id: 'turkce',
+    code: 'TUR-101',
+    name: 'Türkçe',
+    teacherName: 'Özlem ZOR',
+    teacherBranch: 'Sınıf Öğretmeni (1/A)',
+    weeklyHours: 10,
+    classroom: '1/A',
+    roomType: '1. Kat · Derslik 101',
+    color: 'blue',
+    gradient: 'from-blue-600 to-indigo-700',
+    description: 'İlk okuma-yazma hazırlığı, ses grupları ve harf bilgisi (A-N-E-T-İ-L), hece-kelime-cümle kurma ve anlama çalışmaları.',
     topics: [
-      { id: 't1', title: 'Edebiyatın Güzel Sanatlarla İlişkisi', completed: true, week: 1 },
-      { id: 't2', title: 'Metinlerin Sınıflandırılması ve Anlatım Türleri', completed: true, week: 2 },
-      { id: 't3', title: 'Şiir Bilgisi: Nazım Birimi, Ölçü ve Kafiye Düzenleri', completed: true, week: 3 },
-      { id: 't4', title: 'Edebi Sanatlar (Teşbih, İstiare, Mecaz-ı Mürsel)', completed: false, week: 4 },
-      { id: 't5', title: 'Tanzimat Dönemi Türk Edebiyatı ve Gazete Kültürü', completed: false, week: 5 },
+      { id: 't1', title: 'İlk Okuma Yazmaya Hazırlık ve Çizgi Çalışmaları', completed: true, week: 1 },
+      { id: 't2', title: '1. Ses Grubu: A - N - E - T Harfleri ve Hece Birleştirme', completed: true, week: 2 },
+      { id: 't3', title: '2. Ses Grubu: İ - L - O - K Harfleri ve Kelime Oluşturma', completed: true, week: 3 },
+      { id: 't4', title: '3. Ses Grubu: U - R - M - Y Harfleri ve Okuma Metinleri', completed: false, week: 4 },
+      { id: 't5', title: 'Cümle Oluşturma, Büyük Harf ve Nokta Kullanımı', completed: false, week: 5 },
+      { id: 't6', title: 'Görsel Okuma ve Serbest Hikaye Dinleme/Anlatma', completed: false, week: 6 },
     ],
     materials: [
-      { id: 'm1', title: 'Şiir Bilgisi ve Edebi Sanatlar Özeti (PDF)', type: 'pdf', size: '2.4 MB' },
-      { id: 'm2', title: '9-A Şiir Tahlil Çalışma Kağıdı', type: 'doc', size: '1.1 MB' },
-      { id: 'm3', title: 'Divan Edebiyatı Nazım Şekilleri Video Dersi', type: 'video', size: '42 MB' },
+      { id: 'm1', title: '1. Sınıf Ses ve Çizgi Çalışma Föyü (PDF)', type: 'pdf', size: '2.8 MB' },
+      { id: 'm2', title: 'Hece Çarkı ve Harf Kartları Etkinlik Kağıdı', type: 'doc', size: '1.4 MB' },
+      { id: 'm3', title: 'Ses Tanıma ve Telaffuz Eğitici Videosu', type: 'video', size: '36 MB' },
     ],
   },
   {
     id: 'matematik',
     code: 'MAT-101',
     name: 'Matematik',
-    teacherName: 'Ebru TEKNECİ',
-    teacherBranch: 'Matematik',
-    weeklyHours: 6,
-    classroom: '9-A',
-    roomType: 'Derslik 101',
-    color: 'emerald',
-    gradient: 'from-emerald-600 to-teal-700',
-    description: 'Kümeler, denklem ve eşitsizlik sistemleri, fonksiyon kavramı ve temel geometri.',
+    teacherName: 'Özlem ZOR',
+    teacherBranch: 'Sınıf Öğretmeni (1/A)',
+    weeklyHours: 5,
+    classroom: '1/A',
+    roomType: '1. Kat · Derslik 101',
+    color: 'indigo',
+    gradient: 'from-indigo-600 to-purple-700',
+    description: 'Doğal sayılar (1-20), nesne sayma ve eşleştirme, ritmik sayma, basit toplama ve çıkarma, uzamsal ilişkiler.',
     topics: [
-      { id: 't1', title: 'Mantık ve Önermeler', completed: true, week: 1 },
-      { id: 't2', title: 'Kümelerde İşlemler ve Kartezyen Çarpım', completed: true, week: 2 },
-      { id: 't3', title: 'Gerçek Sayılar ve Aralık Kavramı', completed: true, week: 3 },
-      { id: 't4', title: 'Birinci Dereceden Denklem ve Eşitsizlikler', completed: true, week: 4 },
-      { id: 't5', title: 'Üslü ve Köklü İfadeler ile Modelleme', completed: false, week: 5 },
+      { id: 't1', title: 'Uzamsal İlişkiler: Önünde-Arkasında, Sağında-Solunda', completed: true, week: 1 },
+      { id: 't2', title: '1-10 Arası Rakamları Tanıma ve Yazma', completed: true, week: 2 },
+      { id: 't3', title: 'Nesne Sayma, Sayı Doğrusu ve Karşılaştırma', completed: true, week: 3 },
+      { id: 't4', title: 'İleriye ve Geriye Doğru Birer ve İkişer Ritmik Sayma', completed: false, week: 4 },
+      { id: 't5', title: 'Toplama İşlemine Giriş (Nesnelerle Ekleme)', completed: false, week: 5 },
+      { id: 't6', title: 'Temel Geometrik Şekiller: Daire, Kare, Üçgen', completed: false, week: 6 },
     ],
     materials: [
-      { id: 'm1', title: 'Denklem ve Eşitsizlikler Çalışma Föyü (PDF)', type: 'pdf', size: '3.8 MB' },
-      { id: 'm2', title: 'Kümeler Soru Bankası Çözümleri', type: 'pdf', size: '4.5 MB' },
+      { id: 'm1', title: 'Rakam Yazma ve Boyama Çalışma Sayfaları (PDF)', type: 'pdf', size: '3.1 MB' },
+      { id: 'm2', title: '1-20 Sayı Eşleştirme Kartları', type: 'doc', size: '920 KB' },
     ],
   },
   {
-    id: 'fizik',
-    code: 'FIZ-101',
-    name: 'Fizik',
-    teacherName: 'Fen Bilgisi Zümresi',
-    teacherBranch: 'Fizik',
-    weeklyHours: 2,
-    classroom: '9-A',
-    roomType: 'Fen Laboratuvarı',
-    color: 'cyan',
-    gradient: 'from-cyan-600 to-blue-700',
-    description: 'Fizik bilimine giriş, madde ve özellikleri, özkütle, hareket ve kuvvet kanunları.',
+    id: 'hayat-bilgisi',
+    code: 'HAY-101',
+    name: 'Hayat Bilgisi',
+    teacherName: 'Özlem ZOR',
+    teacherBranch: 'Sınıf Öğretmeni (1/A)',
+    weeklyHours: 4,
+    classroom: '1/A',
+    roomType: '1. Kat · Derslik 101',
+    color: 'teal',
+    gradient: 'from-teal-600 to-emerald-700',
+    description: 'Okulumuzda Hayat, Evimizde Hayat, Sağlıklı Hayat, Güvenli Hayat, Ülkemizde Hayat ve Doğada Hayat üniteleri.',
     topics: [
-      { id: 't1', title: 'Fiziksel Niceliklerin Sınıflandırılması', completed: true, week: 1 },
-      { id: 't2', title: 'Madde ve Özkütle Deneyleri', completed: true, week: 2 },
-      { id: 't3', title: 'Düzgün Doğrusal Hareket ve Grafikler', completed: false, week: 3 },
+      { id: 't1', title: 'Okulumuzu Tanıyalım ve Sınıf Kuralları', completed: true, week: 1 },
+      { id: 't2', title: 'Arkadaşlarımızla İletişim ve Nezaket Kuralları', completed: true, week: 2 },
+      { id: 't3', title: 'Okul Yolu ve Trafikte Güvenlik Önlemleri', completed: false, week: 3 },
+      { id: 't4', title: 'Kişisel Bakım, El Yıkama ve Sağlıklı Beslenme', completed: false, week: 4 },
+      { id: 't5', title: 'Ailemiz, Evimizdeki Görevlerimiz ve Dayanışma', completed: false, week: 5 },
     ],
     materials: [
-      { id: 'm1', title: 'Laboratuvar Güvenlik Kuralları ve Deney Raporu', type: 'pdf', size: '1.6 MB' },
+      { id: 'm1', title: 'Okulumuzda Hayat Etkinlik Dosyası (PDF)', type: 'pdf', size: '4.2 MB' },
     ],
   },
   {
-    id: 'bilisim-ve-kodlama',
-    code: 'BIL-101',
-    name: 'Bilişim & Kodlama',
-    teacherName: 'Ebru TEKNECİ',
-    teacherBranch: 'Bilişim Teknolojileri',
-    weeklyHours: 2,
-    classroom: '9-A',
-    roomType: 'Bilişim Atölyesi',
-    color: 'violet',
-    gradient: 'from-violet-600 to-purple-800',
-    description: 'Algoritma tasarımı, akış şemaları, Python ile temel programlama ve akıllı tahta uygulamaları.',
-    topics: [
-      { id: 't1', title: 'Algoritma Mantığı ve Problem Çözme Adımları', completed: true, week: 1 },
-      { id: 't2', title: 'Python Değişkenler, Veri Tipleri ve print()', completed: true, week: 2 },
-      { id: 't3', title: 'Koşullu İfadeler (if-elif-else)', completed: true, week: 3 },
-      { id: 't4', title: 'Döngüler (for & while) ve Listeler', completed: false, week: 4 },
-    ],
-    materials: [
-      { id: 'm1', title: 'Python Temelleri Başlangıç Kılavuzu', type: 'pdf', size: '5.2 MB' },
-      { id: 'm2', title: 'Akıllı Tahta Kodlama Örnekleri', type: 'doc', size: '890 KB' },
-    ],
-  },
-  {
-    id: 'yabanci-dil',
+    id: 'yabanci-dil-ingilizce',
     code: 'ING-101',
     name: 'Yabancı Dil (İngilizce)',
-    teacherName: 'Yabancı Dil Zümresi',
+    teacherName: 'Canan YILDIRIM',
     teacherBranch: 'İngilizce',
-    weeklyHours: 4,
-    classroom: '9-A',
-    roomType: 'Derslik 101',
-    color: 'amber',
-    gradient: 'from-amber-500 to-orange-600',
-    description: 'Academic reading, speaking club debates, grammar in context and writing essays.',
+    weeklyHours: 2,
+    classroom: '1/A',
+    roomType: '1. Kat · Derslik 101',
+    color: 'purple',
+    gradient: 'from-purple-600 to-violet-700',
+    description: 'Greetings, Colors, Numbers 1-10, Classroom Objects, My Family ve Animals.',
     topics: [
-      { id: 't1', title: 'Studying Abroad & Daily Routines', completed: true, week: 1 },
-      { id: 't2', title: 'Past Habits & Narrative Tenses', completed: true, week: 2 },
-      { id: 't3', title: 'Technology and Environment Debates', completed: false, week: 3 },
+      { id: 't1', title: 'Hello! Words of Greeting (Hello, Goodbye)', completed: true, week: 1 },
+      { id: 't2', title: 'Colors: Red, Blue, Yellow, Green', completed: true, week: 2 },
+      { id: 't3', title: 'Numbers 1 to 10 Songs & Chants', completed: false, week: 3 },
+      { id: 't4', title: 'Classroom Objects: Pencil, Book, Bag', completed: false, week: 4 },
     ],
     materials: [
-      { id: 'm1', title: 'Academic Vocabulary List (B2-C1)', type: 'pdf', size: '2.1 MB' },
+      { id: 'm1', title: 'English Fun Coloring & Flashcards (PDF)', type: 'pdf', size: '2.5 MB' },
+    ],
+  },
+  {
+    id: 'beden-egitimi-ve-oyun',
+    code: 'BED-101',
+    name: 'Beden Eğitimi ve Oyun',
+    teacherName: 'Selim AKSOY',
+    teacherBranch: 'Beden Eğitimi',
+    weeklyHours: 5,
+    classroom: '1/A',
+    roomType: 'Kapalı Spor Salonu',
+    color: 'orange',
+    gradient: 'from-orange-500 to-amber-600',
+    description: 'Temel hareket becerileri, nesne kontrolü, geleneksel çocuk oyunları, koordinasyon ve iş birliği.',
+    topics: [
+      { id: 't1', title: 'Yer Değiştirme Hareketleri: Yürüme, Koşma, Sıçrama', completed: true, week: 1 },
+      { id: 't2', title: 'Denge Hareketleri ve Koordinasyon Parkuru', completed: true, week: 2 },
+      { id: 't3', title: 'Geleneksel Çocuk Oyunları: Yağ Satarım Bal Satarım', completed: false, week: 3 },
+      { id: 't4', title: 'Topla İlişkili Beceriler: Atma, Tutma, Yuvarlama', completed: false, week: 4 },
+    ],
+    materials: [
+      { id: 'm1', title: 'Eğitsel Oyun Kuralları Kılavuzu', type: 'doc', size: '650 KB' },
+    ],
+  },
+  {
+    id: 'gorsel-sanatlar',
+    code: 'GOR-101',
+    name: 'Görsel Sanatlar',
+    teacherName: 'Gülşah ÖZTÜRK',
+    teacherBranch: 'Görsel Sanatlar',
+    weeklyHours: 1,
+    classroom: '1/A',
+    roomType: 'Görsel Sanatlar Atölyesi',
+    color: 'pink',
+    gradient: 'from-pink-500 to-rose-600',
+    description: 'Çizgi, şekil ve renkleri tanıma, pastel boya ve sulu boya teknikleri, kolaj ve yoğurma çalışmaları.',
+    topics: [
+      { id: 't1', title: 'Nokta ve Çizgiyle Resim Yapma', completed: true, week: 1 },
+      { id: 't2', title: 'Ana ve Ara Renklerle Boyama', completed: false, week: 2 },
+      { id: 't3', title: 'Oyun Hamuru ve Doğal Malzemelerle Modelleme', completed: false, week: 3 },
+    ],
+    materials: [
+      { id: 'm1', title: 'Sanat Atölyesi Örnek Çizim Föyleri', type: 'pdf', size: '3.6 MB' },
+    ],
+  },
+  {
+    id: 'muzik',
+    code: 'MUZ-101',
+    name: 'Müzik',
+    teacherName: 'Müzik Zümresi',
+    teacherBranch: 'Müzik',
+    weeklyHours: 1,
+    classroom: '1/A',
+    roomType: 'Müzik Odası',
+    color: 'pink',
+    gradient: 'from-rose-500 to-pink-600',
+    description: 'Doğadaki sesler, ince ve kalın sesler, ritim tutma, çocuk şarkıları ve marşlar.',
+    topics: [
+      { id: 't1', title: 'Çevremizdeki Sesleri Dinleme ve Ayırt Etme', completed: true, week: 1 },
+      { id: 't2', title: 'El Çırparak Basit Ritim Kalıpları Uygulama', completed: true, week: 2 },
+      { id: 't3', title: 'İstiklal Marşı ve Okul Şarkıları Söyleme', completed: false, week: 3 },
+    ],
+    materials: [
+      { id: 'm1', title: 'Çocuk Şarkıları Ritim Notaları Kitapçığı', type: 'pdf', size: '1.8 MB' },
+    ],
+  },
+  {
+    id: 'serbest-etkinlikler',
+    code: 'SER-101',
+    name: 'Serbest Etkinlikler & Kodlama',
+    teacherName: 'Özlem ZOR',
+    teacherBranch: 'Sınıf Öğretmeni (1/A)',
+    weeklyHours: 2,
+    classroom: '1/A',
+    roomType: '1. Kat · Derslik 101',
+    color: 'cyan',
+    gradient: 'from-cyan-600 to-blue-700',
+    description: 'Akıl ve zeka oyunları, blok tabanlı görsel kodlama mantığı, robotik hazırlık ve serbest drama.',
+    topics: [
+      { id: 't1', title: 'Akıl Oyunları: Tangram ve Sudoku Tanıtımı', completed: true, week: 1 },
+      { id: 't2', title: 'Yön Bulma ve Adım Adım Kodlama Mantığı', completed: true, week: 2 },
+    ],
+    materials: [
+      { id: 'm1', title: 'Algoritmik Düşünme & Tangram Görev Kartları', type: 'pdf', size: '2.1 MB' },
     ],
   },
 ]
+
+export const STUDENT_COURSES: StudentCourse[] = GRADE_1_COURSES
 
 export interface StudentAssessment {
   id: string
@@ -256,122 +324,65 @@ export interface StudentAssessment {
 export const STUDENT_ASSESSMENTS: StudentAssessment[] = [
   {
     id: 'as-1',
-    title: '1. Dönem 1. Yazılı Sınavı',
-    courseName: 'Türk Dili ve Edebiyatı',
+    title: '1. Değerlendirme (İlk Okuma & Ses Bilgisi)',
+    courseName: 'Türkçe',
     type: 'exam',
-    date: '12 Ekim 2026',
+    date: '16 Ekim 2026',
     time: '09:25',
     durationMinutes: 40,
-    location: 'Derslik 101 (9-A)',
+    location: '1. Kat · Derslik 101 (1/A)',
     maxScore: 100,
-    score: undefined,
-    isGraded: false,
+    score: 100,
+    isGraded: true,
     isPublished: true,
-    status: 'upcoming',
+    status: 'completed',
+    teacherFeedback: 'Özlem ZOR: Harika ses tanıma ve heceleme becerisi. Tebrikler!',
   },
   {
     id: 'as-2',
-    title: '1. Dönem 2. Yazılı Sınavı',
-    courseName: 'Türk Dili ve Edebiyatı',
+    title: '1. Değerlendirme (1-20 Sayı Sayma & Geometri)',
+    courseName: 'Matematik',
     type: 'exam',
-    date: '28 Kasım 2026',
+    date: '20 Ekim 2026',
     time: '10:20',
     durationMinutes: 40,
-    location: 'Derslik 101 (9-A)',
+    location: '1. Kat · Derslik 101 (1/A)',
     maxScore: 100,
-    score: undefined,
-    isGraded: false,
+    score: 98,
+    isGraded: true,
     isPublished: true,
-    status: 'upcoming',
+    status: 'completed',
+    teacherFeedback: 'Özlem ZOR: Ritmik sayma ve şekil eşleştirmede üstün başarı.',
   },
   {
     id: 'as-3',
-    title: '1. Dönem 1. Yazılı Sınavı',
-    courseName: 'Matematik',
-    type: 'exam',
-    date: '18 Ekim 2026',
-    time: '08:30',
+    title: 'Performans Çalışması (Okulumuzda Hayat)',
+    courseName: 'Hayat Bilgisi',
+    type: 'performance',
+    date: '24 Ekim 2026',
+    time: '11:15',
     durationMinutes: 40,
-    location: 'Derslik 101 (9-A)',
+    location: '1. Kat · Derslik 101 (1/A)',
     maxScore: 100,
-    score: undefined,
-    isGraded: false,
+    score: 98,
+    isGraded: true,
     isPublished: true,
-    status: 'upcoming',
+    status: 'completed',
+    teacherFeedback: 'Özlem ZOR: Sınıf kurallarına uyum ve arkadaşlık ilişkilerinde örnek davranış.',
   },
   {
     id: 'as-4',
-    title: '1. Dönem 2. Yazılı Sınavı',
-    courseName: 'Matematik',
-    type: 'exam',
-    date: '02 Aralık 2026',
-    time: '09:25',
-    durationMinutes: 40,
-    location: 'Derslik 101 (9-A)',
-    maxScore: 100,
-    score: undefined,
-    isGraded: false,
-    isPublished: true,
-    status: 'upcoming',
-  },
-  {
-    id: 'as-5',
-    title: 'Python Kodlama ve Algoritma Uygulama Sınavı',
-    courseName: 'Bilişim & Kodlama',
-    type: 'exam',
-    date: '20 Kasım 2026',
-    time: '13:40',
-    durationMinutes: 40,
-    location: 'Bilişim Atölyesi',
-    maxScore: 100,
-    score: undefined,
-    isGraded: false,
-    isPublished: true,
-    status: 'upcoming',
-  },
-  {
-    id: 'as-6',
-    title: 'İngilizce Reading & Essay Değerlendirmesi',
+    title: 'Colors & Greetings Quiz',
     courseName: 'Yabancı Dil (İngilizce)',
-    type: 'exam',
-    date: '15 Kasım 2026',
-    time: '11:15',
-    durationMinutes: 40,
-    location: 'Derslik 101 (9-A)',
+    type: 'quiz',
+    date: '28 Ekim 2026',
+    time: '09:25',
+    durationMinutes: 30,
+    location: '1. Kat · Derslik 101 (1/A)',
     maxScore: 100,
     score: undefined,
     isGraded: false,
     isPublished: true,
-    status: 'upcoming',
-  },
-  {
-    id: 'as-7',
-    title: 'Edebiyat Şiir Tahlili Mini Quiz',
-    courseName: 'Türk Dili ve Edebiyatı',
-    type: 'quiz',
-    date: '24 Ekim 2026',
-    time: '10:20',
-    durationMinutes: 20,
-    location: 'Derslik 101 (9-A)',
-    maxScore: 100,
-    score: undefined,
-    isGraded: false,
-    isPublished: false,
-    status: 'upcoming',
-  },
-  {
-    id: 'as-8',
-    title: 'Denklem Sistemleri Hızlı Tarama Quizi',
-    courseName: 'Matematik',
-    type: 'quiz',
-    date: '27 Ekim 2026',
-    time: '11:15',
-    durationMinutes: 25,
-    location: 'Derslik 101 (9-A)',
-    maxScore: 100,
-    score: undefined,
-    isGraded: false,
-    isPublished: false,
     status: 'upcoming',
   },
 ]
@@ -529,10 +540,10 @@ export interface PlannerTask {
 }
 
 export const INITIAL_PLANNER_TASKS: PlannerTask[] = [
-  { id: 'pt-1', title: 'Edebiyat şiir tahlili 3. ünitenin tekrarı', course: 'Türk Dili ve Edebiyatı', dueDate: 'Bugün', completed: false, priority: 'high' },
-  { id: 'pt-2', title: 'Matematik eşitsizlikler 20 soru çözümü', course: 'Matematik', dueDate: 'Yarın', completed: false, priority: 'medium' },
-  { id: 'pt-3', title: 'Python fonksiyonlar modülü örnek kod denemesi', course: 'Bilişim & Kodlama', dueDate: '14 Ekim', completed: true, priority: 'low' },
-  { id: 'pt-4', title: 'İngilizce essay taslağının düzenlenmesi', course: 'Yabancı Dil', dueDate: '16 Ekim', completed: false, priority: 'medium' },
+  { id: 'pt-1', title: 'Türkçe ses kartları ve hece okuma çalışması', course: 'Türkçe', dueDate: 'Bugün', completed: false, priority: 'high' },
+  { id: 'pt-2', title: 'Matematik 1-20 arası ritmik sayma etkinliği', course: 'Matematik', dueDate: 'Yarın', completed: false, priority: 'medium' },
+  { id: 'pt-3', title: 'Hayat Bilgisi okul kuralları resmi boyama', course: 'Hayat Bilgisi', dueDate: '16 Ekim', completed: true, priority: 'low' },
+  { id: 'pt-4', title: 'İngilizce Greetings şarkısı telaffuz tekrarı', course: 'Yabancı Dil (İngilizce)', dueDate: '18 Ekim', completed: false, priority: 'medium' },
 ]
 
 export function getStoredPlannerTasks(): PlannerTask[] {
@@ -752,7 +763,7 @@ export function getSynchronizedStudentProfile(): StudentProfile {
       const summary = getStudentAttendanceSummary(
         studentRecord.id || 's-1',
         studentRecord.studentNo || '101',
-        studentRecord.className || '9/A'
+        studentRecord.className || '1/A'
       )
       attendanceRate = summary.attendanceRate
       absentDays = summary.absentSessions
@@ -771,12 +782,12 @@ export function getSynchronizedStudentProfile(): StudentProfile {
       studentNo: studentRecord.studentNo || '101',
       tcNo: studentRecord.tcNo || '10000000146',
       gender: studentRecord.gender || 'Erkek',
-      birthDate: studentRecord.birthDate || '15.06.2010 (16 Yaşında)',
+      birthDate: studentRecord.birthDate || '15.06.2018 (7 Yaşında)',
       bloodType: studentRecord.bloodType || 'A Rh+',
       enrollmentDate: studentRecord.enrollmentDate || '01.09.2024',
-      className: studentRecord.className ? studentRecord.className.replace(' Şubesi', '') : '9-A',
-      gradeLevel: '9. Sınıf',
-      mentorTeacher,
+      className: studentRecord.className ? studentRecord.className.replace(' Şubesi', '') : '1/A',
+      gradeLevel: (studentRecord as any).gradeLevel || '1. Sınıf',
+      mentorTeacher: mentorTeacher || 'Özlem ZOR (Sınıf Öğretmeni)',
       schoolName: studentRecord.schoolName || 'Oxonom Okulları',
       gpa: calculatedGpa,
       classRank,
@@ -814,7 +825,7 @@ export function getSynchronizedStudentAssessments(): StudentAssessment[] {
 
   try {
     const calendarExams = getStoredSchoolExams()
-    const currentClass = profile.className || '9-A'
+    const currentClass = profile.className || '1/A'
 
     calendarExams.forEach((ce: any) => {
       const matchClass =
@@ -907,7 +918,8 @@ export function getSynchronizedStudentAssessments(): StudentAssessment[] {
 }
 
 /**
- * Returns courses matching the teacher and schedule records for 9-A.
+ * Returns courses matching the teacher and schedule records for the student.
+ * Dynamically merges materials added by teacher from oxonom_course_materials_${course.id}.
  */
 export function getSynchronizedStudentCourses(): StudentCourse[] {
   const profile = getSynchronizedStudentProfile()
@@ -916,10 +928,26 @@ export function getSynchronizedStudentCourses(): StudentCourse[] {
     const gradeMatch = profile.grades?.find((g) => g.courseName === course.name)
     const teacherName =
       gradeMatch?.teacherName ||
-      (course.name.includes('Edebiyat') ? profile.mentorTeacher.split('(')[0].trim() : course.teacherName)
+      (course.name === 'Türkçe' || course.name === 'Matematik' || course.name === 'Hayat Bilgisi'
+        ? profile.mentorTeacher.split('(')[0].trim()
+        : course.teacherName)
+
+    let courseMaterials = [...course.materials]
+    if (typeof window !== 'undefined') {
+      try {
+        const rawCustomMat = localStorage.getItem(`oxonom_course_materials_${course.id}`)
+        if (rawCustomMat) {
+          const parsed = JSON.parse(rawCustomMat)
+          if (Array.isArray(parsed)) {
+            courseMaterials = [...courseMaterials, ...parsed]
+          }
+        }
+      } catch (_) {}
+    }
 
     return {
       ...course,
+      materials: courseMaterials,
       classroom: `${profile.className} (${course.roomType})`,
       teacherName,
     }
@@ -938,69 +966,71 @@ export function getSynchronizedGuidanceNotes(): GuidanceNoteItem[] {
     {
       id: 'gn-1',
       date: '28.09.2026',
-      author: 'Ebru TEKNECİ (Türk Dili ve Edebiyatı · Rehberlik)',
+      author: 'Özlem ZOR (1/A Sınıf Öğretmeni)',
       content:
-        'Öğrencinin edebiyat tahlilleri, kompozisyon yeteneği ve ders içi motivasyonu en üst düzeydedir.',
+        'Öğrencinin ilk okuma yazma hazırlık sürecindeki motivasyonu, sesleri fark etme ve arkadaşlarıyla uyumu mükemmel düzeydedir.',
     },
     {
       id: 'gn-2',
       date: '15.09.2026',
       author: 'Dr. Uğur UĞURLU (Okul Müdürü)',
       content:
-        'Velisi Ebru Hanım ile yapılan dönem başı akademik ve eğitim planlama görüşmesi verimli tamamlandı.',
+        'Velisi Ebru Hanım ile 1. sınıf oryantasyon ve okula uyum süreci görüşmesi başarıyla gerçekleştirildi.',
     },
   ]
 }
 
-// Canonical 30-hour (6 periods/day x 5 days) schedule for 9-A matching the Principal's curriculum
-export const CANONICAL_9A_SCHEDULE_30: ScheduleEntry[] = [
+// Canonical 30-hour (6 periods/day x 5 days) schedule for 1/A matching the Principal's 1. Sınıf curriculum
+export const CANONICAL_1A_SCHEDULE_30: ScheduleEntry[] = [
   // Pazartesi (6)
-  { id: 'sc-9a-mon-1', orgId: 30, day: 'mon', period: 1, classCode: '9-A', subject: 'Türk Dili ve Edebiyatı', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'blue', isSmartBoardActive: true },
-  { id: 'sc-9a-mon-2', orgId: 30, day: 'mon', period: 2, classCode: '9-A', subject: 'Türk Dili ve Edebiyatı', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'blue', isSmartBoardActive: true },
-  { id: 'sc-9a-mon-3', orgId: 30, day: 'mon', period: 3, classCode: '9-A', subject: 'Matematik', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'indigo', isSmartBoardActive: true },
-  { id: 'sc-9a-mon-4', orgId: 30, day: 'mon', period: 4, classCode: '9-A', subject: 'Matematik', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'indigo', isSmartBoardActive: true },
-  { id: 'sc-9a-mon-5', orgId: 30, day: 'mon', period: 5, classCode: '9-A', subject: 'Fizik & Fen Bilimleri', teacherName: 'Ebru TEKNECİ', roomName: 'Fen & Teknoloji Laboratuvarı', color: 'emerald', isSmartBoardActive: true },
-  { id: 'sc-9a-mon-6', orgId: 30, day: 'mon', period: 6, classCode: '9-A', subject: 'Fizik & Fen Bilimleri', teacherName: 'Ebru TEKNECİ', roomName: 'Fen & Teknoloji Laboratuvarı', color: 'emerald', isSmartBoardActive: true },
+  { id: 'sc-1a-mon-1', orgId: 30, day: 'mon', period: 1, classCode: '1/A', subject: 'Türkçe', teacherName: 'Özlem ZOR', roomName: '1. Kat · Derslik 101', color: 'blue', isSmartBoardActive: true },
+  { id: 'sc-1a-mon-2', orgId: 30, day: 'mon', period: 2, classCode: '1/A', subject: 'Türkçe', teacherName: 'Özlem ZOR', roomName: '1. Kat · Derslik 101', color: 'blue', isSmartBoardActive: true },
+  { id: 'sc-1a-mon-3', orgId: 30, day: 'mon', period: 3, classCode: '1/A', subject: 'Matematik', teacherName: 'Özlem ZOR', roomName: '1. Kat · Derslik 101', color: 'indigo', isSmartBoardActive: true },
+  { id: 'sc-1a-mon-4', orgId: 30, day: 'mon', period: 4, classCode: '1/A', subject: 'Matematik', teacherName: 'Özlem ZOR', roomName: '1. Kat · Derslik 101', color: 'indigo', isSmartBoardActive: true },
+  { id: 'sc-1a-mon-5', orgId: 30, day: 'mon', period: 5, classCode: '1/A', subject: 'Hayat Bilgisi', teacherName: 'Özlem ZOR', roomName: '1. Kat · Derslik 101', color: 'teal', isSmartBoardActive: true },
+  { id: 'sc-1a-mon-6', orgId: 30, day: 'mon', period: 6, classCode: '1/A', subject: 'Beden Eğitimi ve Oyun', teacherName: 'Selim AKSOY', roomName: 'Kapalı Spor Salonu', color: 'orange', isSmartBoardActive: false },
 
   // Salı (6)
-  { id: 'sc-9a-tue-1', orgId: 30, day: 'tue', period: 1, classCode: '9-A', subject: 'Türk Dili ve Edebiyatı', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'blue', isSmartBoardActive: true },
-  { id: 'sc-9a-tue-2', orgId: 30, day: 'tue', period: 2, classCode: '9-A', subject: 'Türk Dili ve Edebiyatı', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'blue', isSmartBoardActive: true },
-  { id: 'sc-9a-tue-3', orgId: 30, day: 'tue', period: 3, classCode: '9-A', subject: 'Matematik', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'indigo', isSmartBoardActive: true },
-  { id: 'sc-9a-tue-4', orgId: 30, day: 'tue', period: 4, classCode: '9-A', subject: 'Matematik', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'indigo', isSmartBoardActive: true },
-  { id: 'sc-9a-tue-5', orgId: 30, day: 'tue', period: 5, classCode: '9-A', subject: 'Fizik & Fen Bilimleri', teacherName: 'Ebru TEKNECİ', roomName: 'Fen & Teknoloji Laboratuvarı', color: 'emerald', isSmartBoardActive: true },
-  { id: 'sc-9a-tue-6', orgId: 30, day: 'tue', period: 6, classCode: '9-A', subject: 'Fizik & Fen Bilimleri', teacherName: 'Ebru TEKNECİ', roomName: 'Fen & Teknoloji Laboratuvarı', color: 'emerald', isSmartBoardActive: true },
+  { id: 'sc-1a-tue-1', orgId: 30, day: 'tue', period: 1, classCode: '1/A', subject: 'Türkçe', teacherName: 'Özlem ZOR', roomName: '1. Kat · Derslik 101', color: 'blue', isSmartBoardActive: true },
+  { id: 'sc-1a-tue-2', orgId: 30, day: 'tue', period: 2, classCode: '1/A', subject: 'Türkçe', teacherName: 'Özlem ZOR', roomName: '1. Kat · Derslik 101', color: 'blue', isSmartBoardActive: true },
+  { id: 'sc-1a-tue-3', orgId: 30, day: 'tue', period: 3, classCode: '1/A', subject: 'Matematik', teacherName: 'Özlem ZOR', roomName: '1. Kat · Derslik 101', color: 'indigo', isSmartBoardActive: true },
+  { id: 'sc-1a-tue-4', orgId: 30, day: 'tue', period: 4, classCode: '1/A', subject: 'Hayat Bilgisi', teacherName: 'Özlem ZOR', roomName: '1. Kat · Derslik 101', color: 'teal', isSmartBoardActive: true },
+  { id: 'sc-1a-tue-5', orgId: 30, day: 'tue', period: 5, classCode: '1/A', subject: 'Yabancı Dil (İngilizce)', teacherName: 'Canan YILDIRIM', roomName: '1. Kat · Derslik 101', color: 'purple', isSmartBoardActive: true },
+  { id: 'sc-1a-tue-6', orgId: 30, day: 'tue', period: 6, classCode: '1/A', subject: 'Beden Eğitimi ve Oyun', teacherName: 'Selim AKSOY', roomName: 'Kapalı Spor Salonu', color: 'orange', isSmartBoardActive: false },
 
   // Çarşamba (6)
-  { id: 'sc-9a-wed-1', orgId: 30, day: 'wed', period: 1, classCode: '9-A', subject: 'Türk Dili ve Edebiyatı', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'blue', isSmartBoardActive: true },
-  { id: 'sc-9a-wed-2', orgId: 30, day: 'wed', period: 2, classCode: '9-A', subject: 'Matematik', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'indigo', isSmartBoardActive: true },
-  { id: 'sc-9a-wed-3', orgId: 30, day: 'wed', period: 3, classCode: '9-A', subject: 'Matematik', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'indigo', isSmartBoardActive: true },
-  { id: 'sc-9a-wed-4', orgId: 30, day: 'wed', period: 4, classCode: '9-A', subject: 'Bilişim & Yazılım', teacherName: 'Ebru TEKNECİ', roomName: 'Bilişim & Kodlama Atölyesi', color: 'cyan', isSmartBoardActive: true },
-  { id: 'sc-9a-wed-5', orgId: 30, day: 'wed', period: 5, classCode: '9-A', subject: 'Bilişim & Yazılım', teacherName: 'Ebru TEKNECİ', roomName: 'Bilişim & Kodlama Atölyesi', color: 'cyan', isSmartBoardActive: true },
-  { id: 'sc-9a-wed-6', orgId: 30, day: 'wed', period: 6, classCode: '9-A', subject: 'Yabancı Dil (İngilizce)', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'purple', isSmartBoardActive: true },
+  { id: 'sc-1a-wed-1', orgId: 30, day: 'wed', period: 1, classCode: '1/A', subject: 'Türkçe', teacherName: 'Özlem ZOR', roomName: '1. Kat · Derslik 101', color: 'blue', isSmartBoardActive: true },
+  { id: 'sc-1a-wed-2', orgId: 30, day: 'wed', period: 2, classCode: '1/A', subject: 'Türkçe', teacherName: 'Özlem ZOR', roomName: '1. Kat · Derslik 101', color: 'blue', isSmartBoardActive: true },
+  { id: 'sc-1a-wed-3', orgId: 30, day: 'wed', period: 3, classCode: '1/A', subject: 'Matematik', teacherName: 'Özlem ZOR', roomName: '1. Kat · Derslik 101', color: 'indigo', isSmartBoardActive: true },
+  { id: 'sc-1a-wed-4', orgId: 30, day: 'wed', period: 4, classCode: '1/A', subject: 'Hayat Bilgisi', teacherName: 'Özlem ZOR', roomName: '1. Kat · Derslik 101', color: 'teal', isSmartBoardActive: true },
+  { id: 'sc-1a-wed-5', orgId: 30, day: 'wed', period: 5, classCode: '1/A', subject: 'Görsel Sanatlar', teacherName: 'Gülşah ÖZTÜRK', roomName: 'Görsel Sanatlar Atölyesi', color: 'pink', isSmartBoardActive: false },
+  { id: 'sc-1a-wed-6', orgId: 30, day: 'wed', period: 6, classCode: '1/A', subject: 'Beden Eğitimi ve Oyun', teacherName: 'Selim AKSOY', roomName: 'Kapalı Spor Salonu', color: 'orange', isSmartBoardActive: false },
 
   // Perşembe (6)
-  { id: 'sc-9a-thu-1', orgId: 30, day: 'thu', period: 1, classCode: '9-A', subject: 'Bilişim & Yazılım', teacherName: 'Ebru TEKNECİ', roomName: 'Bilişim & Kodlama Atölyesi', color: 'cyan', isSmartBoardActive: true },
-  { id: 'sc-9a-thu-2', orgId: 30, day: 'thu', period: 2, classCode: '9-A', subject: 'Yabancı Dil (İngilizce)', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'purple', isSmartBoardActive: true },
-  { id: 'sc-9a-thu-3', orgId: 30, day: 'thu', period: 3, classCode: '9-A', subject: 'Yabancı Dil (İngilizce)', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'purple', isSmartBoardActive: true },
-  { id: 'sc-9a-thu-4', orgId: 30, day: 'thu', period: 4, classCode: '9-A', subject: 'Tarih', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'amber', isSmartBoardActive: true },
-  { id: 'sc-9a-thu-5', orgId: 30, day: 'thu', period: 5, classCode: '9-A', subject: 'Tarih', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'amber', isSmartBoardActive: true },
-  { id: 'sc-9a-thu-6', orgId: 30, day: 'thu', period: 6, classCode: '9-A', subject: 'Coğrafya', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'teal', isSmartBoardActive: true },
+  { id: 'sc-1a-thu-1', orgId: 30, day: 'thu', period: 1, classCode: '1/A', subject: 'Türkçe', teacherName: 'Özlem ZOR', roomName: '1. Kat · Derslik 101', color: 'blue', isSmartBoardActive: true },
+  { id: 'sc-1a-thu-2', orgId: 30, day: 'thu', period: 2, classCode: '1/A', subject: 'Türkçe', teacherName: 'Özlem ZOR', roomName: '1. Kat · Derslik 101', color: 'blue', isSmartBoardActive: true },
+  { id: 'sc-1a-thu-3', orgId: 30, day: 'thu', period: 3, classCode: '1/A', subject: 'Matematik', teacherName: 'Özlem ZOR', roomName: '1. Kat · Derslik 101', color: 'indigo', isSmartBoardActive: true },
+  { id: 'sc-1a-thu-4', orgId: 30, day: 'thu', period: 4, classCode: '1/A', subject: 'Hayat Bilgisi', teacherName: 'Özlem ZOR', roomName: '1. Kat · Derslik 101', color: 'teal', isSmartBoardActive: true },
+  { id: 'sc-1a-thu-5', orgId: 30, day: 'thu', period: 5, classCode: '1/A', subject: 'Müzik', teacherName: 'Müzik Zümresi', roomName: 'Müzik Odası', color: 'pink', isSmartBoardActive: true },
+  { id: 'sc-1a-thu-6', orgId: 30, day: 'thu', period: 6, classCode: '1/A', subject: 'Beden Eğitimi ve Oyun', teacherName: 'Selim AKSOY', roomName: 'Kapalı Spor Salonu', color: 'orange', isSmartBoardActive: false },
 
   // Cuma (6)
-  { id: 'sc-9a-fri-1', orgId: 30, day: 'fri', period: 1, classCode: '9-A', subject: 'Yabancı Dil (İngilizce)', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'purple', isSmartBoardActive: true },
-  { id: 'sc-9a-fri-2', orgId: 30, day: 'fri', period: 2, classCode: '9-A', subject: 'Coğrafya', teacherName: 'Ebru TEKNECİ', roomName: 'Derslik 9-A', color: 'teal', isSmartBoardActive: true },
-  { id: 'sc-9a-fri-3', orgId: 30, day: 'fri', period: 3, classCode: '9-A', subject: 'Beden Eğitimi & Spor', teacherName: 'Ebru TEKNECİ', roomName: 'Kapalı Spor Salonu', color: 'orange', isSmartBoardActive: false },
-  { id: 'sc-9a-fri-4', orgId: 30, day: 'fri', period: 4, classCode: '9-A', subject: 'Beden Eğitimi & Spor', teacherName: 'Ebru TEKNECİ', roomName: 'Kapalı Spor Salonu', color: 'orange', isSmartBoardActive: false },
-  { id: 'sc-9a-fri-5', orgId: 30, day: 'fri', period: 5, classCode: '9-A', subject: 'Görsel Sanatlar & Atölye', teacherName: 'Ebru TEKNECİ', roomName: 'Görsel Sanatlar Atölyesi', color: 'pink', isSmartBoardActive: false },
-  { id: 'sc-9a-fri-6', orgId: 30, day: 'fri', period: 6, classCode: '9-A', subject: 'Müzik & Sahne Sanatları', teacherName: 'Ebru TEKNECİ', roomName: 'Müzik Odası', color: 'pink', isSmartBoardActive: true },
+  { id: 'sc-1a-fri-1', orgId: 30, day: 'fri', period: 1, classCode: '1/A', subject: 'Türkçe', teacherName: 'Özlem ZOR', roomName: '1. Kat · Derslik 101', color: 'blue', isSmartBoardActive: true },
+  { id: 'sc-1a-fri-2', orgId: 30, day: 'fri', period: 2, classCode: '1/A', subject: 'Türkçe', teacherName: 'Özlem ZOR', roomName: '1. Kat · Derslik 101', color: 'blue', isSmartBoardActive: true },
+  { id: 'sc-1a-fri-3', orgId: 30, day: 'fri', period: 3, classCode: '1/A', subject: 'Yabancı Dil (İngilizce)', teacherName: 'Canan YILDIRIM', roomName: '1. Kat · Derslik 101', color: 'purple', isSmartBoardActive: true },
+  { id: 'sc-1a-fri-4', orgId: 30, day: 'fri', period: 4, classCode: '1/A', subject: 'Serbest Etkinlikler & Kodlama', teacherName: 'Özlem ZOR', roomName: '1. Kat · Derslik 101', color: 'cyan', isSmartBoardActive: true },
+  { id: 'sc-1a-fri-5', orgId: 30, day: 'fri', period: 5, classCode: '1/A', subject: 'Serbest Etkinlikler & Kodlama', teacherName: 'Özlem ZOR', roomName: '1. Kat · Derslik 101', color: 'cyan', isSmartBoardActive: true },
+  { id: 'sc-1a-fri-6', orgId: 30, day: 'fri', period: 6, classCode: '1/A', subject: 'Beden Eğitimi ve Oyun', teacherName: 'Selim AKSOY', roomName: 'Kapalı Spor Salonu', color: 'orange', isSmartBoardActive: false },
 ]
 
+export const CANONICAL_9A_SCHEDULE_30: ScheduleEntry[] = CANONICAL_1A_SCHEDULE_30
+
 /**
- * Returns the weekly class schedule configured by the school principal for 9-A.
- * Synchronizes from oxonom_admin_schedule_30 and other admin schedule stores with fallback to CANONICAL_9A_SCHEDULE_30.
+ * Returns the weekly class schedule configured by the school principal for the given class (defaults to 1/A).
+ * Synchronizes from oxonom_admin_schedule_30 and other admin schedule stores with fallback to CANONICAL_1A_SCHEDULE_30.
  */
-export function getSynchronizedClassWeeklySchedule(classCode: string = '9-A'): ScheduleEntry[] {
-  let entries = CANONICAL_9A_SCHEDULE_30
+export function getSynchronizedClassWeeklySchedule(classCode: string = '1/A'): ScheduleEntry[] {
+  let entries = CANONICAL_1A_SCHEDULE_30
 
   if (typeof window !== 'undefined') {
     try {
@@ -1042,11 +1072,12 @@ export function getSynchronizedClassWeeklySchedule(classCode: string = '9-A'): S
       normEntry === normTarget ||
       normEntry.includes(normTarget) ||
       normTarget.includes(normEntry) ||
-      (normTarget.startsWith('9') && normEntry.startsWith('9'))
+      (normTarget.startsWith('1') && normEntry.startsWith('1')) ||
+      (normTarget.startsWith('9') && normEntry.startsWith('1'))
     )
   })
 
-  return filtered.length > 0 ? filtered : CANONICAL_9A_SCHEDULE_30
+  return filtered.length > 0 ? filtered : CANONICAL_1A_SCHEDULE_30
 }
 
 /**

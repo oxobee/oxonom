@@ -217,144 +217,90 @@ function getColorStyle(color: string) {
   return COLOR_OPTIONS[color] || COLOR_OPTIONS.blue
 }
 
-// ── AUTHENTIC INITIAL DATASETS (ORGANIZATION 30: OXONOM OKULLARI & 9/A) ──
+// ── AUTHENTIC INITIAL DATASETS (ORGANIZATION 30: OXONOM OKULLARI & 1/A) ──
 const INITIAL_OXONOM_COURSES: CurriculumCourse[] = [
   {
     id: 'c-ox-1',
-    code: 'EDB-901',
-    name: 'Türk Dili ve Edebiyatı',
+    code: 'TUR-101',
+    name: 'Türkçe',
     category: 'Temel Ders',
-    gradeLevels: ['9. Sınıf'],
-    targetClass: '9/A',
+    gradeLevels: ['1. Sınıf'],
+    targetClass: '1/A',
     orgId: 30,
-    weeklyHours: 5,
-    branchTeacher: 'Ebru TEKNECİ',
-    teacherBranch: 'Türk Dili ve Edebiyatı',
-    backupTeachers: [{ id: 'b-ox-1', name: 'Dr. Uğur UĞURLU', priority: 1, branch: 'Edebiyat & Kurum Yönetimi' }],
+    weeklyHours: 10,
+    branchTeacher: 'Özlem ZOR',
+    teacherBranch: 'Sınıf Öğretmeni (1/A)',
+    backupTeachers: [{ id: 'b-ox-1', name: 'Dr. Uğur UĞURLU', priority: 1, branch: 'Kurum Yönetimi' }],
     roomType: 'normal',
-    requiredRoom: 'Derslik 9/A',
+    requiredRoom: '1. Kat · Derslik 101',
     isSmartBoardReady: true,
     isElective: false,
     color: 'blue',
   },
   {
     id: 'c-ox-2',
-    code: 'MAT-901',
+    code: 'MAT-101',
     name: 'Matematik',
     category: 'Temel Ders',
-    gradeLevels: ['9. Sınıf'],
-    targetClass: '9/A',
+    gradeLevels: ['1. Sınıf'],
+    targetClass: '1/A',
     orgId: 30,
-    weeklyHours: 6,
-    branchTeacher: 'Ebru TEKNECİ',
-    teacherBranch: 'Matematik',
+    weeklyHours: 5,
+    branchTeacher: 'Özlem ZOR',
+    teacherBranch: 'Sınıf Öğretmeni (1/A)',
     backupTeachers: [{ id: 'b-ox-2', name: 'Dr. Uğur UĞURLU', priority: 1, branch: 'Matematik & Analitik' }],
     roomType: 'normal',
-    requiredRoom: 'Derslik 9/A',
+    requiredRoom: '1. Kat · Derslik 101',
     isSmartBoardReady: true,
     isElective: false,
     color: 'indigo',
   },
   {
     id: 'c-ox-3',
-    code: 'FEN-901',
-    name: 'Fizik & Fen Bilimleri',
-    category: 'Fen & Teknoloji',
-    gradeLevels: ['9. Sınıf'],
-    targetClass: '9/A',
+    code: 'HAY-101',
+    name: 'Hayat Bilgisi',
+    category: 'Temel Ders',
+    gradeLevels: ['1. Sınıf'],
+    targetClass: '1/A',
     orgId: 30,
     weeklyHours: 4,
-    branchTeacher: 'Ebru TEKNECİ',
-    teacherBranch: 'Fen Bilimleri',
-    backupTeachers: [{ id: 'b-ox-3', name: 'Dr. Uğur UĞURLU', priority: 1, branch: 'Fen & Teknoloji' }],
-    roomType: 'laboratuvar',
-    requiredRoom: 'Fen & Teknoloji Laboratuvarı',
-    isSmartBoardReady: true,
-    isElective: false,
-    color: 'emerald',
-  },
-  {
-    id: 'c-ox-4',
-    code: 'BIL-901',
-    name: 'Bilişim & Yazılım',
-    category: 'Fen & Teknoloji',
-    gradeLevels: ['9. Sınıf'],
-    targetClass: '9/A',
-    orgId: 30,
-    weeklyHours: 3,
-    branchTeacher: 'Ebru TEKNECİ',
-    teacherBranch: 'Bilişim Teknolojileri',
-    backupTeachers: [{ id: 'b-ox-4', name: 'Dr. Uğur UĞURLU', priority: 1, branch: 'Yazılım' }],
-    roomType: 'atolye',
-    requiredRoom: 'Bilişim & Kodlama Atölyesi',
-    isSmartBoardReady: true,
-    isElective: false,
-    color: 'cyan',
-  },
-  {
-    id: 'c-ox-5',
-    code: 'ING-901',
-    name: 'Yabancı Dil (İngilizce)',
-    category: 'Yabancı Dil',
-    gradeLevels: ['9. Sınıf'],
-    targetClass: '9/A',
-    orgId: 30,
-    weeklyHours: 4,
-    branchTeacher: 'Ebru TEKNECİ',
-    teacherBranch: 'İngilizce',
-    backupTeachers: [{ id: 'b-ox-5', name: 'Dr. Uğur UĞURLU', priority: 1, branch: 'Yabancı Diller' }],
+    branchTeacher: 'Özlem ZOR',
+    teacherBranch: 'Sınıf Öğretmeni (1/A)',
+    backupTeachers: [{ id: 'b-ox-3', name: 'Dr. Uğur UĞURLU', priority: 1, branch: 'Sosyal Gelişim' }],
     roomType: 'normal',
-    requiredRoom: 'Derslik 9/A',
-    isSmartBoardReady: true,
-    isElective: false,
-    color: 'purple',
-  },
-  {
-    id: 'c-ox-6',
-    code: 'TAR-901',
-    name: 'Tarih',
-    category: 'Sosyal & Beşeri',
-    gradeLevels: ['9. Sınıf'],
-    targetClass: '9/A',
-    orgId: 30,
-    weeklyHours: 2,
-    branchTeacher: 'Ebru TEKNECİ',
-    teacherBranch: 'Tarih',
-    backupTeachers: [],
-    roomType: 'normal',
-    requiredRoom: 'Derslik 9/A',
-    isSmartBoardReady: true,
-    isElective: false,
-    color: 'amber',
-  },
-  {
-    id: 'c-ox-7',
-    code: 'COG-901',
-    name: 'Coğrafya',
-    category: 'Sosyal & Beşeri',
-    gradeLevels: ['9. Sınıf'],
-    targetClass: '9/A',
-    orgId: 30,
-    weeklyHours: 2,
-    branchTeacher: 'Ebru TEKNECİ',
-    teacherBranch: 'Coğrafya',
-    backupTeachers: [],
-    roomType: 'normal',
-    requiredRoom: 'Derslik 9/A',
+    requiredRoom: '1. Kat · Derslik 101',
     isSmartBoardReady: true,
     isElective: false,
     color: 'teal',
   },
   {
-    id: 'c-ox-8',
-    code: 'BED-901',
-    name: 'Beden Eğitimi & Spor',
-    category: 'Sanat & Spor',
-    gradeLevels: ['9. Sınıf'],
-    targetClass: '9/A',
+    id: 'c-ox-4',
+    code: 'ING-101',
+    name: 'Yabancı Dil (İngilizce)',
+    category: 'Yabancı Dil',
+    gradeLevels: ['1. Sınıf'],
+    targetClass: '1/A',
     orgId: 30,
     weeklyHours: 2,
-    branchTeacher: 'Ebru TEKNECİ',
+    branchTeacher: 'Canan YILDIRIM',
+    teacherBranch: 'İngilizce',
+    backupTeachers: [{ id: 'b-ox-4', name: 'Dr. Uğur UĞURLU', priority: 1, branch: 'Yabancı Diller' }],
+    roomType: 'normal',
+    requiredRoom: '1. Kat · Derslik 101',
+    isSmartBoardReady: true,
+    isElective: false,
+    color: 'purple',
+  },
+  {
+    id: 'c-ox-5',
+    code: 'BED-101',
+    name: 'Beden Eğitimi ve Oyun',
+    category: 'Sanat & Spor',
+    gradeLevels: ['1. Sınıf'],
+    targetClass: '1/A',
+    orgId: 30,
+    weeklyHours: 5,
+    branchTeacher: 'Selim AKSOY',
     teacherBranch: 'Beden Eğitimi',
     backupTeachers: [],
     roomType: 'atolye',
@@ -364,15 +310,15 @@ const INITIAL_OXONOM_COURSES: CurriculumCourse[] = [
     color: 'orange',
   },
   {
-    id: 'c-ox-9',
-    code: 'GOR-901',
-    name: 'Görsel Sanatlar & Atölye',
+    id: 'c-ox-6',
+    code: 'GOR-101',
+    name: 'Görsel Sanatlar',
     category: 'Sanat & Spor',
-    gradeLevels: ['9. Sınıf'],
-    targetClass: '9/A',
+    gradeLevels: ['1. Sınıf'],
+    targetClass: '1/A',
     orgId: 30,
     weeklyHours: 1,
-    branchTeacher: 'Ebru TEKNECİ',
+    branchTeacher: 'Gülşah ÖZTÜRK',
     teacherBranch: 'Görsel Sanatlar',
     backupTeachers: [],
     roomType: 'atolye',
@@ -382,15 +328,15 @@ const INITIAL_OXONOM_COURSES: CurriculumCourse[] = [
     color: 'pink',
   },
   {
-    id: 'c-ox-10',
-    code: 'MUZ-901',
-    name: 'Müzik & Sahne Sanatları',
+    id: 'c-ox-7',
+    code: 'MUZ-101',
+    name: 'Müzik',
     category: 'Sanat & Spor',
-    gradeLevels: ['9. Sınıf'],
-    targetClass: '9/A',
+    gradeLevels: ['1. Sınıf'],
+    targetClass: '1/A',
     orgId: 30,
     weeklyHours: 1,
-    branchTeacher: 'Ebru TEKNECİ',
+    branchTeacher: 'Müzik Zümresi',
     teacherBranch: 'Müzik',
     backupTeachers: [],
     roomType: 'atolye',
@@ -398,6 +344,24 @@ const INITIAL_OXONOM_COURSES: CurriculumCourse[] = [
     isSmartBoardReady: true,
     isElective: false,
     color: 'pink',
+  },
+  {
+    id: 'c-ox-8',
+    code: 'SER-101',
+    name: 'Serbest Etkinlikler & Kodlama',
+    category: 'Fen & Teknoloji',
+    gradeLevels: ['1. Sınıf'],
+    targetClass: '1/A',
+    orgId: 30,
+    weeklyHours: 2,
+    branchTeacher: 'Özlem ZOR',
+    teacherBranch: 'Sınıf Öğretmeni (1/A)',
+    backupTeachers: [],
+    roomType: 'normal',
+    requiredRoom: '1. Kat · Derslik 101',
+    isSmartBoardReady: true,
+    isElective: false,
+    color: 'cyan',
   },
 ]
 
@@ -451,10 +415,10 @@ export default function MAdminCurriculumClient({
     if (typeof window !== 'undefined') {
       try {
         const saved = localStorage.getItem('oxonom_curriculum_selected_class')
-        if (saved) return saved
+        if (saved && saved !== '9/A' && saved !== '9-A') return saved
       } catch (_) {}
     }
-    return '9/A'
+    return '1/A'
   })
   const [activeDay, setActiveDay] = useState<DayKey>('mon')
 
@@ -469,7 +433,7 @@ export default function MAdminCurriculumClient({
   // Workload monitor toggle (collapsed by default as requested)
   const [isWorkloadExpanded, setIsWorkloadExpanded] = useState<boolean>(false)
 
-  // Dynamic periods (can be customized by principal - default 6 periods = 30 hours/week for Oxonom 9/A)
+  // Dynamic periods (can be customized by principal - default 6 periods = 30 hours/week for Oxonom 1/A)
   const [periods, setPeriods] = useState<PeriodSlot[]>(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -482,7 +446,7 @@ export default function MAdminCurriculumClient({
         }
       } catch (_) {}
     }
-    return PRIMARY_PERIODS // 6 periods/day = 30 hours/week for Oxonom 9/A
+    return PRIMARY_PERIODS // 6 periods/day = 30 hours/week for Oxonom 1/A
   })
 
   // Modals state
@@ -501,15 +465,15 @@ export default function MAdminCurriculumClient({
   // Section 1: Ders Bilgileri
   const [formName, setFormName] = useState('')
   const [formCode, setFormCode] = useState('')
-  const [formTargetClass, setFormTargetClass] = useState('9/A')
+  const [formTargetClass, setFormTargetClass] = useState('1/A')
   const [formWeeklyHours, setFormWeeklyHours] = useState<number>(4)
   const [formCategory, setFormCategory] = useState<'Temel Ders' | 'Fen & Teknoloji' | 'Sosyal & Beşeri' | 'Sanat & Spor' | 'Yabancı Dil'>('Temel Ders')
   const [formColor, setFormColor] = useState('blue')
   const [formIsSmartBoard, setFormIsSmartBoard] = useState(true)
 
   // Section 2: Öğretmen Bilgileri
-  const [formBranchTeacher, setFormBranchTeacher] = useState('Ebru TEKNECİ')
-  const [formTeacherBranch, setFormTeacherBranch] = useState('Türk Dili ve Edebiyatı')
+  const [formBranchTeacher, setFormBranchTeacher] = useState('Özlem ZOR')
+  const [formTeacherBranch, setFormTeacherBranch] = useState('Sınıf Öğretmeni (1/A)')
   const [formBackupTeachers, setFormBackupTeachers] = useState<BackupTeacher[]>([
     { id: 'b-default', name: 'Dr. Uğur UĞURLU', priority: 1, branch: 'Edebiyat & Kurum Yönetimi' },
   ])
@@ -517,7 +481,7 @@ export default function MAdminCurriculumClient({
 
   // Section 3: Derslik Bilgileri
   const [formRoomType, setFormRoomType] = useState<RoomType>('normal')
-  const [formRequiredRoom, setFormRequiredRoom] = useState('Derslik 9/A')
+  const [formRequiredRoom, setFormRequiredRoom] = useState('1. Kat · Derslik 101')
 
   // Dynamic Teachers List (Authentic source without mock data)
   const [teachersList, setTeachersList] = useState<any[]>(() => {
@@ -541,28 +505,38 @@ export default function MAdminCurriculumClient({
         if (saved) {
           const parsed = JSON.parse(saved)
           if (Array.isArray(parsed) && parsed.length > 0) {
-            const list = parsed.map((c: any) => {
-              const code = (c.code || '').trim()
-              const matchGrade = (c.gradeLevel || '').match(/\d+/) || code.match(/^\d+/)
-              const gNum = matchGrade ? matchGrade[0] : '9'
-              let branch = ''
-              if (code.includes('/') || code.includes('-')) {
-                const parts = code.split(/[\/\-]/)
-                branch = parts[parts.length - 1].trim().toUpperCase()
-              } else if (/^[A-Za-zÇĞİÖŞÜçğıöşü]+$/.test(code)) {
-                branch = code.toUpperCase()
-              } else {
-                branch = 'A'
-              }
-              return `${gNum}/${branch}`
-            })
-            if (!list.includes('9/A')) list.unshift('9/A')
+            const list = parsed
+              .map((c: any) => {
+                const code = (c.code || '').trim()
+                const matchGrade = (c.gradeLevel || '').match(/\d+/) || code.match(/^\d+/)
+                const gNum = matchGrade ? matchGrade[0] : '1'
+                let branch = ''
+                if (code.includes('/') || code.includes('-')) {
+                  const parts = code.split(/[\/\-]/)
+                  branch = parts[parts.length - 1].trim().toUpperCase()
+                } else if (/^[A-Za-zÇĞİÖŞÜçğıöşü]+$/.test(code)) {
+                  branch = code.toUpperCase()
+                } else {
+                  branch = 'A'
+                }
+                return `${gNum}/${branch}`
+              })
+              .filter((c: string) => c !== '9/A' && c !== '9-A')
             return Array.from(new Set(list))
           }
         }
       } catch (_) {}
     }
-    return ['9/A']
+    return [
+      '1/A', '1/B', '1/C', '1/D',
+      '2/A', '2/B', '2/C', '2/D',
+      '3/A', '3/B', '3/C', '3/D',
+      '4/A', '4/B', '4/C', '4/D',
+      '5/A', '5/B', '5/C', '5/D',
+      '6/A', '6/B', '6/C', '6/D',
+      '7/A', '7/B', '7/C', '7/D',
+      '8/A', '8/B', '8/C', '8/D',
+    ]
   }
 
   const [availableClasses, setAvailableClasses] = useState<string[]>(() =>
@@ -873,8 +847,8 @@ export default function MAdminCurriculumClient({
         )
         if (matchingWithSchedule) {
           handleSelectClass(matchingWithSchedule)
-        } else if (availableClasses.includes('9/A')) {
-          handleSelectClass('9/A')
+        } else if (availableClasses.includes('1/A')) {
+          handleSelectClass('1/A')
         } else {
           handleSelectClass(availableClasses[0])
         }

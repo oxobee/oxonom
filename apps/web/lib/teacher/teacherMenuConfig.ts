@@ -66,6 +66,20 @@ export const TEACHER_MENU_CONFIG: TeacherMenuItem[] = [
     ],
   },
   {
+    id: 'teacher-courses',
+    label: 'Öğrenci Ders Yönetimi',
+    path: '/teacher/courses',
+    icon: BookOpen,
+    status: 'active',
+    sortOrder: 2.5,
+    description: 'Öğrencilerin Derslerim ekranını yönetme: Müfredat kitaplarını gizle/göster, materyal ve çalışma yükleme, sınav ve not ekleme.',
+    children: [
+      { id: 'teacher-courses-all', label: 'Ders İçerikleri & Kitaplar', path: '/teacher/courses', status: 'active', description: 'Müfredat kitapları görünürlüğü ve ders materyalleri' },
+      { id: 'teacher-courses-materials', label: 'Materyal & Dosya Ekle', path: '/teacher/courses?tab=materials', status: 'active', description: 'Sınıfa veya öğrenciye materyal yükleme' },
+      { id: 'teacher-courses-exams', label: 'Sınav & Not Yönetimi', path: '/teacher/courses?tab=exams', status: 'active', description: 'Yazılı ve performans notları' },
+    ],
+  },
+  {
     id: 'classes',
     label: 'Sınıflarım ve Öğrencilerim',
     path: '/teacher/classes',
